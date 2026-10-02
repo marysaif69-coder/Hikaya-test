@@ -43,7 +43,12 @@ export async function createSamples(actor: string) {
         const past = date < today;
         const status = past ? (randomInt(10) === 0 ? 'cancelled' : 'completed') : date === today ? pick(['confirmed', method === 'pickup' ? 'ready' : 'out-for-delivery']) : w === 0 ? 'confirmed' : pick(['received', 'received', 'confirmed']);
         const payment = pick(['e-transfer', 'at-pickup', 'card']);
-        const paid = status === 'completed' || (status !== 'received' && payment !== 'at-pickup');
+        // Like real life: card is paid when ordering; e-Transfer usually arrives after we confirm
+        // (a few are still outstanding); pay-at-pickup is paid only when collected.
+        const paid = status === 'cancelled' ? false
+          : payment === 'card' ? true
+          : payment === 'e-transfer' ? status === 'completed' || (status !== 'received' && randomInt(4) > 0)
+          : status === 'completed';
         const phone = `403-555-01${10 + randomInt(89)}`;
         const c = await one`INSERT INTO customers (email, name, phone, lang) VALUES (${email}, ${name}, ${phone}, ${lang})
           ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name RETURNING id`;

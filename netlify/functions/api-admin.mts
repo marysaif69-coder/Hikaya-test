@@ -44,9 +44,12 @@ export default async (req: Request) => {
       // The totals follow the sample filter: all orders, real orders only, or sample orders only.
       const counts = await sql`SELECT status, COUNT(*)::int AS n FROM orders
         WHERE (${sample} = '' OR (${sample} = 'hide' AND NOT is_sample) OR (${sample} = 'only' AND is_sample)) GROUP BY status`;
-      const unpaid = await one`SELECT COUNT(*)::int AS n, COALESCE(SUM(total_cents), 0)::int AS cents FROM orders WHERE payment_status = 'unpaid' AND status <> 'cancelled'
-        AND (${sample} = '' OR (${sample} = 'hide' AND NOT is_sample) OR (${sample} = 'only' AND is_sample))`;
-      return json({ orders: rows.map(r => summary({ ...r, items: typeof r.items === 'string' ? JSON.parse(r.items) : r.items })), counts: Object.fromEntries(counts.map(c => [c.status, c.n])), unpaid });
+      // Money still to come in: paid at pickup (normal), or e-Transfer/card not received yet (to chase).
+      const owed = await sql`SELECT payment, COUNT(*)::int AS n, COALESCE(SUM(total_cents), 0)::int AS cents FROM orders WHERE payment_status = 'unpaid' AND status <> 'cancelled'
+        AND (${sample} = '' OR (${sample} = 'hide' AND NOT is_sample) OR (${sample} = 'only' AND is_sample)) GROUP BY payment`;
+      const sum = (rows: any[]) => ({ n: rows.reduce((a, r) => a + r.n, 0), cents: rows.reduce((a, r) => a + r.cents, 0) });
+      const atPickup = sum(owed.filter(r => r.payment === 'at-pickup')), waiting = sum(owed.filter(r => r.payment !== 'at-pickup'));
+      return json({ orders: rows.map(r => summary({ ...r, items: typeof r.items === 'string' ? JSON.parse(r.items) : r.items })), counts: Object.fromEntries(counts.map(c => [c.status, c.n])), atPickup, waiting });
     }
 
     // GET /api/admin/orders/:ref — full order with history

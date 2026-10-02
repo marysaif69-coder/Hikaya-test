@@ -233,6 +233,8 @@ import '../../styles/global.css';
   :global(.pill.cancelled) { background: #F1DCD3; color: var(--tamr-2); }
   :global(.pill.paid) { background: #DCE6CF; }
   :global(.pill.unpaid) { background: #F1DCD3; color: var(--tamr-2); }
+  :global(.pill.due) { background: #F4E6BF; }
+  :global(.st.warn) b { color: var(--tamr-2); }
   :global(.pill.sample) { background: #E4DDF0; color: #4B3A6B; }
   :global(.pill.partly-refunded), :global(.pill.refunded) { background: #EDE3D0; }
   .samples { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 10px 0 14px; font-size: 14px; }
@@ -329,7 +331,18 @@ import '../../styles/global.css';
     return body;
   };
   const STATUS_LABEL: Record<string, string> = { received: 'Received', confirmed: 'Confirmed', ready: 'Ready for pickup', 'out-for-delivery': 'Out for delivery', completed: 'Completed', cancelled: 'Cancelled' };
-  const PAY: Record<string, string> = { 'at-pickup': 'At pickup', 'e-transfer': 'e-Transfer', card: 'Card' };
+  const PAY: Record<string, string> = { 'at-pickup': 'Pay at pickup', 'e-transfer': 'e-Transfer', card: 'Card online' };
+  /** One plain label for the money: what happened, or what to do next. */
+  const payPill = (o: any) => {
+    const st = o.paymentStatus, how = o.payment;
+    if (st === 'refunded') return '<span class="pill refunded">Refunded</span>';
+    if (st === 'partly-refunded') return '<span class="pill refunded">Paid · part refunded</span>';
+    if (st === 'paid') return `<span class="pill paid">Paid · ${how === 'at-pickup' ? 'at pickup' : how === 'card' ? 'card' : 'e-Transfer'}</span>`;
+    if (o.status === 'cancelled') return '<span class="pill">No payment</span>';
+    if (how === 'at-pickup') return `<span class="pill due">Pays ${o.method === 'delivery' ? 'on delivery' : 'at pickup'}</span>`;
+    if (how === 'e-transfer') return '<span class="pill unpaid">Waiting for e-Transfer</span>';
+    return '<span class="pill unpaid">Card not paid yet</span>';
+  };
 
   // ---------- auth ----------
   function showLogin() {
@@ -378,15 +391,16 @@ import '../../styles/global.css';
     const c = d.counts ?? {};
     $('stats').innerHTML = [
       ['New', c.received ?? 0], ['Confirmed', c.confirmed ?? 0], ['Ready / on the way', (c.ready ?? 0) + (c['out-for-delivery'] ?? 0)], ['Completed', c.completed ?? 0],
-      ['Unpaid', `${d.unpaid?.n ?? 0} · ${money(d.unpaid?.cents ?? 0)}`],
-    ].map(([k, v]) => `<div class="st"><b>${v}</b><span>${k}</span></div>`).join('');
+      ['Waiting for e-Transfer or card · follow up', `${d.waiting?.n ?? 0} · ${money(d.waiting?.cents ?? 0)}`, d.waiting?.n ? 'warn' : ''],
+      ['To collect at pickup or delivery', `${d.atPickup?.n ?? 0} · ${money(d.atPickup?.cents ?? 0)}`],
+    ].map(([k, v, cls]) => `<div class="st ${cls ?? ''}"><b>${v}</b><span>${k}</span></div>`).join('');
     $('none').hidden = d.orders.length > 0;
     document.querySelector('#list tbody')!.innerHTML = d.orders.map((o: any) => `<tr class="row" data-ref="${esc(o.ref)}">
       <td class="ref">${esc(o.ref)}${o.sample ? '<br><span class="pill sample">SAMPLE</span>' : ''}</td><td>${fmtDay(o.day)}<br><small>${esc(o.window)}</small></td>
       <td>${esc(o.name)}<br><small>${esc(o.phone)}</small></td>
       <td>${o.method === 'delivery' ? `Delivery<br><small>${esc(o.postal)}</small>` : 'Pickup'}</td>
       <td class="its">${(o.items ?? []).map((i: any) => `${i.qty}× ${esc(i.name)}${i.option ? ` (${esc(i.option)})` : ''}`).join(', ')}</td>
-      <td>${money(o.total)}${o.discount ? `<br><small>−${money(o.discount)} ${esc(o.promo ?? '')}</small>` : ''}</td><td><span class="pill ${o.paymentStatus}">${o.paymentStatus}</span><br><small>${PAY[o.payment]}</small></td>
+      <td>${money(o.total)}${o.discount ? `<br><small>−${money(o.discount)} ${esc(o.promo ?? '')}</small>` : ''}</td><td>${payPill(o)}</td>
       <td><span class="pill ${o.status}">${STATUS_LABEL[o.status]}</span></td></tr>`).join('');
   }
   document.addEventListener('click', e => {
@@ -410,7 +424,7 @@ import '../../styles/global.css';
     $('pRef').textContent = o.ref;
     const flow = o.method === 'pickup' ? ['received', 'confirmed', 'ready', 'completed'] : ['received', 'confirmed', 'out-for-delivery', 'completed'];
     $('pBody').innerHTML = `
-      <p><span class="pill ${o.status}">${STATUS_LABEL[o.status]}</span> <span class="pill ${o.paymentStatus}">${o.paymentStatus}</span> · ${PAY[o.payment]}</p>
+      <p><span class="pill ${o.status}">${STATUS_LABEL[o.status]}</span> ${payPill(o)} <small class="muted">Chose: ${PAY[o.payment]}</small></p>
       <p><b>${fmtDay(o.day)} · ${esc(o.window)}</b><br>${o.method === 'delivery' ? `Delivery: ${esc(o.street)}, ${esc(o.postal)} · <a href="https://maps.google.com/?q=${encodeURIComponent(`${o.street}, ${o.postal}, Calgary`)}" target="_blank" rel="noopener">Map</a>` : 'Pickup'}</p>
       <p>${esc(o.name)} · <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a> · <a href="mailto:${esc(o.email)}">${esc(o.email)}</a> · ${o.lang === 'ar' ? 'Arabic' : 'English'}</p>
       ${o.notes ? `<p><b>Customer note:</b> ${esc(o.notes)}</p>` : ''}
@@ -420,7 +434,7 @@ import '../../styles/global.css';
       <div class="acts">${flow.map(s => `<button type="button" data-status="${s}" class="${s === o.status ? 'cur' : ''}">${STATUS_LABEL[s]}</button>`).join('')}<button type="button" class="danger" data-status="cancelled">Cancel order</button></div>
       <label class="notify"><input type="checkbox" id="pNotify" checked /> Email the customer about the change</label>
       <h3>Payment</h3>
-      <div class="acts"><button type="button" data-pay="paid" class="${o.paymentStatus === 'paid' ? 'cur' : ''}">Paid</button><button type="button" data-pay="unpaid" class="${o.paymentStatus === 'unpaid' ? 'cur' : ''}">Unpaid</button><button type="button" data-pay="refunded" class="${o.paymentStatus === 'refunded' ? 'cur' : ''}">Refunded</button></div>
+      <div class="acts"><button type="button" data-pay="paid" class="${o.paymentStatus === 'paid' ? 'cur' : ''}">Money received</button><button type="button" data-pay="unpaid" class="${o.paymentStatus === 'unpaid' ? 'cur' : ''}">Not received yet</button></div>
       <h3>Refund</h3>
       ${o.refundable > 0 ? `<div class="refund">
         <div class="acts"><input id="rAmt" type="number" min="0.01" step="0.01" max="${(o.refundable / 100).toFixed(2)}" value="${(o.refundable / 100).toFixed(2)}" aria-label="Amount in dollars" />
@@ -629,8 +643,8 @@ import '../../styles/global.css';
     const d = await api(`/api/admin/day${dayPick.value ? `?date=${dayPick.value}` : ''}`);
     dayPick.value = d.date;
     $('pack').innerHTML = d.pack.map((p: any) => `<li><span>${esc(p.name_en)}${p.option ? ` <small>(${esc(p.option)})</small>` : ''}</span><b>${p.qty}</b></li>`).join('') || '<li class="muted">Nothing to pack.</li>';
-    $('pickups').innerHTML = d.pickups.map((w: any) => `<h3>${esc(w.window)} · ${w.orders.length}</h3>${w.orders.map((o: any) => `<div class="mini" data-ref="${esc(o.ref)}"><span><b>${esc(o.ref)}</b> · ${esc(o.name)} · ${esc(o.phone)}</span><span>${o.items.map((i: any) => `${i.qty}× ${esc(i.name_en)}`).join(', ')} · ${money(o.total)} · <span class="pill ${o.paymentStatus}">${o.paymentStatus}</span></span></div>`).join('')}`).join('');
-    $('deliveries').innerHTML = d.deliveries.map((o: any) => `<li><div class="mini" data-ref="${esc(o.ref)}"><span><b>${esc(o.postal)}</b> · ${esc(o.street)} · ${esc(o.window)}</span><span>${esc(o.name)} · <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a> · ${money(o.total)} · <span class="pill ${o.paymentStatus}">${o.paymentStatus}</span></span></div></li>`).join('') || '<li class="muted">No deliveries.</li>';
+    $('pickups').innerHTML = d.pickups.map((w: any) => `<h3>${esc(w.window)} · ${w.orders.length}</h3>${w.orders.map((o: any) => `<div class="mini" data-ref="${esc(o.ref)}"><span><b>${esc(o.ref)}</b> · ${esc(o.name)} · ${esc(o.phone)}</span><span>${o.items.map((i: any) => `${i.qty}× ${esc(i.name_en)}`).join(', ')} · ${money(o.total)} · ${payPill(o)}</span></div>`).join('')}`).join('');
+    $('deliveries').innerHTML = d.deliveries.map((o: any) => `<li><div class="mini" data-ref="${esc(o.ref)}"><span><b>${esc(o.postal)}</b> · ${esc(o.street)} · ${esc(o.window)}</span><span>${esc(o.name)} · <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a> · ${money(o.total)} · ${payPill(o)}</span></div></li>`).join('') || '<li class="muted">No deliveries.</li>';
   }
 
   // ---------- settings ----------
