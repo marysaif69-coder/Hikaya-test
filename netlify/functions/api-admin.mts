@@ -1,10 +1,12 @@
 // /api/admin/* — the team's order desk. Every route requires an admin session (ADMIN_EMAILS).
 import type { Config } from '@netlify/functions';
-import { json, fail, body, str, HttpError } from '../lib/http';
+import { json, fail, body, str, HttpError, siteUrl } from '../lib/http';
 import { requireAdmin } from '../lib/auth';
 import { sql, one } from '../lib/db';
 import { getSettings, WINDOWS, calgaryNow } from '../lib/slots';
 import { items, setStatus, setPayment, event, STATUSES } from '../lib/orders';
+import { readable } from '../lib/ask';
+import { send, ticketReply } from '../lib/email';
 
 const day = (v: unknown) => (v instanceof Date ? v.toISOString() : String(v ?? '')).slice(0, 10);
 const summary = (o: any) => ({
@@ -97,6 +99,63 @@ export default async (req: Request) => {
       const lines = rows.map(r => [r.ref, r.created_at, day(r.slot_date), r.slot_window, r.method, r.status, r.payment, r.payment_status, r.name, r.email, r.phone, r.street, r.postal,
         (r.subtotal_cents / 100).toFixed(2), (r.delivery_cents / 100).toFixed(2), (r.total_cents / 100).toFixed(2), r.items].map(cell).join(','));
       return new Response([head.join(','), ...lines].join('\n'), { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="hikaya-orders-${from}-${to}.csv"`, 'cache-control': 'no-store' } });
+    }
+
+    // ---------- Inbox: help requests and Ask Hikaya conversations ----------
+    if (parts[0] === 'tickets' && parts.length === 1 && req.method === 'GET') {
+      const status = q('status');
+      const rows = await sql`SELECT t.id, t.ref, t.kind, t.status, t.source, t.lang, t.name, t.email, t.order_ref, t.summary, t.created_at, t.updated_at,
+          (SELECT COUNT(*)::int FROM ticket_photos p WHERE p.ticket_id = t.id) AS photos
+        FROM tickets t WHERE (${status} = '' OR t.status = ${status}) ORDER BY (t.status = 'resolved'), t.created_at DESC LIMIT 300`;
+      const counts = await sql`SELECT status, COUNT(*)::int AS n FROM tickets GROUP BY status`;
+      return json({ tickets: rows, counts: Object.fromEntries(counts.map(c => [c.status, c.n])) });
+    }
+    if (parts[0] === 'tickets' && parts[1] && req.method === 'GET') {
+      const t = await one`SELECT * FROM tickets WHERE ref = ${parts[1]}`;
+      if (!t) throw new HttpError(404, 'not-found');
+      const notes = await sql`SELECT kind, body, actor, created_at FROM ticket_notes WHERE ticket_id = ${t.id} ORDER BY created_at`;
+      const photos = await sql`SELECT id FROM ticket_photos WHERE ticket_id = ${t.id} ORDER BY id`;
+      const chat = t.chat_id ? await one`SELECT messages FROM chats WHERE id = ${t.chat_id}` : null;
+      const order = t.order_ref ? await one`SELECT ref, status, method, slot_date, slot_window, total_cents, email FROM orders WHERE ref = ${t.order_ref}` : null;
+      const { upload_token_hash, ...pub } = t;
+      return json({ ticket: pub, notes, photos: photos.map(p => p.id), transcript: chat ? readable(typeof chat.messages === 'string' ? JSON.parse(chat.messages) : chat.messages) : null,
+        order: order ? { ...order, day: day(order.slot_date), emailMatches: order.email === t.email } : null });
+    }
+    if (parts[0] === 'tickets' && parts[1] && req.method === 'POST') {
+      const b = await body(req);
+      const t = await one`SELECT * FROM tickets WHERE ref = ${parts[1]}`;
+      if (!t) throw new HttpError(404, 'not-found');
+      if (b.reply) {
+        const msg = str(b.reply, 5000);
+        const status = await send(ticketReply(t as any, msg, siteUrl(req)));
+        await sql`INSERT INTO ticket_notes (ticket_id, kind, body, actor) VALUES (${t.id}, 'reply', ${msg + (status === 'sent' ? '' : `\n[email ${status}]`)}, ${admin.email})`;
+        if (t.status === 'open') await sql`UPDATE tickets SET status = 'waiting' WHERE id = ${t.id}`;
+      }
+      if (b.note) await sql`INSERT INTO ticket_notes (ticket_id, kind, body, actor) VALUES (${t.id}, 'note', ${str(b.note, 2000)}, ${admin.email})`;
+      if (b.status && ['open', 'waiting', 'resolved'].includes(b.status)) {
+        const resolution = ['refund', 'replacement', 'credit', 'answered', 'none'].includes(b.resolution) ? b.resolution : t.resolution;
+        await sql`UPDATE tickets SET status = ${b.status}, resolution = ${resolution}, resolved_at = ${b.status === 'resolved' ? new Date() : null} WHERE id = ${t.id}`;
+        await sql`INSERT INTO ticket_notes (ticket_id, kind, body, actor) VALUES (${t.id}, 'status', ${b.status + (resolution ? ' · ' + resolution : '')}, ${admin.email})`;
+      }
+      await sql`UPDATE tickets SET updated_at = NOW() WHERE id = ${t.id}`;
+      return json({ ok: true });
+    }
+    if (parts[0] === 'photos' && parts[1] && req.method === 'GET') {
+      const p = await one`SELECT mime, data FROM ticket_photos WHERE id = ${Number(parts[1]) || 0}`;
+      if (!p) throw new HttpError(404, 'not-found');
+      return new Response(p.data, { headers: { 'content-type': p.mime, 'cache-control': 'private, max-age=3600' } });
+    }
+    // Recent conversations, so the team can read what people ask and how the assistant answered.
+    if (parts[0] === 'chats' && parts.length === 1 && req.method === 'GET') {
+      const rows = await sql`SELECT id, lang, email, turns, handed_off, rating, created_at, updated_at, messages->0->>'content' AS first
+        FROM chats WHERE turns > 0 ORDER BY updated_at DESC LIMIT 200`;
+      return json({ chats: rows });
+    }
+    if (parts[0] === 'chats' && parts[1] && req.method === 'GET') {
+      const c = await one`SELECT id, lang, email, turns, handed_off, rating, created_at, messages FROM chats WHERE id = ${Number(parts[1]) || 0}`;
+      if (!c) throw new HttpError(404, 'not-found');
+      const tickets = await sql`SELECT ref, kind, status FROM tickets WHERE chat_id = ${c.id}`;
+      return json({ chat: { ...c, messages: undefined }, transcript: readable(typeof c.messages === 'string' ? JSON.parse(c.messages) : c.messages), tickets });
     }
 
     if (parts[0] === 'statuses') return json({ statuses: STATUSES, windows: WINDOWS });

@@ -23,6 +23,24 @@ globalThis.fetch = (async (url: any, init: any) => {
   return realFetch(url, init);
 }) as any;
 
+// ASK_FAKE=1: Ask Hikaya answers from a tiny script instead of the real model (for UI testing).
+if (process.env.ASK_FAKE) {
+  process.env.ANTHROPIC_API_KEY = 'fake';
+  const { setCreate } = await import('../netlify/lib/ask');
+  const msg = (content: any[], stop = 'end_turn') => ({ id: 'f', type: 'message', role: 'assistant', model: 'fake', stop_reason: stop, content, usage: {} }) as any;
+  setCreate(async (params: any) => {
+    const last = params.messages.at(-1);
+    if (Array.isArray(last.content) && last.content[0]?.type === 'tool_result') {
+      const r = JSON.parse(last.content[0].content);
+      return msg([{ type: 'text', text: r.request_number ? `I have sent this to the team as ${r.request_number}. They reply by email, usually within one day. You can add a photo of the item and the packaging below.` : 'Done. They are in your cart; choose pickup or delivery and the day at checkout: /en/checkout/' }]);
+    }
+    const text = String(last.content);
+    if (/crush|damag|تالف|broken/i.test(text)) return msg([{ type: 'tool_use', id: 't1', name: 'open_request', input: { kind: 'damaged', name: 'Layla', email: 'layla@example.com', phone: null, order_ref: null, summary: 'Item arrived damaged', details: text } }], 'tool_use');
+    if (/add|أضف/i.test(text)) return msg([{ type: 'tool_use', id: 't2', name: 'add_to_cart', input: { items: [{ product_id: 'najdi', option: 'dallah', qty: 2 }] } }], 'tool_use');
+    return msg([{ type: 'text', text: /[\u0600-\u06FF]/.test(text) ? 'أهلاً. جرّب النجدية: فاتحة وذهبية، الهيل أولاً ولمسة زعفران. ومعها تمرة خلاص. التفاصيل في /ar/shop/najdi/' : 'Start with Najdi: light and golden, cardamom first with a touch of saffron. Have it with a Khalas date.\n\nMore on /en/shop/najdi/ and how to brew it on /en/brew/.' }]);
+  });
+}
+
 const fns: { paths: string[]; handler: any }[] = [];
 for (const f of fs.readdirSync('netlify/functions')) {
   const mod = await import(p.resolve('netlify/functions', f));

@@ -10,7 +10,7 @@ import '../../styles/global.css';
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Orders · Hikaya</title>
+  <title>Order desk · Hikaya</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 </head>
 <body class="adm">
@@ -18,7 +18,9 @@ import '../../styles/global.css';
     <a class="lockup" href="/en/"><img src="/brand/logo.svg" alt="" width="40" height="34" /><span class="wm"><b>حكاية</b><small>ORDER DESK</small></span></a>
     <nav class="a-tabs" id="tabs" hidden>
       <button type="button" data-tab="orders" aria-pressed="true">Orders</button>
+      <button type="button" data-tab="inbox" aria-pressed="false">Inbox <span class="badge" id="inboxN" hidden></span></button>
       <button type="button" data-tab="day" aria-pressed="false">Day sheet</button>
+      <button type="button" data-tab="chats" aria-pressed="false">Conversations</button>
       <button type="button" data-tab="settings" aria-pressed="false">Settings</button>
     </nav>
     <div class="a-who" id="who" hidden><span id="whoEmail"></span><button type="button" id="logout">Log out</button></div>
@@ -48,6 +50,30 @@ import '../../styles/global.css';
         <tbody></tbody>
       </table></div>
       <p class="muted" id="none" hidden>No orders match.</p>
+    </section>
+
+    <!-- INBOX: help requests from the form and from Ask Hikaya -->
+    <section id="v-inbox" hidden>
+      <div class="a-filters" id="inboxFilter">
+        <div class="acts seg">
+          <button type="button" data-st="open" class="cur">Open</button><button type="button" data-st="waiting">Waiting on customer</button><button type="button" data-st="resolved">Resolved</button><button type="button" data-st="">All</button>
+        </div>
+      </div>
+      <div class="a-table-wrap"><table class="a-table" id="tickets">
+        <thead><tr><th>Request</th><th>Received</th><th>Customer</th><th>About</th><th>Summary</th><th>Order</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <p class="muted" id="noTickets" hidden>Nothing here. Requests from the help form and from Ask Hikaya land in this list, and each one is also emailed to the team.</p>
+    </section>
+
+    <!-- CONVERSATIONS: what people ask Ask Hikaya -->
+    <section id="v-chats" hidden>
+      <p class="muted a-intro">Every conversation with Ask Hikaya. Read them to see what customers really ask, where the answers fall short, and what to add to the handbook or the test questions.</p>
+      <div class="a-table-wrap"><table class="a-table" id="chats">
+        <thead><tr><th>Last message</th><th>Lang</th><th>First question</th><th>Turns</th><th>Sent to team</th><th>Helpful?</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <p class="muted" id="noChats" hidden>No conversations yet.</p>
     </section>
 
     <!-- DAY SHEET -->
@@ -129,6 +155,22 @@ import '../../styles/global.css';
   :global(.pill.cancelled) { background: #F1DCD3; color: var(--tamr-2); }
   :global(.pill.paid) { background: #DCE6CF; }
   :global(.pill.unpaid) { background: #F1DCD3; color: var(--tamr-2); }
+  .badge { display: inline-grid; place-items: center; min-width: 20px; height: 20px; border-radius: 999px; background: var(--tamr); color: var(--tamr-ink); font-size: 12px; padding: 0 6px; margin-inline-start: 4px; }
+  .seg { display: flex; flex-wrap: wrap; gap: 8px; }
+  .seg button { border: 1.5px solid var(--bunn); background: none; border-radius: 999px; padding: 7px 14px; font-weight: 600; font-size: 14px; }
+  .seg button.cur { background: var(--bunn); color: var(--paper); }
+  .a-intro { max-width: 70ch; margin-bottom: 14px; }
+  .a-pbody :global(.sum) { font-weight: 600; font-size: 17px; }
+  .a-pbody :global(.warn), :global(.warn) { color: var(--tamr-2); font-weight: 600; font-size: 13.5px; }
+  .a-pbody :global(.ph) { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+  .a-pbody :global(.ph img) { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; }
+  .a-pbody :global(select) { border: 1.5px solid var(--line); border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 14px; background: var(--sheet); }
+  .a-pbody :global(.tx) { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .a-pbody :global(.tx li) { padding: 9px 12px; border-radius: 16px; font-size: 14.5px; max-width: 92%; unicode-bidi: plaintext; }
+  .a-pbody :global(.tx .customer) { background: var(--bunn); color: var(--paper); justify-self: end; border-bottom-right-radius: 4px; }
+  .a-pbody :global(.tx .hikaya) { background: var(--paper-2); border-bottom-left-radius: 4px; }
+  .a-pbody :global(.tx .tool) { background: none; padding: 0 12px; max-width: 100%; }
+  .a-pbody :global(.tx code) { font-size: 12px; color: var(--ink-2); word-break: break-word; }
   .a-dayhead { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
   .a-dayhead input { border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 10px; margin-inline-start: 8px; font: inherit; }
   .a-daygrid { display: grid; grid-template-columns: .7fr 1fr 1.2fr; gap: 20px; align-items: start; }
@@ -147,7 +189,7 @@ import '../../styles/global.css';
   .a-switch { display: flex; gap: 10px; align-items: center; font-weight: 600; }
   .a-switch input { width: 20px; height: 20px; accent-color: var(--bunn); }
   .a-panel { width: min(560px, 100%); grid-template-rows: auto 1fr; }
-  .a-pbody { overflow: auto; padding: 18px 22px 40px; display: grid; gap: 16px; align-content: start; }
+  .a-pbody { overflow: auto; padding: 18px 22px 40px; display: grid; gap: 16px; align-content: start; grid-auto-rows: max-content; }
   .a-pbody :global(h3) { font-size: 14px; color: var(--ink-2); font-family: var(--body); font-weight: 600; margin: 4px 0 -6px; }
   .a-pbody :global(.acts) { display: flex; flex-wrap: wrap; gap: 8px; }
   .a-pbody :global(.acts button) { border: 1.5px solid var(--bunn); background: none; border-radius: 999px; padding: 8px 14px; font-weight: 600; font-size: 14px; }
@@ -183,7 +225,7 @@ import '../../styles/global.css';
 
   // ---------- auth ----------
   function showLogin() {
-    for (const id of ['v-orders', 'v-day', 'v-settings', 'tabs', 'who']) $(id).hidden = true;
+    for (const id of ['v-orders', 'v-inbox', 'v-day', 'v-chats', 'v-settings', 'tabs', 'who']) $(id).hidden = true;
     $('login').hidden = false;
     mountLogin($('loginBox'), 'en', user => {
       if (user.role !== 'admin') { $('notAdmin').hidden = false; return; }
@@ -195,16 +237,20 @@ import '../../styles/global.css';
     const sel = document.querySelector<HTMLSelectElement>('#filters [name=status]')!;
     if (sel.options.length === 1) Object.entries(STATUS_LABEL).forEach(([k, v]) => sel.add(new Option(v, k)));
     tab('orders');
-    const want = new URLSearchParams(location.search).get('order');
-    if (want) openOrder(want);
+    const qs = new URLSearchParams(location.search);
+    if (qs.get('order')) openOrder(qs.get('order')!);
+    if (qs.get('ticket')) { tab('inbox'); openTicket(qs.get('ticket')!); }
+    loadInboxCount();
   }
   $('logout').addEventListener('click', async () => { await logout(); location.reload(); });
 
   // ---------- tabs ----------
   function tab(name: string) {
     document.querySelectorAll<HTMLButtonElement>('#tabs [data-tab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === name)));
-    for (const v of ['orders', 'day', 'settings']) $(`v-${v}`).hidden = v !== name;
+    for (const v of ['orders', 'inbox', 'day', 'chats', 'settings']) $(`v-${v}`).hidden = v !== name;
     if (name === 'orders') loadOrders();
+    if (name === 'inbox') loadTickets();
+    if (name === 'chats') loadChats();
     if (name === 'day') loadDay();
     if (name === 'settings') loadSettings();
   }
@@ -233,8 +279,12 @@ import '../../styles/global.css';
       <td><span class="pill ${o.status}">${STATUS_LABEL[o.status]}</span></td></tr>`).join('');
   }
   document.addEventListener('click', e => {
-    const r = (e.target as HTMLElement).closest<HTMLElement>('[data-ref]');
-    if (r && !(e.target as HTMLElement).closest('#panel')) openOrder(r.dataset.ref!);
+    const t = e.target as HTMLElement;
+    const r = t.closest<HTMLElement>('[data-ref]'), tk = t.closest<HTMLElement>('[data-ticket]'), ch = t.closest<HTMLElement>('[data-chat]');
+    if (t.closest('a')) return;
+    if (r && (!t.closest('#panel') || r.classList.contains('to-order'))) openOrder(r.dataset.ref!);
+    else if (tk && !t.closest('#panel')) openTicket(tk.dataset.ticket!);
+    else if (ch && !t.closest('#panel')) openChat(Number(ch.dataset.chat));
   });
 
   // ---------- order panel ----------
@@ -272,6 +322,79 @@ import '../../styles/global.css';
     }));
     $('pBody').querySelectorAll<HTMLButtonElement>('[data-pay]').forEach(b => b.addEventListener('click', async () => { await api(`/api/admin/orders/${encodeURIComponent(ref)}`, { paymentStatus: b.dataset.pay }); refresh(); }));
     $('pAddNote').addEventListener('click', async () => { const v = ($('pNote') as HTMLTextAreaElement).value.trim(); if (v) { await api(`/api/admin/orders/${encodeURIComponent(ref)}`, { note: v }); refresh(); } });
+  }
+
+  const showPanel = (title: string, html: string) => {
+    $('pRef').textContent = title; $('pBody').innerHTML = html;
+    scrim.hidden = false; panel.removeAttribute('inert'); panel.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => { scrim.classList.add('on'); panel.classList.add('on'); });
+  };
+  const when = (iso: string) => new Date(iso).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' });
+  const KIND: Record<string, string> = { damaged: 'Damaged', 'wrong-item': 'Wrong item', missing: 'Missing item', late: 'Late delivery', 'change-order': 'Change order', 'large-order': 'Large order', question: 'Question', other: 'Other' };
+  const URGENT = ['damaged', 'wrong-item', 'missing', 'late'];
+  const transcript = (lines: any[]) => `<ol class="tx">${lines.map(l => `<li class="${l.who}">${l.who === 'tool' ? `<code>${esc(l.text)}</code>` : esc(l.text).replace(/\n/g, '<br>')}</li>`).join('')}</ol>`;
+
+  // ---------- inbox ----------
+  let inboxStatus = 'open';
+  $('inboxFilter').addEventListener('click', e => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-st]'); if (!b) return;
+    inboxStatus = b.dataset.st!; $('inboxFilter').querySelectorAll('button').forEach(x => x.classList.toggle('cur', x === b)); loadTickets();
+  });
+  async function loadInboxCount() {
+    const d = await api('/api/admin/tickets?status=open');
+    const n = d.counts?.open ?? 0; $('inboxN').textContent = String(n); $('inboxN').hidden = !n;
+  }
+  async function loadTickets() {
+    const d = await api(`/api/admin/tickets?status=${inboxStatus}`);
+    const n = d.counts?.open ?? 0; $('inboxN').textContent = String(n); $('inboxN').hidden = !n;
+    $('noTickets').hidden = d.tickets.length > 0;
+    document.querySelector('#tickets tbody')!.innerHTML = d.tickets.map((t: any) => `<tr class="row" data-ticket="${esc(t.ref)}">
+      <td class="ref">${esc(t.ref)}${t.photos ? `<br><small>${t.photos} photo${t.photos > 1 ? 's' : ''}</small>` : ''}</td><td>${when(t.created_at)}<br><small>${t.source === 'ask' ? 'Ask Hikaya' : 'Help form'} · ${t.lang === 'ar' ? 'Arabic' : 'English'}</small></td>
+      <td>${esc(t.name ?? '')}<br><small>${esc(t.email)}</small></td>
+      <td><span class="pill ${URGENT.includes(t.kind) ? 'unpaid' : ''}">${KIND[t.kind] ?? esc(t.kind)}</span></td>
+      <td class="its">${esc(t.summary)}</td><td>${esc(t.order_ref ?? '')}</td><td><span class="pill ${t.status === 'resolved' ? 'completed' : t.status === 'open' ? 'received' : 'confirmed'}">${esc(t.status)}</span></td></tr>`).join('');
+  }
+  async function openTicket(ref: string) {
+    const d = await api(`/api/admin/tickets/${encodeURIComponent(ref)}`);
+    const t = d.ticket, o = d.order;
+    showPanel(`${t.ref} · ${KIND[t.kind] ?? t.kind}`, `
+      <p><span class="pill ${t.status === 'resolved' ? 'completed' : 'received'}">${esc(t.status)}</span>${t.resolution ? ` <span class="pill">${esc(t.resolution)}</span>` : ''} · ${t.source === 'ask' ? 'from Ask Hikaya' : 'from the help form'} · ${when(t.created_at)}</p>
+      <p>${esc(t.name ?? '')} · <a href="mailto:${esc(t.email)}">${esc(t.email)}</a>${t.phone ? ` · <a href="tel:${esc(t.phone)}">${esc(t.phone)}</a>` : ''} · writes in ${t.lang === 'ar' ? 'Arabic' : 'English'}</p>
+      <p class="sum">${esc(t.summary)}</p>
+      ${t.details ? `<p>${esc(t.details).replace(/\n/g, '<br>')}</p>` : ''}
+      ${t.order_ref ? `<h3>Order</h3>${o ? `<div class="mini to-order" data-ref="${esc(o.ref)}"><span><b>${esc(o.ref)}</b> · ${esc(o.method)} · ${fmtDay(o.day)} ${esc(o.slot_window)} · ${money(o.total_cents)} · <span class="pill ${o.status}">${STATUS_LABEL[o.status]}</span></span>${o.emailMatches ? '' : '<span class="warn">The email on this request is not the order’s email. Check before acting.</span>'}</div>` : `<p class="warn">No order ${esc(t.order_ref)} found.</p>`}` : ''}
+      ${d.photos.length ? `<h3>Photos</h3><div class="ph">${d.photos.map((id: number) => `<a href="/api/admin/photos/${id}" target="_blank" rel="noopener"><img src="/api/admin/photos/${id}" alt="Customer photo ${id}" loading="lazy" /></a>`).join('')}</div>` : ''}
+      <h3>Reply to the customer by email</h3>
+      <textarea id="tReply" rows="5" placeholder="${t.lang === 'ar' ? 'The customer wrote in Arabic: reply in Arabic if you can.' : 'Write your reply. It is sent from the Hikaya address with the request number.'}" dir="auto"></textarea>
+      <div class="acts"><button type="button" id="tSend">Send reply</button></div>
+      <h3>Close it</h3>
+      <div class="acts"><select id="tRes"><option value="">Outcome…</option><option value="replacement">Replacement</option><option value="refund">Refund</option><option value="credit">Store credit</option><option value="answered">Answered</option><option value="none">No action</option></select>
+        <button type="button" data-tst="resolved">Mark resolved</button><button type="button" data-tst="waiting">Waiting on customer</button><button type="button" data-tst="open">Reopen</button></div>
+      <h3>Team note</h3><textarea id="tNote" rows="2" placeholder="Only the team sees this"></textarea><div class="acts"><button type="button" id="tAddNote">Add note</button></div>
+      <h3>History</h3><ul>${d.notes.map((n: any) => `<li class="ev">${when(n.created_at)} · <b>${esc(n.kind)}</b> ${esc(n.body)} <small>${esc(n.actor)}</small></li>`).join('') || '<li class="ev">Nothing yet.</li>'}</ul>
+      ${d.transcript ? `<h3>Conversation with Ask Hikaya</h3>${transcript(d.transcript)}` : ''}`);
+    const refresh = async () => { await openTicket(ref); loadTickets(); };
+    $('tSend').addEventListener('click', async () => { const v = ($('tReply') as HTMLTextAreaElement).value.trim(); if (v && confirm(`Email this reply to ${t.email}?`)) { await api(`/api/admin/tickets/${encodeURIComponent(ref)}`, { reply: v }); refresh(); } });
+    $('tAddNote').addEventListener('click', async () => { const v = ($('tNote') as HTMLTextAreaElement).value.trim(); if (v) { await api(`/api/admin/tickets/${encodeURIComponent(ref)}`, { note: v }); refresh(); } });
+    $('pBody').querySelectorAll<HTMLButtonElement>('[data-tst]').forEach(b => b.addEventListener('click', async () => {
+      await api(`/api/admin/tickets/${encodeURIComponent(ref)}`, { status: b.dataset.tst, resolution: ($('tRes') as HTMLSelectElement).value || undefined }); refresh();
+    }));
+  }
+
+  // ---------- conversations ----------
+  async function loadChats() {
+    const d = await api('/api/admin/chats');
+    $('noChats').hidden = d.chats.length > 0;
+    document.querySelector('#chats tbody')!.innerHTML = d.chats.map((c: any) => `<tr class="row" data-chat="${c.id}">
+      <td>${when(c.updated_at)}</td><td>${c.lang === 'ar' ? 'AR' : 'EN'}</td><td class="its" dir="auto">${esc(c.first ?? '')}</td><td>${c.turns}</td>
+      <td>${c.handed_off ? 'Yes' : ''}</td><td>${c.rating === 'up' ? 'Yes' : c.rating === 'down' ? '<b class="warn">No</b>' : ''}</td></tr>`).join('');
+  }
+  async function openChat(id: number) {
+    const d = await api(`/api/admin/chats/${id}`);
+    showPanel(`Conversation · ${when(d.chat.created_at)}`, `
+      <p>${d.chat.email ? esc(d.chat.email) + ' · ' : ''}${d.chat.lang === 'ar' ? 'Arabic' : 'English'} site · ${d.chat.turns} messages${d.chat.rating ? ` · helpful: ${d.chat.rating === 'up' ? 'yes' : 'no'}` : ''}</p>
+      ${d.tickets.length ? `<p>Sent to the team: ${d.tickets.map((t: any) => `<a href="?ticket=${esc(t.ref)}">${esc(t.ref)}</a> (${esc(t.kind)})`).join(', ')}</p>` : ''}
+      ${transcript(d.transcript)}`);
   }
 
   // ---------- day sheet ----------

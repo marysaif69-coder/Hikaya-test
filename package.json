@@ -4,12 +4,14 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "node scripts/build-handbook.mjs && astro build",
     "preview": "astro preview",
-    "test": "tsx tests/api.test.mts",
-    "dev:full": "astro build && tsx tests/dev-server.mts"
+    "test": "node scripts/build-handbook.mjs && tsx tests/api.test.mts",
+    "dev:full": "astro build && tsx tests/dev-server.mts",
+    "ask:eval": "node scripts/build-handbook.mjs && tsx tests/ask-eval.mts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
     "@astrojs/sitemap": "^3.7.4",
     "@netlify/database": "^2.0.1",
     "@netlify/functions": "^6.0.2",

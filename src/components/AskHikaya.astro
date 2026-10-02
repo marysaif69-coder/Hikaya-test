@@ -1,0 +1,297 @@
+---
+// Ask Hikaya: the chat assistant, on every page. Answers come from /api/ask (Claude with the
+// handbook); anything it cannot settle becomes a help request for the team. Without the
+// server (or with the assistant switched off) it points to the help form instead.
+import type { Lang } from '../data/products';
+import { path } from '../data/i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const ar = lang === 'ar';
+const T = {
+  open: ar ? 'اسأل حكاية' : 'Ask Hikaya',
+  title: ar ? 'اسأل حكاية' : 'Ask Hikaya',
+  close: ar ? 'إغلاق' : 'Close',
+  reset: ar ? 'محادثة جديدة' : 'New chat',
+  hello: ar ? 'أهلاً. اسألني عن القهوة والتمر، أو عن طلبك والاستلام والتوصيل. وما لا أستطيع حلّه أرسله إلى الفريق.' : "Ahlan. Ask me about our coffee and dates, your order, pickup or delivery. Anything I can't settle, I pass to the team.",
+  chips: ar ? ['أي قهوة أبدأ بها؟', 'أين طلبي؟', 'وصلني شيء تالف', 'هل توصلون إلى منطقتي؟'] : ['Which coffee should I start with?', 'Where is my order?', 'Something arrived damaged', 'Do you deliver to my area?'],
+  placeholder: ar ? 'اكتب سؤالك…' : 'Type your question…',
+  send: ar ? 'إرسال' : 'Send',
+  note: ar ? 'يجيب المساعد من دليل حكاية. ويقرأ أحد من الفريق كل ما يُرسل إليه.' : 'Answers come from the Hikaya handbook. A person reads everything sent to the team.',
+  form: ar ? 'نموذج المساعدة' : 'Help form',
+  off: ar ? 'المساعد غير متاح الآن. أرسل سؤالك من نموذج المساعدة ويرد عليك الفريق بالبريد.' : 'The assistant is not available right now. Send your question with the help form and the team will reply by email.',
+  error: ar ? 'لم تصل رسالتك. حاول مرة أخرى.' : "Your message didn't go through. Try again.",
+  photo: ar ? 'أضف صورة' : 'Add a photo',
+  photoHint: ar ? 'صورة للمنتج والتغليف تساعد الفريق.' : 'A photo of the item and the packaging helps the team.',
+  photoOk: ar ? 'وصلت الصورة.' : 'Photo received.',
+  photoBusy: ar ? 'جارٍ الإرسال…' : 'Sending…',
+  sentTo: ar ? 'أُرسل إلى الفريق:' : 'Sent to the team:',
+  added: ar ? 'أُضيف إلى سلتك.' : 'Added to your cart.',
+  checkout: ar ? 'إلى الطلب' : 'Go to checkout',
+  helpful: ar ? 'هل أفادتك الإجابة؟' : 'Was this helpful?',
+  yes: ar ? 'نعم' : 'Yes',
+  no: ar ? 'لا' : 'No',
+  thanks: ar ? 'شكراً.' : 'Thank you.',
+};
+---
+<button class="ask-fab" type="button" id="askFab" aria-controls="askPanel" aria-expanded="false">
+  <svg viewBox="0 0 32 28" aria-hidden="true"><path d="M4 3h24a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H11l-6 5v-5H4a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3z" /><circle cx="10" cy="12" r="1.6" /><circle cx="16" cy="12" r="1.6" /><circle cx="22" cy="12" r="1.6" /></svg>
+  <span>{T.open}</span>
+</button>
+
+<section class="ask" id="askPanel" role="dialog" aria-modal="false" aria-labelledby="askTitle" hidden data-lang={lang} data-t={JSON.stringify(T)}>
+  <header class="ask-head">
+    <img src="/brand/logo.svg" alt="" width="34" height="29" />
+    <h2 id="askTitle">{T.title}</h2>
+    <button type="button" class="ask-reset" id="askReset">{T.reset}</button>
+    <button type="button" class="ask-x" id="askClose" aria-label={T.close}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" /></svg></button>
+  </header>
+  <ol class="ask-log" id="askLog" aria-live="polite"></ol>
+  <div class="ask-chips" id="askChips">{T.chips.map(c => <button type="button">{c}</button>)}</div>
+  <form class="ask-form" id="askForm">
+    <label class="sr" for="askInput">{T.placeholder}</label>
+    <textarea id="askInput" rows="1" maxlength="1500" placeholder={T.placeholder} autocomplete="off"></textarea>
+    <button type="submit" class="ask-send" aria-label={T.send}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h13M11 5l5 5-5 5" /></svg></button>
+  </form>
+  <p class="ask-note">{T.note} <a href={path(lang, 'help')}>{T.form}</a></p>
+</section>
+
+<script>
+  import { add } from '../scripts/cart';
+  import { uploadPhoto } from '../scripts/photo';
+
+  type Action = { type: 'cart'; lines: { id: string; opt: string; qty: number }[] } | { type: 'photo'; ref: string; token: string } | { type: 'request'; ref: string };
+  type Entry = { who: 'me' | 'hk'; text: string; actions?: Action[] };
+  const panel = document.getElementById('askPanel') as HTMLElement;
+  const fab = document.getElementById('askFab') as HTMLButtonElement;
+  const log = document.getElementById('askLog') as HTMLOListElement;
+  const form = document.getElementById('askForm') as HTMLFormElement;
+  const input = document.getElementById('askInput') as HTMLTextAreaElement;
+  const chips = document.getElementById('askChips') as HTMLElement;
+  const lang = panel.dataset.lang as 'en' | 'ar';
+  const T = JSON.parse(panel.dataset.t!);
+  const KEY = 'hikaya-ask-v1';
+
+  type State = { chat: string | null; log: Entry[]; open: boolean };
+  const load = (): State => { try { return JSON.parse(sessionStorage.getItem(KEY) || '') } catch { return { chat: null, log: [], open: false }; } };
+  let st: State = load();
+  const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify(st)); } catch { /* private mode */ } };
+  let enabled: boolean | null = null;
+  let busy = false;
+
+  // Plain text with links: site paths (/en/…, /ar/…) and https URLs become links; nothing else is HTML.
+  function richText(el: HTMLElement, text: string) {
+    for (const para of text.split(/\n{2,}/)) {
+      const p = document.createElement('p');
+      const parts = para.split(/((?:https:\/\/[^\s)]+)|(?:(?<![\w/])\/(?:en|ar)\/[\w\-/#?=&.]*))/g);
+      parts.forEach((part, i) => {
+        if (i % 2 === 1) {
+          const href = part.replace(/[.,;:]+$/, ''); const a = document.createElement('a');
+          a.href = href; a.dir = 'ltr'; a.textContent = href.startsWith('/') ? decodeURI(href) : href;
+          if (href.startsWith('http')) { a.target = '_blank'; a.rel = 'noopener'; }
+          p.append(a, part.slice(href.length));
+        } else part.split('\n').forEach((line, j) => { if (j) p.append(document.createElement('br')); p.append(line); });
+      });
+      el.append(p);
+    }
+  }
+
+  function bubble(e: Entry) {
+    const li = document.createElement('li');
+    li.className = `msg ${e.who}`;
+    const b = document.createElement('div'); b.className = 'b';
+    richText(b, e.text);
+    li.append(b);
+    for (const a of e.actions ?? []) li.append(actionEl(a));
+    return li;
+  }
+
+  function actionEl(a: Action) {
+    const box = document.createElement('div'); box.className = 'act';
+    if (a.type === 'request') { box.innerHTML = `<span></span> <b dir="ltr"></b>`; box.querySelector('span')!.textContent = T.sentTo; box.querySelector('b')!.textContent = a.ref; }
+    if (a.type === 'cart') {
+      box.textContent = T.added + ' ';
+      const l = document.createElement('a'); l.href = `/${lang}/checkout/`; l.textContent = T.checkout; box.append(l);
+    }
+    if (a.type === 'photo') {
+      box.classList.add('photo');
+      const lab = document.createElement('label'); lab.className = 'btn line small';
+      const f = document.createElement('input'); f.type = 'file'; f.accept = 'image/*'; f.className = 'sr';
+      lab.append(T.photo, f);
+      const msg = document.createElement('span'); msg.className = 'muted'; msg.textContent = T.photoHint;
+      f.addEventListener('change', async () => {
+        const file = f.files?.[0]; if (!file) return;
+        msg.textContent = T.photoBusy;
+        const r = await uploadPhoto(file, a.ref, a.token);
+        msg.textContent = r.ok ? T.photoOk : (r.message || T.error);
+        f.value = '';
+      });
+      box.append(lab, msg);
+    }
+    return box;
+  }
+
+  function rate() {
+    log.querySelector('.rate')?.remove();
+    if (!st.chat || !st.log.some(e => e.who === 'me')) return;
+    const li = document.createElement('li'); li.className = 'rate';
+    li.innerHTML = `<span></span> <button type="button" data-r="up"></button> <button type="button" data-r="down"></button>`;
+    li.querySelector('span')!.textContent = T.helpful;
+    li.querySelector('[data-r=up]')!.textContent = T.yes;
+    li.querySelector('[data-r=down]')!.textContent = T.no;
+    li.querySelectorAll<HTMLButtonElement>('button').forEach(b => b.addEventListener('click', () => {
+      fetch('/api/ask/rate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chat: st.chat, rating: b.dataset.r }) }).catch(() => {});
+      li.textContent = T.thanks;
+    }));
+    log.append(li);
+  }
+
+  function paint() {
+    log.innerHTML = '';
+    log.append(bubble({ who: 'hk', text: T.hello }));
+    if (enabled === false) log.append(bubble({ who: 'hk', text: `${T.off} /${lang}/help/` }));
+    st.log.forEach(e => log.append(bubble(e)));
+    chips.hidden = st.log.length > 0 || enabled === false;
+    form.hidden = enabled === false;
+    rate();
+    log.scrollTop = log.scrollHeight;
+  }
+
+  async function checkEnabled() {
+    if (enabled !== null) return;
+    try { enabled = (await fetch('/api/ask/config').then(r => r.json())).enabled === true; } catch { enabled = false; }
+    paint();
+  }
+
+  function open() {
+    panel.hidden = false; fab.setAttribute('aria-expanded', 'true');
+    requestAnimationFrame(() => panel.classList.add('on'));
+    st.open = true; save(); paint(); checkEnabled();
+    if (matchMedia('(pointer: fine)').matches) input.focus({ preventScroll: true });
+  }
+  function close() {
+    panel.classList.remove('on'); fab.setAttribute('aria-expanded', 'false');
+    st.open = false; save();
+    setTimeout(() => { if (!st.open) panel.hidden = true; }, 220);
+    fab.focus({ preventScroll: true });
+  }
+
+  async function send(text: string) {
+    text = text.trim();
+    if (!text || busy) return;
+    busy = true;
+    st.log.push({ who: 'me', text }); save(); paint();
+    const typing = document.createElement('li'); typing.className = 'msg hk typing'; typing.innerHTML = '<div class="b"><i></i><i></i><i></i></div>';
+    log.append(typing); log.scrollTop = log.scrollHeight;
+    try {
+      const r = await fetch('/api/ask', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chat: st.chat, text, lang }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.message || T.error);
+      st.chat = d.chat;
+      const actions: Action[] = d.actions ?? [];
+      for (const a of actions) if (a.type === 'cart') a.lines.forEach(l => add(l.id, l.opt, l.qty));
+      st.log.push({ who: 'hk', text: d.reply, actions });
+    } catch (e) {
+      st.log.push({ who: 'hk', text: (e as Error).message || T.error });
+    }
+    busy = false; save(); paint();
+    input.focus({ preventScroll: true });
+  }
+
+  fab.addEventListener('click', () => (panel.hidden ? open() : close()));
+  document.getElementById('askClose')!.addEventListener('click', close);
+  document.getElementById('askReset')!.addEventListener('click', () => { st = { chat: null, log: [], open: true }; save(); paint(); input.focus(); });
+  panel.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  chips.querySelectorAll('button').forEach(b => b.addEventListener('click', () => send(b.textContent || '')));
+  form.addEventListener('submit', e => { e.preventDefault(); const v = input.value; input.value = ''; grow(); send(v); });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); } });
+  const grow = () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 140) + 'px'; };
+  input.addEventListener('input', grow);
+  // Other parts of the page can open the assistant: <a href="#ask"> or data-ask="question".
+  document.addEventListener('click', e => {
+    const t = (e.target as HTMLElement).closest<HTMLElement>('[href="#ask"], [data-ask]');
+    if (!t) return;
+    e.preventDefault(); if (panel.hidden) open();
+    if (t.dataset.ask) send(t.dataset.ask);
+  });
+  if (st.open) open();
+</script>
+
+<style is:global>
+  /* Global: the messages are created by script, so scoped styles would not reach them. Everything is prefixed .ask. */
+  .ask-fab {
+    position: fixed; z-index: 45; inset-inline-end: 18px; bottom: calc(18px + env(safe-area-inset-bottom));
+    display: inline-flex; align-items: center; gap: 9px; border: 0;
+    background: var(--tamr); color: var(--tamr-ink); font-weight: 600; font-size: 15.5px;
+    padding: 12px 18px 12px 14px; border-radius: 999px; border-bottom-left-radius: 6px;
+    box-shadow: 0 14px 30px -14px rgba(51, 33, 26, .55);
+    transition: transform .18s var(--ease), background-color .18s, bottom .3s var(--ease);
+  }
+  .ask-fab:hover { background: var(--tamr-2); }
+  .ask-fab:active { transform: scale(.96); }
+  .ask-fab svg { width: 24px; height: 21px; fill: currentColor; }
+  .ask-fab svg circle { fill: var(--tamr); }
+  .ask-fab[aria-expanded='true'] { transform: scale(.92); opacity: 0; pointer-events: none; }
+  body:has(.sticky-buy.on) .ask-fab { bottom: calc(86px + env(safe-area-inset-bottom)); }
+
+  .ask {
+    position: fixed; z-index: 60; inset-inline-end: 18px; bottom: calc(18px + env(safe-area-inset-bottom));
+    width: min(400px, calc(100vw - 24px)); height: min(640px, calc(100dvh - 110px));
+    display: grid; grid-template-rows: auto 1fr auto auto auto;
+    background: var(--sheet); border-radius: 28px; border-bottom-left-radius: 8px;
+    box-shadow: 0 30px 70px -24px rgba(51, 33, 26, .55), inset 0 0 0 1px var(--line);
+    overflow: hidden; transform-origin: bottom right;
+    opacity: 0; transform: translateY(12px) scale(.97); transition: opacity .2s ease, transform .3s var(--ease);
+  }
+  [dir='rtl'] .ask { transform-origin: bottom left; }
+  .ask.on { opacity: 1; transform: none; }
+  @media (max-width: 520px) {
+    .ask { inset: auto 0 0 0; width: 100%; height: min(86dvh, 680px); border-radius: 26px 26px 0 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .ask, .ask-fab { transition: none; } }
+
+  .ask-head { display: flex; align-items: center; gap: 10px; padding: 14px 14px 12px 18px; border-bottom: 1px solid var(--line); background: var(--paper); }
+  .ask-head img { width: 34px; height: auto; }
+  .ask-head h2 { font-size: 21px; margin-inline-end: auto; }
+  .ask-reset { border: 0; background: none; font-size: 14px; color: var(--ink-2); text-decoration: underline; text-underline-offset: .2em; padding: 6px; }
+  .ask-x { border: 0; background: none; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; }
+  .ask-x:hover { background: var(--paper-2); }
+  .ask-x svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+  .ask-log { list-style: none; margin: 0; padding: 16px 14px 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; overscroll-behavior: contain; }
+  .ask .msg { display: grid; gap: 6px; max-width: 88%; }
+  .ask .msg .b { padding: 10px 14px 11px; border-radius: 20px; font-size: 15.5px; line-height: 1.5; display: grid; gap: 8px; overflow-wrap: anywhere; }
+  [dir='rtl'] .ask .msg .b { font-size: 16.5px; }
+  /* Customer on the inline end, Hikaya on the inline start, as in any chat; tails on the outer corner. */
+  .ask .msg.hk { align-self: flex-start; }
+  .ask .msg.hk .b { background: var(--paper-2); border-end-start-radius: 5px; }
+  .ask .msg.me { align-self: flex-end; }
+  .ask .msg.me .b { background: var(--bunn); color: var(--paper); border-end-end-radius: 5px; }
+  .ask .msg .b a { color: var(--tamr-2); font-weight: 600; }
+  .ask .msg.me .b a { color: var(--khalal-2); }
+  .ask .act { font-size: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-inline-start: 4px; }
+  .ask .act a { font-weight: 600; color: var(--tamr-2); }
+  .ask .act b { font-variant-numeric: tabular-nums; }
+  .ask .act .btn.small { min-height: 38px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
+  .ask .typing .b { display: flex; gap: 5px; padding: 14px 16px; }
+  .ask .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-2); animation: ask-dot 1.1s infinite ease-in-out; }
+  .ask .typing i:nth-child(2) { animation-delay: .15s; } .ask .typing i:nth-child(3) { animation-delay: .3s; }
+  @keyframes ask-dot { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+  @media (prefers-reduced-motion: reduce) { .ask .typing i { animation: none; opacity: .6; } }
+  .ask .rate { align-self: center; font-size: 13.5px; color: var(--ink-2); display: flex; gap: 6px; align-items: center; }
+  .ask .rate button { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 3px 11px; font-size: 13.5px; }
+  .ask .rate button:hover { border-color: var(--bunn); }
+
+  .ask-chips { display: flex; flex-wrap: wrap; gap: 7px; padding: 4px 14px 10px; }
+  .ask-chips button { border: 1.5px solid var(--line); background: var(--paper); border-radius: 999px; padding: 7px 13px; font-size: 14.5px; text-align: start; }
+  .ask-chips button:hover { border-color: var(--bunn); }
+
+  .ask-form { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); background: var(--paper); }
+  .ask-form textarea { flex: 1; resize: none; border: 1.5px solid var(--line); background: var(--sheet); border-radius: 20px; padding: 10px 14px; font-size: 16px; line-height: 1.4; max-height: 140px; }
+  .ask-form textarea:focus { outline: none; border-color: var(--bunn); box-shadow: 0 0 0 4px color-mix(in srgb, var(--khalal) 35%, transparent); }
+  .ask-send { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--bunn); color: var(--paper); display: grid; place-items: center; border-bottom-right-radius: 8px; }
+  .ask-send:hover { background: var(--bunn-2); }
+  .ask-send svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  [dir='rtl'] .ask-send svg { transform: scaleX(-1); }
+  .ask-note { font-size: 12.5px; color: var(--ink-2); padding: 0 14px 12px; background: var(--paper); line-height: 1.4; }
+  .ask-note a { font-weight: 600; }
+</style>

@@ -128,3 +128,34 @@ export function teamAlert(o: OrderForMail, items: ItemForMail[], adminUrl: strin
   return env('ADMIN_EMAILS').split(',').map((e: string) => e.trim()).filter(Boolean)
     .map((to: string) => ({ to, subject: `New order ${o.ref} · ${dollars(o.total_cents)} · ${o.slot_date}`, html, text, kind: 'team-new-order', orderId: o.id }));
 }
+
+// ---------- help requests ----------
+export type TicketForMail = { ref: string; kind: string; email: string; name: string | null; phone: string | null; lang: Lang; order_ref: string | null; summary: string; details: string | null; source: string };
+
+/** "We have your message" to the customer. */
+export function ticketReceived(t: TicketForMail, siteUrl: string, ramadan: boolean): Mail {
+  const ar = t.lang === 'ar';
+  const when = ar ? (ramadan ? 'خلال يومين' : 'خلال يوم واحد عادةً') : (ramadan ? 'within two days' : 'usually within one day');
+  const c = ar
+    ? { s: `وصلتنا رسالتك · ${t.ref}`, h: 'وصلتنا رسالتك', p: `رقم طلبك عندنا ${t.ref}. سيقرأه أحد من فريق حكاية ويرد عليك بالبريد ${when}.`, k: 'إن كان في الطلب شيء تالف، احتفظ به وبالتغليف حتى نرد عليك.' }
+    : { s: `We have your message · ${t.ref}`, h: 'We have your message', p: `Your request number is ${t.ref}. Someone from the Hikaya team will read it and reply by email, ${when}.`, k: 'If something arrived damaged, please keep it and the packaging until we reply.' };
+  const body = `<p>${esc(c.p)}</p><p style="background:#EDE3D0;border-radius:14px;padding:12px 16px">${esc(t.summary)}</p><p>${esc(c.k)}</p>`;
+  return { to: t.email, subject: c.s, html: layout(t.lang, c.h, body, siteUrl), text: `${c.h}\n\n${c.p}\n\n${t.summary}\n\n${c.k}`, kind: 'ticket-received', replyTo: env('EMAIL_REPLY_TO') || undefined };
+}
+
+/** New request alert for the team; urgent kinds are marked in the subject. */
+export function ticketAlert(t: TicketForMail, adminUrl: string): Mail[] {
+  const urgent = ['damaged', 'wrong-item', 'missing', 'late'].includes(t.kind);
+  const text = `${urgent ? 'URGENT · ' : ''}${t.kind} · ${t.ref} (from ${t.source === 'ask' ? 'Ask Hikaya' : 'the help form'})\n${t.name ?? ''} · ${t.email}${t.phone ? ' · ' + t.phone : ''}${t.order_ref ? `\nOrder: ${t.order_ref}` : ''}\n\n${t.summary}\n${t.details ? `\n${t.details}\n` : ''}\n${adminUrl}`;
+  const html = `<pre style="font:15px/1.5 Arial,sans-serif;white-space:pre-wrap">${esc(text)}</pre>`;
+  return env('ADMIN_EMAILS').split(',').map((e: string) => e.trim()).filter(Boolean)
+    .map((to: string) => ({ to, subject: `${urgent ? '⚠ ' : ''}Help request ${t.ref} · ${t.kind}${t.order_ref ? ' · ' + t.order_ref : ''}`, html, text, kind: 'team-ticket', replyTo: t.email }));
+}
+
+/** The team's reply from the Inbox, sent in the customer's language layout. */
+export function ticketReply(t: TicketForMail, message: string, siteUrl: string): Mail {
+  const ar = t.lang === 'ar';
+  const s = ar ? `رد من حكاية · ${t.ref}` : `A reply from Hikaya · ${t.ref}`;
+  const body = message.split(/\n{2,}/).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
+  return { to: t.email, subject: s, html: layout(t.lang, ar ? 'رد من حكاية' : 'A reply from Hikaya', body, siteUrl), text: message, kind: 'ticket-reply', replyTo: env('EMAIL_REPLY_TO') || undefined };
+}

@@ -1,0 +1,128 @@
+---
+// Help: ask the assistant, or send the team a request (damaged or wrong items with photos,
+// order changes, large orders, questions). Requests land in the admin Inbox.
+import Base from '../../layouts/Base.astro';
+import Pair from '../../components/Pair.astro';
+import type { Lang } from '../../data/products';
+import { path } from '../../data/i18n';
+
+export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
+const lang = Astro.params.lang as Lang;
+const ar = lang === 'ar';
+const KINDS: [string, string][] = ar
+  ? [['damaged', 'وصل شيء تالفاً أو فاسداً'], ['wrong-item', 'وصلني منتج خاطئ'], ['missing', 'ينقص شيء من طلبي'], ['late', 'لم يصل التوصيل'], ['change-order', 'تغيير طلب أو إلغاؤه'], ['large-order', 'طلب كبير أو لمناسبة'], ['question', 'سؤال'], ['other', 'شيء آخر']]
+  : [['damaged', 'Something arrived damaged or spoiled'], ['wrong-item', 'I received the wrong item'], ['missing', 'Something is missing from my order'], ['late', 'My delivery did not arrive'], ['change-order', 'Change or cancel an order'], ['large-order', 'A large or event order'], ['question', 'A question'], ['other', 'Something else']];
+---
+<Base lang={lang} title={ar ? 'المساعدة' : 'Help'} description={ar ? 'اسأل حكاية، أو أرسل طلباً إلى الفريق.' : 'Ask Hikaya, or send the team a request.'}>
+  <section class="wrap help-head">
+    <Pair lang={lang} size="m" bunn={{ ar: 'عندك سؤال؟', en: 'A question?' }} tamr={{ ar: 'تفضّل، البيت بيتك.', en: 'Come in, ask away.' }} />
+    <h1 class="h-l">{ar ? 'كيف نساعدك' : 'How can we help'}</h1>
+    <p class="lead measure">{ar ? 'للأسئلة السريعة عن القهوة والتمر وطلبك، اسأل حكاية. ولما يحتاج إلى أحد من الفريق، أرسل الطلب هنا ونرد عليك بالبريد، عادةً خلال يوم واحد، وخلال يومين في رمضان.' : 'For quick questions about our coffee, dates and your order, ask Hikaya. For anything that needs a person, send it here and we reply by email, usually within one day, within two during Ramadan.'}</p>
+    <p><a class="btn tamr" href="#ask">{ar ? 'اسأل حكاية' : 'Ask Hikaya'}</a></p>
+  </section>
+
+  <section class="wrap help-body">
+    <form id="helpForm" class="help-form" novalidate>
+      <h2 class="h-m">{ar ? 'أرسل طلباً إلى الفريق' : 'Send the team a request'}</h2>
+      <div class="field"><label for="h-kind">{ar ? 'ما الموضوع؟' : 'What is it about?'}</label>
+        <select id="h-kind" name="kind">{KINDS.map(([v, l]) => <option value={v}>{l}</option>)}</select></div>
+      <div class="two">
+        <div class="field"><label for="h-name">{ar ? 'الاسم' : 'Name'}</label><input id="h-name" name="name" autocomplete="name" /></div>
+        <div class="field"><label for="h-email">{ar ? 'البريد الإلكتروني' : 'Email'}</label><input id="h-email" name="email" type="email" autocomplete="email" dir="ltr" required /><p class="err" hidden></p></div>
+      </div>
+      <div class="two">
+        <div class="field"><label for="h-phone">{ar ? 'الهاتف (اختياري)' : 'Phone (optional)'}</label><input id="h-phone" name="phone" type="tel" autocomplete="tel" dir="ltr" /></div>
+        <div class="field"><label for="h-order">{ar ? 'رقم الطلب (إن وُجد)' : 'Order number (if any)'}</label><input id="h-order" name="order_ref" dir="ltr" placeholder="HK-" autocapitalize="characters" /></div>
+      </div>
+      <div class="field"><label for="h-summary">{ar ? 'باختصار، ماذا حدث؟' : 'In a line, what happened?'}</label><input id="h-summary" name="summary" maxlength="300" required /><p class="err" hidden></p></div>
+      <div class="field"><label for="h-details">{ar ? 'التفاصيل' : 'Details'}</label><textarea id="h-details" name="details" rows="5" maxlength="3000"></textarea></div>
+      <div class="field photos" id="photoField"><label for="h-photos">{ar ? 'صور (حتى ٤)' : 'Photos (up to 4)'}</label>
+        <input id="h-photos" type="file" accept="image/*" multiple />
+        <p class="hint">{ar ? 'للمنتجات التالفة أو الخاطئة: صورة للمنتج والتغليف.' : 'For damaged or wrong items: a photo of the item and the packaging.'}</p></div>
+      <p class="err" role="alert" id="formErr" hidden></p>
+      <button class="btn primary" type="submit">{ar ? 'أرسل' : 'Send'}</button>
+    </form>
+
+    <div id="helpDone" class="help-done" hidden tabindex="-1">
+      <h2 class="h-m">{ar ? 'وصلتنا رسالتك.' : 'We have your message.'}</h2>
+      <p>{ar ? 'رقم طلبك عندنا:' : 'Your request number:'} <b id="doneRef" dir="ltr"></b></p>
+      <p class="muted" id="donePhotos"></p>
+      <p class="muted">{ar ? 'أرسلنا لك بريداً بالتأكيد. إن كان في الطلب شيء تالف، احتفظ به وبالتغليف حتى نرد عليك.' : 'We emailed you a confirmation. If something arrived damaged, keep it and the packaging until we reply.'}</p>
+    </div>
+
+    <aside class="help-side">
+      <h2 class="h-s">{ar ? 'القاعدة في الأطعمة' : 'Our rule for food'}</h2>
+      <p class="muted">{ar ? 'القهوة والتمر طعام، فلا نستطيع استرجاعهما بعد الاستلام. إن وصل شيء تالفاً أو خاطئاً أخبرنا خلال ٤٨ ساعة ونستبدله أو نعيد المبلغ.' : "Coffee and dates are food, so we can't take them back once they leave us. If something arrives damaged or wrong, tell us within 48 hours and we'll replace it or refund you."}</p>
+      <p><a href={path(lang, 'visit') + '#policies'}>{ar ? 'كل السياسات' : 'All policies'}</a> · <a href={path(lang, 'account')}>{ar ? 'طلباتي' : 'My orders'}</a></p>
+    </aside>
+  </section>
+</Base>
+
+<script>
+  import { uploadPhoto } from '../../scripts/photo';
+  const form = document.getElementById('helpForm') as HTMLFormElement;
+  const lang = document.documentElement.lang as 'en' | 'ar';
+  const ar = lang === 'ar';
+  const M = {
+    email: ar ? 'اكتب بريداً صحيحاً.' : 'Enter a valid email.',
+    required: ar ? 'هذا الحقل مطلوب.' : 'This is needed.',
+    fail: ar ? 'لم تصل رسالتك. حاول مرة أخرى.' : "Your message didn't go through. Try again.",
+    photos: (n: number, of: number) => (ar ? `أُرفقت ${n} من ${of} صور.` : `${n} of ${of} photos attached.`),
+  };
+  const q = new URLSearchParams(location.search);
+  if (q.get('order')) (form.elements.namedItem('order_ref') as HTMLInputElement).value = q.get('order')!;
+  if (q.get('kind')) (form.elements.namedItem('kind') as HTMLSelectElement).value = q.get('kind')!;
+  fetch('/api/me').then(r => (r.ok ? r.json() : null)).then(d => { if (d?.user?.email) (form.elements.namedItem('email') as HTMLInputElement).value = d.user.email; }).catch(() => {});
+
+  const setErr = (name: string, msg: string) => {
+    const el = form.elements.namedItem(name) as HTMLInputElement;
+    const e = el.closest('.field')?.querySelector<HTMLElement>('.err');
+    el.setAttribute('aria-invalid', msg ? 'true' : 'false');
+    if (e) { e.textContent = msg; e.hidden = !msg; }
+  };
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = form.querySelector<HTMLButtonElement>('[type=submit]')!;
+    const err = document.getElementById('formErr')!;
+    err.hidden = true; setErr('email', ''); setErr('summary', '');
+    const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
+    let bad = false;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(data.email)) { setErr('email', M.email); bad = true; }
+    if (!data.summary?.trim()) { setErr('summary', M.required); bad = true; }
+    if (bad) { form.querySelector<HTMLElement>('[aria-invalid=true]')?.focus(); return; }
+    btn.disabled = true;
+    try {
+      const r = await fetch('/api/help', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...data, lang }) });
+      const d = await r.json();
+      if (!r.ok) {
+        if (d.fields) for (const k of Object.keys(d.fields)) if (form.elements.namedItem(k)) setErr(k, d.fields[k] === 'email' ? M.email : M.required);
+        throw new Error(d.message || M.fail);
+      }
+      const files = Array.from((document.getElementById('h-photos') as HTMLInputElement).files ?? []).slice(0, 4);
+      let ok = 0;
+      for (const f of files) if ((await uploadPhoto(f, d.ref, d.token)).ok) ok++;
+      form.hidden = true;
+      const done = document.getElementById('helpDone')!;
+      document.getElementById('doneRef')!.textContent = d.ref;
+      document.getElementById('donePhotos')!.textContent = files.length ? M.photos(ok, files.length) : '';
+      done.hidden = false; done.focus();
+    } catch (x) {
+      err.textContent = (x as Error).message || M.fail; err.hidden = false;
+    } finally { btn.disabled = false; }
+  });
+</script>
+
+<style>
+  .help-head { display: grid; gap: 16px; padding-block: clamp(36px, 6vw, 72px) 28px; max-width: 900px; }
+  .help-head .pair { max-width: 460px; }
+  .help-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: clamp(24px, 4vw, 56px); padding-bottom: clamp(56px, 8vw, 104px); align-items: start; }
+  @media (max-width: 900px) { .help-body { grid-template-columns: 1fr; } }
+  .help-form, .help-done { display: grid; gap: 18px; background: var(--sheet); border-radius: 30px; border-bottom-right-radius: 8px; padding: clamp(22px, 3vw, 36px); box-shadow: inset 0 0 0 1px var(--line); }
+  .help-form .btn { justify-self: start; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 620px) { .two { grid-template-columns: 1fr; } }
+  .photos input[type=file] { padding: 10px; }
+  .help-form > .err { color: var(--tamr-2); font-weight: 500; }
+  .help-done b { font-size: 22px; font-variant-numeric: tabular-nums; }
+  .help-side { display: grid; gap: 10px; background: var(--paper-2); border-radius: 26px; border-bottom-left-radius: 6px; padding: 24px; }
+</style>

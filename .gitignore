@@ -27,3 +27,4 @@ dist/
 .astro/
 hikaya-site-dist.zip
 .netlify/
+knowledge/eval-report.md

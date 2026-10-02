@@ -13,13 +13,17 @@ export const fail = (e: unknown) => {
   return json({ error: 'server', message: 'Something went wrong on our side.' }, 500);
 };
 
-/** JSON body, size-limited, from a same-origin request (blocks cross-site form posts). */
-export async function body<T = any>(req: Request): Promise<T> {
+export function sameOrigin(req: Request) {
   const origin = req.headers.get('origin');
   if (origin && new URL(origin).host !== new URL(req.url).host) throw new HttpError(403, 'origin');
+}
+
+/** JSON body, size-limited, from a same-origin request (blocks cross-site form posts). */
+export async function body<T = any>(req: Request, max = 20_000): Promise<T> {
+  sameOrigin(req);
   if (!(req.headers.get('content-type') ?? '').includes('application/json')) throw new HttpError(415, 'json');
   const text = await req.text();
-  if (text.length > 20_000) throw new HttpError(413, 'too-large');
+  if (text.length > max) throw new HttpError(413, 'too-large');
   try { return JSON.parse(text) as T; } catch { throw new HttpError(400, 'bad-json'); }
 }
 

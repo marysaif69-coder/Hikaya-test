@@ -4,6 +4,7 @@ import '../styles/global.css';
 import type { Lang } from '../data/products';
 import { PRODUCTS, DATES, GRINDS } from '../data/products';
 import { UI, dir, other, path } from '../data/i18n';
+import AskHikaya from '../components/AskHikaya.astro';
 
 interface Props { lang: Lang; title: string; description?: string; current?: keyof typeof UI.nav; sleeve?: 'regular' | 'ramadan' | 'eid'; intro?: boolean; jsonld?: object; image?: string }
 const { lang, title, description = UI.footLine[lang], current, sleeve = 'regular', intro = false, jsonld, image = '/media/img/eid-coffee-dates.jpg' } = Astro.props;
@@ -96,6 +97,7 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
             <li><a href={path(lang, 'visit')}>{UI.nav.visit[lang]}</a></li>
             <li><a href={path(lang, 'visit') + '#questions'}>{lang === 'ar' ? 'أسئلة' : 'Questions'}</a></li>
             <li><a href={path(lang, 'visit') + '#policies'}>{lang === 'ar' ? 'السياسات' : 'Policies'}</a></li>
+            <li><a href={path(lang, 'help')}>{lang === 'ar' ? 'المساعدة' : 'Help'}</a></li>
           </ul>
         </div>
         <div>
@@ -134,6 +136,8 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
       <p class="dr-note">{lang === 'ar' ? 'لا دفع الآن. نؤكد طلبك بالبريد.' : 'Nothing is paid now. We confirm by email.'}</p>
     </div>
   </aside>
+
+  <AskHikaya lang={lang} />
 
   <script type="application/json" id="catalog" set:html={JSON.stringify({ lang, cart: path(lang, 'cart'), added: UI.added[lang], add: UI.add[lang], items: catalog })} />
   <script>

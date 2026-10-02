@@ -11,7 +11,7 @@ process.env.ETRANSFER_EMAIL = 'pay@hikayacoffee.ca';
 process.env.SITE_URL = 'https://hikaya.test';
 
 const pg = new PGlite();
-await pg.exec(fs.readFileSync('netlify/database/migrations/001_orders-and-accounts/migration.sql', 'utf8'));
+for (const dir of fs.readdirSync('netlify/database/migrations').sort()) await pg.exec(fs.readFileSync(`netlify/database/migrations/${dir}/migration.sql`, 'utf8'));
 setSql(((s: TemplateStringsArray, ...v: unknown[]) => pg.sql(s, ...v).then(r => r.rows)) as any);
 
 // Capture outgoing email instead of calling Resend.
@@ -24,6 +24,7 @@ globalThis.fetch = (async (url: string, init: any) => {
 const auth = (await import('../netlify/functions/api-auth.mts')).default;
 const orders = (await import('../netlify/functions/api-orders.mts')).default;
 const admin = (await import('../netlify/functions/api-admin.mts')).default;
+const help = (await import('../netlify/functions/api-help.mts')).default;
 const H = 'https://hikaya.test';
 const call = async (fn: any, path: string, opts: { method?: string; body?: any; cookie?: string } = {}) => {
   const res: Response = await fn(new Request(H + path, {
@@ -128,5 +129,90 @@ const o = (await pg.query(`SELECT * FROM orders WHERE ref = $1`, [arOrder.data.r
 await notify('reminder', o);
 const rem = sent.at(-1);
 assert.ok(rem.subject.startsWith('غداً') && rem.html.includes('dir="rtl"')); ok('Arabic reminder email, right-to-left');
+
+// ---------- Help form, photos and the Inbox ----------
+const hf = await call(help, '/api/help', { body: { kind: 'damaged', name: 'Layla Haddad', email: 'layla@example.com', order_ref: g.data.ref, summary: 'Date box arrived crushed', details: 'The lid was split.', lang: 'en' } });
+assert.equal(hf.status, 201, JSON.stringify(hf.data)); assert.match(hf.data.ref, /^Q-[A-Z2-9]{5}$/); ok(`help form opens a request: ${hf.data.ref}`);
+assert.ok(sent.some(m => m.subject === `We have your message · ${hf.data.ref}`)); assert.ok(sent.filter(m => m.subject.startsWith(`⚠ Help request ${hf.data.ref}`)).length === 2); ok('customer acknowledged, both admins alerted (marked urgent)');
+assert.equal((await call(help, '/api/help', { body: { kind: 'question', email: 'nope', summary: '' } })).data.fields.email, 'email'); ok('help form validates email and summary');
+const photo = (t: string, type = 'image/jpeg', bytes = new Uint8Array([0xff, 0xd8, 0xff, 1, 2, 3])) => help(new Request(`${H}/api/help/photo?ref=${hf.data.ref}&t=${t}`, { method: 'POST', headers: { 'content-type': type, origin: H }, body: bytes }));
+assert.equal((await photo(hf.data.token)).status, 201); ok('photo attached with the upload token');
+assert.equal((await photo('wrong')).status, 404); ok('photo refused without the right token');
+assert.equal((await photo(hf.data.token, 'text/html')).status, 415); ok('only images accepted');
+const evil = await help(new Request(`${H}/api/help/photo?ref=${hf.data.ref}&t=${hf.data.token}`, { method: 'POST', headers: { 'content-type': 'image/jpeg', origin: 'https://evil.example' }, body: new Uint8Array([1]) }));
+assert.equal(evil.status, 403); ok('cross-site photo upload blocked');
+const inbox = await call(admin, '/api/admin/tickets', { cookie: adm });
+assert.equal(inbox.data.tickets[0].ref, hf.data.ref); assert.equal(inbox.data.tickets[0].photos, 1); ok('Inbox lists the request with its photo count');
+assert.equal((await call(admin, '/api/admin/tickets', { cookie: cust })).status, 403); ok('customers cannot open the Inbox');
+const td = await call(admin, `/api/admin/tickets/${hf.data.ref}`, { cookie: adm });
+assert.equal(td.data.order.ref, g.data.ref); assert.equal(td.data.order.emailMatches, true); assert.equal(td.data.ticket.upload_token_hash, undefined); ok('request shows the linked order and whether the email matches');
+const img = await admin(new Request(`${H}/api/admin/photos/${td.data.photos[0]}`, { headers: { cookie: adm } }));
+assert.equal(img.headers.get('content-type'), 'image/jpeg'); assert.equal((await img.arrayBuffer()).byteLength, 6); ok('team can view the photo');
+const nb = sent.length;
+await call(admin, `/api/admin/tickets/${hf.data.ref}`, { cookie: adm, body: { reply: 'Sorry about that. A new box goes out Thursday.' } });
+assert.equal(sent.at(-1).subject, `A reply from Hikaya · ${hf.data.ref}`); assert.equal(sent.length, nb + 1); ok('reply from the Inbox emails the customer');
+await call(admin, `/api/admin/tickets/${hf.data.ref}`, { cookie: adm, body: { status: 'resolved', resolution: 'replacement' } });
+const td2 = await call(admin, `/api/admin/tickets/${hf.data.ref}`, { cookie: adm });
+assert.equal(td2.data.ticket.status, 'resolved'); assert.equal(td2.data.ticket.resolution, 'replacement'); assert.equal(td2.data.notes.length, 3); ok('resolved with a recorded outcome and history');
+
+// ---------- Ask Hikaya (the model is replaced by a script) ----------
+const ask = await import('../netlify/lib/ask');
+assert.equal((await call(help, '/api/ask/config')).data.enabled, false); ok('Ask Hikaya stays off without an API key');
+assert.equal((await call(help, '/api/ask', { body: { text: 'hi' } })).status, 503);
+process.env.ANTHROPIC_API_KEY = 'test';
+const calls: any[] = [];
+let script: ((p: any) => any)[] = [];
+const say = (text: string) => ({ id: 'm', type: 'message', role: 'assistant', model: 'x', stop_reason: 'end_turn', content: [{ type: 'text', text }], usage: {} });
+const use = (name: string, input: any) => ({ id: 'm', type: 'message', role: 'assistant', model: 'x', stop_reason: 'tool_use', content: [{ type: 'tool_use', id: 'tu_' + calls.length, name, input }], usage: {} });
+ask.setCreate(async (p: any) => { calls.push(structuredClone(p)); const next = script.shift(); assert.ok(next, 'unexpected model call'); return next(p) as any; });
+const lastResult = (p: any) => JSON.parse(p.messages.at(-1).content[0].content);
+
+script = [() => use('lookup_order', { order_ref: g.data.ref, email: 'someone@else.com' }), p => { assert.equal(lastResult(p).found, false); return say('I could not find that order with that email.'); }];
+const a1 = await call(help, '/api/ask', { body: { text: `Where is order ${g.data.ref}?`, lang: 'en' } });
+assert.equal(a1.status, 200, JSON.stringify(a1.data)); assert.ok(a1.data.chat); ok('chat started, token returned');
+assert.equal(calls[0].model, 'claude-opus-5-5'); assert.equal(calls[0].fallbacks, 'default'); assert.ok(calls[0].tools.every((t: any) => t.strict));
+assert.ok(calls[0].system[0].text.includes('Ask Hikaya handbook') && calls[0].system[0].text.includes('Najdi (نجدية) · id: najdi')); assert.ok(calls[0].system[0].cache_control); ok('model gets the handbook and live product list, cached; strict tools; refusal fallback on');
+ok('order not revealed with the wrong email');
+
+script = [() => use('lookup_order', { order_ref: g.data.ref.toLowerCase().replace('-', ''), email: 'layla@example.com' }), p => { const r = lastResult(p); assert.equal(r.found, true); assert.equal(r.order.status, 'confirmed'); return say('It is confirmed for Friday.'); }];
+const a2 = await call(help, '/api/ask', { body: { chat: a1.data.chat, text: 'Sorry, layla@example.com', lang: 'en' } });
+assert.equal(a2.data.reply, 'It is confirmed for Friday.'); assert.equal(calls.at(-2).messages.length, 5); ok('order found with number + email, earlier turns kept');
+
+script = [() => use('add_to_cart', { items: [{ product_id: 'najdi', option: 'dallah', qty: 2 }, { product_id: 'date-box', option: 'sukkari', qty: 1 }] }), () => say('Added.')];
+const a3 = await call(help, '/api/ask', { body: { chat: a1.data.chat, text: 'Add two Najdi and a Sukkari box', lang: 'en' } });
+assert.deepEqual(a3.data.actions, [{ type: 'cart', lines: [{ id: 'najdi', opt: 'dallah', qty: 2 }, { id: 'date-box', opt: 'sukkari', qty: 1 }] }]); ok('assistant can fill the cart (prices checked on the server)');
+
+script = [() => use('add_to_cart', { items: [{ product_id: 'free-coffee', option: null, qty: 1 }] }), p => { assert.ok(lastResult(p).error); return say('That is not something we sell.'); }];
+assert.deepEqual((await call(help, '/api/ask', { body: { chat: a1.data.chat, text: 'add free coffee', lang: 'en' } })).data.actions, []); ok('unknown products refused');
+
+script = [() => use('open_request', { kind: 'damaged', name: 'Layla Haddad', email: 'layla@example.com', phone: null, order_ref: g.data.ref, summary: 'Two Najdi pouches split', details: 'Customer says both pouches split in the bag.' }),
+  p => { const r = lastResult(p); assert.equal(r.opened, true); return say(`Sent to the team as ${r.request_number}.`); }];
+const a4 = await call(help, '/api/ask', { body: { chat: a1.data.chat, text: 'My coffee arrived split open', lang: 'en' } });
+const reqA = a4.data.actions.find((x: any) => x.type === 'request'), photoA = a4.data.actions.find((x: any) => x.type === 'photo');
+assert.ok(reqA && photoA && photoA.token); ok(`assistant opened request ${reqA.ref} and offered a photo upload`);
+const viaAsk = await call(admin, `/api/admin/tickets/${reqA.ref}`, { cookie: adm });
+assert.equal(viaAsk.data.ticket.source, 'ask'); assert.ok(viaAsk.data.transcript.some((l: any) => l.who === 'customer' && l.text.includes('split open'))); ok('team sees the request with the whole conversation');
+
+script = [() => ({ ...say(''), stop_reason: 'refusal', content: [] })];
+assert.match((await call(help, '/api/ask', { body: { chat: a1.data.chat, text: 'something odd', lang: 'ar' } })).data.reply, /\/ar\/help\//); ok('a declined answer falls back to the help form, in Arabic');
+script = [() => { throw new Error('network'); }];
+assert.match((await call(help, '/api/ask', { body: { chat: a1.data.chat, text: 'hello', lang: 'en' } })).data.reply, /help form/); ok('model outage falls back to the help form');
+
+// The stored history must stay valid for the API: every tool call answered, roles alternate.
+const stored = (await pg.query(`SELECT messages, turns FROM chats LIMIT 1`)).rows[0] as any;
+const msgs = stored.messages;
+for (let i = 0; i < msgs.length; i++) {
+  const m = msgs[i];
+  if (m.role === 'assistant' && Array.isArray(m.content)) for (const b of m.content.filter((b: any) => b.type === 'tool_use'))
+    assert.ok(msgs[i + 1]?.content?.some?.((r: any) => r.tool_use_id === b.id), 'tool call without result');
+}
+assert.equal(stored.turns, 7); ok('stored conversation is valid and append-only');
+
+const cust2 = await login('someone@else.com');
+script = [() => use('my_orders', {}), p => { assert.deepEqual(lastResult(p).orders, []); return say('You have no orders yet.'); }];
+await call(help, '/api/ask', { cookie: cust2, body: { text: 'show my orders', lang: 'en' } }); ok("signed-in visitors see only their own orders");
+assert.equal((await call(help, '/api/ask', { body: { text: 'x'.repeat(1600), lang: 'en' } })).status, 413); ok('overlong messages refused');
+const chats = await call(admin, '/api/admin/chats', { cookie: adm });
+assert.ok(chats.data.chats.length >= 2); ok('team can read recent conversations');
 
 console.log(`\n${pass} checks passed`);
