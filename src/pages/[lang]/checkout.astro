@@ -183,7 +183,11 @@ const slots = pickupSlots(8);
     if (delivery()) {
       const st = $('f-street') as HTMLInputElement, pc = $('f-postal') as HTMLInputElement;
       ok = setErr(st, st.value.trim() ? '' : MSG.req) && ok;
-      ok = setErr(pc, /^T[123]\d[A-Z] ?\d[A-Z]\d$/i.test(pc.value.trim()) ? '' : MSG.postal) && ok;
+      // Canadian format A1A 1A1; Calgary codes start T1, T2 or T3. Accept lowercase, no space or a hyphen.
+      const code = pc.value.toUpperCase().replace(/[\s-]+/g, '');
+      const valid = /^T[123][A-Z]\d[A-Z]\d$/.test(code);
+      if (valid) pc.value = `${code.slice(0, 3)} ${code.slice(3)}`;
+      ok = setErr(pc, valid ? '' : MSG.postal) && ok;
     }
     const fe = $('formErr');
     fe.hidden = lines.length > 0; fe.textContent = lines.length ? '' : MSG.empty;

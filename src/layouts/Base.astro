@@ -5,8 +5,8 @@ import type { Lang } from '../data/products';
 import { PRODUCTS, DATES, GRINDS } from '../data/products';
 import { UI, dir, other, path } from '../data/i18n';
 
-interface Props { lang: Lang; title: string; description?: string; current?: keyof typeof UI.nav; sleeve?: 'regular' | 'ramadan' | 'eid' }
-const { lang, title, description = UI.footLine[lang], current, sleeve = 'regular' } = Astro.props;
+interface Props { lang: Lang; title: string; description?: string; current?: keyof typeof UI.nav; sleeve?: 'regular' | 'ramadan' | 'eid'; intro?: boolean }
+const { lang, title, description = UI.footLine[lang], current, sleeve = 'regular', intro = false } = Astro.props;
 const alt = other(lang);
 const here = Astro.url.pathname;
 const altHref = here.replace(/^\/(en|ar)\//, `/${alt}/`);
@@ -15,7 +15,7 @@ const nav: [keyof typeof UI.nav, string][] = [['shop', 'shop'], ['ramadan', 'ram
 // Small catalog for the client cart (names, prices, options) — no secrets, all public.
 const catalog = Object.fromEntries(PRODUCTS.map(p => [p.id, {
   n: p.name, price: p.price, kind: p.kind,
-  img: p.kind === 'box' ? p.img : null,
+  img: p.kind === 'box' ? p.img : p.art?.front ?? null,
   opts: p.kind === 'coffee' ? Object.fromEntries(p.grinds.map(g => [g, GRINDS[g]])) : p.chooseDate ? Object.fromEntries(Object.entries(DATES).map(([k, d]) => [k, d.name])) : null,
 }]));
 const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'}` : (lang === 'ar' ? 'حكاية · قهوة وتمر في كالغاري' : 'Hikaya · Coffee & dates in Calgary');
@@ -36,6 +36,7 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
   <meta property="og:image" content={new URL('/media/img/eid-coffee-dates.jpg', Astro.site)} />
   <link rel="preload" href="/fonts/ElMessiri-700-arabic.woff2" as="font" type="font/woff2" crossorigin />
   <script is:inline>document.documentElement.classList.add('js')</script>
+  {intro && <script is:inline>try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!sessionStorage.getItem('hikaya-intro'))document.documentElement.classList.add('intro-on')}catch(e){}</script>}
 </head>
 <body>
   <a class="skip" href="#main">{UI.skip[lang]}</a>
@@ -105,6 +106,23 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
       </div>
     </div>
   </footer>
+
+
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" aria-label={UI.cart[lang]} aria-hidden="true" inert>
+    <div class="dr-head">
+      <h2 class="h-s">{lang === 'ar' ? 'سلتك' : 'Your cart'}</h2>
+      <button class="dr-x" type="button" id="drClose" aria-label={UI.close[lang]}><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button>
+    </div>
+    <div class="dr-free"><p id="drFree"></p><span class="dr-bar"><b id="drBar"></b></span></div>
+    <ul class="dr-lines" id="drLines"></ul>
+    <div class="dr-foot">
+      <p class="dr-sub"><span>{lang === 'ar' ? 'المجموع الفرعي' : 'Subtotal'}</span><b class="tnum" id="drSub"></b></p>
+      <a class="btn primary" href={path(lang, 'checkout')}>{lang === 'ar' ? 'أكمل الطلب المسبق' : 'Continue to pre-order'}</a>
+      <a class="dr-link" href={path(lang, 'cart')}>{lang === 'ar' ? 'عرض السلة' : 'View cart'}</a>
+      <p class="dr-note">{lang === 'ar' ? 'لا دفع الآن. نؤكد طلبك بالبريد.' : 'Nothing is paid now. We confirm by email.'}</p>
+    </div>
+  </aside>
 
   <script type="application/json" id="catalog" set:html={JSON.stringify({ lang, cart: path(lang, 'cart'), added: UI.added[lang], add: UI.add[lang], items: catalog })} />
   <script>

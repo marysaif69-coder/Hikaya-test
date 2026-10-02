@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import Intro from '../../components/Intro.astro';
 import Pair from '../../components/Pair.astro';
 import Pouch from '../../components/Pouch.astro';
 import BoxBuilder from '../../components/BoxBuilder.astro';
@@ -14,10 +15,11 @@ const lang = Astro.params.lang as Lang;
 const ar = lang === 'ar';
 const najdi = COFFEES[0];
 const dateBox = BOXES.find(b => b.id === 'date-box')!;
-const shelf = (['palm', 'mountain', 'house', 'husk'] as const).map(f => ({ f, c: COFFEES.find(c => c.fam === f)!, n: COFFEES.filter(c => c.fam === f).length }));
+const shelf = (['palm', 'mountain', 'house', 'husk'] as const).map(f => ({ f, c: COFFEES.find(c => c.fam === f && c.art) ?? COFFEES.find(c => c.fam === f)!, n: COFFEES.filter(c => c.fam === f).length }));
 const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
 ---
-<Base lang={lang} title="">
+<Base lang={lang} title="" intro>
+  <Intro />
   <!-- First viewport: the conversation is the headline; the bag stands beside the box. -->
   <section class="hero">
     <div class="wrap hero-grid">
@@ -42,6 +44,14 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
       </div>
     </div>
   </section>
+
+
+  <ul class="wrap promises" aria-label={ar ? 'وعودنا' : 'Our promises'}>
+    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c2 3 5 4.5 5 9a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.6 1.2 2.5 2 2.5 0-2.6-.6-4.6 1-7z" /></svg><span>{ar ? 'محمّصة في كالغاري بكميات صغيرة' : 'Small-batch roasted in Calgary'}</span></li>
+    <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3" /><path d="M8 3v4M16 3v4M4 10h16" /></svg><span>{ar ? 'تاريخ التحميص على كل كيس' : 'Roast date on every bag'}</span></li>
+    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6z" /><path d="M9 8a3 3 0 0 1 6 0" /></svg><span>{ar ? 'استلام مجاني، الخميس إلى الأحد' : 'Free pickup, Thursday to Sunday'}</span></li>
+    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7" /><circle cx="7" cy="17.5" r="1.8" /><circle cx="17" cy="17.5" r="1.8" /></svg><span>{ar ? 'توصيل مجاني في كالغاري فوق ٨٠ $' : 'Free Calgary delivery over $80'}</span></li>
+  </ul>
 
   <div class="print-band patterned" aria-hidden="true"></div>
 
@@ -133,7 +143,7 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
   .hero-copy { display: grid; gap: 16px; max-width: 600px; }
   .hero-copy h1 { font-size: clamp(24px, 2.4vw, 32px); line-height: 1.25; }
   .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
-  .pack-panel { position: relative; border-radius: clamp(28px, 4vw, 48px); border-bottom-left-radius: 8px; overflow: hidden; aspect-ratio: 4 / 5; background-size: 150px 150px; }
+  .pack-panel { position: relative; border-radius: clamp(28px, 4vw, 48px); border-bottom-left-radius: 8px; overflow: hidden; aspect-ratio: 4 / 5; }
   .pack-box { position: absolute; inset: 9% 8% 16% 18%; width: 74%; height: 75%; object-fit: cover; object-position: 60% 40%; border-radius: clamp(20px, 3vw, 34px); box-shadow: 0 24px 40px -24px rgba(51, 33, 26, .45); }
   html[dir='rtl'] .pack-box { inset: 9% 18% 16% 8%; }
   .pack-pouch { position: absolute; width: 44%; inset-inline-start: 6%; bottom: 3%; filter: drop-shadow(0 22px 22px rgba(51, 33, 26, .28)); }
@@ -150,7 +160,14 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
     .pack-pouch { width: 34%; }
   }
 
-  .print-band { height: clamp(150px, 16vw, 220px); background-color: var(--paper); background-size: 150px 150px; background-position: center; }
+  .print-band { height: clamp(120px, 12vw, 168px); }
+
+  :global(html.intro-on) .hero-pair .say, :global(html.intro-on) .pack-pouch { animation-play-state: paused; }
+  .promises { list-style: none; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 28px; padding-block: 0 clamp(40px, 5vw, 64px); }
+  .promises li { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 500; }
+  .promises svg { width: 26px; height: 26px; flex: none; fill: none; stroke: var(--tamr); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  @media (max-width: 900px) { .promises { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 480px) { .promises li { font-size: 14px; } }
 
   /* ---------- pairing (Bunn-drenched) ---------- */
   .pairing { background: var(--bunn); color: var(--paper); padding-block: clamp(64px, 8vw, 120px); }

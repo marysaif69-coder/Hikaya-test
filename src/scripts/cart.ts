@@ -51,9 +51,62 @@ function paintCount() {
   b?.classList.remove('bump'); void b?.offsetWidth; b?.classList.add('bump');
 }
 
+const money = (n: number, lang: 'en' | 'ar') => (lang === 'ar' ? `${n} $` : `$${n}`);
+
+/** Slide-in cart: opens on add, shows progress to free delivery. */
+function paintDrawer() {
+  const { lang, items } = catalog();
+  const lines = read();
+  const { sub } = totals(lines);
+  const list = document.getElementById('drLines');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!lines.length) {
+    const li = document.createElement('li'); li.className = 'dr-empty';
+    li.textContent = lang === 'ar' ? 'السلة فارغة.' : 'Your cart is empty.';
+    list.append(li);
+  }
+  lines.forEach((l, i) => {
+    const d = describe(l, lang);
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="th"></span><div><div class="nm"></div><div class="op"></div><div class="q"><button type="button" data-d="-1" aria-label="${lang === 'ar' ? 'أنقص' : 'Less'}">−</button><span class="tnum">${l.qty}</span><button type="button" data-d="1" aria-label="${lang === 'ar' ? 'زد' : 'More'}">+</button></div></div><span class="lp tnum">${money(d.price * l.qty, lang)}</span>`;
+    const img = items[l.id]?.img;
+    (li.querySelector('.th') as HTMLElement).style.backgroundImage = `url(${img ?? '/brand/logo.svg'})`;
+    if (!img) (li.querySelector('.th') as HTMLElement).style.backgroundSize = '70%';
+    li.querySelector('.nm')!.textContent = d.name;
+    li.querySelector('.op')!.textContent = d.opt;
+    li.querySelectorAll<HTMLButtonElement>('[data-d]').forEach(b => b.addEventListener('click', () => { setQty(i, l.qty + Number(b.dataset.d)); paintDrawer(); }));
+    list.append(li);
+  });
+  document.getElementById('drSub')!.textContent = money(sub, lang);
+  const left = Math.max(0, 80 - sub);
+  document.getElementById('drFree')!.textContent = left === 0
+    ? (lang === 'ar' ? 'التوصيل داخل كالغاري مجاني لهذا الطلب.' : 'Free Calgary delivery on this order.')
+    : (lang === 'ar' ? `أضف ${left} $ ليصبح التوصيل مجاناً.` : `Add $${left} for free Calgary delivery.`);
+  (document.getElementById('drBar') as HTMLElement).style.width = `${Math.min(100, (sub / 80) * 100)}%`;
+}
+
+let lastFocus: HTMLElement | null = null;
+export function openDrawer() {
+  const dr = document.getElementById('drawer'), sc = document.getElementById('scrim');
+  if (!dr || !sc) return;
+  paintDrawer();
+  lastFocus = document.activeElement as HTMLElement;
+  sc.hidden = false; dr.removeAttribute('inert'); dr.setAttribute('aria-hidden', 'false');
+  requestAnimationFrame(() => { sc.classList.add('on'); dr.classList.add('on'); });
+  (document.getElementById('drClose') as HTMLElement).focus({ preventScroll: true });
+}
+export function closeDrawer() {
+  const dr = document.getElementById('drawer'), sc = document.getElementById('scrim');
+  if (!dr || !sc || !dr.classList.contains('on')) return;
+  dr.classList.remove('on'); sc.classList.remove('on');
+  dr.setAttribute('aria-hidden', 'true'); dr.setAttribute('inert', '');
+  setTimeout(() => { sc.hidden = true; }, 300);
+  lastFocus?.focus({ preventScroll: true });
+}
+
 export function initCart() {
   paintCount();
-  const { added } = catalog();
   document.addEventListener('click', e => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-add]');
     if (!btn) return;
@@ -62,10 +115,9 @@ export function initCart() {
     const formOpt = btn.form ? new FormData(btn.form).get('opt') : null;
     const qty = btn.form ? Number(new FormData(btn.form).get('qty') || 1) : 1;
     ids.forEach((id, i) => add(id, (i === 0 && formOpt ? String(formOpt) : opts[i]) || '', qty));
-    const label = btn.querySelector('span');
-    const prev = label?.textContent;
-    btn.classList.add('done');
-    if (label) label.textContent = added;
-    setTimeout(() => { btn.classList.remove('done'); if (label && prev) label.textContent = prev; }, 1600);
+    openDrawer();
   });
+  document.getElementById('drClose')?.addEventListener('click', closeDrawer);
+  document.getElementById('scrim')?.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
 }
