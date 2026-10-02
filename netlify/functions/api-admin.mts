@@ -41,8 +41,11 @@ export default async (req: Request) => {
           AND (${sample} = '' OR (${sample} = 'hide' AND NOT o.is_sample) OR (${sample} = 'only' AND o.is_sample))
           AND (${term} = '%%' OR LOWER(o.ref || ' ' || o.name || ' ' || o.email || ' ' || o.phone || ' ' || COALESCE(o.postal, '')) LIKE ${term})
         GROUP BY o.id ORDER BY o.slot_date, o.slot_window, o.created_at LIMIT 500`;
-      const counts = await sql`SELECT status, COUNT(*)::int AS n FROM orders GROUP BY status`;
-      const unpaid = await one`SELECT COUNT(*)::int AS n, COALESCE(SUM(total_cents), 0)::int AS cents FROM orders WHERE payment_status = 'unpaid' AND status <> 'cancelled'`;
+      // The totals follow the sample filter: all orders, real orders only, or sample orders only.
+      const counts = await sql`SELECT status, COUNT(*)::int AS n FROM orders
+        WHERE (${sample} = '' OR (${sample} = 'hide' AND NOT is_sample) OR (${sample} = 'only' AND is_sample)) GROUP BY status`;
+      const unpaid = await one`SELECT COUNT(*)::int AS n, COALESCE(SUM(total_cents), 0)::int AS cents FROM orders WHERE payment_status = 'unpaid' AND status <> 'cancelled'
+        AND (${sample} = '' OR (${sample} = 'hide' AND NOT is_sample) OR (${sample} = 'only' AND is_sample))`;
       return json({ orders: rows.map(r => summary({ ...r, items: typeof r.items === 'string' ? JSON.parse(r.items) : r.items })), counts: Object.fromEntries(counts.map(c => [c.status, c.n])), unpaid });
     }
 

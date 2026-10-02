@@ -139,6 +139,9 @@ const weeks = (await pg.query(`SELECT COUNT(DISTINCT date_trunc('week', slot_dat
 assert.equal(weeks.w, 5); assert.equal(sent.length, mailsBefore); ok(`${mk.data.made} sample orders over 5 weeks, no emails sent`);
 const onlySamples = await call(admin, '/api/admin/orders?sample=only', { cookie: adm });
 assert.equal(onlySamples.data.orders.length, weeks.n); assert.ok(onlySamples.data.orders.every((o: any) => o.sample)); ok('filter: sample orders only');
+const realOnly = (await call(admin, '/api/admin/orders?sample=hide', { cookie: adm })).data;
+const realCount = (await pg.query(`SELECT COUNT(*)::int AS n FROM orders WHERE NOT is_sample`)).rows[0] as any;
+assert.equal(Object.values(realOnly.counts as Record<string, number>).reduce((a, b) => a + b, 0), realCount.n); ok('totals at the top follow the filter');
 assert.ok(!(await call(admin, '/api/admin/export.csv?from=1900-01-01&to=2999-01-01', { cookie: adm })).data.includes('.sample@example.com')); ok('samples left out of the CSV');
 const rm = await call(admin, '/api/admin/samples', { cookie: adm, body: { action: 'remove' } });
 assert.equal(rm.data.removed, weeks.n);
