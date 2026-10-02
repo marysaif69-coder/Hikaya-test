@@ -1,0 +1,41 @@
+# Runs the Ask Hikaya test questions against the real assistant and shows the report.
+# Start it by hand: Actions → "Ask Hikaya eval" → Run workflow. Costs roughly $1 per full run.
+# Needs the repository secret ANTHROPIC_API_KEY (Settings → Secrets and variables → Actions).
+name: Ask Hikaya eval
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Only questions whose id contains this (leave empty for all)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Ask every question and grade the answers
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ONLY: ${{ inputs.only }}
+        run: npm run ask:eval -- "$ONLY"
+      - name: Show the report on the run page
+        if: always()
+        run: test -f knowledge/eval-report.md && cat knowledge/eval-report.md >> "$GITHUB_STEP_SUMMARY" || echo "No report was written." >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-report
+          path: knowledge/eval-report.md
+          if-no-files-found: ignore
