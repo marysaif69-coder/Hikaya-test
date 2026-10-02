@@ -3,7 +3,7 @@
 Coffee and dates shop for Calgary (hikayacoffee.ca), Arabic and English. Astro static site on
 Netlify, with Netlify Functions (`netlify/functions/`), Netlify Database (Postgres, migrations in
 `netlify/database/migrations/`) and one edge function (the private-preview gate).
-Read `docs/backend.md` for how everything works and `PRODUCT.md` / `DESIGN.md` for the brand.
+Read `docs/backend.md` for how everything works, `docs/launch-plan.md` for what is left, and `PRODUCT.md` / `DESIGN.md` for the brand.
 
 ## Branch and deploys
 - Work on `claude/frontend-design-skills-setup-2e6lwc`. It is the repo's default branch and
