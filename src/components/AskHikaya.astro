@@ -25,6 +25,7 @@ const T = {
   photoOk: ar ? 'وصلت الصورة.' : 'Photo received.',
   photoBusy: ar ? 'جارٍ الإرسال…' : 'Sending…',
   sentTo: ar ? 'أُرسل إلى الفريق:' : 'Sent to the team:',
+  byEmail: ar ? 'يرد الفريق بالبريد الإلكتروني.' : 'The team replies by email.',
   added: ar ? 'أُضيف إلى سلتك.' : 'Added to your cart.',
   checkout: ar ? 'إلى الطلب' : 'Go to checkout',
   helpful: ar ? 'هل أفادتك الإجابة؟' : 'Was this helpful?',
@@ -107,7 +108,7 @@ const T = {
 
   function actionEl(a: Action) {
     const box = document.createElement('div'); box.className = 'act';
-    if (a.type === 'request') { box.innerHTML = `<span></span> <b dir="ltr"></b>`; box.querySelector('span')!.textContent = T.sentTo; box.querySelector('b')!.textContent = a.ref; }
+    if (a.type === 'request') { box.innerHTML = `<span></span> <b dir="ltr"></b>`; box.querySelector('span')!.textContent = T.sentTo; box.querySelector('b')!.textContent = a.ref; box.append(' · ' + T.byEmail); }
     if (a.type === 'cart') {
       box.textContent = T.added + ' ';
       const l = document.createElement('a'); l.href = `/${lang}/checkout/`; l.textContent = T.checkout; box.append(l);

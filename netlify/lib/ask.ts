@@ -60,7 +60,7 @@ function catalog() {
   const brew = Object.entries(BREW).map(([fam, b]) => [
     `### ${b.title.en} (${b.title.ar}) — for ${FAMILIES[fam as keyof typeof FAMILIES].name.en}`,
     `Vessel: ${b.vessel.en}. Makes: ${b.yields.en}.`,
-    ...b.steps.map((s, i) => `${i + 1}. ${s.t.en}`),
+    ...b.steps.map((s, i) => `${i + 1}. ${s.t.en}${s.secs ? ` (about ${s.secs >= 60 ? `${Math.round(s.secs / 60)} minutes` : `${s.secs} seconds`})` : ''}`),
     `Serve: ${b.serve.en}`,
   ].join('\n')).join('\n\n');
   return `# Product list (from the website, always current)\n\nPrices are draft prices in CAD.\n\n## Coffees\n\n${coffees}\n\n## Dates and boxes\n\n${boxes}\n\n## Date varieties\n\n${dates}\n\n# How to brew (also on /en/brew/)\n\n${brew}`;
@@ -187,7 +187,14 @@ async function runTool(name: string, input: any, c: ToolCtx): Promise<unknown> {
         c.actions.push({ type: 'request', ref: ticket.ref });
         const photo = ['damaged', 'wrong-item', 'missing'].includes(ticket.kind);
         if (photo) c.actions.push({ type: 'photo', ref: ticket.ref, token: uploadToken });
-        return { opened: true, request_number: ticket.ref, reply_promise: ramadanNow() ? 'within two days' : 'usually within one day', photo_button_shown: photo };
+        const when = ramadanNow() ? { en: 'within two days', ar: 'خلال يومين' } : { en: 'usually within one day', ar: 'خلال يوم واحد عادةً' };
+        return {
+          opened: true, request_number: ticket.ref, photo_button_shown: photo,
+          include_in_reply: c.lang === 'ar'
+            ? `رقم طلبك ${ticket.ref}، وسيرد عليك فريق حكاية بالبريد الإلكتروني ${when.ar}.`
+            : `Your request number is ${ticket.ref}, and the Hikaya team will reply by email, ${when.en}.`,
+          note: 'Put the include_in_reply sentence in your reply, in these words or very close to them.',
+        };
       } catch (e: any) {
         return { error: e instanceof HttpError ? `${e.message}${(e as any).fields ? ' ' + JSON.stringify((e as any).fields) : ''}` : 'Could not open the request.' };
       }
