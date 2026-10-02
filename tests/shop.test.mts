@@ -116,6 +116,12 @@ assert.equal(od.order.paymentStatus, 'refunded'); assert.equal(od.refunds.length
 const useCredit = await order({ promo: cr.data.creditCode, lines: [{ id: 'najdi', opt: 'dallah', qty: 2 }] });
 assert.equal((await pg.query(`SELECT total_cents FROM orders WHERE ref = $1`, [useCredit.data.ref])).rows[0].total_cents, 2000); ok('the credit code takes $32 off the next order');
 
+// ---------- CSV safety ----------
+const evil = await order({ name: '=HYPERLINK("http://x","click")' });
+const csvText = String((await call(admin, '/api/admin/export.csv?from=1900-01-01&to=2999-01-01', { cookie: adm })).data);
+assert.ok(csvText.includes(`"'=HYPERLINK(""http://x"",""click"")"`)); ok('formula-looking names are made safe in the CSV');
+await call(admin, `/api/admin/orders/${evil.data.ref}`, { cookie: adm, body: { status: 'cancelled', notify: false } });
+
 // ---------- sample orders ----------
 const mailsBefore = sent.length;
 const mk = await call(admin, '/api/admin/samples', { cookie: adm, body: { action: 'create' } });

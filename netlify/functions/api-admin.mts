@@ -181,7 +181,8 @@ export default async (req: Request) => {
           o.subtotal_cents, o.delivery_cents, o.discount_cents, o.promo_code, o.total_cents, o.refunded_cents, STRING_AGG(i.qty || ' x ' || i.name_en || COALESCE(' (' || i.option_en || ')', ''), '; ' ORDER BY i.id) AS items
         FROM orders o LEFT JOIN order_items i ON i.order_id = o.id WHERE o.slot_date BETWEEN ${from} AND ${to} AND NOT o.is_sample GROUP BY o.id ORDER BY o.slot_date, o.slot_window`;
       const head = ['ref', 'placed', 'day', 'window', 'method', 'status', 'payment', 'paid', 'name', 'email', 'phone', 'street', 'postal', 'subtotal', 'delivery', 'discount', 'promo', 'total', 'refunded', 'items'];
-      const cell = (v: unknown) => { const s = v instanceof Date ? v.toISOString() : String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+      // Customer text that starts like a formula (=, +, -, @) is prefixed so Excel shows it as text.
+      const cell = (v: unknown) => { let s = v instanceof Date ? v.toISOString() : String(v ?? ''); if (/^[=+\-@\t\r]/.test(s) && typeof v === 'string') s = `'${s}`; return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
       const lines = rows.map(r => [r.ref, r.created_at, day(r.slot_date), r.slot_window, r.method, r.status, r.payment, r.payment_status, r.name, r.email, r.phone, r.street, r.postal,
         (r.subtotal_cents / 100).toFixed(2), (r.delivery_cents / 100).toFixed(2), (r.discount_cents / 100).toFixed(2), r.promo_code, (r.total_cents / 100).toFixed(2), (r.refunded_cents / 100).toFixed(2), r.items].map(cell).join(','));
       return new Response([head.join(','), ...lines].join('\n'), { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="hikaya-orders-${from}-${to}.csv"`, 'cache-control': 'no-store' } });
