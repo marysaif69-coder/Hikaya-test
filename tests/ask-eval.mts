@@ -25,6 +25,12 @@ await pg.exec(`
   INSERT INTO order_items (order_id, product_id, name_en, name_ar, option, option_en, option_ar, qty, unit_cents) VALUES
     (1, 'najdi', 'Najdi', 'نجدية', 'dallah', 'Ground for the dallah', 'مطحون للدلّة', 2, 2400),
     (1, 'ramadan-box', 'Ramadan Date Box', 'صندوق تمر رمضان', 'khalas', 'Khalas', 'خلاص', 1, 3400);
+  -- A delivered order from six days ago, for the "it arrived damaged" questions.
+  INSERT INTO orders (ref, customer_id, email, name, phone, lang, method, street, postal, slot_date, slot_window, payment, subtotal_cents, delivery_cents, total_cents, guest_token_hash, status, payment_status)
+    VALUES ('HK-PAST1', 1, 'layla@example.com', 'Layla Haddad', '403-555-0100', 'en', 'delivery', '12 Example St NW', 'T3H 2K1', (CURRENT_DATE - 6)::date, '14:00–17:00', 'e-transfer', 5800, 0, 5800, 'x', 'completed', 'paid');
+  INSERT INTO order_items (order_id, product_id, name_en, name_ar, option, option_en, option_ar, qty, unit_cents) VALUES
+    (2, 'najdi', 'Najdi', 'نجدية', 'dallah', 'Ground for the dallah', 'مطحون للدلّة', 1, 2400),
+    (2, 'date-box', 'The Everyday Date Box', 'علبة التمر اليومية', 'sukkari', 'Sukkari', 'سكري', 1, 3400);
 `);
 
 const { openChat, askTurn } = await import('../netlify/lib/ask');
