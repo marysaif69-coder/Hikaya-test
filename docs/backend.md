@@ -42,7 +42,7 @@ Order received · confirmed · ready for pickup · out for delivery · completed
 ## Ask Hikaya: how it knows things, and how to improve it
 - What it may say lives in `knowledge/handbook.md` (policies, delivery, Ramadan, storage, health rules, voice). The product list, prices, ingredients and brewing steps are added automatically from `src/data/products.ts` and `src/data/brew.ts`, so it never drifts from the shop.
 - It answers only from those. Anything else, and every damaged, wrong, missing or late item, order change, large order or request for a person, becomes an Inbox request; it never promises a refund or replacement itself.
-- `knowledge/test-questions.json` holds the questions customers will ask, each with what a good answer must and must not do. `npm run ask:eval` (needs `ANTHROPIC_API_KEY` in your shell) asks the real assistant every one, grades the answers, and writes `knowledge/eval-report.md`. About $1 per full run.
+- `knowledge/test-questions.json` holds the questions customers will ask, each with what a good answer must and must not do. `npm run ask:eval` (needs `ANTHROPIC_API_KEY` in your shell, or in a Claude Code cloud environment an API credential for `api.anthropic.com` with header `x-api-key`) asks the real assistant every one, grades the answers, and writes `knowledge/eval-report.md`. About $1 per full run.
 - The loop: read the Conversations tab weekly → add real questions to the test file → fix the handbook where answers were wrong → run the test → publish.
 
 ## Testing locally

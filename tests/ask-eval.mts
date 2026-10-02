@@ -2,16 +2,23 @@
 // in-memory database with one test order) and has a grader check each answer against its
 // must / must-not lists. Costs real API usage (roughly $1 per full run).
 //
-//   ANTHROPIC_API_KEY=... npm run ask:eval            all questions
-//   ANTHROPIC_API_KEY=... npm run ask:eval damaged    only ids containing "damaged"
+//   npm run ask:eval            all questions
+//   npm run ask:eval damaged    only ids containing "damaged"
 //
+// The key comes from ANTHROPIC_API_KEY, or, in a Claude Code cloud environment, from an
+// "API credential" for api.anthropic.com (header x-api-key) that is added to requests on the
+// way out, so the session never sees it. Without either, the first check below stops the run.
 // Writes a report to knowledge/eval-report.md.
 import { PGlite } from '@electric-sql/pglite';
 import Anthropic from '@anthropic-ai/sdk';
 import fs from 'node:fs';
 import { setSql } from '../netlify/lib/db';
 
-if (!process.env.ANTHROPIC_API_KEY) { console.error('Set ANTHROPIC_API_KEY first.'); process.exit(1); }
+// Always call the real API directly (a coding session may point ANTHROPIC_BASE_URL elsewhere),
+// and use a stand-in key when the real one is added outside this process.
+process.env.ANTHROPIC_BASE_URL = 'https://api.anthropic.com';
+delete process.env.ANTHROPIC_AUTH_TOKEN;
+process.env.ANTHROPIC_API_KEY ||= 'added-by-environment-credential';
 delete process.env.RESEND_API_KEY; // never email anyone during a test run
 process.env.ADMIN_EMAILS = 'team@hikaya.test';
 
