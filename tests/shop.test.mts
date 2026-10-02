@@ -42,17 +42,25 @@ let n = 0;
 const order = (extra: any = {}) => call(orders, '/api/orders', { body: { lang: 'en', name: 'Test Person', phone: '403-555-0100', email: `t${++n}@example.com`, method: 'pickup', day: '2027-01-22', window: '11:00–14:00', payment: 'e-transfer', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }], ...extra } });
 
 // ---------- order-by deadline ----------
-const { bookable, cutoffFor } = await import('../netlify/lib/slots');
+const { bookable, cutoffFor, calgaryNow } = await import('../netlify/lib/slots');
+// The instant when it is `hour` o'clock in Calgary on `date`, whatever Calgary's UTC offset is
+// in the machine's time-zone data (Alberta's rules may change).
+const atCalgary = (date: string, hour: number) => {
+  for (let off = 4; off <= 9; off++) {
+    const t = new Date(Date.parse(`${date}T${String(hour).padStart(2, '0')}:30:00Z`) + off * 3600_000);
+    const c = calgaryNow(t); if (c.date === date && c.hour === hour) return t;
+  }
+  throw new Error('no such Calgary time');
+};
 const weekly = { open: true, firstDay: '2027-01-01', cutoffHour: 20, cutoffMode: 'weekly' as const, cutoffWeekday: 2, closedDates: ['2027-01-24'] };
 assert.deepEqual(cutoffFor('2027-01-23', weekly), { date: '2027-01-19', hour: 20 }); ok('weekly: Saturday 23 Jan closes Tuesday 19 Jan, 8 pm');
-const at = (iso: string) => new Date(iso); // Calgary is UTC−7 in January
-assert.equal(bookable('2027-01-21', weekly, at('2027-01-20T02:00:00Z')), true); ok('Tuesday 7 pm: this Thursday is still open');
-assert.equal(bookable('2027-01-21', weekly, at('2027-01-20T04:00:00Z')), false);
-assert.equal(bookable('2027-01-28', weekly, at('2027-01-20T04:00:00Z')), true); ok('Tuesday 9 pm: this week has closed, next week is open');
-assert.equal(bookable('2027-01-24', weekly, at('2027-01-10T12:00:00Z')), false); ok('closed days cannot be booked');
+assert.equal(bookable('2027-01-21', weekly, atCalgary('2027-01-19', 19)), true); ok('Tuesday 7 pm: this Thursday is still open');
+assert.equal(bookable('2027-01-21', weekly, atCalgary('2027-01-19', 21)), false);
+assert.equal(bookable('2027-01-28', weekly, atCalgary('2027-01-19', 21)), true); ok('Tuesday 9 pm: this week has closed, next week is open');
+assert.equal(bookable('2027-01-24', weekly, atCalgary('2027-01-10', 12)), false); ok('closed days cannot be booked');
 const dayBefore = { ...weekly, cutoffMode: 'day-before' as const, closedDates: [] };
-assert.equal(bookable('2027-01-22', dayBefore, at('2027-01-22T02:00:00Z')), true);
-assert.equal(bookable('2027-01-22', dayBefore, at('2027-01-22T04:00:00Z')), false); ok('evening-before mode: closes 8 pm the day before');
+assert.equal(bookable('2027-01-22', dayBefore, atCalgary('2027-01-21', 19)), true);
+assert.equal(bookable('2027-01-22', dayBefore, atCalgary('2027-01-21', 21)), false); ok('evening-before mode: closes 8 pm the day before');
 await call(admin, '/api/admin/settings', { cookie: adm, body: { cutoffMode: 'weekly', cutoffWeekday: 2, cutoffHour: 20 } });
 const sl = await call(orders, '/api/slots');
 assert.equal(sl.data.cutoffMode, 'weekly'); assert.equal(sl.data.next.from, '2027-01-22'); assert.equal(sl.data.next.to, '2027-01-24'); ok(`slots say: order by ${sl.data.next.orderBy.date} ${sl.data.next.orderBy.hour}:00 for ${sl.data.next.from} to ${sl.data.next.to}`);

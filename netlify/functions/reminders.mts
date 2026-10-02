@@ -1,4 +1,4 @@
-// Every evening (00:00 UTC = 5 pm Calgary in winter, 6 pm in summer) email tomorrow's customers a reminder.
+// Every evening (00:00 UTC, which is late afternoon or early evening in Calgary) email tomorrow's customers a reminder.
 import type { Config } from '@netlify/functions';
 import { sql } from '../lib/db';
 import { calgaryNow, addDays } from '../lib/slots';
