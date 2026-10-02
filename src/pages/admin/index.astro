@@ -1,0 +1,307 @@
+---
+// The team's order desk. Static page; every action goes through /api/admin/*, which checks
+// the session belongs to an email in ADMIN_EMAILS. Hidden from search engines.
+import '../../styles/fonts.css';
+import '../../styles/global.css';
+---
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Orders · Hikaya</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body class="adm">
+  <header class="a-top">
+    <a class="lockup" href="/en/"><img src="/brand/logo.svg" alt="" width="40" height="34" /><span class="wm"><b>حكاية</b><small>ORDER DESK</small></span></a>
+    <nav class="a-tabs" id="tabs" hidden>
+      <button type="button" data-tab="orders" aria-pressed="true">Orders</button>
+      <button type="button" data-tab="day" aria-pressed="false">Day sheet</button>
+      <button type="button" data-tab="settings" aria-pressed="false">Settings</button>
+    </nav>
+    <div class="a-who" id="who" hidden><span id="whoEmail"></span><button type="button" id="logout">Log out</button></div>
+  </header>
+
+  <main class="a-main">
+    <section id="login" hidden class="a-login">
+      <h1 class="h-m">Team login</h1>
+      <p class="muted">Use your Hikaya email. Only emails on the team list can open the desk.</p>
+      <div id="loginBox"></div>
+      <p class="err" id="notAdmin" hidden>This email is not on the team list. Ask Maryam to add it in Netlify (ADMIN_EMAILS).</p>
+    </section>
+
+    <!-- ORDERS -->
+    <section id="v-orders" hidden>
+      <div class="a-stats" id="stats"></div>
+      <form class="a-filters" id="filters">
+        <input type="search" name="q" placeholder="Search name, email, phone, postal, HK-…" />
+        <select name="status"><option value="">All statuses</option></select>
+        <select name="method"><option value="">Pickup & delivery</option><option value="pickup">Pickup</option><option value="delivery">Delivery</option></select>
+        <label>From <input type="date" name="from" /></label>
+        <label>To <input type="date" name="to" /></label>
+        <a class="btn line sm" id="csv" href="/api/admin/export.csv">Export CSV</a>
+      </form>
+      <div class="a-table-wrap"><table class="a-table" id="list">
+        <thead><tr><th>Order</th><th>Day</th><th>Customer</th><th>How</th><th>Items</th><th>Total</th><th>Paid</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <p class="muted" id="none" hidden>No orders match.</p>
+    </section>
+
+    <!-- DAY SHEET -->
+    <section id="v-day" hidden>
+      <div class="a-dayhead">
+        <label class="h-s">Day <input type="date" id="dayPick" /></label>
+        <button type="button" class="btn line sm" onclick="window.print()">Print</button>
+      </div>
+      <div class="a-daygrid">
+        <div><h2 class="h-s">To pack</h2><ul id="pack" class="a-pack"></ul></div>
+        <div><h2 class="h-s">Pickups</h2><div id="pickups"></div></div>
+        <div><h2 class="h-s">Deliveries <small class="muted">by area</small></h2><ol id="deliveries" class="a-route"></ol></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="v-settings" hidden class="a-settings">
+      <form id="setForm">
+        <h2 class="h-s">Taking orders</h2>
+        <label class="a-switch"><input type="checkbox" name="open" /> <span>Open for new orders</span></label>
+        <h2 class="h-s">Places per time window</h2>
+        <div class="two">
+          <div class="field"><label for="capP">Pickups per window</label><input id="capP" name="pickup" type="number" min="0" max="200" /></div>
+          <div class="field"><label for="capD">Deliveries per window</label><input id="capD" name="delivery" type="number" min="0" max="200" /></div>
+        </div>
+        <p class="muted">Windows: 11:00–14:00, 14:00–17:00, 17:00–20:00, Thursday to Sunday. Orders for a day close at 20:00 the evening before.</p>
+        <button class="btn primary" type="submit">Save</button> <span id="saved" class="muted" hidden>Saved.</span>
+      </form>
+    </section>
+  </main>
+
+  <!-- ORDER PANEL -->
+  <div class="scrim" id="pScrim" hidden></div>
+  <aside class="drawer a-panel" id="panel" aria-label="Order" aria-hidden="true" inert>
+    <div class="dr-head"><h2 class="h-s" id="pRef"></h2><button class="dr-x" type="button" id="pClose" aria-label="Close"><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button></div>
+    <div class="a-pbody" id="pBody"></div>
+  </aside>
+</body>
+</html>
+
+<style>
+  .adm { background: var(--paper); }
+  .a-top { position: sticky; top: 0; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 12px clamp(16px, 3vw, 32px); background: var(--paper); border-bottom: 1px solid var(--line); }
+  .a-top .lockup img { width: 40px; }
+  .a-top .wm b { font-size: 24px; }
+  .a-tabs { display: flex; gap: 4px; }
+  .a-tabs button { border: 0; background: none; padding: 9px 14px; border-radius: 999px; font-weight: 600; }
+  .a-tabs button[aria-pressed='true'] { background: var(--bunn); color: var(--paper); }
+  .a-who { margin-inline-start: auto; display: flex; gap: 12px; align-items: center; font-size: 14px; color: var(--ink-2); }
+  .a-who button { border: 0; background: none; color: var(--tamr); font-weight: 600; text-decoration: underline; }
+  .a-main { padding: 24px clamp(16px, 3vw, 32px) 80px; display: grid; gap: 20px; }
+  .a-login { max-width: 460px; display: grid; gap: 14px; margin: 40px auto; background: var(--sheet); padding: 26px; border-radius: 28px; }
+  .a-login :global(.lg) { display: grid; gap: 14px; }
+  .a-login :global(.lg-row) { display: flex; gap: 12px; flex-wrap: wrap; }
+  .a-login :global(.lg-back) { border: 0; background: none; text-decoration: underline; color: var(--ink-2); }
+  .a-login :global(#lg-c) { font-size: 26px; letter-spacing: .35em; text-align: center; }
+  .a-stats { display: flex; flex-wrap: wrap; gap: 10px; }
+  .a-stats :global(.st) { background: var(--sheet); border-radius: 16px; padding: 10px 14px; min-width: 120px; }
+  .a-stats :global(.st b) { display: block; font-family: var(--display); font-size: 26px; }
+  .a-stats :global(.st span) { font-size: 13px; color: var(--ink-2); }
+  .a-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .a-filters input, .a-filters select { border: 1.5px solid var(--line); background: var(--sheet); border-radius: 12px; padding: 9px 12px; font-size: 15px; }
+  .a-filters input[type=search] { min-width: 260px; flex: 1; }
+  .a-filters label { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; color: var(--ink-2); }
+  .sm { min-height: 40px; padding: 8px 14px; font-size: 14px; }
+  .a-table-wrap { overflow-x: auto; background: var(--sheet); border-radius: 20px; }
+  .a-table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  .a-table th { text-align: left; font-size: 12.5px; color: var(--ink-2); font-weight: 600; padding: 12px; border-bottom: 2px solid var(--line); white-space: nowrap; }
+  .a-table :global(td) { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .a-table :global(tr.row) { cursor: pointer; }
+  .a-table :global(tr.row:hover) { background: color-mix(in srgb, var(--khalal) 10%, transparent); }
+  .a-table :global(.ref) { font-weight: 700; color: var(--tamr); white-space: nowrap; }
+  .a-table :global(.its) { color: var(--ink-2); max-width: 280px; }
+  :global(.pill) { display: inline-block; border-radius: 999px; padding: 3px 10px; font-size: 12.5px; font-weight: 600; background: var(--paper-2); white-space: nowrap; }
+  :global(.pill.received) { background: #F4E6BF; }
+  :global(.pill.confirmed) { background: #E9DFCB; }
+  :global(.pill.ready), :global(.pill.out-for-delivery) { background: #DCE6CF; }
+  :global(.pill.completed) { background: var(--line); color: var(--ink-2); }
+  :global(.pill.cancelled) { background: #F1DCD3; color: var(--tamr-2); }
+  :global(.pill.paid) { background: #DCE6CF; }
+  :global(.pill.unpaid) { background: #F1DCD3; color: var(--tamr-2); }
+  .a-dayhead { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .a-dayhead input { border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 10px; margin-inline-start: 8px; font: inherit; }
+  .a-daygrid { display: grid; grid-template-columns: .7fr 1fr 1.2fr; gap: 20px; align-items: start; }
+  @media (max-width: 1000px) { .a-daygrid { grid-template-columns: 1fr; } }
+  .a-daygrid > div { background: var(--sheet); border-radius: 20px; padding: 18px; display: grid; gap: 12px; }
+  .a-pack { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+  .a-pack :global(li) { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dashed var(--line); padding-bottom: 6px; }
+  .a-pack :global(li b) { font-size: 18px; }
+  #pickups :global(h3) { font-size: 15px; margin: 10px 0 6px; font-family: var(--body); }
+  :global(.mini) { border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 2px; font-size: 14.5px; margin-bottom: 8px; cursor: pointer; background: var(--paper); }
+  :global(.mini b) { color: var(--tamr); }
+  .a-route { margin: 0; padding-inline-start: 22px; display: grid; gap: 8px; }
+  .a-settings { max-width: 560px; }
+  .a-settings form { display: grid; gap: 14px; background: var(--sheet); padding: 24px; border-radius: 24px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .a-switch { display: flex; gap: 10px; align-items: center; font-weight: 600; }
+  .a-switch input { width: 20px; height: 20px; accent-color: var(--bunn); }
+  .a-panel { width: min(560px, 100%); grid-template-rows: auto 1fr; }
+  .a-pbody { overflow: auto; padding: 18px 22px 40px; display: grid; gap: 16px; align-content: start; }
+  .a-pbody :global(h3) { font-size: 14px; color: var(--ink-2); font-family: var(--body); font-weight: 600; margin: 4px 0 -6px; }
+  .a-pbody :global(.acts) { display: flex; flex-wrap: wrap; gap: 8px; }
+  .a-pbody :global(.acts button) { border: 1.5px solid var(--bunn); background: none; border-radius: 999px; padding: 8px 14px; font-weight: 600; font-size: 14px; }
+  .a-pbody :global(.acts button.cur) { background: var(--bunn); color: var(--paper); }
+  .a-pbody :global(.acts button.danger) { border-color: var(--tamr); color: var(--tamr-2); }
+  .a-pbody :global(.its li) { display: flex; justify-content: space-between; gap: 10px; }
+  .a-pbody :global(ul) { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+  .a-pbody :global(.ev) { font-size: 13.5px; color: var(--ink-2); }
+  .a-pbody :global(textarea) { width: 100%; border: 1.5px solid var(--line); border-radius: 12px; padding: 10px; font: inherit; }
+  .a-pbody :global(.notify) { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+  @media print {
+    .a-top, .a-dayhead button, #v-orders, #v-settings { display: none !important; }
+    .a-daygrid { grid-template-columns: 1fr; }
+    .a-daygrid > div { break-inside: avoid; }
+  }
+</style>
+
+<script>
+  import { mountLogin, logout } from '../../scripts/login';
+  const $ = (id: string) => document.getElementById(id)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+  const money = (c: number) => `$${(c / 100).toFixed(c % 100 ? 2 : 0)}`;
+  const fmtDay = (iso: string) => new Date(iso + 'T12:00:00Z').toLocaleDateString('en-CA', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const api = async (url: string, data?: object) => {
+    const r = await fetch(url, data ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) } : undefined);
+    const body = await r.json().catch(() => ({}));
+    if (r.status === 401) { showLogin(); throw new Error('login'); }
+    if (!r.ok) { alert(body.message ?? 'Something went wrong.'); throw new Error(body.error); }
+    return body;
+  };
+  const STATUS_LABEL: Record<string, string> = { received: 'Received', confirmed: 'Confirmed', ready: 'Ready for pickup', 'out-for-delivery': 'Out for delivery', completed: 'Completed', cancelled: 'Cancelled' };
+  const PAY: Record<string, string> = { 'at-pickup': 'At pickup', 'e-transfer': 'e-Transfer', card: 'Card' };
+
+  // ---------- auth ----------
+  function showLogin() {
+    for (const id of ['v-orders', 'v-day', 'v-settings', 'tabs', 'who']) $(id).hidden = true;
+    $('login').hidden = false;
+    mountLogin($('loginBox'), 'en', user => {
+      if (user.role !== 'admin') { $('notAdmin').hidden = false; return; }
+      start(user.email);
+    });
+  }
+  function start(email: string) {
+    $('login').hidden = true; $('tabs').hidden = false; $('who').hidden = false; $('whoEmail').textContent = email;
+    const sel = document.querySelector<HTMLSelectElement>('#filters [name=status]')!;
+    if (sel.options.length === 1) Object.entries(STATUS_LABEL).forEach(([k, v]) => sel.add(new Option(v, k)));
+    tab('orders');
+    const want = new URLSearchParams(location.search).get('order');
+    if (want) openOrder(want);
+  }
+  $('logout').addEventListener('click', async () => { await logout(); location.reload(); });
+
+  // ---------- tabs ----------
+  function tab(name: string) {
+    document.querySelectorAll<HTMLButtonElement>('#tabs [data-tab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === name)));
+    for (const v of ['orders', 'day', 'settings']) $(`v-${v}`).hidden = v !== name;
+    if (name === 'orders') loadOrders();
+    if (name === 'day') loadDay();
+    if (name === 'settings') loadSettings();
+  }
+  $('tabs').addEventListener('click', e => { const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-tab]'); if (b) tab(b.dataset.tab!); });
+
+  // ---------- orders ----------
+  let timer: number | undefined;
+  $('filters').addEventListener('input', () => { clearTimeout(timer); timer = window.setTimeout(loadOrders, 250); });
+  async function loadOrders() {
+    const f = new FormData($('filters') as HTMLFormElement);
+    const qs = new URLSearchParams([...f.entries()].filter(([, v]) => v) as [string, string][]).toString();
+    ($('csv') as HTMLAnchorElement).href = `/api/admin/export.csv?${qs}`;
+    const d = await api(`/api/admin/orders?${qs}`);
+    const c = d.counts ?? {};
+    $('stats').innerHTML = [
+      ['New', c.received ?? 0], ['Confirmed', c.confirmed ?? 0], ['Ready / on the way', (c.ready ?? 0) + (c['out-for-delivery'] ?? 0)], ['Completed', c.completed ?? 0],
+      ['Unpaid', `${d.unpaid?.n ?? 0} · ${money(d.unpaid?.cents ?? 0)}`],
+    ].map(([k, v]) => `<div class="st"><b>${v}</b><span>${k}</span></div>`).join('');
+    $('none').hidden = d.orders.length > 0;
+    document.querySelector('#list tbody')!.innerHTML = d.orders.map((o: any) => `<tr class="row" data-ref="${esc(o.ref)}">
+      <td class="ref">${esc(o.ref)}</td><td>${fmtDay(o.day)}<br><small>${esc(o.window)}</small></td>
+      <td>${esc(o.name)}<br><small>${esc(o.phone)}</small></td>
+      <td>${o.method === 'delivery' ? `Delivery<br><small>${esc(o.postal)}</small>` : 'Pickup'}</td>
+      <td class="its">${(o.items ?? []).map((i: any) => `${i.qty}× ${esc(i.name)}${i.option ? ` (${esc(i.option)})` : ''}`).join(', ')}</td>
+      <td>${money(o.total)}</td><td><span class="pill ${o.paymentStatus}">${o.paymentStatus}</span><br><small>${PAY[o.payment]}</small></td>
+      <td><span class="pill ${o.status}">${STATUS_LABEL[o.status]}</span></td></tr>`).join('');
+  }
+  document.addEventListener('click', e => {
+    const r = (e.target as HTMLElement).closest<HTMLElement>('[data-ref]');
+    if (r && !(e.target as HTMLElement).closest('#panel')) openOrder(r.dataset.ref!);
+  });
+
+  // ---------- order panel ----------
+  const panel = $('panel'), scrim = $('pScrim');
+  const closePanel = () => { panel.classList.remove('on'); scrim.classList.remove('on'); panel.setAttribute('inert', ''); panel.setAttribute('aria-hidden', 'true'); setTimeout(() => { scrim.hidden = true; }, 300); };
+  $('pClose').addEventListener('click', closePanel); scrim.addEventListener('click', closePanel);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+
+  async function openOrder(ref: string) {
+    const d = await api(`/api/admin/orders/${encodeURIComponent(ref)}`);
+    const o = d.order;
+    $('pRef').textContent = o.ref;
+    const flow = o.method === 'pickup' ? ['received', 'confirmed', 'ready', 'completed'] : ['received', 'confirmed', 'out-for-delivery', 'completed'];
+    $('pBody').innerHTML = `
+      <p><span class="pill ${o.status}">${STATUS_LABEL[o.status]}</span> <span class="pill ${o.paymentStatus}">${o.paymentStatus}</span> · ${PAY[o.payment]}</p>
+      <p><b>${fmtDay(o.day)} · ${esc(o.window)}</b><br>${o.method === 'delivery' ? `Delivery: ${esc(o.street)}, ${esc(o.postal)} · <a href="https://maps.google.com/?q=${encodeURIComponent(`${o.street}, ${o.postal}, Calgary`)}" target="_blank" rel="noopener">Map</a>` : 'Pickup'}</p>
+      <p>${esc(o.name)} · <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a> · <a href="mailto:${esc(o.email)}">${esc(o.email)}</a> · ${o.lang === 'ar' ? 'Arabic' : 'English'}</p>
+      ${o.notes ? `<p><b>Customer note:</b> ${esc(o.notes)}</p>` : ''}
+      <h3>Items</h3><ul class="its">${o.items.map((i: any) => `<li><span>${i.qty} × ${esc(i.name_en)}${i.option_en ? ` <small>(${esc(i.option_en)})</small>` : ''}</span><span>${money(i.unit_cents * i.qty)}</span></li>`).join('')}
+        ${o.delivery ? `<li><span>Delivery</span><span>${money(o.delivery)}</span></li>` : ''}<li><b>Total</b><b>${money(o.total)}</b></li></ul>
+      <h3>Move the order</h3>
+      <div class="acts">${flow.map(s => `<button type="button" data-status="${s}" class="${s === o.status ? 'cur' : ''}">${STATUS_LABEL[s]}</button>`).join('')}<button type="button" class="danger" data-status="cancelled">Cancel order</button></div>
+      <label class="notify"><input type="checkbox" id="pNotify" checked /> Email the customer about the change</label>
+      <h3>Payment</h3>
+      <div class="acts"><button type="button" data-pay="paid" class="${o.paymentStatus === 'paid' ? 'cur' : ''}">Paid</button><button type="button" data-pay="unpaid" class="${o.paymentStatus === 'unpaid' ? 'cur' : ''}">Unpaid</button><button type="button" data-pay="refunded" class="${o.paymentStatus === 'refunded' ? 'cur' : ''}">Refunded</button></div>
+      <h3>Team note</h3><textarea id="pNote" rows="2" placeholder="Only the team sees this"></textarea><div class="acts"><button type="button" id="pAddNote">Add note</button></div>
+      <h3>History</h3><ul>${d.events.map((e: any) => `<li class="ev">${new Date(e.created_at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })} · <b>${esc(e.kind)}</b> ${esc(e.detail ?? '')} <small>${esc(e.actor ?? '')}</small></li>`).join('')}</ul>
+      <h3>Emails</h3><ul>${d.emails.map((m: any) => `<li class="ev">${esc(m.subject)} → ${esc(m.to_email)} · <b>${esc(m.status)}</b></li>`).join('') || '<li class="ev">None yet.</li>'}</ul>`;
+    scrim.hidden = false; panel.removeAttribute('inert'); panel.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => { scrim.classList.add('on'); panel.classList.add('on'); });
+    const refresh = async () => { await openOrder(ref); if (!$('v-orders').hidden) loadOrders(); if (!$('v-day').hidden) loadDay(); };
+    $('pBody').querySelectorAll<HTMLButtonElement>('[data-status]').forEach(b => b.addEventListener('click', async () => {
+      if (b.dataset.status === 'cancelled' && !confirm(`Cancel ${ref}?`)) return;
+      await api(`/api/admin/orders/${encodeURIComponent(ref)}`, { status: b.dataset.status, notify: ($('pNotify') as HTMLInputElement).checked }); refresh();
+    }));
+    $('pBody').querySelectorAll<HTMLButtonElement>('[data-pay]').forEach(b => b.addEventListener('click', async () => { await api(`/api/admin/orders/${encodeURIComponent(ref)}`, { paymentStatus: b.dataset.pay }); refresh(); }));
+    $('pAddNote').addEventListener('click', async () => { const v = ($('pNote') as HTMLTextAreaElement).value.trim(); if (v) { await api(`/api/admin/orders/${encodeURIComponent(ref)}`, { note: v }); refresh(); } });
+  }
+
+  // ---------- day sheet ----------
+  const dayPick = $('dayPick') as HTMLInputElement;
+  dayPick.addEventListener('change', loadDay);
+  async function loadDay() {
+    const d = await api(`/api/admin/day${dayPick.value ? `?date=${dayPick.value}` : ''}`);
+    dayPick.value = d.date;
+    $('pack').innerHTML = d.pack.map((p: any) => `<li><span>${esc(p.name_en)}${p.option ? ` <small>(${esc(p.option)})</small>` : ''}</span><b>${p.qty}</b></li>`).join('') || '<li class="muted">Nothing to pack.</li>';
+    $('pickups').innerHTML = d.pickups.map((w: any) => `<h3>${esc(w.window)} · ${w.orders.length}</h3>${w.orders.map((o: any) => `<div class="mini" data-ref="${esc(o.ref)}"><span><b>${esc(o.ref)}</b> · ${esc(o.name)} · ${esc(o.phone)}</span><span>${o.items.map((i: any) => `${i.qty}× ${esc(i.name_en)}`).join(', ')} · ${money(o.total)} · <span class="pill ${o.paymentStatus}">${o.paymentStatus}</span></span></div>`).join('')}`).join('');
+    $('deliveries').innerHTML = d.deliveries.map((o: any) => `<li><div class="mini" data-ref="${esc(o.ref)}"><span><b>${esc(o.postal)}</b> · ${esc(o.street)} · ${esc(o.window)}</span><span>${esc(o.name)} · <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a> · ${money(o.total)} · <span class="pill ${o.paymentStatus}">${o.paymentStatus}</span></span></div></li>`).join('') || '<li class="muted">No deliveries.</li>';
+  }
+
+  // ---------- settings ----------
+  async function loadSettings() {
+    const s = await api('/api/admin/settings');
+    const f = $('setForm') as HTMLFormElement;
+    (f.elements.namedItem('open') as HTMLInputElement).checked = s.ordering.open;
+    (f.elements.namedItem('pickup') as HTMLInputElement).value = s.capacity.pickup;
+    (f.elements.namedItem('delivery') as HTMLInputElement).value = s.capacity.delivery;
+  }
+  $('setForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target as HTMLFormElement;
+    await api('/api/admin/settings', { open: (f.elements.namedItem('open') as HTMLInputElement).checked, capacity: { pickup: Number((f.elements.namedItem('pickup') as HTMLInputElement).value), delivery: Number((f.elements.namedItem('delivery') as HTMLInputElement).value) } });
+    $('saved').hidden = false; setTimeout(() => { $('saved').hidden = true; }, 2000);
+  });
+
+  (async () => {
+    const me = await fetch('/api/me').then(r => r.json()).catch(() => ({ user: null }));
+    if (me.user?.role === 'admin') start(me.user.email); else showLogin();
+  })();
+</script>

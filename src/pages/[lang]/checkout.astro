@@ -1,36 +1,32 @@
 ---
-// Pre-order checkout. Submits to Netlify Forms ("preorder"); nothing is charged.
-// At launch, swap the submit for a Square/Shopify checkout: the form fields stay the same.
+// Checkout: places the order through /api/orders (Netlify Function + Netlify Database).
+// Guests check out with just an email; logged-in customers have it filled in. Slots are live.
 import Base from '../../layouts/Base.astro';
 import type { Lang } from '../../data/products';
 import { path } from '../../data/i18n';
-import { pickupSlots, weekday, dayMonth } from '../../data/calendar';
 
 export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
 const lang = Astro.params.lang as Lang;
 const ar = lang === 'ar';
-const slots = pickupSlots(8);
 ---
 <Base lang={lang} title={ar ? 'الطلب المسبق' : 'Pre-order'}>
   <section class="wrap co">
-    <form class="co-form" id="co" name="preorder" method="POST" data-netlify="true" netlify-honeypot="company" action={path(lang, 'thanks') + '?order=1'} novalidate>
-      <input type="hidden" name="form-name" value="preorder" />
-      <input type="hidden" name="lang" value={lang} />
-      <input type="hidden" name="order" id="f-order" />
-      <input type="hidden" name="total" id="f-total" />
-      <input type="hidden" name="ref" id="f-ref" />
-      <p class="sr"><label>Company <input name="company" tabindex="-1" autocomplete="off" /></label></p>
-
+    <form class="co-form" id="co" novalidate>
       <h1 class="h-l">{ar ? 'الطلب المسبق' : 'Pre-order'}</h1>
-      <p class="lead">{ar ? 'لا دفع الآن. نرسل لك تأكيداً بالبريد، وتدفع عند الاستلام أو بتحويل Interac.' : 'Nothing is paid now. We email you a confirmation; you pay at pickup or by Interac e-Transfer.'}</p>
+      <p class="lead">{ar ? 'نرسل لك تأكيداً بالبريد. ادفع عند الاستلام أو بتحويل Interac، أو بالبطاقة حين يتوفر.' : 'We email you a confirmation. Pay at pickup, by Interac e-Transfer, or by card when it is available.'}</p>
+      <div class="acct" id="acct">
+        <p id="acctGuest">{ar ? 'لديك حساب؟' : 'Have an account?'} <a href={path(lang, 'account') + '?next=checkout'}>{ar ? 'سجّل الدخول' : 'Log in'}</a> {ar ? 'أو تابع كضيف.' : 'or continue as a guest.'}</p>
+        <p id="acctUser" hidden>{ar ? 'مسجّل باسم' : 'Logged in as'} <b id="acctEmail"></b></p>
+      </div>
+      <noscript><p class="err">{ar ? 'نحتاج JavaScript لإتمام الطلب.' : 'Checkout needs JavaScript turned on.'}</p></noscript>
 
       <fieldset class="block">
         <legend class="h-s">{ar ? 'أنت' : 'You'}</legend>
         <div class="two">
           <div class="field"><label for="f-name">{ar ? 'الاسم' : 'Name'}</label><input id="f-name" name="name" required autocomplete="name" /><p class="err" hidden></p></div>
-          <div class="field"><label for="f-phone">{ar ? 'الهاتف' : 'Phone'}</label><input id="f-phone" name="phone" type="tel" required autocomplete="tel" inputmode="tel" /><p class="err" hidden></p></div>
+          <div class="field"><label for="f-phone">{ar ? 'الهاتف' : 'Phone'}</label><input id="f-phone" name="phone" type="tel" required autocomplete="tel" inputmode="tel" dir="ltr" /><p class="err" hidden></p></div>
         </div>
-        <div class="field"><label for="f-email">{ar ? 'البريد الإلكتروني' : 'Email'}</label><input id="f-email" name="email" type="email" required autocomplete="email" /><p class="hint">{ar ? 'نرسل التأكيد إلى هنا.' : 'Your confirmation goes here.'}</p><p class="err" hidden></p></div>
+        <div class="field"><label for="f-email">{ar ? 'البريد الإلكتروني' : 'Email'}</label><input id="f-email" name="email" type="email" required autocomplete="email" dir="ltr" /><p class="hint">{ar ? 'نرسل التأكيد إلى هنا، ويمكنك متابعة طلبك به لاحقاً.' : 'Your confirmation goes here, and you can follow your order with it later.'}</p><p class="err" hidden></p></div>
       </fieldset>
 
       <fieldset class="block">
@@ -47,32 +43,30 @@ const slots = pickupSlots(8);
 
       <fieldset class="block">
         <legend class="h-s">{ar ? 'اليوم والوقت' : 'Day and time'}</legend>
+        <p class="closed" id="closed" hidden>{ar ? 'الطلبات متوقفة مؤقتاً. عد قريباً.' : 'Orders are paused for the moment. Please check back soon.'}</p>
         <div class="field">
           <label for="f-day">{ar ? 'اليوم (الخميس إلى الأحد)' : 'Day (Thursday to Sunday)'}</label>
-          <select id="f-day" name="day" required>
-            <option value="">{ar ? 'اختر يوماً' : 'Choose a day'}</option>
-            {slots.map(s => <option value={s.iso}>{weekday(s.iso, lang, 'long')} · {dayMonth(s.iso, lang)}</option>)}
-          </select>
+          <select id="f-day" name="day" required><option value="">{ar ? 'جارٍ التحميل…' : 'Loading days…'}</option></select>
           <p class="err" hidden></p>
         </div>
-        <div class="choice row">
-          {['11:00–14:00', '14:00–17:00', '17:00–20:00'].map((w, i) => <label><input type="radio" name="window" value={w} checked={i === 0} /><span class="tnum" dir="ltr"><b>{w}</b></span></label>)}
+        <div class="choice row" id="windows">
+          {['11:00–14:00', '14:00–17:00', '17:00–20:00'].map((w, i) => <label><input type="radio" name="window" value={w} checked={i === 0} /><span><b class="tnum" dir="ltr">{w}</b><small class="left"></small></span></label>)}
         </div>
       </fieldset>
 
       <fieldset class="block">
         <legend class="h-s">{ar ? 'الدفع' : 'Paying'}</legend>
-        <div class="choice">
+        <div class="choice pay">
+          <label id="payCard" hidden><input type="radio" name="payment" value="card" /><span><b>{ar ? 'بالبطاقة الآن' : 'Card, now'}</b><small>{ar ? 'صفحة دفع آمنة من Square' : 'Secure payment page by Square'}</small></span></label>
           <label><input type="radio" name="payment" value="at-pickup" checked /><span><b>{ar ? 'عند الاستلام أو التسليم' : 'At pickup or handover'}</b><small>{ar ? 'بطاقة أو نقداً' : 'Card or cash'}</small></span></label>
           <label><input type="radio" name="payment" value="e-transfer" /><span><b>Interac e-Transfer</b><small>{ar ? 'نرسل التفاصيل مع التأكيد' : 'Details come with your confirmation'}</small></span></label>
         </div>
         <div class="field"><label for="f-notes">{ar ? 'ملاحظة (اختياري)' : 'A note (optional)'}</label><textarea id="f-notes" name="notes" rows="3" placeholder={ar ? 'هدية؟ رسالة على البطاقة؟' : 'A gift? A message for the card?'}></textarea></div>
       </fieldset>
 
-      <p class="err form-err" id="formErr" hidden></p>
-      <button class="btn tamr submit" type="submit">{ar ? 'أرسل الطلب المسبق' : 'Send my pre-order'}</button>
+      <p class="err form-err" id="formErr" hidden role="alert"></p>
+      <button class="btn tamr submit" type="submit"><span>{ar ? 'أرسل الطلب المسبق' : 'Send my pre-order'}</span></button>
     </form>
-
     <aside class="co-sum">
       <h2 class="h-s">{ar ? 'طلبك' : 'Your order'}</h2>
       <p class="empty-co" id="emptyCo" hidden>{ar ? 'سلتك فارغة، فلا شيء نرسله بعد.' : 'Your cart is empty, so there is nothing to send yet.'} <a class="btn primary" href={path(lang, 'shop')}>{ar ? 'إلى المتجر' : 'To the shop'}</a></p>
@@ -114,6 +108,13 @@ const slots = pickupSlots(8);
   .form-err { font-size: 15px; }
   .empty-co { font-weight: 600; display: grid; gap: 12px; justify-items: start; }
   .submit:disabled { opacity: .45; cursor: not-allowed; }
+  .submit.busy { opacity: .7; pointer-events: none; }
+  .acct { background: var(--sheet); border-radius: 16px; padding: 12px 16px; font-size: 15.5px; }
+  .acct a { color: var(--tamr); font-weight: 600; }
+  .closed { font-weight: 600; color: var(--tamr-2); }
+  .choice .left { font-weight: 500; }
+  .choice input:disabled + span { opacity: .45; cursor: not-allowed; }
+  .choice.pay { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
   .co-sum { background: var(--sheet); border-radius: 32px; border-bottom-right-radius: 6px; padding: 26px; display: grid; gap: 14px; position: sticky; top: 100px; }
   .co-sum ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
   .co-sum :global(li) { display: flex; justify-content: space-between; gap: 12px; font-size: 15.5px; }
@@ -126,13 +127,17 @@ const slots = pickupSlots(8);
 </style>
 
 <script>
-  import { read, totals, describe } from '../../scripts/cart';
+  import { read, totals, describe, clear } from '../../scripts/cart';
   const lang = document.documentElement.lang as 'en' | 'ar';
   const ar = lang === 'ar';
   const money = (n: number) => (ar ? `${n} $` : `$${n}`);
   const form = document.getElementById('co') as HTMLFormElement;
   const $ = (id: string) => document.getElementById(id)!;
-  const delivery = () => (form.elements.namedItem('method') as RadioNodeList).value === 'delivery';
+  const val = (n: string) => (form.elements.namedItem(n) as RadioNodeList | HTMLInputElement).value;
+  const delivery = () => val('method') === 'delivery';
+  type Day = { date: string; windows: { window: string; pickup: number; delivery: number }[] };
+  let days: Day[] = [];
+  let open = true;
 
   function paint() {
     const lines = read();
@@ -152,50 +157,98 @@ const slots = pickupSlots(8);
     $('sTot').textContent = money(t.total);
     $('addr').hidden = !delivery();
     $('emptyCo').hidden = lines.length > 0;
-    form.querySelector<HTMLButtonElement>('.submit')!.disabled = lines.length === 0;
+    paintWindows();
+    form.querySelector<HTMLButtonElement>('.submit')!.disabled = lines.length === 0 || !open;
     return { lines, t };
   }
-  form.addEventListener('change', paint);
-  paint();
 
-  const MSG = {
-    req: ar ? 'نحتاج هذا لنؤكد طلبك.' : 'We need this to confirm your order.',
+  // Live slots: how many places are left in each window for pickup or delivery.
+  const fmtDay = (iso: string) => new Date(iso + 'T12:00:00Z').toLocaleDateString(ar ? 'ar-u-nu-arab' : 'en-CA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+  function paintDays() {
+    const sel = $('f-day') as HTMLSelectElement;
+    const keep = sel.value;
+    sel.innerHTML = `<option value="">${ar ? 'اختر يوماً' : 'Choose a day'}</option>` + days.map(d => {
+      const left = d.windows.reduce((s, w) => s + (delivery() ? w.delivery : w.pickup), 0);
+      return `<option value="${d.date}" ${left ? '' : 'disabled'}>${fmtDay(d.date)}${left ? '' : (ar ? ' · ممتلئ' : ' · full')}</option>`;
+    }).join('');
+    if (keep) sel.value = keep;
+  }
+  function paintWindows() {
+    const day = days.find(d => d.date === ($('f-day') as HTMLSelectElement).value);
+    $('windows').querySelectorAll<HTMLInputElement>('input').forEach(inp => {
+      const w = day?.windows.find(x => x.window === inp.value);
+      const left = w ? (delivery() ? w.delivery : w.pickup) : null;
+      inp.disabled = left === 0;
+      const small = inp.parentElement!.querySelector('.left')!;
+      small.textContent = left === null ? '' : left === 0 ? (ar ? 'ممتلئ' : 'Full') : left <= 3 ? (ar ? `بقي ${left}` : `${left} left`) : '';
+      if (inp.disabled && inp.checked) { inp.checked = false; $('windows').querySelector<HTMLInputElement>('input:not(:disabled)')?.click(); }
+    });
+  }
+
+  async function load() {
+    try {
+      const [slots, cfg, me] = await Promise.all([fetch('/api/slots').then(r => r.json()), fetch('/api/config').then(r => r.json()), fetch('/api/me').then(r => r.json())]);
+      days = slots.days ?? []; open = slots.open !== false;
+      $('closed').hidden = open;
+      $('payCard').hidden = !cfg.card;
+      if (me.user) {
+        const em = $('f-email') as HTMLInputElement;
+        em.value = me.user.email; em.readOnly = true;
+        $('acctEmail').textContent = me.user.email; $('acctUser').hidden = false; $('acctGuest').hidden = true;
+      }
+    } catch {
+      $('formErr').textContent = ar ? 'تعذّر تحميل المواعيد. أعد تحميل الصفحة.' : 'We could not load the days. Refresh the page.'; $('formErr').hidden = false;
+    }
+    paintDays(); paint();
+  }
+  form.addEventListener('change', e => { if ((e.target as HTMLInputElement).name === 'method') paintDays(); paint(); });
+  load();
+
+  const MSG: Record<string, string> = {
+    required: ar ? 'نحتاج هذا لنؤكد طلبك.' : 'We need this to confirm your order.',
     email: ar ? 'تحقق من البريد، مثل name@example.com' : 'Check the email, like name@example.com',
+    phone: ar ? 'اكتب رقم هاتف من ١٠ أرقام.' : 'Enter a 10-digit phone number.',
     postal: ar ? 'نوصل داخل كالغاري فقط: يبدأ الرمز بـ T1 أو T2 أو T3. اختر الاستلام إن كنت خارجها.' : 'We only deliver in Calgary: codes start T1, T2 or T3. Choose pickup if you are outside it.',
-    empty: ar ? 'سلتك فارغة. أضف قهوة أو تمراً أولاً.' : 'Your cart is empty. Add a coffee or a box first.',
   };
-  const setErr = (el: HTMLInputElement | HTMLSelectElement, msg: string) => {
+  const FIELD: Record<string, string> = { name: 'f-name', phone: 'f-phone', email: 'f-email', street: 'f-street', postal: 'f-postal' };
+  const setErr = (el: HTMLElement, msg: string) => {
     const e = el.closest('.field')?.querySelector<HTMLElement>('.err');
     el.setAttribute('aria-invalid', msg ? 'true' : 'false');
     if (e) { e.textContent = msg; e.hidden = !msg; }
-    return !msg;
   };
 
-  form.addEventListener('submit', ev => {
-    const { lines, t } = paint();
-    let ok = true;
-    for (const id of ['f-name', 'f-phone', 'f-email', 'f-day']) {
-      const el = $(id) as HTMLInputElement;
-      ok = setErr(el, el.value.trim() ? '' : MSG.req) && ok;
-    }
-    const em = $('f-email') as HTMLInputElement;
-    if (em.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em.value)) ok = setErr(em, MSG.email) && false;
-    if (delivery()) {
-      const st = $('f-street') as HTMLInputElement, pc = $('f-postal') as HTMLInputElement;
-      ok = setErr(st, st.value.trim() ? '' : MSG.req) && ok;
-      // Canadian format A1A 1A1; Calgary codes start T1, T2 or T3. Accept lowercase, no space or a hyphen.
-      const code = pc.value.toUpperCase().replace(/[\s-]+/g, '');
-      const valid = /^T[123][A-Z]\d[A-Z]\d$/.test(code);
-      if (valid) pc.value = `${code.slice(0, 3)} ${code.slice(3)}`;
-      ok = setErr(pc, valid ? '' : MSG.postal) && ok;
-    }
-    const fe = $('formErr');
-    fe.hidden = lines.length > 0; fe.textContent = lines.length ? '' : MSG.empty;
-    if (!ok || !lines.length) { ev.preventDefault(); form.querySelector<HTMLElement>('[aria-invalid=true]')?.focus(); return; }
-    const ref = 'HK-' + Math.random().toString(36).slice(2, 7).toUpperCase();
-    ($('f-ref') as HTMLInputElement).value = ref;
-    ($('f-total') as HTMLInputElement).value = `$${t.total} (subtotal $${t.sub}, delivery $${t.fee})`;
-    ($('f-order') as HTMLInputElement).value = lines.map(l => { const d = describe(l, 'en'); return `${l.qty} x ${d.name}${d.opt ? ` (${d.opt})` : ''} @ $${d.price}`; }).join('\n');
-    try { sessionStorage.setItem('hikaya-ref', ref); } catch {}
+  form.addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const { lines } = paint();
+    form.querySelectorAll<HTMLElement>('[aria-invalid]').forEach(el => setErr(el, ''));
+    const fe = $('formErr'); fe.hidden = true;
+    if (!($('f-day') as HTMLSelectElement).value) { setErr($('f-day'), ar ? 'اختر يوماً.' : 'Choose a day.'); $('f-day').focus(); return; }
+    const btn = form.querySelector<HTMLButtonElement>('.submit')!;
+    btn.classList.add('busy');
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          lang, name: val('name'), phone: val('phone'), email: val('email'), method: val('method'), street: val('street'), postal: val('postal'),
+          day: val('day'), window: val('window'), payment: val('payment'), notes: val('notes'),
+          lines: lines.map(l => ({ id: l.id, opt: l.opt, qty: l.qty })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.fields) {
+          for (const [k, v] of Object.entries(data.fields)) if (FIELD[k]) setErr($(FIELD[k]), MSG[v as string] ?? MSG.required);
+          form.querySelector<HTMLElement>('[aria-invalid=true]')?.focus();
+        }
+        if (data.error === 'slot-full' || data.error === 'too-soon') { const s = await fetch('/api/slots').then(r => r.json()); days = s.days; paintDays(); paint(); }
+        fe.textContent = data.message ?? (ar ? 'تعذّر إرسال الطلب.' : 'We could not send your order.'); fe.hidden = false;
+        return;
+      }
+      clear();
+      if (data.payUrl) { location.href = data.payUrl; return; }
+      location.href = `/${lang}/thanks/?order=${encodeURIComponent(data.ref)}&t=${encodeURIComponent(data.token)}`;
+    } catch {
+      fe.textContent = ar ? 'انقطع الاتصال. حاول مرة أخرى.' : 'The connection dropped. Please try again.'; fe.hidden = false;
+    } finally { btn.classList.remove('busy'); }
   });
 </script>

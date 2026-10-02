@@ -1,0 +1,148 @@
+---
+// Customer account: log in with an email code, see every order placed with that email
+// (guest orders included), follow status and pickup/delivery day. A guest can open one order
+// from the link in their email without logging in.
+import Base from '../../layouts/Base.astro';
+import type { Lang } from '../../data/products';
+import { path } from '../../data/i18n';
+
+export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
+const lang = Astro.params.lang as Lang;
+const ar = lang === 'ar';
+---
+<Base lang={lang} title={ar ? 'حسابي' : 'My account'}>
+  <section class="wrap acc">
+    <div class="acc-head">
+      <h1 class="h-l" id="accTitle">{ar ? 'طلباتي' : 'My orders'}</h1>
+      <div class="acc-who" id="who" hidden><span id="whoEmail"></span> <button type="button" class="linkish" id="logout">{ar ? 'تسجيل الخروج' : 'Log out'}</button></div>
+    </div>
+    <div id="loading" class="muted">{ar ? 'جارٍ التحميل…' : 'Loading…'}</div>
+    <div id="login" hidden>
+      <p class="lead">{ar ? 'ادخل ببريدك الإلكتروني لترى طلباتك ومواعيد الاستلام والتوصيل. لا كلمة مرور: نرسل لك رمزاً.' : 'Log in with your email to see your orders and their pickup or delivery days. No password: we email you a code.'}</p>
+      <div id="loginBox" class="login-box"></div>
+      <p class="muted small">{ar ? 'طلبت كضيف؟ استخدم البريد نفسه وستجد طلباتك هنا.' : 'Ordered as a guest? Use the same email and your orders will be here.'}</p>
+    </div>
+    <div id="orders" class="orders"></div>
+    <div id="empty" hidden class="empty">
+      <p>{ar ? 'لا طلبات بعد بهذا البريد.' : 'No orders yet with this email.'}</p>
+      <a class="btn primary" href={path(lang, 'shop')}>{ar ? 'إلى المتجر' : 'To the shop'}</a>
+    </div>
+    <p id="guestNote" class="muted small" hidden>{ar ? 'هذا طلب واحد من رابط بريدك. سجّل الدخول لترى كل طلباتك.' : 'This is one order from your email link. Log in to see all your orders.'} <a href={path(lang, 'account')}>{ar ? 'دخول' : 'Log in'}</a></p>
+  </section>
+</Base>
+
+<style>
+  .acc { padding-block: clamp(40px, 6vw, 80px) clamp(64px, 8vw, 104px); display: grid; gap: 22px; max-width: 920px; }
+  .acc-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 10px 20px; }
+  .acc-who { font-size: 15px; color: var(--ink-2); }
+  .linkish { border: 0; background: none; padding: 0; color: var(--tamr); font-weight: 600; text-decoration: underline; text-underline-offset: .2em; margin-inline-start: 10px; }
+  .login-box { max-width: 460px; background: var(--sheet); border-radius: 28px; border-bottom-right-radius: 6px; padding: 22px; }
+  .login-box :global(.lg) { display: grid; gap: 14px; }
+  .login-box :global(.lg-row) { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .login-box :global(.lg-back) { border: 0; background: none; color: var(--ink-2); text-decoration: underline; }
+  .login-box :global(.lg-sent) { font-size: 15px; margin-bottom: 6px; }
+  .login-box :global(#lg-c) { font-size: 26px; letter-spacing: .35em; text-align: center; }
+  .small { font-size: 14.5px; }
+  .orders { display: grid; gap: 18px; }
+  .orders :global(.ord) { background: var(--sheet); border-radius: 28px; border-bottom-right-radius: 6px; padding: clamp(18px, 3vw, 28px); display: grid; gap: 14px; box-shadow: inset 0 0 0 1.5px var(--line); }
+  .orders :global(.ord.hl) { box-shadow: inset 0 0 0 2px var(--tamr); }
+  .orders :global(.ord-top) { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: baseline; }
+  .orders :global(.ref) { font-family: var(--display); font-weight: 700; font-size: 24px; color: var(--tamr); direction: ltr; }
+  .orders :global(.when) { font-weight: 600; font-size: 17px; }
+  .orders :global(.steps) { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .orders :global(.steps li) { font-size: 13px; font-weight: 600; color: var(--ink-2); border-top: 4px solid var(--line); padding-top: 6px; }
+  .orders :global(.steps li.on) { border-color: var(--khalal); color: var(--bunn); }
+  .orders :global(.steps li.now) { border-color: var(--bunn); color: var(--bunn); }
+  .orders :global(.cancelled) { font-weight: 700; color: var(--tamr-2); }
+  .orders :global(.its) { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 15.5px; }
+  .orders :global(.its li) { display: flex; justify-content: space-between; gap: 12px; }
+  .orders :global(.its small) { color: var(--ink-2); }
+  .orders :global(.tot) { display: flex; justify-content: space-between; font-weight: 700; border-top: 1px solid var(--line); padding-top: 10px; }
+  .orders :global(.pay) { font-size: 15px; }
+  .orders :global(.pay b) { color: var(--cardamom); }
+  .orders :global(.acts) { display: flex; gap: 12px; flex-wrap: wrap; }
+  .orders :global(.btn) { min-height: 44px; padding: 10px 18px; font-size: 15px; }
+  .empty { display: grid; gap: 14px; justify-items: start; }
+</style>
+
+<script>
+  import { mountLogin, logout } from '../../scripts/login';
+  const lang = document.documentElement.lang as 'en' | 'ar';
+  const ar = lang === 'ar';
+  const $ = (id: string) => document.getElementById(id)!;
+  const q = new URLSearchParams(location.search);
+  const money = (c: number) => { const v = (c / 100).toFixed(c % 100 ? 2 : 0); return ar ? `${v} $` : `$${v}`; };
+  const fmtDay = (iso: string) => new Date(iso + 'T12:00:00Z').toLocaleDateString(ar ? 'ar-u-nu-arab' : 'en-CA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+  const STEPS = {
+    pickup: [['received', ar ? 'وصل الطلب' : 'Received'], ['confirmed', ar ? 'تأكّد' : 'Confirmed'], ['ready', ar ? 'جاهز للاستلام' : 'Ready for pickup'], ['completed', ar ? 'تم الاستلام' : 'Picked up']],
+    delivery: [['received', ar ? 'وصل الطلب' : 'Received'], ['confirmed', ar ? 'تأكّد' : 'Confirmed'], ['out-for-delivery', ar ? 'في الطريق' : 'On its way'], ['completed', ar ? 'تم التوصيل' : 'Delivered']],
+  } as const;
+  const PAY: Record<string, string> = { 'at-pickup': ar ? 'الدفع عند الاستلام' : 'Pay at pickup or handover', 'e-transfer': 'Interac e-Transfer', card: ar ? 'بطاقة عبر Square' : 'Card through Square' };
+
+  function card(o: any) {
+    const steps = STEPS[o.method as 'pickup' | 'delivery'];
+    const idx = steps.findIndex(s => s[0] === o.status);
+    const where = o.method === 'pickup' ? (ar ? 'استلام · [العنوان]، كالغاري' : 'Pickup · [address], Calgary') : `${ar ? 'توصيل إلى' : 'Delivery to'} ${esc(o.street)}, ${esc(o.postal)}`;
+    const its = o.items.map((i: any) => `<li><span>${i.qty} × ${esc(ar ? i.name_ar : i.name_en)}${i.option_en ? `<br><small>${esc(ar ? i.option_ar : i.option_en)}</small>` : ''}</span><span class="tnum">${money(i.unit_cents * i.qty)}</span></li>`).join('');
+    const canCancel = o.status === 'received' && o.paymentStatus === 'unpaid' && !q.has('t');
+    return `<article class="ord${q.get('order') === o.ref ? ' hl' : ''}" id="o-${esc(o.ref)}">
+      <div class="ord-top"><span class="ref">${esc(o.ref)}</span><span class="when">${fmtDay(o.day)} · <span dir="ltr">${esc(o.window)}</span></span></div>
+      <p>${where}</p>
+      ${o.status === 'cancelled' ? `<p class="cancelled">${ar ? 'أُلغي هذا الطلب.' : 'This order was cancelled.'}</p>` :
+        `<ol class="steps">${steps.map((s, i) => `<li class="${i < idx ? 'on' : i === idx ? 'now' : ''}">${s[1]}</li>`).join('')}</ol>`}
+      <ul class="its">${its}${o.delivery ? `<li><span>${ar ? 'التوصيل' : 'Delivery'}</span><span class="tnum">${money(o.delivery)}</span></li>` : ''}</ul>
+      <p class="tot"><span>${ar ? 'الإجمالي' : 'Total'}</span><span class="tnum">${money(o.total)}</span></p>
+      <p class="pay">${PAY[o.payment] ?? ''} · ${o.paymentStatus === 'paid' ? `<b>${ar ? 'مدفوع' : 'Paid'}</b>` : (ar ? 'لم يُدفع بعد' : 'Not paid yet')}</p>
+      <div class="acts">${o.payUrl ? `<a class="btn tamr" href="${esc(o.payUrl)}">${ar ? 'ادفع الآن' : 'Pay now'}</a>` : ''}${canCancel ? `<button class="btn line" type="button" data-cancel="${esc(o.ref)}">${ar ? 'إلغاء الطلب' : 'Cancel order'}</button>` : ''}</div>
+    </article>`;
+  }
+
+  async function showMine() {
+    $('loading').hidden = false;
+    const r = await fetch('/api/my/orders');
+    $('loading').hidden = true;
+    if (r.status === 401) return showLogin();
+    const { orders } = await r.json();
+    $('orders').innerHTML = orders.map(card).join('');
+    $('empty').hidden = orders.length > 0;
+    document.getElementById(`o-${q.get('order')}`)?.scrollIntoView({ block: 'center' });
+  }
+  function showLogin() {
+    $('loading').hidden = true; $('login').hidden = false;
+    mountLogin($('loginBox'), lang, user => {
+      if (q.get('next') === 'checkout') { location.href = `/${lang}/checkout/`; return; }
+      if (user.role === 'admin' && q.get('next') === 'admin') { location.href = '/admin/'; return; }
+      $('login').hidden = true; setWho(user.email); showMine();
+    });
+  }
+  const setWho = (email: string) => { $('whoEmail').textContent = email; $('who').hidden = false; };
+
+  $('logout').addEventListener('click', async () => { await logout(); location.href = `/${lang}/account/`; });
+  $('orders').addEventListener('click', async e => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-cancel]');
+    if (!b || !confirm(ar ? 'هل تريد إلغاء هذا الطلب؟' : 'Cancel this order?')) return;
+    const r = await fetch('/api/my/orders/cancel', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ref: b.dataset.cancel }) });
+    const d = await r.json();
+    if (!r.ok) alert(d.message); else showMine();
+  });
+
+  (async () => {
+    // Guest link from an email: one order, no login needed.
+    if (q.get('order') && q.get('t')) {
+      const r = await fetch(`/api/orders/view?ref=${encodeURIComponent(q.get('order')!)}&t=${encodeURIComponent(q.get('t')!)}`);
+      $('loading').hidden = true;
+      if (r.ok) {
+        const { order } = await r.json();
+        $('accTitle').textContent = ar ? 'طلبك' : 'Your order';
+        $('orders').innerHTML = card(order);
+        $('guestNote').hidden = false;
+        return;
+      }
+    }
+    const me = await fetch('/api/me').then(r => r.json()).catch(() => ({ user: null }));
+    if (!me.user) return showLogin();
+    setWho(me.user.email);
+    showMine();
+  })();
+</script>

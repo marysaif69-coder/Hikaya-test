@@ -1,9 +1,13 @@
 User-agent: *
+Disallow: /api/
+Disallow: /admin/
 Disallow: /en/cart/
 Disallow: /ar/cart/
 Disallow: /en/checkout/
 Disallow: /ar/checkout/
 Disallow: /en/thanks/
 Disallow: /ar/thanks/
+Disallow: /en/account/
+Disallow: /ar/account/
 
 Sitemap: https://hikayacoffee.ca/sitemap-index.xml

@@ -1,0 +1,23 @@
+// Square tells us when a card payment completes; we mark the order paid.
+// In Square's Developer Dashboard, subscribe this URL to payment.updated.
+import type { Config } from '@netlify/functions';
+import { json, siteUrl } from '../lib/http';
+import { one } from '../lib/db';
+import { verifyWebhook } from '../lib/square';
+import { setPayment } from '../lib/orders';
+
+export default async (req: Request) => {
+  if (req.method !== 'POST') return json({ error: 'method' }, 405);
+  const raw = await req.text();
+  const notificationUrl = `${siteUrl(req)}/api/square/webhook`;
+  if (!verifyWebhook(raw, req.headers.get('x-square-hmacsha256-signature'), notificationUrl)) return json({ error: 'signature' }, 401);
+  const evt = JSON.parse(raw);
+  const payment = evt?.data?.object?.payment;
+  if (evt?.type === 'payment.updated' && payment?.status === 'COMPLETED' && payment.order_id) {
+    const o = await one`SELECT ref, payment_status FROM orders WHERE square_order_id = ${payment.order_id}`;
+    if (o && o.payment_status !== 'paid') await setPayment(o.ref, 'paid', 'square');
+  }
+  return json({ ok: true });
+};
+
+export const config: Config = { path: '/api/square/webhook' };

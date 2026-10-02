@@ -6,7 +6,7 @@ export default defineConfig({
   trailingSlash: 'always',
   build: { format: 'directory' },
   integrations: [sitemap({
-    filter: page => !/\/(cart|checkout|thanks)\/$/.test(page) && !page.endsWith('/404/'),
+    filter: page => !/\/(cart|checkout|thanks|account|admin)\/$/.test(page) && !page.endsWith('/404/'),
     i18n: { defaultLocale: 'en', locales: { en: 'en-CA', ar: 'ar' } },
   })],
 });

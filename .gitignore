@@ -26,3 +26,4 @@ node_modules/
 dist/
 .astro/
 hikaya-site-dist.zip
+.netlify/

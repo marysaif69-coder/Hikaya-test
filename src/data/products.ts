@@ -16,7 +16,8 @@ export interface Coffee {
   size: string;
   roast: number; // 1–4, as printed on the bag
   spices: Spice[];
-  grinds: ('dallah' | 'fine' | 'whole')[];
+  /** Every coffee is sold ground; the grind is set with the roaster. Qishr is whole husk. */
+  grinds: ('dallah' | 'fine')[];
   notes: L;
   story: L;
   ingredients: [string, string]; // EN, FR — as printed on the label
@@ -66,10 +67,9 @@ export const SPICES: Record<Spice, { c: string; name: L }> = {
   cinnamon: { c: '#7A3E1D', name: { en: 'Cinnamon', ar: 'قرفة' } },
 };
 
-export const GRINDS: Record<'dallah' | 'fine' | 'whole', L> = {
+export const GRINDS: Record<'dallah' | 'fine', L> = {
   dallah: { en: 'Ground for the dallah', ar: 'مطحون للدلّة' },
   fine: { en: 'Fine, for the pot', ar: 'ناعم للركوة' },
-  whole: { en: 'Whole bean', ar: 'حبوب كاملة' },
 };
 
 export const DATES: Record<DateId, { name: L; region: L; c: string; sweet: number; notes: L }> = {
@@ -83,61 +83,61 @@ export const DATES: Record<DateId, { name: L; region: L; c: string; sweet: numbe
 const C = (c: Omit<Coffee, 'kind' | 'size'> & { size?: string }): Coffee => ({ kind: 'coffee', size: '250 g', ...c });
 
 export const COFFEES: Coffee[] = [
-  C({ id: 'najdi', taste: { en: 'Golden · cardamom · saffron', ar: 'ذهبية · هيل · زعفران' }, art: { front: '/media/bags/najdi-front.webp', back: '/media/bags/najdi-back.webp' },  fam: 'palm', name: { en: 'Najdi', ar: 'نجدية' }, price: 24, roast: 1, spices: ['saffron', 'cardamom'], grinds: ['dallah', 'whole'],
+  C({ id: 'najdi', taste: { en: 'Golden · cardamom · saffron', ar: 'ذهبية · هيل · زعفران' }, art: { front: '/media/bags/najdi-front.webp', back: '/media/bags/najdi-back.webp' },  fam: 'palm', name: { en: 'Najdi', ar: 'نجدية' }, price: 24, roast: 1, spices: ['saffron', 'cardamom'], grinds: ['dallah'],
     notes: { en: 'Golden and light. Cardamom leads, with a touch of saffron.', ar: 'ذهبية وخفيفة، الهيل أولاً ولمسة زعفران.' },
     story: { en: "Najd's way: roasted light, poured from the dallah into a small cup, always with a date.", ar: 'على طريقة نجد: تحميص فاتح، تُصبّ من الدلّة في فنجان صغير، ومعها تمرة دائماً.' },
     ingredients: ['Coffee, saffron, cardamom.', 'Café, safran, cardamome.'],
     bunn: { en: 'Light, with cardamom and saffron.', ar: 'فاتحة، فيها هيل وزعفران.' }, date: 'khalas',
     why: { en: 'Toffee-soft Khalas rounds the saffron.', ar: 'خلاص الطرية تُليّن الزعفران.' } }),
-  C({ id: 'khaleeji', taste: { en: 'Floral · saffron · bright', ar: 'زهرية · زعفران · مشرقة' },  fam: 'palm', name: { en: 'Khaleeji', ar: 'خليجية' }, price: 24, roast: 1, spices: ['saffron', 'cardamom'], grinds: ['dallah', 'whole'],
+  C({ id: 'khaleeji', taste: { en: 'Floral · saffron · bright', ar: 'زهرية · زعفران · مشرقة' },  fam: 'palm', name: { en: 'Khaleeji', ar: 'خليجية' }, price: 24, roast: 1, spices: ['saffron', 'cardamom'], grinds: ['dallah'],
     notes: { en: 'Heavy on saffron, floral and golden.', ar: 'زعفران وافر، زهرية وذهبية.' },
     story: { en: "The coast's qahwa: the same light roast, more saffron, a brighter, floral cup.", ar: 'قهوة الساحل: التحميص الفاتح نفسه، بزعفران أكثر وفنجان أزهى.' },
     ingredients: ['Coffee, saffron, cardamom.', 'Café, safran, cardamome.'],
     bunn: { en: 'More saffron than my brother.', ar: 'زعفراني أكثر من أخي.' }, date: 'sukkari',
     why: { en: 'Sukkari’s caramel against a floral cup.', ar: 'كراميل السكري مع فنجان زهري.' } }),
-  C({ id: 'shamaliyya', taste: { en: 'Toasty · cardamom · round', ar: 'محمّصة · هيل · مستديرة' },  fam: 'palm', name: { en: 'Shamaliyya', ar: 'شمالية' }, price: 24, roast: 2, spices: ['cardamom'], grinds: ['dallah', 'whole'],
+  C({ id: 'shamaliyya', taste: { en: 'Toasty · cardamom · round', ar: 'محمّصة · هيل · مستديرة' },  fam: 'palm', name: { en: 'Shamaliyya', ar: 'شمالية' }, price: 24, roast: 2, spices: ['cardamom'], grinds: ['dallah'],
     notes: { en: 'Northern style, a shade darker, cardamom only.', ar: 'على طريقة الشمال، أغمق قليلاً، بالهيل فقط.' },
     story: { en: 'From the north of Arabia: a touch more roast and nothing but cardamom.', ar: 'من شمال الجزيرة: تحميص أعمق قليلاً ولا شيء غير الهيل.' },
     ingredients: ['Coffee, cardamom.', 'Café, cardamome.'],
     bunn: { en: 'From the north. Cardamom, nothing else.', ar: 'من الشمال، هيل ولا غيره.' }, date: 'khudri',
     why: { en: 'Firm Khudri for a deeper cup.', ar: 'خضري متماسك لفنجان أعمق.' } }),
-  C({ id: 'radaey', taste: { en: 'Fruity · ginger · warm', ar: 'فاكهية · زنجبيل · دافئة' },  fam: 'mountain', name: { en: "Rada'ey", ar: 'رداعي' }, price: 26, roast: 1, spices: ['ginger', 'cardamom'], grinds: ['dallah', 'whole'],
+  C({ id: 'radaey', taste: { en: 'Fruity · ginger · warm', ar: 'فاكهية · زنجبيل · دافئة' },  fam: 'mountain', name: { en: "Rada'ey", ar: 'رداعي' }, price: 26, roast: 1, spices: ['ginger', 'cardamom'], grinds: ['dallah'],
     notes: { en: 'A lighter roast with ginger and cardamom.', ar: 'تحميص فاتح مع الزنجبيل والهيل.' },
     story: { en: "From Rada'a in Yemen: bright coffee, warm ginger, made in the pot.", ar: 'من رداع في اليمن: قهوة مشرقة وزنجبيل دافئ، تُصنع في الإبريق.' },
     ingredients: ['Coffee, ginger, cardamom.', 'Café, gingembre, cardamome.'],
     bunn: { en: "Rada'a ginger, for the cold.", ar: 'زنجبيل رداع، للبرد.' }, date: 'medjool',
     why: { en: 'Big, honeyed Medjool meets the ginger.', ar: 'مجهول العسلية تلاقي الزنجبيل.' } }),
-  C({ id: 'jubani', taste: { en: 'Dried cherry · ginger · round', ar: 'كرز مجفف · زنجبيل · مستديرة' },  fam: 'mountain', name: { en: 'Jubani', ar: 'جُبَني' }, price: 26, roast: 2, spices: ['husk', 'cardamom', 'ginger'], grinds: ['dallah', 'whole'],
+  C({ id: 'jubani', taste: { en: 'Dried cherry · ginger · round', ar: 'كرز مجفف · زنجبيل · مستديرة' },  fam: 'mountain', name: { en: 'Jubani', ar: 'جُبَني' }, price: 26, roast: 2, spices: ['husk', 'cardamom', 'ginger'], grinds: ['dallah'],
     notes: { en: 'Coffee, coffee husk, cardamom and ginger.', ar: 'بُن وقشر وهيل وزنجبيل.' },
     story: { en: 'The bean and its own husk in one pot, the way Juban makes it.', ar: 'الحبّة وقشرها في إبريق واحد، على طريقة جُبَن.' },
     ingredients: ['Coffee, cardamom, ginger, coffee husk.', 'Café, cardamome, gingembre, cascara.'],
     bunn: { en: 'Me, and my own husk.', ar: 'أنا، ومعي قشري.' }, date: 'sukkari',
     why: { en: 'Sukkari answers the dried-cherry note.', ar: 'السكري يجاوب طعم الكرز المجفف.' } }),
-  C({ id: 'sanaani', taste: { en: 'Cocoa · dark fruit · full', ar: 'كاكاو · فاكهة داكنة · ممتلئة' },  fam: 'mountain', name: { en: "Sana'ani", ar: 'صنعاني' }, price: 26, roast: 3, spices: ['cardamom'], grinds: ['dallah', 'whole'],
+  C({ id: 'sanaani', taste: { en: 'Cocoa · dark fruit · full', ar: 'كاكاو · فاكهة داكنة · ممتلئة' },  fam: 'mountain', name: { en: "Sana'ani", ar: 'صنعاني' }, price: 26, roast: 3, spices: ['cardamom'], grinds: ['dallah'],
     notes: { en: 'A deeper roast, boiled with cardamom until it rises.', ar: 'تحميص أعمق، يُغلى مع الهيل حتى يفور.' },
     story: { en: "Sana'a's coffee: brought up to a rise three times, strong and full.", ar: 'قهوة صنعاء: تفور ثلاث مرات، قوية وممتلئة.' },
     ingredients: ['Coffee, cardamom.', 'Café, cardamome.'],
     bunn: { en: 'I rise three times.', ar: 'أفور ثلاث مرات.' }, date: 'ajwa',
     why: { en: 'Dark Ajwa holds up to a dark cup.', ar: 'العجوة الداكنة تصمد أمام فنجان داكن.' } }),
-  C({ id: 'baydani', taste: { en: 'Nutty · sesame · warm spice', ar: 'مكسرات · سمسم · بهار دافئ' }, art: { front: '/media/bags/baydani-front.webp', back: '/media/bags/baydani-back.webp' },  fam: 'mountain', name: { en: 'Baydani', ar: 'بيضاني' }, price: 26, roast: 3, spices: ['sesame', 'ginger', 'cinnamon'], grinds: ['dallah', 'whole'],
+  C({ id: 'baydani', taste: { en: 'Nutty · sesame · warm spice', ar: 'مكسرات · سمسم · بهار دافئ' }, art: { front: '/media/bags/baydani-front.webp', back: '/media/bags/baydani-back.webp' },  fam: 'mountain', name: { en: 'Baydani', ar: 'بيضاني' }, price: 26, roast: 3, spices: ['sesame', 'ginger', 'cinnamon'], grinds: ['dallah'],
     notes: { en: 'Coffee roasted with sesame, with ginger and cinnamon.', ar: 'بُن محمّص مع السمسم، مع الزنجبيل والقرفة.' },
     story: { en: "Al-Bayda's way: sesame goes into the roaster with the beans.", ar: 'على طريقة البيضاء: يدخل السمسم المحمصة مع الحبوب.' },
     ingredients: ['Coffee, sesame, ginger, cinnamon. Contains: sesame.', 'Café, sésame, gingembre, cannelle. Contient : sésame.'],
     bunn: { en: 'They roasted me with sesame.', ar: 'حمّصوني مع السمسم.' }, date: 'khalas',
     why: { en: 'Khalas toffee with toasted sesame.', ar: 'توفي خلاص مع السمسم المحمّص.' } }),
-  C({ id: 'lev-cardamom', taste: { en: 'Thick · bittersweet · cardamom', ar: 'كثيفة · مُرّة حلوة · هيل' },  fam: 'house', name: { en: 'Levantine, cardamom', ar: 'شامية بالهيل' }, price: 22, roast: 4, spices: ['cardamom'], grinds: ['fine', 'whole'],
+  C({ id: 'lev-cardamom', taste: { en: 'Thick · bittersweet · cardamom', ar: 'كثيفة · مُرّة حلوة · هيل' },  fam: 'house', name: { en: 'Levantine, cardamom', ar: 'شامية بالهيل' }, price: 22, roast: 4, spices: ['cardamom'], grinds: ['fine'],
     notes: { en: 'Our family’s dark roast, ground to powder, with cardamom.', ar: 'تحميص عائلتنا الغامق، مطحون ناعماً، بالهيل.' },
     story: { en: 'The Shami pot: fine, dark coffee boiled slowly, cardamom the way Syrian homes make it.', ar: 'الركوة الشامية: قهوة ناعمة غامقة تُغلى على مهل، بالهيل كما في البيوت الشامية.' },
     ingredients: ['Coffee, cardamom.', 'Café, cardamome.'],
     bunn: { en: 'Fine, for the pot.', ar: 'ناعمة، للركوة.' }, date: 'medjool',
     why: { en: 'A soft Medjool after a thick cup.', ar: 'مجهولة طرية بعد فنجان كثيف.' } }),
-  C({ id: 'lev-plain', taste: { en: 'Thick · bittersweet · plain', ar: 'كثيفة · مُرّة حلوة · سادة' }, art: { front: '/media/bags/lev-plain-front.webp', back: '/media/bags/lev-plain-back.webp' },  fam: 'house', name: { en: 'Levantine, plain', ar: 'شامية سادة' }, price: 20, roast: 4, spices: [], grinds: ['fine', 'whole'],
+  C({ id: 'lev-plain', taste: { en: 'Thick · bittersweet · plain', ar: 'كثيفة · مُرّة حلوة · سادة' }, art: { front: '/media/bags/lev-plain-front.webp', back: '/media/bags/lev-plain-back.webp' },  fam: 'house', name: { en: 'Levantine, plain', ar: 'شامية سادة' }, price: 20, roast: 4, spices: [], grinds: ['fine'],
     notes: { en: 'The same dark roast, nothing added.', ar: 'التحميص الغامق نفسه، بلا إضافات.' },
     story: { en: 'For those who take their coffee plain and their sweetness from the date.', ar: 'لمن يشرب قهوته سادة ويأخذ حلاوته من التمرة.' },
     ingredients: ['Coffee.', 'Café.'],
     bunn: { en: "I'm bitter today.", ar: 'أنا مُرّ اليوم.' }, date: 'medjool',
     why: { en: 'Then take two dates.', ar: 'خذ تمرتين إذن.' } }),
-  C({ id: 'qishr', taste: { en: 'Cherry · honey · light', ar: 'كرز · عسل · خفيفة' },  fam: 'husk', name: { en: 'Qishr', ar: 'قشر' }, price: 16, size: '100 g', roast: 0, spices: ['husk'], grinds: ['whole'],
+  C({ id: 'qishr', taste: { en: 'Cherry · honey · light', ar: 'كرز · عسل · خفيفة' },  fam: 'husk', name: { en: 'Qishr', ar: 'قشر' }, price: 16, size: '100 g', roast: 0, spices: ['husk'], grinds: [],
     notes: { en: 'Dried coffee cherry husks. Brew hot with ginger, or cold over ice.', ar: 'قشر ثمرة البن المجفف. ساخناً مع الزنجبيل أو بارداً على الثلج.' },
     story: { en: "Yemen's oldest coffee drink, older than the roasted bean. Light on caffeine.", ar: 'أقدم مشروبات البن في اليمن، أقدم من الحبّة المحمّصة. قليل الكافيين.' },
     ingredients: ['Coffee cherry husk.', 'Cascara.'],

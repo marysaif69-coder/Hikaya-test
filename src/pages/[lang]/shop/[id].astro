@@ -75,11 +75,8 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
       )}
 
       <form class="buy" onsubmit="return false">
-        {p.kind === 'coffee' && (
-          <fieldset class="choice">
-            <legend>{UI.grind[lang]}</legend>
-            {p.grinds.map((g, i) => <label><input type="radio" name="opt" value={g} checked={i === 0} /><span>{GRINDS[g][lang]}</span></label>)}
-          </fieldset>
+        {p.kind === 'coffee' && p.grinds.length > 0 && (
+          <p class="grind-line"><span class="label">{UI.grind[lang]}</span> {GRINDS[p.grinds[0]][lang]}<input type="hidden" name="opt" value={p.grinds[0]} /></p>
         )}
         {p.kind === 'box' && p.chooseDate && (
           <fieldset class="choice">
@@ -209,6 +206,8 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
   .facts { display: grid; gap: 12px; }
   .roast { display: flex; align-items: center; gap: 10px; }
   .buy { display: grid; gap: 18px; padding-top: 6px; }
+  .grind-line { font-weight: 600; }
+  .grind-line .label { margin-inline-end: 8px; }
   .choice { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
   .choice legend { font-weight: 600; font-size: 15px; margin-bottom: 10px; }
   .choice input { position: absolute; opacity: 0; }

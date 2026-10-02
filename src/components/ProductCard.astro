@@ -7,7 +7,7 @@ interface Props { p: Product; lang: Lang }
 const { p, lang } = Astro.props;
 const href = path(lang, `shop/${p.id}`);
 const sub = p.kind === 'coffee' ? `${FAMILIES[p.fam].name[lang]} · ${p.size}` : `${FAMILIES[p.fam].name[lang]} · ${p.size[lang]}`;
-const defaultOpt = p.kind === 'coffee' ? p.grinds[0] : p.chooseDate ? 'khalas' : '';
+const defaultOpt = p.kind === 'coffee' ? (p.grinds[0] ?? '') : p.chooseDate ? 'khalas' : '';
 ---
 <article class={`pc pc-${p.kind}`}>
   <a href={href} class="pc-media" tabindex="-1" aria-hidden="true">

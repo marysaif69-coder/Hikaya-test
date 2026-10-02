@@ -14,6 +14,8 @@ const ar = lang === 'ar';
       <Pair lang={lang} size="l" bunn={{ ar: 'وصل طلبك.', en: 'Your order arrived.' }} tamr={{ ar: 'والتمرة تنتظرك.', en: 'And the date is waiting.' }} />
       <h1 class="h-m">{ar ? 'شكراً. نؤكد طلبك بالبريد قريباً.' : 'Thank you. We’ll confirm your order by email soon.'}</h1>
       <p class="ref" id="ref"></p>
+      <p class="muted">{ar ? 'أرسلنا لك بريداً بالتفاصيل. يمكنك متابعة طلبك في أي وقت.' : 'We emailed you the details. You can follow your order any time.'}</p>
+      <a class="btn tamr" id="follow" href={path(lang, 'account')}>{ar ? 'تابع طلبك' : 'Follow your order'}</a>
     </div>
     <div data-kind="list" hidden>
       <Pair lang={lang} size="l" bunn={{ ar: 'سجّلنا بريدك.', en: 'We have your email.' }} tamr={{ ar: 'ثلاث رسائل فقط في السنة.', en: 'Only three letters a year.' }} />
@@ -44,8 +46,9 @@ const ar = lang === 'ar';
   document.querySelector<HTMLElement>(`[data-kind="${kind}"]`)!.hidden = false;
   if (kind === 'order') {
     clear();
-    let ref = '';
-    try { ref = sessionStorage.getItem('hikaya-ref') || ''; } catch {}
-    if (ref) document.getElementById('ref')!.textContent = (document.documentElement.lang === 'ar' ? 'رقم الطلب: ' : 'Order reference: ') + ref;
+    const ref = q.get('order'), t = q.get('t');
+    const lang = document.documentElement.lang;
+    if (ref) document.getElementById('ref')!.textContent = (lang === 'ar' ? 'رقم الطلب: ' : 'Order number: ') + ref;
+    if (ref && t) (document.getElementById('follow') as HTMLAnchorElement).href = `/${lang}/account/?order=${encodeURIComponent(ref)}&t=${encodeURIComponent(t)}`;
   }
 </script>
