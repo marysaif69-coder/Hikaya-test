@@ -154,7 +154,7 @@ export const BOXES: Box[] = [
     insert: 'D24', sleeve: 'regular',
     notes: { en: 'Sukkari, Khalas, Khudri and Ajwa, six of each, side by side.', ar: 'سكري وخلاص وخضري وعجوة، ست من كل صنف، جنباً إلى جنب.' },
     contents: { en: 'Gift box, 24 dates in paper cups, four varieties.', ar: 'صندوق هدية، ٢٤ تمرة في أكواب ورقية، أربعة أصناف.' }, preorder: true },
-  { kind: 'box', id: 'iftar-pair', fam: 'ramadan', name: { en: 'The Iftar Pair', ar: 'زوج الإفطار' }, price: 54, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/iftar-pair.webp',
+  { kind: 'box', id: 'iftar-pair', fam: 'ramadan', name: { en: 'The Iftar Pair', ar: 'ثنائي الإفطار' }, price: 54, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/iftar-pair.webp',
     insert: 'C12', sleeve: 'ramadan',
     notes: { en: 'One coffee and twelve dates, for the first cup after sunset.', ar: 'قهوة واثنتا عشرة تمرة، لأول فنجان بعد الغروب.' },
     contents: { en: 'Gift box with Najdi coffee and 12 Khalas dates.', ar: 'صندوق هدية فيه قهوة نجدية و١٢ تمرة خلاص.' }, preorder: true },
