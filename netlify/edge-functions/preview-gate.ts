@@ -7,7 +7,15 @@
 const COOKIE = 'hk_preview';
 const DAYS = 30;
 
-const env = (k: string): string => (globalThis as any).Netlify?.env?.get(k) ?? (globalThis as any).process?.env?.[k] ?? '';
+const env = (k: string): string => {
+  const g = globalThis as any;
+  try { const v = g.Netlify?.env?.get(k); if (v) return String(v); } catch { /* not on Netlify */ }
+  try { const v = g.Deno?.env?.get(k); if (v) return String(v); } catch { /* no permission */ }
+  return g.process?.env?.[k] ?? '';
+};
+// Codes are compared without surrounding spaces and without caring about capitals, so a stray
+// space or a capital letter in Netlify or on a phone keyboard doesn't lock people out.
+const norm = (v: string) => v.normalize('NFKC').trim().toLowerCase();
 
 async function digest(text: string) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -27,7 +35,7 @@ const NOINDEX = 'noindex, nofollow, noarchive';
 
 export default async (req: Request, context: { next: () => Promise<Response> }) => {
   if (env('SITE_PUBLIC').toLowerCase() === 'true') return context.next();
-  const password = env('PREVIEW_PASSWORD');
+  const password = norm(env('PREVIEW_PASSWORD'));
 
   const url = new URL(req.url);
   // The cookie holds a hash of the passcode, so changing the passcode signs everyone out.
@@ -39,7 +47,7 @@ export default async (req: Request, context: { next: () => Promise<Response> }) 
 
   if (url.pathname === '/__preview' && req.method === 'POST') {
     const form = await req.formData().catch(() => null);
-    const given = String(form?.get('code') ?? '').trim();
+    const given = norm(String(form?.get('code') ?? ''));
     const next = safeNext(form?.get('next'));
     if (password && sameText(await digest(`hikaya-preview:${given}`), token)) {
       return new Response(null, { status: 303, headers: {
@@ -49,7 +57,7 @@ export default async (req: Request, context: { next: () => Promise<Response> }) 
       } });
     }
     await new Promise(r => setTimeout(r, 600)); // slow down guessing
-    return gate(next, true);
+    return gate(next, password ? 'wrong' : 'unset');
   }
 
   if (password && sameText(readCookie(req), token)) {
@@ -62,10 +70,11 @@ export default async (req: Request, context: { next: () => Promise<Response> }) 
   if (url.pathname.startsWith('/api/')) {
     return new Response(JSON.stringify({ error: 'preview', message: 'This site is in private preview.' }), { status: 401, headers: { 'content-type': 'application/json', 'x-robots-tag': NOINDEX, 'cache-control': 'no-store' } });
   }
-  return gate(url.pathname + url.search, false);
+  return gate(url.pathname + url.search, 'ask');
 };
 
-function gate(next: string, wrong: boolean) {
+function gate(next: string, state: 'ask' | 'wrong' | 'unset') {
+  const wrong = state !== 'ask';
   const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
   const html = `<!doctype html>
 <html lang="ar" dir="rtl">
@@ -110,7 +119,8 @@ function gate(next: string, wrong: boolean) {
     <label for="code">رمز المعاينة · Preview code</label>
     <input id="code" name="code" type="password" autocomplete="current-password" required autofocus>
     <input type="hidden" name="next" value="${esc(next)}">
-    ${wrong ? '<p class="err" role="alert">الرمز غير صحيح · That code is not right.</p>' : ''}
+    ${state === 'wrong' ? '<p class="err" role="alert">الرمز غير صحيح · That code is not right.</p>' : ''}
+    ${state === 'unset' ? '<p class="err" role="alert">The site has no preview code yet. In Netlify, add PREVIEW_PASSWORD (scopes: All, or include Functions), then redeploy.</p>' : ''}
     <button type="submit">ادخل · Enter</button>
   </form>
   <p class="foot">وللحكاية بقية · <a href="https://www.instagram.com/hikaya.yyc/" rel="noopener" dir="ltr">@hikaya.yyc</a></p>

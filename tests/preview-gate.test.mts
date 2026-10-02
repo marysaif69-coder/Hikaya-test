@@ -10,7 +10,8 @@ let pass = 0; const ok = (m: string) => { pass++; console.log('  ✓', m); };
 delete process.env.PREVIEW_PASSWORD; delete process.env.SITE_PUBLIC;
 const closed = await run('/en/');
 assert.ok((await closed.text()).includes('Coming soon')); ok('hidden by default: no settings means the Coming soon screen');
-assert.equal((await run('/__preview', { method: 'POST', body: new URLSearchParams({ code: '' }) })).status, 401); ok('without a passcode nobody can get in');
+const unset = await run('/__preview', { method: 'POST', body: new URLSearchParams({ code: 'anything' }) });
+assert.equal(unset.status, 401); assert.ok((await unset.text()).includes('no preview code yet')); ok('without a passcode nobody gets in, and the screen says why');
 process.env.SITE_PUBLIC = 'true';
 assert.equal(await (await run('/en/')).text(), '<h1>shop</h1>'); ok('SITE_PUBLIC=true opens the site');
 delete process.env.SITE_PUBLIC;
@@ -25,6 +26,7 @@ assert.equal(await (await run('/robots.txt')).text(), 'User-agent: *\nDisallow: 
 const post = (code: string, next = '/en/shop/') => run('/__preview', { method: 'POST', body: new URLSearchParams({ code, next }) });
 const bad = await post('wrong');
 assert.equal(bad.status, 401); assert.ok((await bad.text()).includes('not right')); ok('wrong code refused');
+assert.equal((await post('  Dates-2027 ')).status, 303); ok('spaces and capitals do not matter');
 const good = await post('dates-2027');
 assert.equal(good.status, 303); assert.equal(good.headers.get('location'), '/en/shop/');
 const cookie = good.headers.get('set-cookie')!.split(';')[0];
