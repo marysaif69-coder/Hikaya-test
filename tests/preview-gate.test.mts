@@ -7,8 +7,13 @@ const page = () => new Response('<h1>shop</h1>', { headers: { 'content-type': 't
 const run = (path: string, init: RequestInit = {}) => gate(new Request(H + path, init), { next: async () => page() });
 let pass = 0; const ok = (m: string) => { pass++; console.log('  ✓', m); };
 
-delete process.env.PREVIEW_PASSWORD;
-assert.equal(await (await run('/en/')).text(), '<h1>shop</h1>'); ok('no PREVIEW_PASSWORD: site is open as normal');
+delete process.env.PREVIEW_PASSWORD; delete process.env.SITE_PUBLIC;
+const closed = await run('/en/');
+assert.ok((await closed.text()).includes('Coming soon')); ok('hidden by default: no settings means the Coming soon screen');
+assert.equal((await run('/__preview', { method: 'POST', body: new URLSearchParams({ code: '' }) })).status, 401); ok('without a passcode nobody can get in');
+process.env.SITE_PUBLIC = 'true';
+assert.equal(await (await run('/en/')).text(), '<h1>shop</h1>'); ok('SITE_PUBLIC=true opens the site');
+delete process.env.SITE_PUBLIC;
 
 process.env.PREVIEW_PASSWORD = 'dates-2027';
 const g = await run('/en/shop/?x=1');

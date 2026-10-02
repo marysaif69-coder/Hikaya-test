@@ -1,6 +1,8 @@
-// Private preview. While PREVIEW_PASSWORD is set in Netlify, every page and API call asks for
-// the passcode first, search engines are told not to index anything, and robots.txt blocks
-// crawlers. To open the site to everyone: delete PREVIEW_PASSWORD and redeploy.
+// Private preview, hidden by default. Unless SITE_PUBLIC is "true" in Netlify, every page and API
+// call shows a "Coming soon" screen first, search engines are told not to index anything, and
+// robots.txt blocks crawlers. With PREVIEW_PASSWORD set, the screen has a code box that lets
+// testers in; without it nobody gets in. To open the site to everyone at launch: set
+// SITE_PUBLIC=true and redeploy.
 
 const COOKIE = 'hk_preview';
 const DAYS = 30;
@@ -24,12 +26,12 @@ const safeNext = (v: unknown) => (typeof v === 'string' && /^\/(?!\/)[^\s]*$/.te
 const NOINDEX = 'noindex, nofollow, noarchive';
 
 export default async (req: Request, context: { next: () => Promise<Response> }) => {
+  if (env('SITE_PUBLIC').toLowerCase() === 'true') return context.next();
   const password = env('PREVIEW_PASSWORD');
-  if (!password) return context.next();
 
   const url = new URL(req.url);
   // The cookie holds a hash of the passcode, so changing the passcode signs everyone out.
-  const token = await digest(`hikaya-preview:${password}`);
+  const token = password ? await digest(`hikaya-preview:${password}`) : 'closed';
 
   if (url.pathname === '/robots.txt') {
     return new Response('User-agent: *\nDisallow: /\n', { headers: { 'content-type': 'text/plain; charset=utf-8', 'x-robots-tag': NOINDEX } });
@@ -39,7 +41,7 @@ export default async (req: Request, context: { next: () => Promise<Response> }) 
     const form = await req.formData().catch(() => null);
     const given = String(form?.get('code') ?? '').trim();
     const next = safeNext(form?.get('next'));
-    if (sameText(await digest(`hikaya-preview:${given}`), token)) {
+    if (password && sameText(await digest(`hikaya-preview:${given}`), token)) {
       return new Response(null, { status: 303, headers: {
         location: next,
         'set-cookie': `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${DAYS * 86400}`,
@@ -50,7 +52,7 @@ export default async (req: Request, context: { next: () => Promise<Response> }) 
     return gate(next, true);
   }
 
-  if (sameText(readCookie(req), token)) {
+  if (password && sameText(readCookie(req), token)) {
     const res = await context.next();
     const out = new Response(res.body, res);
     out.headers.set('x-robots-tag', NOINDEX);
