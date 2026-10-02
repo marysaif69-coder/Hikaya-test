@@ -1,0 +1,490 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-02T02:52:13+00:00",
+  "title": "Design System: Hikaya",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#F5EFE3",
+        "tonalRamp": [
+          "#382C14",
+          "#624D23",
+          "#8B6D32",
+          "#B48E40",
+          "#C8A765",
+          "#D7BF8E",
+          "#E7D8BB",
+          "#F8F4EC"
+        ]
+      },
+      "paper-2": {
+        "role": "neutral",
+        "displayName": "Paper Fold",
+        "canonical": "#EDE3D0",
+        "tonalRamp": [
+          "#372C15",
+          "#604B25",
+          "#886B34",
+          "#B18B44",
+          "#C5A568",
+          "#D5BD90",
+          "#E6D7BD",
+          "#F8F4ED"
+        ]
+      },
+      "sheet": {
+        "role": "neutral",
+        "displayName": "Sheet",
+        "canonical": "#FBF8F1",
+        "tonalRamp": [
+          "#3B2F11",
+          "#67511D",
+          "#93732A",
+          "#BE9636",
+          "#D1AE5C",
+          "#DDC488",
+          "#EBDBB8",
+          "#F9F5EB"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "canonical": "#DFD1BA",
+        "tonalRamp": [
+          "#342A18",
+          "#5B482A",
+          "#81673C",
+          "#A7854E",
+          "#BDA070",
+          "#CFB996",
+          "#E2D5C0",
+          "#F7F3EE"
+        ]
+      },
+      "bunn": {
+        "role": "primary",
+        "displayName": "Bunn Roast Brown",
+        "canonical": "#33211A",
+        "tonalRamp": [
+          "#33211A",
+          "#58392D",
+          "#7D5140",
+          "#A26953",
+          "#B88875",
+          "#CBA89A",
+          "#E0CBC2",
+          "#F6F0EE"
+        ]
+      },
+      "bunn-2": {
+        "role": "primary",
+        "displayName": "Bunn Lifted",
+        "canonical": "#4A3127",
+        "tonalRamp": [
+          "#32211A",
+          "#57392E",
+          "#7C5241",
+          "#A06A54",
+          "#B78976",
+          "#CAA89B",
+          "#DFCBC3",
+          "#F6F1EE"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Bunn Ink Soft",
+        "canonical": "#66503F",
+        "tonalRamp": [
+          "#2F251D",
+          "#524033",
+          "#755B48",
+          "#97775D",
+          "#AF937E",
+          "#C5B0A0",
+          "#DCD0C6",
+          "#F5F2EF"
+        ]
+      },
+      "tamr": {
+        "role": "secondary",
+        "displayName": "Tamr Date Red",
+        "canonical": "#A93B28",
+        "tonalRamp": [
+          "#3E160F",
+          "#6B2519",
+          "#993524",
+          "#C6452F",
+          "#D76956",
+          "#E29183",
+          "#EDBDB5",
+          "#FAEDEA"
+        ]
+      },
+      "tamr-2": {
+        "role": "secondary",
+        "displayName": "Tamr Deep",
+        "canonical": "#8E2F1F",
+        "tonalRamp": [
+          "#3F150E",
+          "#6D2418",
+          "#9B3322",
+          "#C9432C",
+          "#DA6753",
+          "#E49081",
+          "#EFBCB4",
+          "#FAECEA"
+        ]
+      },
+      "tamr-ink": {
+        "role": "secondary",
+        "displayName": "Tamr Cream",
+        "canonical": "#FFF6EE",
+        "tonalRamp": [
+          "#43250A",
+          "#743F11",
+          "#A55A18",
+          "#D6751F",
+          "#E59248",
+          "#ECAF79",
+          "#F4CFAF",
+          "#FCF2E9"
+        ]
+      },
+      "khalal": {
+        "role": "tertiary",
+        "displayName": "Khalal Seed Gold",
+        "canonical": "#CF9C0C",
+        "tonalRamp": [
+          "#43340A",
+          "#745A11",
+          "#A58018",
+          "#D6A61F",
+          "#E5BC48",
+          "#ECCE79",
+          "#F4E2AF",
+          "#FCF7E9"
+        ]
+      },
+      "khalal-2": {
+        "role": "tertiary",
+        "displayName": "Khalal Light",
+        "canonical": "#E7C866",
+        "tonalRamp": [
+          "#42350A",
+          "#735B12",
+          "#A3821A",
+          "#D4A921",
+          "#E3BE4A",
+          "#EACF7B",
+          "#F3E2B0",
+          "#FCF7E9"
+        ]
+      },
+      "cardamom": {
+        "role": "neutral",
+        "displayName": "Cardamom",
+        "canonical": "#5E7A2E",
+        "tonalRamp": [
+          "#2B3815",
+          "#4A6024",
+          "#6A8934",
+          "#89B243",
+          "#A3C667",
+          "#BCD590",
+          "#D7E6BC",
+          "#F4F8EC"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "voice": {
+        "displayName": "Voice",
+        "purpose": "Bunn and Tamr speech bubbles; hero scale shown, steps at 40px, 25px, 18px."
+      },
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page openers (Story, Eid)."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section heads."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Sub-heads and hero h1 band."
+      },
+      "title-s": {
+        "displayName": "Title S",
+        "purpose": "Family and small section names."
+      },
+      "lead": {
+        "displayName": "Lead",
+        "purpose": "Intro paragraphs, Bunn Ink Soft, max 54ch."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running text, 62ch measure."
+      },
+      "body-ar": {
+        "displayName": "Body (Arabic)",
+        "purpose": "Running text on Arabic pages."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Small sentence-case field and meter labels."
+      },
+      "guest": {
+        "displayName": "Guest",
+        "purpose": "Guest lines only, Nastaliq."
+      }
+    },
+    "shadows": [
+      {
+        "name": "object-on-paper",
+        "value": "drop-shadow(0 22px 22px rgba(51, 33, 26, .28))",
+        "purpose": "filter on standing pouches and box lid on paper."
+      },
+      {
+        "name": "object-on-bunn",
+        "value": "drop-shadow(0 28px 30px rgba(0, 0, 0, .35))",
+        "purpose": "filter on the pouch in the Bunn pairing band."
+      },
+      {
+        "name": "card-over-photo",
+        "value": "0 30px 60px -30px rgba(0, 0, 0, .5)",
+        "purpose": "Paper cards laid on Ramadan/Eid photographs."
+      },
+      {
+        "name": "guest-note",
+        "value": "0 14px 30px -22px rgba(51, 33, 26, .6)",
+        "purpose": "Guest bubbles on the guest wall."
+      },
+      {
+        "name": "field-focus-halo",
+        "value": "0 0 0 4px color-mix(in srgb, #CF9C0C 35%, transparent)",
+        "purpose": "Focus ring on text fields with a Bunn border."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-house",
+        "value": "cubic-bezier(.16, 1, .3, 1)",
+        "purpose": "All transitions and entrances."
+      },
+      {
+        "name": "press",
+        "value": "transform .18s ease-house; scale(.97)",
+        "purpose": "Button press."
+      },
+      {
+        "name": "say",
+        "value": ".7s ease-house; from opacity 0, translateY(10px) scale(.98)",
+        "purpose": "Bunn bubble arrives; Tamr follows with .55s delay."
+      },
+      {
+        "name": "answer",
+        "value": ".9s ease-house; hidden until 45%, then rises",
+        "purpose": "Tamr replays its answer when a new coffee is picked."
+      },
+      {
+        "name": "stand",
+        "value": ".9s .25s ease-house; from translateY(26px) rotate(-3deg)",
+        "purpose": "Hero pouch stands up."
+      },
+      {
+        "name": "rise",
+        "value": ".7s ease-house; from opacity 0, translateY(14px), blur(4px)",
+        "purpose": "Sections entering on scroll (IntersectionObserver)."
+      },
+      {
+        "name": "bump",
+        "value": ".5s ease-house; scale(1.35) at 30%",
+        "purpose": "Cart count on add."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation: none; transition: none",
+        "purpose": "All motion removed under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact",
+        "value": "520px"
+      },
+      {
+        "name": "stack-panels",
+        "value": "760px"
+      },
+      {
+        "name": "stack-heads",
+        "value": "800px"
+      },
+      {
+        "name": "stack",
+        "value": "900px"
+      },
+      {
+        "name": "nav-collapse",
+        "value": "1020px"
+      },
+      {
+        "name": "max",
+        "value": "1280px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button (Bunn)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main action; Bunn pill with Bunn's bottom-right tail.",
+      "html": "<button class=\"ds-btn-primary\">Shop coffee &amp; dates</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:15px 22px 16px;border:0;border-radius:999px;border-bottom-right-radius:6px;background:var(--bunn,#33211A);color:var(--paper,#F5EFE3);font:600 16px/1.2 'IBM Plex Sans',system-ui,sans-serif;cursor:pointer;transition:transform .18s cubic-bezier(.16,1,.3,1),background-color .18s}.ds-btn-primary:hover{background:var(--bunn-2,#4A3127)}.ds-btn-primary:active{transform:scale(.97)}.ds-btn-primary:focus-visible{outline:2.5px solid var(--tamr,#A93B28);outline-offset:3px}"
+    },
+    {
+      "name": "Tamr Button",
+      "kind": "button",
+      "refersTo": "button-tamr",
+      "description": "The answering action (pre-order, add the pair); Tamr pill with the bottom-left tail.",
+      "html": "<button class=\"ds-btn-tamr\">Pre-order for Ramadan</button>",
+      "css": ".ds-btn-tamr{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:15px 22px 16px;border:0;border-radius:999px;border-bottom-left-radius:6px;background:var(--tamr,#A93B28);color:var(--tamr-ink,#FFF6EE);font:600 16px/1.2 'IBM Plex Sans',system-ui,sans-serif;cursor:pointer;transition:transform .18s cubic-bezier(.16,1,.3,1),background-color .18s}.ds-btn-tamr:hover{background:var(--tamr-2,#8E2F1F)}.ds-btn-tamr:active{transform:scale(.97)}.ds-btn-tamr:focus-visible{outline:2.5px solid var(--tamr,#A93B28);outline-offset:3px}"
+    },
+    {
+      "name": "Line Button",
+      "kind": "button",
+      "refersTo": "button-line",
+      "description": "Quiet secondary action; Bunn inset stroke that fills on hover.",
+      "html": "<button class=\"ds-btn-line\">About this coffee</button>",
+      "css": ".ds-btn-line{display:inline-flex;align-items:center;min-height:50px;padding:15px 22px 16px;border:0;border-radius:999px;background:transparent;color:var(--bunn,#33211A);box-shadow:inset 0 0 0 1.5px var(--bunn,#33211A);font:600 16px/1.2 'IBM Plex Sans',system-ui,sans-serif;cursor:pointer;transition:background-color .18s,color .18s}.ds-btn-line:hover{background:var(--bunn,#33211A);color:var(--paper,#F5EFE3)}.ds-btn-line:focus-visible{outline:2.5px solid var(--tamr,#A93B28);outline-offset:3px}"
+    },
+    {
+      "name": "Speech Bubble Pair",
+      "kind": "custom",
+      "refersTo": "bubble-bunn",
+      "description": "Bunn speaks first on the right (tail bottom-right), Tamr answers on the left (tail bottom-left); physical sides, never mirrored in RTL. Arabic first.",
+      "html": "<div class=\"ds-pair\"><p class=\"ds-say ds-bunn\"><span lang=\"ar\">ضيف جديد في كالغاري.</span><span class=\"ds-en\">A new guest in Calgary.</span></p><p class=\"ds-say ds-tamr\"><span lang=\"ar\">مكانك محفوظ، والتمرة جاهزة.</span><span class=\"ds-en\">Your seat is kept, the date is ready.</span></p></div>",
+      "css": ".ds-pair{display:grid;gap:10px;max-width:520px}.ds-say{margin:0;border-radius:26px;padding:.7em 1.05em .8em;font:600 25px/1.3 'El Messiri','IBM Plex Sans Arabic',Georgia,serif;width:fit-content;max-width:100%}.ds-say [lang=ar]{display:block;direction:rtl}.ds-bunn{background:var(--bunn,#33211A);color:var(--paper,#F5EFE3);border-bottom-right-radius:5px;margin-left:auto;text-align:right}.ds-tamr{background:var(--tamr,#A93B28);color:var(--tamr-ink,#FFF6EE);border-bottom-left-radius:5px;margin-right:auto}.ds-en{display:block;font:400 15px/1.4 'IBM Plex Sans',system-ui,sans-serif;opacity:.82;margin-top:.3em}"
+    },
+    {
+      "name": "Season Sleeve",
+      "kind": "custom",
+      "refersTo": "sleeve-regular",
+      "description": "Full-width band above the header carrying the season line; Khalal regular and Eid, Tamr for Ramadan.",
+      "html": "<div class=\"ds-sleeve\"><p>Ramadan pre-orders open January 2027 · pickup and our own delivery across Calgary</p></div><div class=\"ds-sleeve ds-ramadan\"><p>Ramadan orders arrive before sunset</p></div>",
+      "css": ".ds-sleeve{display:flex;align-items:center;justify-content:center;min-height:40px;padding:8px 16px;background:var(--khalal,#CF9C0C);color:var(--bunn,#33211A);font:500 14.5px/1.4 'IBM Plex Sans',system-ui,sans-serif;text-align:center}.ds-sleeve p{margin:0}.ds-sleeve.ds-ramadan{background:var(--tamr,#A93B28);color:var(--tamr-ink,#FFF6EE)}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Sheet field with Line stroke; focus turns Bunn with a Khalal halo.",
+      "html": "<label class=\"ds-field\"><span>Your line</span><input placeholder=\"In Arabic or English\"></label>",
+      "css": ".ds-field{display:grid;gap:7px;font:600 15px/1.4 'IBM Plex Sans',system-ui,sans-serif;color:var(--bunn,#33211A)}.ds-field input{font:400 17px/1.4 'IBM Plex Sans',system-ui,sans-serif;border:1.5px solid var(--line,#DFD1BA);background:var(--sheet,#FBF8F1);border-radius:14px;padding:13px 15px;color:inherit;caret-color:var(--tamr,#A93B28);transition:border-color .15s,box-shadow .15s}.ds-field input::placeholder{color:#75604F}.ds-field input:focus{outline:none;border-color:var(--bunn,#33211A);box-shadow:0 0 0 4px rgba(207,156,12,.35)}"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "refersTo": "nav-link-current",
+      "description": "Pill links on translucent paper; current page filled Bunn; Bunn cart pill with Khalal count.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\" aria-current=\"page\">Shop</a><a href=\"#\">Ramadan</a><a href=\"#\">Eid</a><a href=\"#\">Brew</a><a class=\"ds-cart\" href=\"#\">Cart <span>2</span></a></nav>",
+      "css": ".ds-nav{display:flex;align-items:center;gap:2px;padding:12px;background:rgba(245,239,227,.94);border-bottom:1px solid var(--line,#DFD1BA);font:500 15.5px/1.2 'IBM Plex Sans',system-ui,sans-serif}.ds-nav a{color:var(--bunn,#33211A);text-decoration:none;padding:9px 13px;border-radius:999px}.ds-nav a:hover{background:var(--paper-2,#EDE3D0)}.ds-nav a[aria-current=page]{background:var(--bunn,#33211A);color:var(--paper,#F5EFE3)}.ds-nav a:focus-visible{outline:2.5px solid var(--tamr,#A93B28);outline-offset:3px}.ds-nav .ds-cart{margin-left:auto;display:inline-flex;gap:8px;align-items:center;background:var(--bunn,#33211A);color:var(--paper,#F5EFE3);font-weight:600;padding:9px 10px 9px 16px;border-bottom-right-radius:5px}.ds-nav .ds-cart:hover{background:var(--bunn-2,#4A3127)}.ds-cart span{min-width:24px;height:24px;border-radius:999px;display:inline-grid;place-items:center;background:var(--khalal,#CF9C0C);color:var(--bunn,#33211A);font-size:13px}"
+    },
+    {
+      "name": "Coffee Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Pill selector; selected fills Bunn and takes Bunn's tail.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip\" aria-pressed=\"true\">Najdi</button><button class=\"ds-chip\">Khaleeji</button><button class=\"ds-chip\">Rada'ey</button></div>",
+      "css": ".ds-chips{display:flex;flex-wrap:wrap;gap:8px}.ds-chip{border:0;background:transparent;color:var(--bunn,#33211A);padding:8px 14px;border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--line,#DFD1BA);font:500 15px/1.2 'IBM Plex Sans',system-ui,sans-serif;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s}.ds-chip:hover{box-shadow:inset 0 0 0 1.5px var(--bunn,#33211A)}.ds-chip[aria-pressed=true]{background:var(--bunn,#33211A);color:var(--paper,#F5EFE3);box-shadow:none;border-bottom-right-radius:5px}.ds-chip:focus-visible{outline:2.5px solid var(--tamr,#A93B28);outline-offset:3px}"
+    },
+    {
+      "name": "Bubble Card over Photo",
+      "kind": "card",
+      "refersTo": "card-sheet",
+      "description": "Paper card laid on a photograph: 36px bubble with Tamr's bottom-left tail and a long soft shadow.",
+      "html": "<div class=\"ds-photo\"><div class=\"ds-card\"><h3>First iftar in Calgary</h3><p class=\"ds-time\">5:37 <span>p.m.</span></p><p>Ramadan orders arrive before sunset.</p></div></div>",
+      "css": ".ds-photo{padding:40px;background:linear-gradient(160deg,#5a3a2a,#c9774a 60%,#e9b46a)}.ds-card{background:var(--paper,#F5EFE3);color:var(--bunn,#33211A);border-radius:36px;border-bottom-left-radius:8px;padding:32px;max-width:380px;display:grid;gap:12px;box-shadow:0 30px 60px -30px rgba(0,0,0,.5);font:400 17px/1.6 'IBM Plex Sans',system-ui,sans-serif}.ds-card h3{margin:0;font:700 34px/1.12 'El Messiri',Georgia,serif}.ds-card p{margin:0}.ds-time{font:700 72px/1 'El Messiri',Georgia,serif;color:var(--tamr,#A93B28)}.ds-time span{font-size:24px;color:var(--bunn,#33211A)}"
+    },
+    {
+      "name": "Patterned Paper Tile",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Paper Fold tiled with the cream-conversation bubble print, behind pouches and pack panels, never behind the logo or text.",
+      "html": "<div class=\"ds-patterned\"></div>",
+      "css": ".ds-patterned{height:180px;border-radius:40px;border-bottom-left-radius:8px;background-color:var(--paper-2,#EDE3D0);background-image:var(--pattern,url('/brand/pattern.svg'));background-size:240px 240px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Package, Opened",
+    "overview": "The site wears Hikaya's real packaging instead of a coffee-roaster template. The ground is warm paper (Paper), sections are wrapped in solid colour the way the sleeve wraps the gift box, coffees are shown as the actual 250 g pouch with its 80 × 80 front sticker drawn in code, and every container is a speech bubble, because the brand is a conversation between Bunn (coffee) and Tamr (date). Arabic comes first in every pair and is set as a first language, not a translation.\n\nDensity is relaxed and editorial: wide section padding, a 1280px measure, one idea per band. Colour comes from the fruit, the drink and the spice: Bunn brown carries weight, Tamr red answers, Khalal gold marks the season and small accents, and the only green is the cardamom dot. Photography is reserved for the real boxes, dates and Calgary scenes; drawn things (pouches, dates on the box builder, the bubble print) are flat printed illustration, never imitation photographs.\n\nMotion is a conversation tempo: Bunn's bubble arrives, Tamr answers a beat later; pouches stand up into place; sections rise softly on scroll. All of it is disabled under reduced motion.",
+    "keyCharacteristics": [
+      "Speech-bubble containers: large radius with one tightened tail corner.",
+      "Bunn's bubble sits right and speaks first; Tamr's sits left and answers, in both languages.",
+      "Full-width season sleeve above the header (Khalal regular, Tamr for Ramadan, Khalal for Eid).",
+      "Patterned paper (the cream-conversation bubble print) as a packaging ground, never behind the logo or running text.",
+      "Code-drawn pouches with the front sticker: bubble icon with spice dots, Arabic name in El Messiri, English in tracked caps, roast bar.",
+      "Pill buttons that carry the same tail corner as the bubbles."
+    ],
+    "rules": [
+      {
+        "name": "The Fruit, Drink, Spice Rule",
+        "body": "Every colour names something real. No grey, no green except the cardamom dot, no colour added for decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tamr Answers Rule",
+        "body": "Tamr red is the reply, not the shout: one Tamr action per view beside a Bunn action, Tamr bubbles after Bunn bubbles, Tamr names after English names.",
+        "section": "colors"
+      },
+      {
+        "name": "The Sleeve Holds the Season Rule",
+        "body": "The occasion is carried only by the sleeve colour (Khalal regular and Eid, Tamr Ramadan), never by re-theming the page.",
+        "section": "colors"
+      },
+      {
+        "name": "The Who Is Speaking Rule",
+        "body": "El Messiri is for the brand's voices and headings, Nastaliq is for guests, Plex is for everything that informs. Never swap them.",
+        "section": "typography"
+      },
+      {
+        "name": "The Arabic First Rule",
+        "body": "In every paired line Arabic sets first and larger; English follows smaller, under it, on English pages only.",
+        "section": "typography"
+      },
+      {
+        "name": "The Real Objects Cast Shadows Rule",
+        "body": "Only things that exist as objects (bags, boxes, a card laid on a window) get a shadow. Interface chrome stays flat.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Tail Rule",
+        "body": "Every container is a bubble with one tail corner. No square corners, no uniform-radius cards, no second container shape.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do put Bunn's bubble first and on the right, Tamr's second and on the left, on Arabic and English pages alike.",
+      "Do give every container one tail corner (5 to 8px) on a 26 to 48px radius.",
+      "Do carry the occasion only in the sleeve: Khalal (regular, Eid) or Tamr (Ramadan).",
+      "Do show coffees as the drawn pouch and sticker; show boxes and dates as real photographs.",
+      "Do pair a Bunn primary button with a Tamr button when two actions sit together.",
+      "Do keep text to WCAG AA on Paper: Bunn for text, Bunn Ink Soft for secondary text.",
+      "Do use logical properties for layout so Arabic mirrors, except the conversation and the lockup."
+    ],
+    "donts": [
+      "Don't flip, rotate, recolour or swap the bubbles of the logo, or mirror the conversation in RTL.",
+      "Don't place the bubble print behind the logo or behind running text.",
+      "Don't use grey, or green other than the cardamom dot.",
+      "Don't use El Messiri for body copy or Nastaliq for anything but guest lines.",
+      "Don't add shadows to buttons, fields or ordinary cards.",
+      "Don't draw dates as imitation photographs; drawn dates are flat printed illustration.",
+      "Don't add decorative section numbers or small labels above headings."
+    ]
+  }
+}
