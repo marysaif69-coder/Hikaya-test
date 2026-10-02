@@ -323,6 +323,7 @@ import '../../styles/global.css';
   const api = async (url: string, data?: object) => {
     const r = await fetch(url, data ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) } : undefined);
     const body = await r.json().catch(() => ({}));
+    if (r.status === 401 && body.error === 'preview') { location.replace(`/admin/?code=${Date.now()}`); throw new Error('preview'); }
     if (r.status === 401) { showLogin(); throw new Error('login'); }
     if (!r.ok) { alert(body.message ?? 'Something went wrong.'); throw new Error(body.error); }
     return body;
@@ -674,6 +675,7 @@ import '../../styles/global.css';
 
   (async () => {
     const me = await fetch('/api/me').then(r => r.json()).catch(() => ({ user: null }));
+    if (me.error === 'preview') { location.replace(`/admin/?code=${Date.now()}`); return; }
     if (me.user?.role === 'admin') start(me.user.email); else showLogin();
   })();
 </script>
