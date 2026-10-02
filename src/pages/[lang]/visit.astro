@@ -34,6 +34,7 @@ const POL = [
   <section class="sec wrap faq" id="questions" aria-labelledby="q-h">
     <h2 id="q-h" class="h-l">{ar ? 'أسئلة' : 'Questions'}</h2>
     <div class="acc">{FAQ.map(f => <details><summary>{f.q[lang]}</summary><p>{f.a[lang]}</p></details>)}</div>
+    <p class="more">{ar ? 'سؤالك ليس هنا؟' : 'Question not here?'} <a href="#ask">{ar ? 'اسأل حكاية' : 'Ask Hikaya'}</a> {ar ? 'أو' : 'or'} <a href={`/${lang}/help/`}>{ar ? 'راسل الفريق' : 'write to the team'}</a>.</p>
   </section>
   <section class="sec-tight wrap pol" id="policies" aria-labelledby="p-h">
     <h2 id="p-h" class="h-m">{ar ? 'السياسات' : 'Policies'}</h2>
@@ -57,6 +58,8 @@ const POL = [
   .acc summary::after { content: '+'; font-size: 24px; line-height: 1; }
   .acc details[open] summary::after { content: '–'; }
   .acc p { margin-top: 10px; color: var(--ink-2); max-width: 70ch; }
+  .more { margin-top: 22px; font-weight: 500; }
+  .more a { font-weight: 600; color: var(--tamr-2); }
   .pol { padding-bottom: clamp(56px, 8vw, 104px); scroll-margin-top: 100px; }
   .pol-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 22px; }
   .pol-grid > div { display: grid; gap: 8px; align-content: start; }
