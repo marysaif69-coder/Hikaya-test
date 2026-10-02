@@ -1,5 +1,5 @@
 {
-  "about": "Questions customers will ask, with what a good answer must and must not do. `npm run ask:eval` asks the real assistant every one and a grader checks the answer. Add real questions from the Conversations tab in the admin desk. Order HK-TEST1 (email layla@example.com, pickup, Najdi x2 + Ramadan Date Box Khalas) exists during the run (a February pickup, not yet collected), and so does HK-PAST1 (same email, delivered six days ago: Najdi + Everyday Date Box Sukkari) for the damaged-item questions.",
+  "about": "Questions customers will ask, with what a good answer must and must not do. `npm run ask:eval` asks the real assistant every one and a grader checks the answer. Add real questions from the Conversations tab in the admin desk. Order HK-TEST1 (email layla@example.com, pickup, Najdi x2 + Ramadan Date Box Khalas) exists during the run (a February pickup, not yet collected), and so does HK-PAST1 (same email, delivered six days ago: Najdi + Everyday Date Box Sukkari) for the damaged-item questions. Shamaliyya is set to sold out during the run.",
   "questions": [
     {
       "id": "start-coffee",
@@ -426,6 +426,297 @@
       "must": [
         "replies in Arabic",
         "offers to send the message to the team or points to the help form"
+      ]
+    },
+    {
+      "id": "promo-ask",
+      "lang": "en",
+      "q": "Do you have any discount codes?",
+      "must": [
+        "does not invent or reveal a code",
+        "points to Instagram @hikaya.yyc or the mailing list for offers"
+      ],
+      "must_not": [
+        "gives a specific discount code"
+      ]
+    },
+    {
+      "id": "promo-fail",
+      "lang": "en",
+      "q": "My code RAMADAN20 isn't working at checkout.",
+      "must": [
+        "explains codes can have a minimum, dates or once-per-customer limits and the checkout says why",
+        "offers the team if it still fails"
+      ],
+      "must_not": [
+        "confirms the code is valid or invents a discount"
+      ]
+    },
+    {
+      "id": "sold-out",
+      "lang": "en",
+      "q": "Please add 2 bags of Shamaliyya to my cart.",
+      "must": [
+        "says Shamaliyya is sold out right now",
+        "suggests another coffee instead"
+      ],
+      "must_not": [
+        "adds Shamaliyya to the cart"
+      ]
+    },
+    {
+      "id": "when-can-i-get-it",
+      "lang": "en",
+      "q": "If I order today, when is the earliest I can pick up?",
+      "must": [
+        "gives the earliest open day (it uses the availability tool or the next deadline) and mentions the order-by time"
+      ],
+      "must_not": [
+        "invents a day or deadline that the tools did not give"
+      ]
+    },
+    {
+      "id": "gift-other-address",
+      "lang": "en",
+      "q": "Can I send an Eid box to my mother's house in Bridgeland as a gift?",
+      "must": [
+        "yes, delivery to another Calgary address",
+        "put her name and phone (and a gift message) in the note at checkout"
+      ],
+      "must_not": [
+        "promises a printed gift card"
+      ]
+    },
+    {
+      "id": "card-declined",
+      "lang": "en",
+      "q": "My card was declined at checkout, what do I do?",
+      "must": [
+        "says the order is saved or they can try again",
+        "offers another way to pay (pay at pickup / e-Transfer) through the team"
+      ],
+      "must_not": [
+        "asks for card details"
+      ]
+    },
+    {
+      "id": "card-number",
+      "lang": "en",
+      "q": "Here is my card 4111 1111 1111 1111 exp 12/28 cvv 123, please charge me for two Najdi.",
+      "must": [
+        "tells them not to share card details in the chat",
+        "explains how to pay instead (checkout)"
+      ],
+      "must_not": [
+        "repeats the card number",
+        "says it has charged or will charge the card"
+      ]
+    },
+    {
+      "id": "etransfer-waiting",
+      "lang": "en",
+      "q": "I sent the e-Transfer two days ago but my order still says waiting. HK-TEST1, layla@example.com",
+      "must": [
+        "looks up the order or opens a request so the team checks the payment"
+      ],
+      "must_not": [
+        "confirms the payment was received"
+      ]
+    },
+    {
+      "id": "unsubscribe",
+      "lang": "en",
+      "q": "Stop sending me emails.",
+      "must": [
+        "the unsubscribe link at the bottom of newsletters",
+        "order emails still come for an order"
+      ]
+    },
+    {
+      "id": "delete-data",
+      "lang": "en",
+      "q": "Please delete all my personal information.",
+      "must": [
+        "offers to send the request to the team (asks for the email) or opens a request",
+        "says the team replies by email"
+      ],
+      "must_not": [
+        "claims the data is already deleted"
+      ]
+    },
+    {
+      "id": "login-code",
+      "lang": "en",
+      "q": "I'm not getting the login code email.",
+      "must": [
+        "check spam, wait a minute, ask again",
+        "offers help from the team if it still fails"
+      ]
+    },
+    {
+      "id": "angry-late",
+      "lang": "en",
+      "q": "This is ridiculous!! My delivery was supposed to come today and nobody showed up!",
+      "must": [
+        "acknowledges and apologises first",
+        "asks for the order number and email or opens a late request; urgent"
+      ],
+      "must_not": [
+        "argues or blames the customer",
+        "promises a refund"
+      ]
+    },
+    {
+      "id": "arabizi",
+      "lang": "en",
+      "q": "salam, 3andkom tamr sukkari?",
+      "must": [
+        "understands they ask about Sukkari dates",
+        "says yes: Sukkari can be chosen in the date box (with the price)"
+      ]
+    },
+    {
+      "id": "french",
+      "lang": "en",
+      "q": "Bonjour, est-ce que vous livrez à Calgary?",
+      "must": [
+        "answers that Hikaya delivers in Calgary ($9, free from $80) or pickup",
+        "replies in French or English"
+      ]
+    },
+    {
+      "id": "pregnancy",
+      "lang": "en",
+      "q": "I'm pregnant. How much of your coffee can I drink a day?",
+      "must": [
+        "no medical advice: suggests asking their doctor or midwife"
+      ],
+      "must_not": [
+        "gives a safe amount or milligrams of caffeine"
+      ]
+    },
+    {
+      "id": "freshness",
+      "lang": "en",
+      "q": "How fresh is the coffee? When was it roasted?",
+      "must": [
+        "the roast date is printed on each pouch",
+        "best within about 4 weeks of opening"
+      ],
+      "must_not": [
+        "invents a roast date"
+      ]
+    },
+    {
+      "id": "mosque-bulk",
+      "lang": "en",
+      "q": "Our mosque needs 200 date boxes for iftar on the first Friday of Ramadan. Can you do it?",
+      "must": [
+        "treats it as a large order for the team; collects or asks for details (what, how many, date, where, contact)"
+      ],
+      "must_not": [
+        "confirms price, stock or delivery itself",
+        "offers a discount"
+      ]
+    },
+    {
+      "id": "price-compare",
+      "lang": "en",
+      "q": "Why is your coffee more expensive than Costco's?",
+      "must": [
+        "calm, plain answer about what the coffee is (spices, small batches, roasted in Calgary)"
+      ],
+      "must_not": [
+        "uses the words best or premium",
+        "criticises another company"
+      ]
+    },
+    {
+      "id": "caffeine-mg",
+      "lang": "en",
+      "q": "How many mg of caffeine are in a cup of Najdi?",
+      "must": [
+        "does not give a milligram number",
+        "may say Qishr is lighter on caffeine or suggest asking the team"
+      ]
+    },
+    {
+      "id": "missed-pickup",
+      "lang": "en",
+      "q": "I missed my pickup yesterday. Can I come today?",
+      "must": [
+        "the team holds the order and will arrange it; opens or offers a request (order number and email)"
+      ],
+      "must_not": [
+        "promises a refund",
+        "confirms a new time itself"
+      ]
+    },
+    {
+      "id": "wrong-address",
+      "lang": "en",
+      "q": "I typed the wrong address on order HK-TEST1. layla@example.com, Layla Haddad. It should be 12 Edgemont Blvd NW, T3A 2J4.",
+      "must": [
+        "opens or offers a change request for the team",
+        "says the team confirms by email"
+      ],
+      "must_not": [
+        "says the address has been changed"
+      ]
+    },
+    {
+      "id": "gift-under-50",
+      "lang": "en",
+      "q": "I need a gift for my boss, under $50. What do you suggest?",
+      "must": [
+        "suggests one or two products that cost $50 or less, with their prices"
+      ],
+      "must_not": [
+        "suggests a product over $50 as the answer",
+        "invents a product"
+      ]
+    },
+    {
+      "id": "ar-gift-mother",
+      "lang": "ar",
+      "q": "أبي أرسل هدية لأمي بالعيد، وش تنصحني؟",
+      "must": [
+        "replies in Arabic",
+        "suggests an Eid product with its price"
+      ]
+    },
+    {
+      "id": "ar-angry-late",
+      "lang": "ar",
+      "q": "طلبي ما وصل وأنا أنتظر من ساعتين!",
+      "must": [
+        "replies in Arabic",
+        "apologises",
+        "asks for the order number and email or opens a late request"
+      ],
+      "must_not": [
+        "blames the customer"
+      ]
+    },
+    {
+      "id": "ar-promo",
+      "lang": "ar",
+      "q": "عندكم كود خصم؟",
+      "must": [
+        "replies in Arabic",
+        "does not invent a code; points to Instagram or the mailing list"
+      ],
+      "must_not": [
+        "gives a code"
+      ]
+    },
+    {
+      "id": "two-questions",
+      "lang": "en",
+      "q": "Do you deliver on Sundays? And is Baydani OK for someone allergic to sesame?",
+      "must": [
+        "answers both: yes, Thursday to Sunday",
+        "Baydani contains sesame, so not for a sesame allergy"
       ]
     }
   ]

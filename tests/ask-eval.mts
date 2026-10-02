@@ -38,6 +38,8 @@ await pg.exec(`
   INSERT INTO order_items (order_id, product_id, name_en, name_ar, option, option_en, option_ar, qty, unit_cents) VALUES
     (2, 'najdi', 'Najdi', 'نجدية', 'dallah', 'Ground for the dallah', 'مطحون للدلّة', 1, 2400),
     (2, 'date-box', 'The Everyday Date Box', 'علبة التمر اليومية', 'sukkari', 'Sukkari', 'سكري', 1, 3400);
+  -- One product sold out, to test that the assistant notices.
+  INSERT INTO product_settings (product_id, available, updated_by) VALUES ('shamaliyya', FALSE, 'eval');
 `);
 
 const { openChat, askTurn } = await import('../netlify/lib/ask');
