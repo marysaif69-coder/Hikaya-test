@@ -1,0 +1,160 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Pouch from '../../../components/Pouch.astro';
+import Pair from '../../../components/Pair.astro';
+import ProductCard from '../../../components/ProductCard.astro';
+import { PRODUCTS, FAMILIES, SPICES, GRINDS, DATES, money, type Lang, type Product } from '../../../data/products';
+import { BREW } from '../../../data/brew';
+import { UI, path } from '../../../data/i18n';
+
+export function getStaticPaths() {
+  return (['en', 'ar'] as const).flatMap(lang => PRODUCTS.map(p => ({ params: { lang, id: p.id }, props: { p } })));
+}
+const lang = Astro.params.lang as Lang;
+const { p } = Astro.props as { p: Product };
+const ar = lang === 'ar';
+const related = PRODUCTS.filter(o => o.fam === p.fam && o.id !== p.id).slice(0, 4);
+const fill = related.length < 3 ? PRODUCTS.filter(o => o.kind !== p.kind && !related.includes(o)).slice(0, 3 - related.length) : [];
+const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { ar: string; en: string } }> = {
+  dates: { bunn: { ar: 'علبة لكل بيت.', en: 'A box for every house.' }, tamr: { ar: 'وتمرة لكل جار.', en: 'And a date for every neighbour.' } },
+  ramadan: { bunn: { ar: 'أنا لما بعد المغرب.', en: "I'm for after sunset." }, tamr: { ar: 'وأنا أوّل المائدة.', en: "I'm first on the table." } },
+  eid: { bunn: { ar: 'من نزور أولاً؟', en: 'Who do we visit first?' }, tamr: { ar: 'الكبار دائماً.', en: 'The elders, always.' } },
+};
+---
+<Base lang={lang} title={p.name[lang]} current="shop" description={p.notes[lang]}>
+  <nav class="wrap crumbs" aria-label={ar ? 'المسار' : 'Breadcrumb'}>
+    <a href={path(lang, 'shop')}>{UI.nav.shop[lang]}</a><span aria-hidden="true">/</span>
+    <a href={path(lang, 'shop') + `#${p.fam}`}>{FAMILIES[p.fam].name[lang]}</a><span aria-hidden="true">/</span>
+    <span aria-current="page">{p.name[lang]}</span>
+  </nav>
+
+  <section class="wrap pdp">
+    <div class="pdp-media">
+      {p.kind === 'coffee'
+        ? <div class="pdp-pouch patterned"><div><Pouch coffee={p} lang={lang} /></div></div>
+        : <img src={p.img} alt={p.name[lang]} width="1000" height="1250" />}
+    </div>
+
+    <div class="pdp-info">
+      <h1 class="h-l">{p.name[lang]}{lang === 'en' && <span lang="ar">{p.name.ar}</span>}</h1>
+      <p class="pdp-price"><span class="price">{money(p.price, lang)}</span> <span class="draft">· {UI.draftPrice[lang]}</span> <span class="muted">· {p.kind === 'coffee' ? p.size : p.size[lang]} · {FAMILIES[p.fam].name[lang]}</span></p>
+      <p class="pdp-notes">{p.notes[lang]}</p>
+
+      {p.kind === 'coffee' ? (
+        <>
+          <Pair lang={lang} size="m" bunn={p.bunn} tamr={{ ar: `خذ معها ${DATES[p.date].name.ar}.`, en: `Take ${DATES[p.date].name.en} with it.` }} />
+          <div class="facts">
+            {p.spices.length > 0 && <div class="spices">{p.spices.map(s => <span><i style={`background:${SPICES[s].c}`}></i>{SPICES[s].name[lang]}</span>)}</div>}
+            {p.roast > 0 && <p class="roast"><span class="label">{UI.roast[lang]}</span> <span class="roastbar" role="img" aria-label={`${p.roast} / 5`}>{[1, 2, 3, 4, 5].map(i => <i class={i <= p.roast ? 'on' : ''}></i>)}</span></p>}
+          </div>
+        </>
+      ) : (
+        <Pair lang={lang} size="m" bunn={occasionPair[p.fam].bunn} tamr={occasionPair[p.fam].tamr} />
+      )}
+
+      <form class="buy" onsubmit="return false">
+        {p.kind === 'coffee' && (
+          <fieldset class="choice">
+            <legend>{UI.grind[lang]}</legend>
+            {p.grinds.map((g, i) => <label><input type="radio" name="opt" value={g} checked={i === 0} /><span>{GRINDS[g][lang]}</span></label>)}
+          </fieldset>
+        )}
+        {p.kind === 'box' && p.chooseDate && (
+          <fieldset class="choice">
+            <legend>{UI.date[lang]}</legend>
+            {Object.entries(DATES).map(([k, d], i) => <label><input type="radio" name="opt" value={k} checked={i === 1} /><span><i class="dot" style={`background:${d.c}`}></i>{d.name[lang]}</span></label>)}
+          </fieldset>
+        )}
+        <div class="buy-row">
+          <label class="qty"><span class="sr">{UI.qty[lang]}</span>
+            <select name="qty">{[1, 2, 3, 4, 5, 6].map(n => <option value={n}>{n}</option>)}</select>
+          </label>
+          <button class="btn primary grow" type="button" data-add={p.id} data-opt=""><span>{UI.add[lang]} · {money(p.price, lang)}</span></button>
+        </div>
+      </form>
+
+      <ul class="assure">
+        <li>{ar ? 'طلب مسبق: نؤكد بالبريد قبل أي دفع.' : 'Pre-order: we confirm by email before anything is paid.'}</li>
+        <li>{ar ? 'استلام مجاني من الخميس إلى الأحد، من ٢٢ يناير ٢٠٢٧.' : 'Free pickup Thursday to Sunday, from 22 January 2027.'}</li>
+        <li>{ar ? 'توصيل داخل كالغاري ٩ $، مجاني فوق ٨٠ $.' : 'Calgary delivery $9, free over $80.'}</li>
+      </ul>
+
+      <div class="acc">
+        <details open>
+          <summary>{ar ? 'الحكاية' : 'The story'}</summary>
+          <p>{p.kind === 'coffee' ? p.story[lang] : p.contents[lang]}</p>
+        </details>
+        {p.kind === 'coffee' && (
+          <details>
+            <summary>{UI.howToBrew[lang]}</summary>
+            <ol>{BREW[p.fam].steps.map(s => <li>{s.t[lang]}</li>)}</ol>
+            <a href={path(lang, 'brew') + `#${p.fam}`}>{ar ? 'الدليل مع المؤقّت' : 'The guide, with a timer'}</a>
+          </details>
+        )}
+        {p.kind === 'coffee' && (
+          <details>
+            <summary>{UI.ingredients[lang]} · English / Français</summary>
+            <div class="label-box">
+              <p><b>Ingredients:</b> {p.ingredients[0]}</p>
+              <p lang="fr"><b>Ingrédients :</b> {p.ingredients[1]}</p>
+              <p><b>Net weight / Poids net:</b> {p.size}</p>
+              <p>Roasted in Calgary by Hikaya Coffee Ltd., [address], Calgary, AB · Torréfié à Calgary.</p>
+            </div>
+          </details>
+        )}
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap related" aria-labelledby="rel-h">
+    <h2 id="rel-h" class="h-m">{ar ? 'ومن الرف نفسه' : 'From the same shelf'}</h2>
+    <div class="grid">{[...related, ...fill].map(o => <ProductCard p={o} lang={lang} />)}</div>
+  </section>
+</Base>
+
+<style>
+  .crumbs { display: flex; gap: 8px; flex-wrap: wrap; padding-block: 20px; font-size: 14.5px; color: var(--ink-2); }
+  .crumbs a { text-decoration: none; }
+  .crumbs a:hover { text-decoration: underline; }
+  .pdp { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 5vw, 80px); align-items: start; padding-bottom: clamp(56px, 8vw, 104px); }
+  @media (max-width: 900px) { .pdp { grid-template-columns: 1fr; } }
+  .pdp-media { position: sticky; top: 96px; }
+  @media (max-width: 900px) { .pdp-media { position: static; } }
+  .pdp-pouch { border-radius: 40px; border-bottom-left-radius: 8px; aspect-ratio: 4 / 5; display: grid; place-items: center; }
+  .pdp-pouch > div { width: 58%; filter: drop-shadow(0 26px 26px rgba(51, 33, 26, .25)); }
+  .pdp-media img { border-radius: 40px; border-bottom-left-radius: 8px; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+  .pdp-info { display: grid; gap: 20px; align-content: start; }
+  .fam { font-weight: 600; color: var(--tamr); }
+  .pdp-info h1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; }
+  .pdp-info h1 span { color: var(--tamr); font-size: .6em; }
+  .pdp-price .price { font-size: 26px; }
+  .pdp-notes { font-size: 19px; max-width: 46ch; }
+  .facts { display: grid; gap: 12px; }
+  .roast { display: flex; align-items: center; gap: 10px; }
+  .buy { display: grid; gap: 18px; padding-top: 6px; }
+  .choice { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .choice legend { font-weight: 600; font-size: 15px; margin-bottom: 10px; }
+  .choice input { position: absolute; opacity: 0; }
+  .choice span { display: inline-flex; align-items: center; gap: 8px; padding: 10px 15px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--line); cursor: pointer; font-weight: 500; }
+  .choice input:checked + span { background: var(--bunn); color: var(--paper); box-shadow: none; border-bottom-right-radius: 5px; }
+  .choice input:focus-visible + span { outline: 2.5px solid var(--tamr); outline-offset: 3px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .buy-row { display: flex; gap: 10px; }
+  .qty select { height: 100%; min-height: 50px; border: 1.5px solid var(--line); background: var(--sheet); border-radius: 999px; padding: 0 16px; font-weight: 600; }
+  .grow { flex: 1; }
+  .assure { list-style: none; margin: 0; padding: 16px 18px; display: grid; gap: 6px; background: var(--sheet); border-radius: 20px; font-size: 15px; }
+  .assure li::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--khalal); margin-inline-end: 10px; vertical-align: middle; }
+  .acc details { border-bottom: 1px solid var(--line); padding-block: 16px; }
+  .acc details:first-child { border-top: 1px solid var(--line); }
+  .acc summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+  .acc summary::after { content: '+'; font-size: 22px; line-height: 1; }
+  .acc details[open] summary::after { content: '–'; }
+  .acc p, .acc ol { margin-top: 10px; color: var(--ink-2); }
+  .acc ol { padding-inline-start: 20px; display: grid; gap: 6px; }
+  .acc a { display: inline-block; margin-top: 10px; font-weight: 600; color: var(--tamr); }
+  .label-box { margin-top: 12px; border: 1.5px solid var(--bunn); border-radius: 14px; padding: 14px; display: grid; gap: 4px; font-size: 14.5px; background: var(--sheet); direction: ltr; text-align: left; }
+  .label-box p { margin: 0; color: var(--bunn); }
+  .related { padding-bottom: clamp(56px, 8vw, 104px); }
+  .related h2 { margin-bottom: 24px; }
+  .related .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 32px 22px; }
+</style>

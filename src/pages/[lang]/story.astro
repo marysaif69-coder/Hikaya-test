@@ -1,0 +1,115 @@
+---
+import Base from '../../layouts/Base.astro';
+import Pair from '../../components/Pair.astro';
+import { DATES, type Lang } from '../../data/products';
+import { path } from '../../data/i18n';
+
+export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
+const lang = Astro.params.lang as Lang;
+const ar = lang === 'ar';
+const CH = {
+  bunn: { name: 'بُن', en: 'Bunn · the coffee', pts: { en: ['The traveller and the teller', 'Came down from the terraces of Haraz', 'Bitter, quick, proud', 'Speaks first'], ar: ['المسافر والحكّاء', 'نزل من مدرجات حراز', 'مُرّ وسريع وفخور', 'يتكلم أولاً'] } },
+  tamr: { name: 'تمر', en: 'Tamr · the date', pts: { en: ['The host and the listener', 'Of any palm, and knows Al-Ahsa by heart', 'Sweet, patient, teasing', 'Always answers'], ar: ['المضيفة والمستمعة', 'من كل نخلة، وتعرف الأحساء عن ظهر قلب', 'حلوة وصبورة ومشاكسة', 'تردّ دائماً'] } },
+};
+const STAGES = [
+  { t: { en: 'Now', ar: 'الآن' }, d: { en: 'Setting up in Calgary: roasting, tasting, packaging.', ar: 'نؤسس في كالغاري: تحميص وتذوق وتغليف.' }, on: true },
+  { t: { en: 'January 2027', ar: 'يناير ٢٠٢٧' }, d: { en: 'Online pre-orders open, for Ramadan and Eid.', ar: 'يفتح الطلب المسبق عبر الإنترنت، لرمضان والعيد.' }, on: false },
+  { t: { en: 'Later', ar: 'لاحقاً' }, d: { en: 'More shops, more houses, more tables.', ar: 'متاجر أكثر، وبيوت أكثر، وموائد أكثر.' }, on: false },
+  { t: { en: 'One day', ar: 'يوماً ما' }, d: { en: 'The café. Its menu is already being written.', ar: 'المقهى. قائمته تُكتب منذ الآن.' }, on: false },
+];
+---
+<Base lang={lang} title={ar ? 'حكايتنا' : 'Our story'} current="story">
+  <section class="wrap s-head">
+    <img class="s-logo" src="/brand/logo.svg" alt={ar ? 'شعار حكاية: فقاعتا حديث تلتقيان عند بذرة ذهبية' : 'The Hikaya logo: two speech bubbles meeting at a gold seed'} width="300" height="251" />
+    <div class="stack" style="--gap:18px">
+      <h1 class="h-xl">{ar ? 'حكاية' : 'Hikaya means “a story”.'}</h1>
+      <p class="lead">{ar ? 'شعارنا حوار. بُن، القهوة، يتكلم أولاً. تمر تردّ. وحيث تلتقي فقاعتاهما بذرة بلون الخلال: الحكاية التي بينهما.' : 'Our logo is a conversation. Bunn, the coffee, speaks first. Tamr, the date, answers. Where their bubbles meet sits a seed the colour of khalal: the story they share.'}</p>
+    </div>
+  </section>
+
+  <section class="chars">
+    <div class="wrap c-grid">
+      {(['bunn', 'tamr'] as const).map(k => (
+        <article class={`char ${k}`}>
+          <h2><span lang="ar">{CH[k].name}</span><small>{CH[k].en}</small></h2>
+          <ul>{CH[k].pts[lang].map(p => <li>{p}</li>)}</ul>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="sec wrap rules" aria-labelledby="rules-h">
+    <h2 id="rules-h" class="h-l">{ar ? 'كيف يتكلمان' : 'How they talk'}</h2>
+    <div class="r-grid">
+      <Pair lang={lang} size="l" bunn={{ ar: 'أنا مُرّ اليوم.', en: "I'm bitter today." }} tamr={{ ar: 'خذ تمرتين إذن.', en: 'Then take two dates.' }} />
+      <ul class="r-list">
+        <li>{ar ? 'دائماً اثنان: بُن يبدأ وتمر تردّ.' : 'Always a pair: Bunn begins, Tamr replies.'}</li>
+        <li>{ar ? 'العربية أولاً، ثماني كلمات أو أقل.' : 'Arabic first, eight words or fewer.'}</li>
+        <li>{ar ? 'يحكيان ولا يبيعان.' : 'They tell, they don’t sell.'}</li>
+        <li>{ar ? 'والحكاية لا تنتهي: وللحكاية بقية.' : 'And the story never ends: وللحكاية بقية.'}</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec dates" aria-labelledby="dates-h">
+    <div class="wrap">
+      <h2 id="dates-h" class="h-l">{ar ? 'تمر، الصوت الآخر' : 'Tamr, the other voice'}</h2>
+      <p class="lead">{ar ? 'نختار التمر كما يُختار النبيذ: بالصنف والمنطقة والموسم.' : 'We choose dates like wine: by variety, region and harvest.'}</p>
+      <ul class="d-row">
+        {Object.values(DATES).map(d => (
+          <li>
+            <span class="date" style={`--c:${d.c}`} aria-hidden="true"></span>
+            <h3>{d.name[lang]}{lang === 'en' && <span lang="ar">{d.name.ar}</span>}</h3>
+            <p class="rg">{d.region[lang]}</p>
+            <p class="muted">{d.notes[lang]}</p>
+            <p class="sweet"><span class="label">{ar ? 'الحلاوة' : 'Sweetness'}</span><span class="bar"><b style={`width:${d.sweet}%`}></b></span></p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec wrap stages" aria-labelledby="st-h">
+    <h2 id="st-h" class="h-l">{ar ? 'خطوة بخطوة' : 'One step at a time'}</h2>
+    <ol>
+      {STAGES.map(s => <li class={s.on ? 'on' : ''}><b>{s.t[lang]}</b><p class="muted">{s.d[lang]}</p></li>)}
+    </ol>
+    <a class="btn primary" href={path(lang, 'shop')}>{ar ? 'إلى المتجر' : 'To the shop'}</a>
+  </section>
+</Base>
+
+<style>
+  .s-head { display: grid; grid-template-columns: .6fr 1.4fr; gap: clamp(24px, 5vw, 80px); align-items: center; padding-block: clamp(48px, 7vw, 104px); }
+  .s-logo { width: 100%; max-width: 300px; }
+  @media (max-width: 760px) { .s-head { grid-template-columns: 1fr; } .s-logo { max-width: 160px; } }
+  .chars { padding-bottom: 24px; }
+  .c-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 760px) { .c-grid { grid-template-columns: 1fr; } }
+  .char { border-radius: 44px; padding: clamp(24px, 3.4vw, 48px); display: grid; gap: 14px; }
+  .char.bunn { background: var(--bunn); color: var(--paper); border-bottom-right-radius: 8px; }
+  .char.tamr { background: var(--tamr); color: var(--tamr-ink); border-bottom-left-radius: 8px; }
+  .char h2 { font-size: clamp(56px, 7vw, 96px); display: grid; }
+  .char h2 small { font-family: var(--body); font-size: 15px; font-weight: 600; opacity: .85; }
+  .char ul { margin: 0; padding-inline-start: 20px; display: grid; gap: 6px; font-size: 18px; }
+  .r-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px clamp(28px, 5vw, 80px); margin-top: 32px; align-items: center; }
+  @media (max-width: 760px) { .r-grid { grid-template-columns: 1fr; } }
+  .r-list { margin: 0; padding-inline-start: 20px; display: grid; gap: 10px; font-size: 18px; }
+  .dates { background: var(--paper-2); }
+  .dates .lead { margin-top: 12px; }
+  .d-row { list-style: none; margin: 36px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 28px 22px; }
+  @media (max-width: 960px) { .d-row { grid-template-columns: repeat(2, 1fr); } }
+  .d-row li { display: grid; gap: 6px; align-content: start; }
+  .date { width: 46px; height: 66px; border-radius: 50%; background: var(--c); position: relative; margin-bottom: 8px; transform: rotate(-14deg); }
+  .date::after { content: ''; position: absolute; inset: 16% 46% 16% 46%; border-radius: 50%; box-shadow: -2px 0 0 1.5px rgba(51, 33, 26, .35); }
+  .d-row h3 { font-size: 24px; display: flex; gap: 10px; align-items: baseline; }
+  .d-row h3 span { font-size: 19px; color: var(--tamr); }
+  .rg { font-size: 14px; font-weight: 600; color: var(--ink-2); }
+  .sweet { display: grid; gap: 4px; margin-top: 6px; }
+  .bar { height: 6px; background: var(--line); border-radius: 6px; overflow: hidden; }
+  .bar b { display: block; height: 100%; background: var(--khalal); }
+  .stages ol { list-style: none; margin: 32px 0 36px; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; counter-reset: s; }
+  @media (max-width: 860px) { .stages ol { grid-template-columns: 1fr 1fr; } }
+  .stages li { border-top: 3px solid var(--line); padding-top: 14px; display: grid; gap: 4px; }
+  .stages li.on { border-color: var(--tamr); }
+  .stages b { font-family: var(--display); font-size: 22px; }
+</style>

@@ -1,0 +1,109 @@
+---
+import Base from '../../layouts/Base.astro';
+import Pair from '../../components/Pair.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import Films from '../../components/Films.astro';
+import { BOXES, PRODUCTS, type Lang } from '../../data/products';
+import { path } from '../../data/i18n';
+import { ramadanTable, hhmm, weekday, dayMonth, EID } from '../../data/calendar';
+
+export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
+const lang = Astro.params.lang as Lang;
+const ar = lang === 'ar';
+const rows = ramadanTable();
+const picks = [...BOXES.filter(b => b.fam === 'ramadan'), PRODUCTS.find(p => p.id === 'four-palms')!, PRODUCTS.find(p => p.id === 'najdi')!];
+const toAr = (n: number | string) => (ar ? String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]) : String(n));
+---
+<Base lang={lang} title={ar ? 'رمضان' : 'Ramadan'} current="ramadan" sleeve="ramadan" description={ar ? 'صناديق تمر وقهوة لرمضان ٢٠٢٧ في كالغاري، وجدول أوقات الإفطار.' : 'Ramadan 2027 dates and coffee in Calgary, with the iftar timetable.'}>
+  <section class="r-hero">
+    <img src="/media/img/ramadan-window.jpg" alt="" width="1000" height="1250" />
+    <div class="wrap r-hero-in">
+      <div class="r-card">
+        <h1 class="h-l">{ar ? 'تمر وقهوة لرمضان' : 'Ramadan dates & coffee'}</h1>
+        <Pair lang={lang} size="m" bunn={{ ar: 'أنا لما بعد المغرب.', en: "I'm for after sunset." }} tamr={{ ar: 'وأنا أوّل المائدة.', en: "I'm first on the table." }} />
+        <p>{ar ? 'الطلب المسبق يفتح في يناير ٢٠٢٧. استلام وتوصيل داخل كالغاري، وطلبات رمضان تصل قبل الغروب.' : 'Pre-orders open January 2027. Pickup and delivery in Calgary; Ramadan orders arrive before sunset.'}</p>
+        <a class="btn tamr" href="#boxes">{ar ? 'صناديق رمضان' : 'The Ramadan boxes'}</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="boxes" aria-labelledby="boxes-h">
+    <div class="wrap">
+      <h2 id="boxes-h" class="h-l">{ar ? 'للمائدة عند الغروب' : 'For the table at sunset'}</h2>
+      <div class="grid">{picks.map(p => <ProductCard p={p} lang={lang} />)}</div>
+    </div>
+  </section>
+
+  <!-- The imsakiya: Calgary iftar times, with our delivery days marked. -->
+  <section class="sec imsakiya" aria-labelledby="t-h">
+    <div class="wrap t-grid">
+      <div class="t-copy">
+        <h2 id="t-h" class="h-l">{ar ? 'جدول الإفطار في كالغاري' : 'The Calgary iftar table'}</h2>
+        <p class="lead">{ar ? 'وقت الغروب لكل يوم من رمضان ١٤٤٨، محسوب لوسط كالغاري. الأيام المعلّمة أيام الاستلام والتوصيل، من الخميس إلى الأحد.' : 'Sunset for every day of Ramadan 1448, calculated for downtown Calgary. Marked days are pickup and delivery days, Thursday to Sunday.'}</p>
+        <p class="note">{ar ? 'التواريخ متوقعة والهلال يقرر. اتبع جدول مسجدك لأوقات الصلاة.' : 'Dates are expected; the moon decides. Follow your mosque’s timetable for prayer.'}</p>
+        <p class="today" id="today" hidden></p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <caption class="sr">{ar ? 'أوقات الإفطار في كالغاري، رمضان ٢٠٢٧' : 'Iftar times in Calgary, Ramadan 2027'}</caption>
+          <thead><tr><th scope="col">{ar ? 'اليوم' : 'Day'}</th><th scope="col">{ar ? 'التاريخ' : 'Date'}</th><th scope="col">{ar ? 'الإفطار' : 'Iftar'}</th><th scope="col">{ar ? 'نوصل' : 'We deliver'}</th></tr></thead>
+          <tbody>
+            {rows.map(r => (
+              <tr data-iso={r.iso} class={r.service ? 'svc' : ''}>
+                <td class="tnum"><b>{toAr(r.day)}</b> <span>{weekday(r.iso, lang)}</span></td>
+                <td>{dayMonth(r.iso, lang)}</td>
+                <td class="tnum time">{toAr(hhmm(r.sunset))} <small>{ar ? 'م' : 'p.m.'}</small></td>
+                <td>{r.service ? <span class="mark">{ar ? 'نعم' : 'Yes'}</span> : <span class="muted" aria-label={ar ? 'لا' : 'No'}>·</span>}</td>
+              </tr>
+            ))}
+            <tr class="eidrow"><td colspan="4">{ar ? `العيد: ${dayMonth(EID, lang)} تقريباً` : `Eid: around ${dayMonth(EID, lang)}`} · <a href={path(lang, 'eid')}>{ar ? 'إصدار العيد' : 'The Eid edition'}</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <Films lang={lang} only={['ramadan', 'seed-to-story', 'calgary']} />
+</Base>
+
+<style>
+  .r-hero { position: relative; min-height: clamp(560px, 72vw, 780px); display: grid; align-items: end; overflow: hidden; background: var(--bunn); }
+  .r-hero > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 40%; }
+  .r-hero-in { position: relative; width: 100%; padding-block: clamp(24px, 5vw, 64px); }
+  .r-card { background: var(--paper); border-radius: 36px; border-bottom-left-radius: 8px; padding: clamp(22px, 3.4vw, 44px); max-width: 520px; display: grid; gap: 18px; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .55); }
+  .r-card .btn { justify-self: start; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 36px 24px; margin-top: 32px; }
+  .imsakiya { background: var(--tamr); color: var(--tamr-ink); }
+  .imsakiya .lead, .imsakiya .note { color: #F7DCD3; }
+  .t-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 28px clamp(28px, 5vw, 80px); align-items: start; }
+  @media (max-width: 900px) { .t-grid { grid-template-columns: 1fr; } }
+  .t-copy { display: grid; gap: 16px; position: sticky; top: 100px; }
+  @media (max-width: 900px) { .t-copy { position: static; } }
+  .note { font-size: 15px; }
+  .today { font-family: var(--display); font-size: 24px; background: var(--paper); color: var(--bunn); border-radius: 24px; border-bottom-left-radius: 5px; padding: 12px 18px; justify-self: start; }
+  .table-wrap { background: var(--paper); color: var(--bunn); border-radius: 28px; padding: clamp(10px, 2vw, 20px); overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 16px; }
+  th { text-align: start; font-size: 13px; font-weight: 600; color: var(--ink-2); padding: 10px 12px; border-bottom: 2px solid var(--bunn); }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td span:not(.mark) { color: var(--ink-2); font-size: 14px; margin-inline-start: 6px; }
+  .time { font-family: var(--display); font-size: 20px; font-weight: 600; }
+  .time small { font-family: var(--body); font-size: 12px; color: var(--ink-2); }
+  tr.svc { background: color-mix(in srgb, var(--khalal) 12%, transparent); }
+  .mark { display: inline-block; background: var(--khalal); color: var(--bunn); border-radius: 999px; padding: 2px 10px; font-size: 13px; font-weight: 600; }
+  tr.is-today td { background: var(--bunn); color: var(--paper); }
+  tr.is-today td span, tr.is-today .time small { color: #D9C9B4; }
+  .eidrow td { font-weight: 600; padding-block: 14px; }
+  .eidrow a { color: var(--tamr); }
+</style>
+
+<script>
+  // Highlight today's row during Ramadan (Calgary time).
+  const iso = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Edmonton' }).format(new Date());
+  const row = document.querySelector<HTMLTableRowElement>(`tr[data-iso="${iso}"]`);
+  if (row) {
+    row.classList.add('is-today');
+    const t = document.getElementById('today')!;
+    t.textContent = `${document.documentElement.lang === 'ar' ? 'إفطار اليوم' : 'Iftar today'}: ${row.querySelector('.time')!.textContent}`;
+    t.hidden = false;
+  }
+</script>

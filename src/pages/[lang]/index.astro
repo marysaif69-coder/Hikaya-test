@@ -1,0 +1,211 @@
+---
+import Base from '../../layouts/Base.astro';
+import Pair from '../../components/Pair.astro';
+import Pouch from '../../components/Pouch.astro';
+import BoxBuilder from '../../components/BoxBuilder.astro';
+import Films from '../../components/Films.astro';
+import GuestWall from '../../components/GuestWall.astro';
+import { COFFEES, DATES, FAMILIES, BOXES, money, type Lang } from '../../data/products';
+import { path } from '../../data/i18n';
+import { sunsetMinutes, hhmm, RAMADAN_START } from '../../data/calendar';
+
+export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
+const lang = Astro.params.lang as Lang;
+const ar = lang === 'ar';
+const najdi = COFFEES[0];
+const dateBox = BOXES.find(b => b.id === 'date-box')!;
+const shelf = (['palm', 'mountain', 'house', 'husk'] as const).map(f => ({ f, c: COFFEES.find(c => c.fam === f)!, n: COFFEES.filter(c => c.fam === f).length }));
+const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
+---
+<Base lang={lang} title="">
+  <!-- First viewport: the conversation is the headline; the bag stands beside the box. -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-talk">
+        <Pair lang={lang} size="xl" class="hero-pair"
+          bunn={{ ar: 'ضيف جديد في كالغاري.', en: 'A new guest in Calgary.' }}
+          tamr={{ ar: 'مكانك محفوظ، والتمرة جاهزة.', en: 'Your seat is kept, the date is ready.' }} />
+        <div class="hero-copy">
+          <h1 class="h-m">{ar ? 'قهوة اليمن والخليج والشام، وكل فنجان معه تمرة.' : 'Coffee from Yemen, the Gulf and the Levant. Every cup comes with a date.'}</h1>
+          <p class="lead">{ar ? 'نحمّص بكميات صغيرة في كالغاري. استلام من الخميس إلى الأحد، أو نوصلها لبيتك.' : 'Roasted in small batches in Calgary. Pick up Thursday to Sunday, or we bring it to your door.'}</p>
+          <div class="cta">
+            <a class="btn primary" href={path(lang, 'shop')}>{ar ? 'تسوّق القهوة والتمر' : 'Shop coffee & dates'}</a>
+            <a class="btn tamr" href={path(lang, 'ramadan')}>{ar ? 'اطلب لرمضان مسبقاً' : 'Pre-order for Ramadan'}</a>
+          </div>
+        </div>
+      </div>
+      <div class="hero-pack" aria-hidden="true">
+        <div class="pack-panel patterned">
+          <img class="pack-box" src="/media/img/giftbox.jpg" alt="" width="1000" height="1250" fetchpriority="high" />
+          <div class="pack-pouch"><Pouch coffee={najdi} lang={lang} label={false} /></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Signature: choose a coffee, Tamr answers with its date. Works without JS via :checked. -->
+  <section class="pairing" aria-labelledby="pairing-h">
+    <div class="wrap">
+      <div class="pairing-head">
+        <h2 id="pairing-h" class="h-l">{ar ? 'اختر قهوتك، وتمر تردّ.' : 'Choose a coffee. Tamr answers.'}</h2>
+        <p class="lead">{ar ? 'لكل قهوة تمرة تليق بها. نرسلهما معاً.' : 'Every coffee has a date that suits it. We send them together.'}</p>
+      </div>
+      <fieldset class="chips">
+        <legend class="sr">{ar ? 'القهوة' : 'Coffee'}</legend>
+        {COFFEES.map((c, i) => (
+          <label class="chip"><input type="radio" name="pick" value={c.id} checked={i === 0} /><span>{c.name[lang]}</span></label>
+        ))}
+      </fieldset>
+      <div class="panels">
+        {COFFEES.map((c, i) => {
+          const d = DATES[c.date];
+          return (
+            <div class="panel" data-for={c.id} hidden={i !== 0}>
+              <div class="panel-pouch"><Pouch coffee={c} lang={lang} /></div>
+              <div class="panel-chat">
+                <Pair lang={lang} size="l"
+                  bunn={c.bunn}
+                  tamr={{ ar: `خذ معها ${d.name.ar}.`, en: `Take ${d.name.en} with it.` }} />
+                <p class="why">{c.why[lang]} <span>{d.name[lang]} · {d.region[lang]}</span></p>
+                <div class="panel-buy">
+                  <p><span class="price">{money(c.price + dateBox.price, lang)}</span> <span class="muted">{ar ? `${c.name.ar} ${c.size} + ٥٠٠ غ ${d.name.ar}` : `${c.name.en} ${c.size} + 500 g ${d.name.en}`}</span></p>
+                  <button class="btn tamr" type="button" data-add={`${c.id},date-box`} data-opt={`${c.grinds[0]},${c.date}`}><span>{ar ? 'أضف الاثنين' : 'Add the pair'}</span></button>
+                  <a href={path(lang, `shop/${c.id}`)}>{ar ? 'عن هذه القهوة' : 'About this coffee'}</a>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <!-- The shelf: four families standing like bags on a counter. -->
+  <section class="sec shelf-sec" aria-labelledby="shelf-h">
+    <div class="wrap">
+      <div class="split-head">
+        <h2 id="shelf-h" class="h-l">{ar ? 'أربع عائلات على الرف.' : 'Four families on the shelf.'}</h2>
+        <p class="lead">{ar ? 'كيس واحد لكل قهوة، والملصق يحكي الباقي: الاسم والبهار ودرجة التحميص.' : 'One bag for every coffee. The sticker tells the rest: the name, the spice, the roast.'}</p>
+      </div>
+      <ul class="shelf">
+        {shelf.map(({ f, c, n }) => (
+          <li class={`rise shelf-${f}`}>
+            <a href={path(lang, 'shop') + `#${f}`}>
+              <div class="shelf-bag"><Pouch coffee={c} lang={lang} label={false} /></div>
+              <h3 class="h-s">{FAMILIES[f].name[lang]}</h3>
+              <p class="muted">{FAMILIES[f].line[lang]}</p>
+              <p class="count">{ar ? `${n} ${n > 2 ? 'أنواع' : n === 1 ? 'نوع' : 'نوعان'}` : `${n} ${n === 1 ? 'kind' : 'kinds'}`}</p>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <BoxBuilder lang={lang} />
+
+  <!-- Ramadan: the Calgary window at sunset. -->
+  <section class="ramadan-cta" aria-labelledby="ram-h">
+    <img src="/media/img/ramadan-window.jpg" alt={ar ? 'غروب الشمس فوق كالغاري من نافذة بيت' : 'Sunset over Calgary from a home window'} loading="lazy" width="1000" height="1250" />
+    <div class="wrap ram-inner">
+      <div class="ram-card">
+        <h2 id="ram-h" class="h-l">{ar ? 'أول إفطار في كالغاري' : 'First iftar in Calgary'}</h2>
+        <p class="ram-time tnum"><b>{firstIftar}</b> <span>{ar ? 'مساءً' : 'p.m.'}</span></p>
+        <p class="muted">{ar ? 'الاثنين ٨ فبراير ٢٠٢٧، إن شاء الله. موعد متوقع، والهلال يقرر.' : 'Monday, 8 February 2027, expected. The moon decides.'}</p>
+        <p>{ar ? 'طلبات رمضان تصل قبل الغروب.' : 'Ramadan orders arrive before sunset.'}</p>
+        <a class="btn tamr" href={path(lang, 'ramadan')}>{ar ? 'جدول رمضان والصناديق' : 'The Ramadan table & boxes'}</a>
+      </div>
+    </div>
+  </section>
+
+  <Films lang={lang} />
+  <GuestWall lang={lang} />
+</Base>
+
+<style>
+  /* ---------- hero ---------- */
+  .hero { padding-block: clamp(28px, 5vw, 72px) clamp(56px, 7vw, 104px); }
+  .hero-grid { display: grid; grid-template-columns: 1.12fr .88fr; gap: clamp(28px, 5vw, 80px); align-items: center; }
+  .hero-talk { display: grid; gap: clamp(28px, 4vw, 48px); }
+  .hero-pair { max-width: 760px; }
+  .hero-copy { display: grid; gap: 16px; max-width: 600px; }
+  .hero-copy h1 { font-size: clamp(24px, 2.4vw, 32px); line-height: 1.25; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+  .pack-panel { position: relative; border-radius: clamp(28px, 4vw, 48px); border-bottom-left-radius: 8px; overflow: hidden; aspect-ratio: 4 / 5; }
+  .pack-box { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% 40%; }
+  .pack-pouch { position: absolute; width: 44%; inset-inline-start: 6%; bottom: 3%; filter: drop-shadow(0 22px 22px rgba(51, 33, 26, .28)); }
+  html[dir='rtl'] .pack-pouch { inset-inline-start: auto; left: 6%; }
+  .js .hero-pair .say { opacity: 0; transform: translateY(10px) scale(.98); animation: say .7s var(--ease) forwards; }
+  .js .hero-pair .say.tamr { animation-delay: .55s; }
+  .js .pack-pouch { animation: stand .9s .25s var(--ease) both; }
+  @keyframes say { to { opacity: 1; transform: none; } }
+  @keyframes stand { from { opacity: 0; transform: translateY(26px) rotate(-3deg); } }
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .hero-pack { max-width: 520px; width: 100%; margin-inline: auto; }
+    .pack-panel { aspect-ratio: 5 / 4; }
+    .pack-pouch { width: 34%; }
+  }
+
+  /* ---------- pairing (Bunn-drenched) ---------- */
+  .pairing { background: var(--bunn); color: var(--paper); padding-block: clamp(64px, 8vw, 120px); }
+  .pairing-head { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 40px; align-items: end; margin-bottom: 32px; }
+  .pairing .lead { color: #D9C9B4; }
+  @media (max-width: 800px) { .pairing-head { grid-template-columns: 1fr; } }
+  .chips { border: 0; padding: 0; margin: 0 0 36px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip input { position: absolute; opacity: 0; pointer-events: none; }
+  .chip span { display: inline-block; padding: 10px 16px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px rgba(245, 239, 227, .35); font-weight: 500; cursor: pointer; transition: background .15s, color .15s, box-shadow .15s; }
+  .chip span:hover { box-shadow: inset 0 0 0 1.5px var(--paper); }
+  .chip input:checked + span { background: var(--paper); color: var(--bunn); border-bottom-right-radius: 5px; }
+  .chip input:focus-visible + span { outline: 2.5px solid var(--khalal); outline-offset: 3px; }
+  .panel { display: grid; grid-template-columns: minmax(200px, .55fr) 1fr; gap: clamp(28px, 5vw, 80px); align-items: center; }
+  .panel[hidden] { display: none; }
+  .panel-pouch { max-width: 300px; justify-self: center; width: 100%; filter: drop-shadow(0 28px 30px rgba(0, 0, 0, .35)); }
+  .panel-chat { display: grid; gap: 22px; max-width: 640px; }
+  .panel-chat :global(.say.bunn) { background: var(--paper); color: var(--bunn); }
+  .why { color: #E5D7C3; font-size: 17px; }
+  .why span { display: block; color: var(--khalal-2); font-weight: 600; font-size: 15px; margin-top: 4px; }
+  .panel-buy { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px; padding-top: 20px; border-top: 1px solid rgba(245, 239, 227, .18); }
+  .panel-buy p { flex-basis: 100%; }
+  .panel-buy .price { font-size: 26px; margin-inline-end: 8px; }
+  .panel-buy .muted { color: #CDBBA5; }
+  .panel-buy a { color: var(--paper); }
+  .panel.replay .panel-chat :global(.say.tamr) { animation: answer .9s var(--ease) both; }
+  .panel.replay .panel-chat :global(.say.bunn) { animation: say .5s var(--ease) both; }
+  @keyframes answer { 0%, 45% { opacity: 0; transform: translateY(10px) scale(.96); } 100% { opacity: 1; transform: none; } }
+  @media (max-width: 760px) { .panel { grid-template-columns: 1fr; } .panel-pouch { max-width: 200px; } }
+
+  /* ---------- shelf ---------- */
+  .split-head { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 40px; align-items: end; margin-bottom: clamp(32px, 4vw, 56px); }
+  @media (max-width: 800px) { .split-head { grid-template-columns: 1fr; } }
+  .shelf { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(16px, 3vw, 40px); align-items: end; }
+  .shelf a { display: grid; gap: 8px; text-decoration: none; }
+  .shelf-bag { padding: 0 12% 18px; border-bottom: 3px solid var(--bunn); margin-bottom: 10px; transition: transform .45s var(--ease); }
+  .shelf a:hover .shelf-bag { transform: translateY(-8px); }
+  .shelf-husk .shelf-bag { padding-inline: 22%; }
+  .shelf a:hover h3 { text-decoration: underline; text-underline-offset: .2em; }
+  .count { font-size: 14px; font-weight: 600; color: var(--tamr); }
+  @media (max-width: 760px) { .shelf { grid-template-columns: 1fr 1fr; row-gap: 40px; } }
+
+  /* ---------- Ramadan window ---------- */
+  .ramadan-cta { position: relative; min-height: clamp(560px, 70vw, 760px); display: grid; align-items: center; overflow: hidden; background: var(--bunn); }
+  .ramadan-cta > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 35%; }
+  .ram-inner { position: relative; width: 100%; }
+  .ram-card { background: var(--paper); border-radius: 36px; border-bottom-left-radius: 8px; padding: clamp(24px, 3.5vw, 44px); max-width: 460px; display: grid; gap: 12px; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .5); }
+  .ram-time { font-family: var(--display); line-height: 1; }
+  .ram-time b { font-size: clamp(64px, 8vw, 104px); color: var(--tamr); font-weight: 700; }
+  .ram-time span { font-size: 24px; }
+  .ram-card .btn { justify-self: start; margin-top: 8px; }
+</style>
+
+<script>
+  // Pairing: swap panels and let Tamr "type" before answering.
+  const panels = document.querySelectorAll<HTMLElement>('.pairing .panel');
+  document.querySelectorAll<HTMLInputElement>('.pairing input[name=pick]').forEach(r => r.addEventListener('change', () => {
+    panels.forEach(p => {
+      const on = p.dataset.for === r.value;
+      p.hidden = !on;
+      if (on) { p.classList.remove('replay'); void p.offsetWidth; p.classList.add('replay'); }
+    });
+  }));
+</script>

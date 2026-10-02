@@ -1,0 +1,20 @@
+---
+// Bunn speaks first, Tamr answers. Arabic first; the English page adds the translation underneath.
+import type { L, Lang } from '../data/products';
+interface Props { bunn: L; tamr: L; lang: Lang; size?: 's' | 'm' | 'l' | 'xl'; class?: string; id?: string }
+const { bunn, tamr, lang, size = 'm', class: cls = '', id } = Astro.props;
+---
+<div class={`pair pair-${size} ${cls}`} id={id}>
+  <p class="say bunn" data-who="bunn"><span lang="ar" data-ar>{bunn.ar}</span>{lang === 'en' && <span class="en" data-en>{bunn.en}</span>}</p>
+  <p class="say tamr" data-who="tamr"><span lang="ar" data-ar>{tamr.ar}</span>{lang === 'en' && <span class="en" data-en>{tamr.en}</span>}</p>
+</div>
+
+<style>
+  .pair { display: grid; gap: 10px; }
+  .pair-s .say { font-size: 18px; }
+  .pair-m .say { font-size: clamp(20px, 2vw, 25px); }
+  .pair-l .say { font-size: clamp(26px, 3.2vw, 40px); --r: 34px; }
+  .pair-xl .say { font-size: clamp(32px, 4.2vw, 58px); --r: clamp(28px, 3.4vw, 46px); padding: .38em .72em .5em; max-width: 92%; }
+  .pair-xl .say .en { font-size: clamp(15px, 1.2vw, 18px); margin-top: .15em; }
+  .pair-xl { gap: clamp(10px, 1.4vw, 18px); }
+</style>

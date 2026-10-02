@@ -1,0 +1,64 @@
+---
+import Base from '../../layouts/Base.astro';
+import type { Lang } from '../../data/products';
+
+export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
+const lang = Astro.params.lang as Lang;
+const ar = lang === 'ar';
+const WAYS = [
+  { h: { en: 'Pickup', ar: 'الاستلام' }, p: { en: 'Free, at [address], Calgary. Thursday to Sunday, 11:00 to 20:00, from 22 January 2027. Pick a time window at checkout.', ar: 'مجاناً من [العنوان]، كالغاري. من الخميس إلى الأحد، ١١:٠٠ حتى ٢٠:٠٠، من ٢٢ يناير ٢٠٢٧. اختر موعدك عند الطلب.' } },
+  { h: { en: 'Calgary delivery', ar: 'التوصيل داخل كالغاري' }, p: { en: 'We deliver ourselves, $9, free over $80. Postal codes starting T1, T2 or T3. Ramadan orders arrive before sunset; Eid orders before Eid morning.', ar: 'نوصل بأنفسنا، ٩ $، ومجاناً فوق ٨٠ $. للرموز البريدية التي تبدأ بـ T1 أو T2 أو T3. طلبات رمضان تصل قبل الغروب، وطلبات العيد قبل صباح العيد.' } },
+  { h: { en: 'Paying', ar: 'الدفع' }, p: { en: 'For now: at pickup (card or cash) or by Interac e-Transfer once we confirm your order. Card payment online comes with the full launch.', ar: 'حالياً: عند الاستلام (بطاقة أو نقداً) أو بتحويل Interac بعد تأكيد طلبك. الدفع بالبطاقة عبر الموقع يأتي مع الإطلاق الكامل.' } },
+];
+const FAQ = [
+  { q: { en: 'When can I order?', ar: 'متى أستطيع الطلب؟' }, a: { en: 'Pre-orders open in January 2027. Ramadan is expected to begin around 8 February 2027, and Eid around 9 March. Orders placed now are saved as pre-orders and confirmed by email when we open.', ar: 'يفتح الطلب المسبق في يناير ٢٠٢٧. يُتوقع أن يبدأ رمضان نحو ٨ فبراير ٢٠٢٧ والعيد نحو ٩ مارس. الطلبات الآن تُحفظ كطلبات مسبقة ونؤكدها بالبريد عند الافتتاح.' } },
+  { q: { en: 'Ground or whole bean?', ar: 'مطحون أم حبوب؟' }, a: { en: 'Gulf and Yemeni coffees come ground for the dallah unless you choose whole bean. Levantine comes fine for the pot. Every bag has its roast date on the back.', ar: 'القهوة الخليجية واليمنية تأتي مطحونة للدلّة إلا إذا اخترت الحبوب، والشامية ناعمة للركوة. وتاريخ التحميص على ظهر كل كيس.' } },
+  { q: { en: 'Do you ship outside Calgary?', ar: 'هل تشحنون خارج كالغاري؟' }, a: { en: 'Not yet. Pickup and our own delivery in Calgary only, for now.', ar: 'ليس بعد. الاستلام وتوصيلنا داخل كالغاري فقط حالياً.' } },
+  { q: { en: 'Is there a café?', ar: 'هل هناك مقهى؟' }, a: { en: 'Not yet. The café comes after the shop grows.', ar: 'ليس بعد. يأتي المقهى بعد أن يكبر المتجر.' } },
+  { q: { en: 'Allergens?', ar: 'مسببات الحساسية؟' }, a: { en: 'Baydani is roasted with sesame. Every label lists its ingredients in English and French.', ar: 'البيضاني محمّص مع السمسم. وكل ملصق يذكر مكوناته بالإنجليزية والفرنسية.' } },
+];
+const POL = [
+  { h: { en: 'Refunds', ar: 'الاسترجاع' }, p: { en: "Coffee and dates are food, so we can't take them back once they leave us. If something arrives damaged or wrong, tell us within 48 hours and we'll replace it or refund you.", ar: 'القهوة والتمر طعام، فلا نستطيع استرجاعهما بعد الاستلام. إن وصل شيء تالفاً أو خاطئاً أخبرنا خلال ٤٨ ساعة ونستبدله أو نعيد المبلغ.' } },
+  { h: { en: 'Privacy', ar: 'الخصوصية' }, p: { en: "We keep your name, phone, email and address only to prepare and deliver your order, and to write to you if you join our list. We don't sell or share them.", ar: 'نحتفظ باسمك وهاتفك وبريدك وعنوانك فقط لتجهيز طلبك وتوصيله، ولمراسلتك إن اشتركت في قائمتنا. لا نبيعها ولا نشاركها.' } },
+  { h: { en: 'Terms', ar: 'الشروط' }, p: { en: 'Prices are drafts until launch and in Canadian dollars. Pre-orders are confirmed by email before anything is charged. GST shown as 0% on basic groceries is pending confirmation. Hikaya Coffee Ltd., [address], Calgary, AB.', ar: 'الأسعار مبدئية حتى الإطلاق وبالدولار الكندي. نؤكد الطلبات المسبقة بالبريد قبل أي دفع. ضريبة ٠٪ على المواد الغذائية الأساسية بانتظار التأكيد. حكاية للقهوة المحدودة، [العنوان]، كالغاري.' } },
+];
+---
+<Base lang={lang} title={ar ? 'الاستلام والتوصيل' : 'Pickup & delivery'} current="visit">
+  <section class="wrap v-head">
+    <h1 class="h-l">{ar ? 'كيف تصلك' : 'How it reaches you'}</h1>
+    <p class="lead">{ar ? '[العنوان]، كالغاري. العنوان والساعات النهائية تُعلن قبل افتتاح الطلبات.' : '[address], Calgary. The final address and hours are announced before pre-orders open.'}</p>
+  </section>
+  <section class="wrap ways">
+    {WAYS.map((w, i) => <div class={`way w${i}`}><h2 class="h-s">{w.h[lang]}</h2><p>{w.p[lang]}</p></div>)}
+  </section>
+  <section class="sec wrap faq" id="questions" aria-labelledby="q-h">
+    <h2 id="q-h" class="h-l">{ar ? 'أسئلة' : 'Questions'}</h2>
+    <div class="acc">{FAQ.map(f => <details><summary>{f.q[lang]}</summary><p>{f.a[lang]}</p></details>)}</div>
+  </section>
+  <section class="sec-tight wrap pol" id="policies" aria-labelledby="p-h">
+    <h2 id="p-h" class="h-m">{ar ? 'السياسات' : 'Policies'}</h2>
+    <div class="pol-grid">{POL.map(p => <div><h3 class="h-s">{p.h[lang]}</h3><p class="muted">{p.p[lang]}</p></div>)}</div>
+  </section>
+</Base>
+
+<style>
+  .v-head { display: grid; gap: 14px; padding-block: clamp(40px, 6vw, 80px) 32px; }
+  .ways { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 860px) { .ways { grid-template-columns: 1fr; } }
+  .way { border-radius: 32px; padding: 26px; display: grid; gap: 10px; align-content: start; }
+  .w0 { background: var(--bunn); color: var(--paper); border-bottom-right-radius: 6px; }
+  .w1 { background: var(--tamr); color: var(--tamr-ink); border-bottom-left-radius: 6px; }
+  .w2 { background: var(--sheet); box-shadow: inset 0 0 0 1.5px var(--line); }
+  .faq h2 { margin-bottom: 24px; }
+  .acc { max-width: 860px; }
+  .acc details { border-bottom: 1px solid var(--line); padding-block: 18px; }
+  .acc details:first-child { border-top: 1px solid var(--line); }
+  .acc summary { cursor: pointer; font-weight: 600; font-size: 19px; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+  .acc summary::after { content: '+'; font-size: 24px; line-height: 1; }
+  .acc details[open] summary::after { content: '–'; }
+  .acc p { margin-top: 10px; color: var(--ink-2); max-width: 70ch; }
+  .pol { padding-bottom: clamp(56px, 8vw, 104px); scroll-margin-top: 100px; }
+  .pol-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 22px; }
+  .pol-grid > div { display: grid; gap: 8px; align-content: start; }
+  @media (max-width: 860px) { .pol-grid { grid-template-columns: 1fr; } }
+</style>

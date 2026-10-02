@@ -1,0 +1,132 @@
+---
+import '../styles/fonts.css';
+import '../styles/global.css';
+import type { Lang } from '../data/products';
+import { PRODUCTS, DATES, GRINDS } from '../data/products';
+import { UI, dir, other, path } from '../data/i18n';
+
+interface Props { lang: Lang; title: string; description?: string; current?: keyof typeof UI.nav; sleeve?: 'regular' | 'ramadan' | 'eid' }
+const { lang, title, description = UI.footLine[lang], current, sleeve = 'regular' } = Astro.props;
+const alt = other(lang);
+const here = Astro.url.pathname;
+const altHref = here.replace(/^\/(en|ar)\//, `/${alt}/`);
+const nav: [keyof typeof UI.nav, string][] = [['shop', 'shop'], ['ramadan', 'ramadan'], ['eid', 'eid'], ['brew', 'brew'], ['story', 'story'], ['visit', 'visit']];
+
+// Small catalog for the client cart (names, prices, options) — no secrets, all public.
+const catalog = Object.fromEntries(PRODUCTS.map(p => [p.id, {
+  n: p.name, price: p.price, kind: p.kind,
+  img: p.kind === 'box' ? p.img : null,
+  opts: p.kind === 'coffee' ? Object.fromEntries(p.grinds.map(g => [g, GRINDS[g]])) : p.chooseDate ? Object.fromEntries(Object.entries(DATES).map(([k, d]) => [k, d.name])) : null,
+}]));
+const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'}` : (lang === 'ar' ? 'حكاية · قهوة وتمر في كالغاري' : 'Hikaya · Coffee & dates in Calgary');
+---
+<!doctype html>
+<html lang={lang} dir={dir(lang)}>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>{fullTitle}</title>
+  <meta name="description" content={description} />
+  <meta name="theme-color" content="#F5EFE3" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="alternate" hreflang={lang} href={new URL(here, Astro.site)} />
+  <link rel="alternate" hreflang={alt} href={new URL(altHref, Astro.site)} />
+  <meta property="og:title" content={fullTitle} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={new URL('/media/img/eid-coffee-dates.jpg', Astro.site)} />
+  <link rel="preload" href="/fonts/ElMessiri-700-arabic.woff2" as="font" type="font/woff2" crossorigin />
+  <script is:inline>document.documentElement.classList.add('js')</script>
+</head>
+<body>
+  <a class="skip" href="#main">{UI.skip[lang]}</a>
+  <div class={`sleeve ${sleeve}`}><div class="wrap"><p>{UI.season[lang]}</p></div></div>
+  <header class="top">
+    <div class="wrap">
+      <a class="lockup" href={path(lang)} aria-label={lang === 'ar' ? 'حكاية، الصفحة الرئيسية' : 'Hikaya, home'}>
+        <img src="/brand/logo.svg" alt="" width="52" height="44" />
+        <span class="wm"><b>حكاية</b><small>HIKAYA</small></span>
+      </a>
+      <nav id="nav" aria-label={lang === 'ar' ? 'الرئيسية' : 'Main'}>
+        {nav.map(([k, p]) => <a href={path(lang, p)} aria-current={current === k ? 'page' : undefined}>{UI.nav[k][lang]}</a>)}
+      </nav>
+      <div class="acts">
+        <a class="langsw" href={altHref} lang={alt} hreflang={alt}>{UI.langName[lang]}</a>
+        <a class="cartbtn" href={path(lang, 'cart')} id="cartBtn"><span class="lbl">{UI.cart[lang]}</span><span class="n tnum" id="cartN" aria-live="polite">0</span></a>
+        <button class="menubtn" type="button" aria-controls="nav" aria-expanded="false" id="menuBtn">{UI.menu[lang]}</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main"><slot /></main>
+
+  <footer class="foot">
+    <div class="wrap">
+      <div class="grid">
+        <div class="stack" style="--gap:16px">
+          <a class="lockup" href={path(lang)} aria-label="Hikaya"><img src="/brand/logo.svg" alt="" width="52" height="44" /><span class="wm"><b>حكاية</b><small>HIKAYA</small></span></a>
+          <p class="muted measure">{UI.footLine[lang]}</p>
+          <p><a class="ig" href="https://www.instagram.com/hikaya.yyc/" rel="me noopener" target="_blank"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.8" /><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8" /><circle cx="17.3" cy="6.7" r="1.2" fill="currentColor" /></svg><span dir="ltr">@hikaya.yyc</span><span class="sr"> · Instagram</span></a></p>
+          <p class="open-line"><span lang="ar">{UI.open.ar}</span>{lang === 'en' && <span class="muted"> · {UI.openEn.en}</span>}</p>
+        </div>
+        <div>
+          <h2 class="fh">{UI.nav.shop[lang]}</h2>
+          <ul>
+            <li><a href={path(lang, 'shop')}>{lang === 'ar' ? 'كل القهوة والتمر' : 'All coffee & dates'}</a></li>
+            <li><a href={path(lang, 'ramadan')}>{UI.nav.ramadan[lang]}</a></li>
+            <li><a href={path(lang, 'eid')}>{UI.nav.eid[lang]}</a></li>
+            <li><a href={path(lang, 'brew')}>{UI.nav.brew[lang]}</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="fh">{lang === 'ar' ? 'معلومات' : 'Info'}</h2>
+          <ul>
+            <li><a href={path(lang, 'story')}>{UI.nav.story[lang]}</a></li>
+            <li><a href={path(lang, 'visit')}>{UI.nav.visit[lang]}</a></li>
+            <li><a href={path(lang, 'visit') + '#questions'}>{lang === 'ar' ? 'أسئلة' : 'Questions'}</a></li>
+            <li><a href={path(lang, 'visit') + '#policies'}>{lang === 'ar' ? 'السياسات' : 'Policies'}</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="fh">{lang === 'ar' ? 'قائمة البريد' : 'The list'}</h2>
+          <p class="muted">{UI.listLine[lang]}</p>
+          <form class="listform" name="list" method="POST" data-netlify="true" netlify-honeypot="company" action={path(lang, 'thanks') + '?list=1'}>
+            <input type="hidden" name="form-name" value="list" />
+            <input type="hidden" name="lang" value={lang} />
+            <p class="sr"><label>Company <input name="company" tabindex="-1" autocomplete="off" /></label></p>
+            <label class="sr" for={`list-${lang}`}>{UI.email[lang]}</label>
+            <input id={`list-${lang}`} type="email" name="email" required autocomplete="email" placeholder={UI.email[lang]} />
+            <button class="btn primary" type="submit" style="min-height:46px;padding:11px 18px">{UI.join[lang]}</button>
+          </form>
+        </div>
+      </div>
+      <div class="legal">
+        <p>© 2026 Hikaya Coffee Ltd. · Calgary, Alberta</p>
+        <p>{lang === 'ar' ? 'الأسعار مبدئية حتى الإطلاق.' : 'Prices are drafts until launch.'}</p>
+      </div>
+    </div>
+  </footer>
+
+  <script type="application/json" id="catalog" set:html={JSON.stringify({ lang, cart: path(lang, 'cart'), added: UI.added[lang], add: UI.add[lang], items: catalog })} />
+  <script>
+    import { initCart } from '../scripts/cart';
+    initCart();
+    const btn = document.getElementById('menuBtn');
+    const nav = document.getElementById('nav');
+    btn?.addEventListener('click', () => {
+      const open = nav!.classList.toggle('open');
+      btn.setAttribute('aria-expanded', String(open));
+    });
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+    document.querySelectorAll('.rise').forEach(el => io.observe(el));
+  </script>
+  <style>
+    .ig { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; text-decoration: none; }
+    .ig:hover { color: var(--tamr); }
+    .ig svg { width: 20px; height: 20px; }
+    .open-line { font-family: var(--display); font-size: 22px; }
+    .open-line .muted { font-family: var(--body); font-size: 15px; }
+    .lockup img { width: 52px; height: auto; }
+    @media (max-width: 520px) { .top .lockup img { width: 42px; } }
+  </style>
+</body>
+</html>

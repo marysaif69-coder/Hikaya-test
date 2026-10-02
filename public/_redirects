@@ -1,0 +1,7 @@
+# Language door: Arabic browsers land on /ar/, everyone else on /en/
+/        /ar/       302  Language=ar
+/        /en/       302
+# The QR code on every pouch points here
+/brew    /ar/brew/  302  Language=ar
+/brew    /en/brew/  302
+/brew/*  /en/brew/  302

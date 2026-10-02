@@ -1,0 +1,62 @@
+---
+// Guests speak in Nastaliq. These three are sample lines until real ones arrive through the form.
+import type { Lang } from '../data/products';
+import { path } from '../data/i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const ar = lang === 'ar';
+const SAMPLES = [
+  { ar: 'جدتي كانت تصبّ القهوة قبل أن نقول صباح الخير.', en: 'My grandmother poured the coffee before we said good morning.' },
+  { ar: 'أول مرة ذقت القشر كانت في صنعاء، مع خالي.', en: 'The first time I tasted qishr was in Sana’a, with my uncle.' },
+  { ar: 'في كالغاري البرد طويل، والدلّة أطول.', en: 'In Calgary the cold is long, and the dallah is longer.' },
+];
+---
+<section class="sec wall" aria-labelledby="wall-h">
+  <div class="wrap wall-grid">
+    <div class="wall-copy">
+      <h2 id="wall-h" class="h-l">{ar ? 'وأنتم، ما حكايتكم؟' : 'And yours? What is your story?'}</h2>
+      <p class="lead">{ar ? 'فنجان تتذكره، بيت، شخص كان يصبّ لك. اكتب سطراً، وقد نعلّقه هنا.' : 'A cup you remember, a house, someone who poured for you. Write a line and we may hang it here.'}</p>
+      <form class="wall-form" name="story" method="POST" data-netlify="true" netlify-honeypot="company" action={path(lang, 'thanks') + '?story=1'}>
+        <input type="hidden" name="form-name" value="story" />
+        <input type="hidden" name="lang" value={lang} />
+        <p class="sr"><label>Company <input name="company" tabindex="-1" autocomplete="off" /></label></p>
+        <div class="field">
+          <label for={`story-${lang}`}>{ar ? 'سطرك' : 'Your line'}</label>
+          <textarea id={`story-${lang}`} name="line" rows="3" maxlength="160" required placeholder={ar ? 'بالعربية أو بالإنجليزية' : 'In Arabic or English'}></textarea>
+        </div>
+        <div class="field">
+          <label for={`sname-${lang}`}>{ar ? 'الاسم الذي نكتبه تحته (اختياري)' : 'The name we sign it with (optional)'}</label>
+          <input id={`sname-${lang}`} name="name" autocomplete="given-name" />
+        </div>
+        <label class="consent"><input type="checkbox" name="consent" required /> <span>{ar ? 'أوافق على نشر سطري على موقع حكاية وصفحاتها.' : 'Hikaya may show my line on its site and pages.'}</span></label>
+        <button class="btn primary" type="submit">{ar ? 'أرسل السطر' : 'Send the line'}</button>
+      </form>
+    </div>
+    <div class="guests">
+      {SAMPLES.map((s, i) => (
+        <figure class={`guest rise g${i}`}>
+          <blockquote class="say guest" lang="ar">{s.ar}</blockquote>
+          <figcaption>{lang === 'en' ? s.en : ''}<small>{ar ? 'سطر تجريبي، حتى تصلنا سطوركم' : 'Sample line, until yours arrive'}</small></figcaption>
+        </figure>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .wall { background: var(--paper-2); }
+  .wall-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 6vw, 96px); align-items: start; }
+  @media (max-width: 900px) { .wall-grid { grid-template-columns: 1fr; } }
+  .wall-copy { background: var(--paper); border-radius: 36px; border-bottom-right-radius: 8px; padding: clamp(22px, 3vw, 40px); display: grid; gap: 18px; }
+  .wall-form { display: grid; gap: 16px; margin-top: 6px; }
+  .consent { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; }
+  .consent input { margin-top: 5px; accent-color: var(--bunn); width: 18px; height: 18px; flex: none; }
+  .wall-form .btn { justify-self: start; }
+  .guests { display: grid; gap: 22px; padding-top: 12px; }
+  .guest { margin: 0; display: grid; gap: 8px; }
+  .guest.g1 { margin-inline-start: 12%; }
+  .guest.g2 { margin-inline-start: 4%; }
+  .guest blockquote { margin: 0; font-family: var(--guest); font-weight: 500; font-size: clamp(20px, 2vw, 25px); line-height: 2.1; direction: rtl; text-align: right; padding: .5em 1em .7em; border-bottom-left-radius: 5px; box-shadow: 0 14px 30px -22px rgba(51, 33, 26, .6); background: var(--sheet); }
+  .guest figcaption { font-size: 15px; color: var(--ink-2); display: grid; gap: 2px; padding-inline: 8px; }
+  .guest small { font-size: 12.5px; font-weight: 600; color: var(--tamr); }
+</style>

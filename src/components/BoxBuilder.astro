@@ -1,0 +1,153 @@
+---
+// One gift box (320 × 240 × 70), three inserts, one khalal sleeve; the occasion is only our Ø50 sticker.
+// Drawn to the packaging brief at 2 px per mm.
+import type { Lang } from '../data/products';
+import { BOXES, DATES, money } from '../data/products';
+import { path } from '../data/i18n';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const ar = lang === 'ar';
+
+const INSERTS = [
+  { id: 'D24', name: { en: 'D24 · dates only', ar: 'D24 · تمر فقط' }, line: { en: '24 dates in paper cups, four varieties.', ar: '٢٤ تمرة في أكواب ورقية، أربعة أصناف.' } },
+  { id: 'C12', name: { en: 'C12 · coffee + 12 dates', ar: 'C12 · قهوة و١٢ تمرة' }, line: { en: 'One pouch lying flat, twelve dates beside it.', ar: 'كيس قهوة ممدد، واثنتا عشرة تمرة بجانبه.' } },
+  { id: 'C2', name: { en: 'C2 · two coffees', ar: 'C2 · قهوتان' }, line: { en: 'Two pouches, side by side.', ar: 'كيسان جنباً إلى جنب.' } },
+] as const;
+const OCC = [
+  { id: 'regular', name: { en: 'Any day', ar: 'كل يوم' } },
+  { id: 'ramadan', name: { en: 'Ramadan', ar: 'رمضان' } },
+  { id: 'eid', name: { en: 'Eid', ar: 'العيد' } },
+] as const;
+// Which real product each combination is. Missing combinations fall back to the any-day box.
+const MATCH: Record<string, string> = {
+  'D24-regular': 'four-palms', 'D24-ramadan': 'four-palms', 'D24-eid': 'eid-dates',
+  'C12-regular': 'iftar-pair', 'C12-ramadan': 'iftar-pair', 'C12-eid': 'eid-coffee-dates',
+  'C2-regular': 'eid-duo', 'C2-ramadan': 'eid-duo', 'C2-eid': 'eid-duo',
+};
+const products = Object.fromEntries(BOXES.map(b => [b.id, { name: b.name[lang], price: money(b.price, lang), href: path(lang, `shop/${b.id}`), contents: b.contents[lang] }]));
+const dc = Object.values(DATES).map(d => d.c);
+
+// geometry (2 px / mm): inner tray 312 × 232 → 624 × 464
+const cups = (cols: number, rows: number, x0: number, y0: number, w: number, h: number) =>
+  Array.from({ length: cols * rows }, (_, i) => ({ x: x0 + (i % cols) * w, y: y0 + Math.floor(i / cols) * h, c: dc[Math.floor(i / rows) % 4] }));
+const D24 = cups(6, 4, 16, 16, 98, 108);
+const C12 = cups(3, 4, 316, 16, 98, 108);
+---
+<section class="sec boxsec" aria-labelledby="box-h">
+  <div class="wrap box-grid">
+    <div class="box-copy">
+      <h2 id="box-h" class="h-l">{ar ? 'صندوق واحد، ثلاثة بطون.' : 'One box, three insides.'}</h2>
+      <p class="lead">{ar ? 'نصنع صندوقاً واحداً لكل الهدايا. ما في داخله يتغيّر، والحزام الذهبي يبقى، والمناسبة ملصق صغير نضعه بأيدينا في كالغاري.' : 'We make one box for every gift. What sits inside changes, the gold sleeve stays, and the occasion is a small sticker we put on by hand in Calgary.'}</p>
+
+      <fieldset class="opt">
+        <legend>{ar ? 'في الداخل' : 'Inside'}</legend>
+        {INSERTS.map((it, i) => (
+          <label><input type="radio" name="insert" value={it.id} checked={i === 0} /><span><b>{it.name[lang]}</b><small>{it.line[lang]}</small></span></label>
+        ))}
+      </fieldset>
+      <fieldset class="opt opt-row">
+        <legend>{ar ? 'المناسبة' : 'Occasion'}</legend>
+        {OCC.map((o, i) => (
+          <label><input type="radio" name="occ" value={o.id} checked={i === 0} /><span><b>{o.name[lang]}</b></span></label>
+        ))}
+      </fieldset>
+
+      <div class="match" aria-live="polite">
+                <a class="match-name" id="matchLink" href={products['four-palms'].href}>{products['four-palms'].name}</a>
+        <p class="muted" id="matchLine">{products['four-palms'].contents}</p>
+        <p class="price" id="matchPrice">{products['four-palms'].price}</p>
+      </div>
+    </div>
+
+    <div class="box-art patterned" aria-hidden="true">
+      <!-- lid, with sleeve, seal and the occasion sticker -->
+      <svg class="lid" viewBox="0 0 640 480">
+        <defs>
+          <pattern id="lidpat" width="240" height="240" patternUnits="userSpaceOnUse">
+            <image href="/brand/pattern.svg" width="240" height="240" />
+          </pattern>
+        </defs>
+        <rect x="0" y="0" width="640" height="480" rx="10" fill="#F7F1E4" />
+        <rect x="0" y="0" width="640" height="480" rx="10" fill="url(#lidpat)" />
+        <rect x="40" y="150" width="210" height="180" rx="8" fill="#F7F1E4" />
+        <image href="/brand/logo.svg" x="70" y="170" width="150" height="126" />
+        <rect x="380" y="0" width="160" height="480" fill="#CF9C0C" />
+        <circle cx="460" cy="240" r="76" fill="#F5EFE3" />
+        <image href="/brand/logo.svg" x="404" y="196" width="112" height="94" />
+        <g class="occ occ-ramadan">
+          <circle cx="530" cy="345" r="50" fill="#A93B28" />
+          <path d="M546 322a26 26 0 1 0 0 46a21 21 0 1 1 0-46z" fill="#F5EFE3" />
+        </g>
+        <g class="occ occ-eid">
+          <circle cx="530" cy="345" r="50" fill="#33211A" />
+          <text x="530" y="360" text-anchor="middle" font-family="El Messiri, serif" font-weight="700" font-size="38" fill="#CF9C0C">عيد</text>
+        </g>
+      </svg>
+
+      <!-- base, opened: three inserts drawn to the brief -->
+      <svg class="base" viewBox="0 0 656 496">
+        <rect x="0" y="0" width="656" height="496" rx="12" fill="#E9DFCB" />
+        <rect x="16" y="16" width="624" height="464" rx="6" fill="#F3EBDA" />
+        <g class="ins ins-D24">
+          {D24.map(c => (<g><rect x={c.x + 4} y={c.y + 4} width="90" height="100" rx="14" fill="#5A3A28" /><ellipse cx={c.x + 49} cy={c.y + 54} rx="28" ry="39" fill={c.c} /><path d={`M${c.x + 49} ${c.y + 22} q-7 32 0 64`} stroke="#33211A" stroke-opacity=".35" stroke-width="2.5" fill="none" stroke-linecap="round" /></g>))}
+        </g>
+        <g class="ins ins-C12">
+          <g transform="translate(30 30)"><rect width="280" height="420" rx="10" fill="#FBF7EE" /><image href="/brand/logo.svg" x="95" y="40" width="90" height="76" /><rect x="50" y="190" width="180" height="180" rx="10" fill="#FFFDF8" /><rect x="50" y="190" width="180" height="52" rx="10" fill="#E6D2A6" /><text x="140" y="300" text-anchor="middle" font-family="El Messiri, serif" font-weight="700" font-size="34" fill="#33211A">نجدية</text></g>
+          {C12.map(c => (<g><rect x={c.x + 4} y={c.y + 4} width="90" height="100" rx="14" fill="#5A3A28" /><ellipse cx={c.x + 49} cy={c.y + 54} rx="28" ry="39" fill="#8E4A22" /><path d={`M${c.x + 49} ${c.y + 22} q-7 32 0 64`} stroke="#33211A" stroke-opacity=".35" stroke-width="2.5" fill="none" stroke-linecap="round" /></g>))}
+        </g>
+        <g class="ins ins-C2">
+          {[[46, 'نجدية', '#E6D2A6'], [346, 'خليجية', '#E6D2A6']].map(([x, n, b]) => (
+            <g transform={`translate(${x} 30)`}><rect width="264" height="420" rx="10" fill="#FBF7EE" /><image href="/brand/logo.svg" x="87" y="40" width="90" height="76" /><rect x="42" y="190" width="180" height="180" rx="10" fill="#FFFDF8" /><rect x="42" y="190" width="180" height="52" rx="10" fill={b as string} /><text x="132" y="300" text-anchor="middle" font-family="El Messiri, serif" font-weight="700" font-size="32" fill="#33211A">{n}</text></g>
+          ))}
+        </g>
+      </svg>
+    </div>
+  </div>
+  <script type="application/json" id="boxdata" set:html={JSON.stringify({ MATCH, products })} />
+</section>
+
+<style>
+  .box-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: clamp(32px, 5vw, 80px); align-items: center; }
+  @media (max-width: 900px) { .box-grid { grid-template-columns: 1fr; } }
+  .box-copy { display: grid; gap: 22px; }
+  .opt { border: 0; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .opt legend { font-weight: 600; font-size: 15px; margin-bottom: 8px; color: var(--ink-2); }
+  .opt label { cursor: pointer; }
+  .opt input { position: absolute; opacity: 0; }
+  .opt span { display: grid; gap: 2px; padding: 12px 16px; border-radius: 18px; box-shadow: inset 0 0 0 1.5px var(--line); transition: box-shadow .15s, background .15s; }
+  .opt small { font-size: 14.5px; color: var(--ink-2); }
+  .opt label:hover span { box-shadow: inset 0 0 0 1.5px var(--bunn); }
+  .opt input:checked + span { background: var(--sheet); box-shadow: inset 0 0 0 2px var(--bunn); border-bottom-right-radius: 5px; }
+  .opt input:focus-visible + span { outline: 2.5px solid var(--tamr); outline-offset: 3px; }
+  .opt-row { grid-template-columns: repeat(3, auto); justify-content: start; }
+  .opt-row legend { grid-column: 1 / -1; }
+  .match { border-top: 1px solid var(--line); padding-top: 18px; display: grid; gap: 4px; }
+  .match-name { font-family: var(--display); font-size: 32px; font-weight: 700; color: var(--tamr); text-decoration: none; }
+  .match-name:hover { text-decoration: underline; }
+  .match .price { font-size: 20px; }
+  .box-art { position: relative; padding: 26% 6% 8%; border-radius: 44px; border-bottom-left-radius: 8px; }
+  .lid { position: absolute; top: 5%; inset-inline-end: 3%; width: 50%; border-radius: 10px; filter: drop-shadow(0 22px 26px rgba(51, 33, 26, .28)); transform: rotate(5deg); z-index: 1; }
+  html[dir='rtl'] .lid { transform: rotate(-5deg); }
+  .base { width: 88%; border-radius: 12px; filter: drop-shadow(0 18px 24px rgba(51, 33, 26, .18)); }
+  .ins, .occ { opacity: 0; transition: opacity .35s var(--ease); }
+  .boxsec:not(:has(input[value='C12']:checked)):not(:has(input[value='C2']:checked)) .ins-D24,
+  .boxsec:has(input[value='C12']:checked) .ins-C12,
+  .boxsec:has(input[value='C2']:checked) .ins-C2,
+  .boxsec:has(input[value='ramadan']:checked) .occ-ramadan,
+  .boxsec:has(input[value='eid']:checked) .occ-eid { opacity: 1; }
+</style>
+
+<script>
+  const data = JSON.parse(document.getElementById('boxdata')!.textContent!);
+  const sec = document.querySelector('.boxsec')!;
+  const link = document.getElementById('matchLink') as HTMLAnchorElement;
+  const update = () => {
+    const ins = (sec.querySelector('input[name=insert]:checked') as HTMLInputElement).value;
+    const occ = (sec.querySelector('input[name=occ]:checked') as HTMLInputElement).value;
+    const p = data.products[data.MATCH[`${ins}-${occ}`]];
+    link.textContent = p.name; link.href = p.href;
+    document.getElementById('matchLine')!.textContent = p.contents;
+    document.getElementById('matchPrice')!.textContent = p.price;
+  };
+  sec.addEventListener('change', update);
+</script>

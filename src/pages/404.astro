@@ -1,0 +1,13 @@
+---
+import Base from '../layouts/Base.astro';
+import Pair from '../components/Pair.astro';
+---
+<Base lang="en" title="Not found">
+  <section class="wrap" style="padding-block:clamp(56px,9vw,120px);display:grid;gap:28px;max-width:760px">
+    <Pair lang="en" size="l" bunn={{ ar: 'ضعنا في الطريق.', en: 'We got lost on the way.' }} tamr={{ ar: 'ارجع، المكان محفوظ.', en: 'Come back, your seat is kept.' }} />
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <a class="btn primary" href="/en/">Home</a>
+      <a class="btn line" href="/ar/" lang="ar">الرئيسية</a>
+    </div>
+  </section>
+</Base>

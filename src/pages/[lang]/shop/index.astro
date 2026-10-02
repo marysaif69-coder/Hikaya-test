@@ -1,0 +1,58 @@
+---
+import Base from '../../../layouts/Base.astro';
+import ProductCard from '../../../components/ProductCard.astro';
+import Pair from '../../../components/Pair.astro';
+import { COFFEES, BOXES, FAMILIES, type Lang } from '../../../data/products';
+
+export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
+const lang = Astro.params.lang as Lang;
+const ar = lang === 'ar';
+const groups = [
+  { id: 'palm', items: COFFEES.filter(c => c.fam === 'palm') },
+  { id: 'mountain', items: COFFEES.filter(c => c.fam === 'mountain') },
+  { id: 'house', items: COFFEES.filter(c => c.fam === 'house') },
+  { id: 'husk', items: COFFEES.filter(c => c.fam === 'husk') },
+  { id: 'dates', items: BOXES.filter(b => b.fam === 'dates') },
+  { id: 'ramadan', items: BOXES.filter(b => b.fam === 'ramadan') },
+  { id: 'eid', items: BOXES.filter(b => b.fam === 'eid') },
+] as const;
+---
+<Base lang={lang} title={ar ? 'المتجر' : 'Shop'} current="shop">
+  <section class="wrap shop-head">
+    <div>
+      <h1 class="h-l">{ar ? 'القهوة والتمر' : 'Coffee & dates'}</h1>
+      <p class="lead">{ar ? 'محمّصة بكميات صغيرة في كالغاري. الحكاية على الملصق وتاريخ التحميص على الظهر. كل الطلبات الآن طلبات مسبقة، للاستلام أو التوصيل من ٢٢ يناير ٢٠٢٧.' : 'Roasted in small batches in Calgary. The story is on the label, the roast date on the back. Every order is a pre-order for now, for pickup or delivery from 22 January 2027.'}</p>
+    </div>
+    <Pair lang={lang} size="s" bunn={{ ar: 'من أين نبدأ؟', en: 'Where do we start?' }} tamr={{ ar: 'من الدلّة، ثم الجبل.', en: 'With the dallah, then the mountain.' }} />
+  </section>
+
+  <nav class="wrap fam-nav" aria-label={ar ? 'العائلات' : 'Families'}>
+    {groups.map(g => <a href={`#${g.id}`}>{FAMILIES[g.id].name[lang]}</a>)}
+  </nav>
+
+  {groups.map((g, gi) => (
+    <section class={`fam ${gi % 2 ? 'alt' : ''}`} id={g.id} aria-labelledby={`h-${g.id}`}>
+      <div class="wrap">
+        <div class="fam-head">
+          <h2 id={`h-${g.id}`} class="h-m">{FAMILIES[g.id].name[lang]}</h2>
+          <p class="muted">{FAMILIES[g.id].line[lang]}</p>
+        </div>
+        <div class="grid">{g.items.map(p => <ProductCard p={p} lang={lang} />)}</div>
+      </div>
+    </section>
+  ))}
+</Base>
+
+<style>
+  .shop-head { display: grid; grid-template-columns: 1.3fr .7fr; gap: 24px 64px; align-items: end; padding-block: clamp(40px, 6vw, 80px) 28px; }
+  .shop-head > div { display: grid; gap: 14px; }
+  @media (max-width: 860px) { .shop-head { grid-template-columns: 1fr; } }
+  .fam-nav { display: flex; gap: 8px; flex-wrap: wrap; padding-bottom: 28px; position: sticky; top: 72px; z-index: 5; background: var(--paper); padding-top: 12px; }
+  .fam-nav a { text-decoration: none; font-weight: 500; font-size: 15px; padding: 8px 14px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--line); }
+  .fam-nav a:hover { box-shadow: inset 0 0 0 1.5px var(--bunn); }
+  @media (max-width: 760px) { .fam-nav { top: 64px; flex-wrap: nowrap; overflow-x: auto; } .fam-nav a { white-space: nowrap; } }
+  .fam { padding-block: 48px 64px; scroll-margin-top: 140px; }
+  .fam.alt { background: var(--paper-2); }
+  .fam-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 24px; margin-bottom: 26px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 36px 24px; }
+</style>

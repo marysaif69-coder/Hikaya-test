@@ -1,0 +1,51 @@
+---
+import Base from '../../layouts/Base.astro';
+import Pair from '../../components/Pair.astro';
+import type { Lang } from '../../data/products';
+import { path } from '../../data/i18n';
+
+export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
+const lang = Astro.params.lang as Lang;
+const ar = lang === 'ar';
+---
+<Base lang={lang} title={ar ? 'شكراً' : 'Thank you'}>
+  <section class="wrap thanks">
+    <div data-kind="order" hidden>
+      <Pair lang={lang} size="l" bunn={{ ar: 'وصل طلبك.', en: 'Your order arrived.' }} tamr={{ ar: 'والتمرة تنتظرك.', en: 'And the date is waiting.' }} />
+      <h1 class="h-m">{ar ? 'شكراً. نؤكد طلبك بالبريد قريباً.' : 'Thank you. We’ll confirm your order by email soon.'}</h1>
+      <p class="ref" id="ref"></p>
+    </div>
+    <div data-kind="list" hidden>
+      <Pair lang={lang} size="l" bunn={{ ar: 'سجّلنا بريدك.', en: 'We have your email.' }} tamr={{ ar: 'ثلاث رسائل فقط في السنة.', en: 'Only three letters a year.' }} />
+      <h1 class="h-m">{ar ? 'أنت على القائمة.' : 'You’re on the list.'}</h1>
+    </div>
+    <div data-kind="story" hidden>
+      <Pair lang={lang} size="l" bunn={{ ar: 'وصل سطرك.', en: 'Your line arrived.' }} tamr={{ ar: 'وللحكاية بقية.', en: 'And the story goes on.' }} />
+      <h1 class="h-m">{ar ? 'شكراً على حكايتك.' : 'Thank you for your story.'}</h1>
+    </div>
+    <div class="cta">
+      <a class="btn primary" href={path(lang)}>{ar ? 'الصفحة الرئيسية' : 'Back home'}</a>
+      <a class="btn line" href={path(lang, 'brew')}>{ar ? 'طريقة التحضير' : 'How to brew'}</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .thanks { padding-block: clamp(56px, 9vw, 120px); display: grid; gap: 28px; max-width: 760px; }
+  .thanks > div:not(.cta) { display: grid; gap: 24px; }
+  .ref { font-family: var(--display); font-size: 26px; color: var(--tamr); }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; }
+</style>
+
+<script>
+  import { clear } from '../../scripts/cart';
+  const q = new URLSearchParams(location.search);
+  const kind = q.has('list') ? 'list' : q.has('story') ? 'story' : 'order';
+  document.querySelector<HTMLElement>(`[data-kind="${kind}"]`)!.hidden = false;
+  if (kind === 'order') {
+    clear();
+    let ref = '';
+    try { ref = sessionStorage.getItem('hikaya-ref') || ''; } catch {}
+    if (ref) document.getElementById('ref')!.textContent = (document.documentElement.lang === 'ar' ? 'رقم الطلب: ' : 'Order reference: ') + ref;
+  }
+</script>

@@ -1,0 +1,83 @@
+---
+import Base from '../../layouts/Base.astro';
+import Pair from '../../components/Pair.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import { BOXES, type Lang } from '../../data/products';
+import { path } from '../../data/i18n';
+
+export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
+const lang = Astro.params.lang as Lang;
+const ar = lang === 'ar';
+const eid = BOXES.filter(b => b.fam === 'eid');
+---
+<Base lang={lang} title={ar ? 'العيد' : 'Eid'} current="eid" sleeve="eid" description={ar ? 'إصدار العيد من حكاية: قهوة وتمر للزيارات، في كالغاري.' : 'The Hikaya Eid edition: coffee and dates for the visits, in Calgary.'}>
+  <section class="e-hero">
+    <div class="wrap e-grid">
+      <div class="e-copy">
+        <h1 class="h-xl">{ar ? 'عيدكم مبارك' : 'Eid Mubarak'}{lang === 'en' && <span lang="ar">عيدكم مبارك</span>}</h1>
+        <p class="lead">{ar ? 'العيد زيارات قبل أن يكون هدايا. إصدار العيد بحزامه الذهبي، لأول بيت تطرقون بابه.' : 'Eid is about visiting before it is about gifts. The Eid edition wears a gold band, for the first door you knock on.'}</p>
+        <div class="cta"><a class="btn primary" href="#eid-boxes">{ar ? 'صناديق العيد' : 'The Eid boxes'}</a></div>
+      </div>
+      <button class="e-film" type="button" data-film="eid" data-title="Eid">
+        <img src="/media/vid/eid.jpg" alt={ar ? 'شغّل فيلم زيارة العيد' : 'Play the Eid visit film'} width="540" height="960" />
+        <span class="play"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 4l10 6-10 6z" fill="currentColor" /></svg>{ar ? 'زيارة العيد · ١٦ ث' : 'The Eid visit · 16 s'}</span>
+      </button>
+    </div>
+  </section>
+
+  <section class="sec visits" aria-labelledby="v-h">
+    <div class="wrap v-grid">
+      <h2 id="v-h" class="h-l">{ar ? 'ترتيب الزيارات' : 'The order of visits'}</h2>
+      <div class="v-pairs">
+        <Pair lang={lang} size="l" bunn={{ ar: 'من نزور أولاً؟', en: 'Who do we visit first?' }} tamr={{ ar: 'الكبار دائماً.', en: 'The elders, always.' }} />
+        <Pair lang={lang} size="l" bunn={{ ar: 'وماذا نحمل؟', en: 'And what do we carry?' }} tamr={{ ar: 'قهوة وتمر.', en: 'Coffee and dates.' }} />
+        <Pair lang={lang} size="l" bunn={{ ar: 'والصغار؟', en: 'And the little ones?' }} tamr={{ ar: 'لهم تمرة.', en: 'A date for them.' }} />
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="eid-boxes" aria-labelledby="eb-h">
+    <div class="wrap">
+      <h2 id="eb-h" class="h-l">{ar ? 'إصدار العيد' : 'The Eid edition'}</h2>
+      <p class="lead" style="margin-top:12px">{ar ? 'ثلاثة صناديق بحزام خلال الذهبي. بلا معمول: نترك المعمول لبيوتكم.' : 'Three boxes with the gold khalal band. No maamoul: we leave that to your kitchens.'}</p>
+      <div class="grid">{eid.map(p => <ProductCard p={p} lang={lang} />)}</div>
+      <p class="muted when">{ar ? 'العيد متوقع نحو ٩ مارس ٢٠٢٧. طلبات العيد تصل قبل صباح العيد.' : 'Eid is expected around 9 March 2027. Eid orders arrive before Eid morning.'} <a href={path(lang, 'visit')}>{ar ? 'الاستلام والتوصيل' : 'Pickup & delivery'}</a></p>
+    </div>
+  </section>
+
+  <dialog class="viewer"><form method="dialog"><button class="x" aria-label={ar ? 'إغلاق' : 'Close'}>×</button></form><video controls playsinline preload="none" poster="/media/vid/eid.jpg"></video></dialog>
+</Base>
+
+<style>
+  .e-hero { background: var(--khalal); padding-block: clamp(40px, 6vw, 88px); overflow: hidden; }
+  .e-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: clamp(28px, 5vw, 80px); align-items: center; }
+  @media (max-width: 860px) { .e-grid { grid-template-columns: 1fr; } }
+  .e-copy { display: grid; gap: 20px; }
+  .e-copy h1 span { display: block; font-size: .55em; color: var(--tamr-2); margin-top: 8px; }
+  .e-copy .lead { color: var(--bunn); }
+  .cta { display: flex; gap: 12px; }
+  .e-film { all: unset; cursor: pointer; position: relative; border-radius: 34px; border-bottom-right-radius: 8px; overflow: hidden; max-width: 340px; justify-self: center; box-shadow: 0 30px 60px -30px rgba(51, 33, 26, .7); }
+  .e-film:focus-visible { outline: 3px solid var(--bunn); outline-offset: 4px; }
+  .e-film img { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; }
+  .play { position: absolute; inset-inline-start: 14px; bottom: 14px; display: inline-flex; align-items: center; gap: 6px; background: var(--paper); color: var(--bunn); border-radius: 999px; padding: 8px 14px 8px 11px; font-size: 14px; font-weight: 600; }
+  .play svg { width: 14px; height: 14px; }
+  .visits { background: var(--sheet); }
+  .v-grid { display: grid; grid-template-columns: .7fr 1.3fr; gap: 32px clamp(28px, 5vw, 80px); align-items: start; }
+  @media (max-width: 860px) { .v-grid { grid-template-columns: 1fr; } }
+  .v-pairs { display: grid; gap: 40px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 36px 24px; margin-top: 32px; }
+  .when { margin-top: 28px; }
+  .when a { color: var(--tamr); font-weight: 600; }
+  .viewer { border: 0; padding: 0; background: transparent; max-width: min(92vw, 460px); }
+  .viewer::backdrop { background: rgba(28, 18, 14, .86); }
+  .viewer video { width: 100%; max-height: 86vh; aspect-ratio: 9 / 16; border-radius: 22px; background: #000; }
+  .x { position: fixed; top: 14px; inset-inline-end: 18px; background: var(--paper); color: var(--bunn); border: 0; width: 44px; height: 44px; border-radius: 50%; font-size: 26px; }
+</style>
+
+<script>
+  const dlg = document.querySelector<HTMLDialogElement>('.viewer')!;
+  const vid = dlg.querySelector('video')!;
+  document.querySelector('.e-film')?.addEventListener('click', () => { vid.src = '/media/vid/eid.mp4'; dlg.showModal(); vid.play().catch(() => {}); });
+  dlg.addEventListener('close', () => vid.pause());
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+</script>

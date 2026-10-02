@@ -1,0 +1,70 @@
+---
+import type { Lang } from '../data/products';
+interface Props { lang: Lang; only?: string[] }
+const { lang, only } = Astro.props;
+const ar = lang === 'ar';
+const ALL = [
+  { id: 'seed-to-story', t: { en: 'Seed to story', ar: 'من البذرة إلى الحكاية' }, d: { en: 'A seed, an aroma, Bunn, Tamr. 19 s', ar: 'بذرة، رائحة، بُن، تمر. ١٩ ث' } },
+  { id: 'calgary', t: { en: 'A winter morning', ar: 'صباح شتوي' }, d: { en: 'Stephen Avenue, a slipping bag, a date. 19 s', ar: 'شارع ستيفن، كيس ينزلق، وتمرة. ١٩ ث' } },
+  { id: 'ramadan', t: { en: 'Iftar at sunset', ar: 'إفطار عند الغروب' }, d: { en: 'Ramadan in a Calgary home. 19 s', ar: 'رمضان في بيت في كالغاري. ١٩ ث' } },
+  { id: 'eid', t: { en: 'The Eid visit', ar: 'زيارة العيد' }, d: { en: 'Who do we visit first? 16 s', ar: 'من نزور أولاً؟ ١٦ ث' } },
+  { id: 'four-families', t: { en: 'The four families', ar: 'العائلات الأربع' }, d: { en: 'One glide along the counter. 14 s', ar: 'جولة واحدة على الطاولة. ١٤ ث' } },
+  { id: 'brew', t: { en: 'The brew, as sound', ar: 'صوت التحضير' }, d: { en: 'Roast, pound, boil. 17 s', ar: 'تحميص، دق، غلي. ١٧ ث' } },
+  { id: 'cold-qishr', t: { en: 'Cold qishr', ar: 'قشر بارد' }, d: { en: 'Five flavours for summer. 14 s', ar: 'خمس نكهات للصيف. ١٤ ث' } },
+  { id: 'chat-ep1', t: { en: 'Who came first?', ar: 'من جاء أولاً؟' }, d: { en: 'Bunn and Tamr, episode 1. 15 s', ar: 'بُن وتمر، الحلقة ١. ١٥ ث' } },
+];
+const films = only ? ALL.filter(f => only.includes(f.id)) : ALL;
+---
+<section class="sec films" aria-labelledby="films-h">
+  <div class="wrap">
+    <h2 id="films-h" class="h-l">{ar ? 'شاهد الحكاية.' : 'Watch the story.'}</h2>
+  </div>
+  <ul class="reel" role="list">
+    {films.map(f => (
+      <li>
+        <button type="button" class="film" data-film={f.id} data-title={f.t[lang]}>
+          <span class="poster"><img src={`/media/vid/${f.id}.jpg`} alt="" loading="lazy" width="540" height="960" /><span class="play"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 4l10 6-10 6z" fill="currentColor" /></svg>{ar ? 'شغّل' : 'Play'}</span></span>
+          <b>{f.t[lang]}</b><small>{f.d[lang]}</small>
+        </button>
+      </li>
+    ))}
+  </ul>
+  <dialog class="viewer" aria-label={ar ? 'فيلم' : 'Film'}>
+    <form method="dialog"><button class="x" aria-label={ar ? 'إغلاق' : 'Close'}>×</button></form>
+    <video controls playsinline preload="none"></video>
+  </dialog>
+</section>
+
+<style>
+  .films h2 { margin-bottom: 28px; }
+  .reel { list-style: none; margin: 0; padding: 4px var(--gutter) 18px; display: grid; grid-auto-flow: column; grid-auto-columns: clamp(190px, 21vw, 260px); gap: 18px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); }
+  .reel li { scroll-snap-align: start; }
+  .film { all: unset; cursor: pointer; display: grid; gap: 6px; width: 100%; }
+  .film:focus-visible .poster { outline: 2.5px solid var(--tamr); outline-offset: 3px; }
+  .poster { position: relative; display: block; border-radius: 24px; border-bottom-right-radius: 6px; overflow: hidden; background: var(--bunn); aspect-ratio: 9 / 16; }
+  .poster img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--ease); }
+  .film:hover .poster img { transform: scale(1.04); }
+  .play { position: absolute; inset-inline-start: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 6px; background: var(--paper); color: var(--bunn); border-radius: 999px; padding: 7px 13px 7px 10px; font-size: 14px; font-weight: 600; }
+  .play svg { width: 14px; height: 14px; }
+  html[dir='rtl'] .play svg { transform: scaleX(-1); }
+  .film b { font-family: var(--display); font-size: 20px; margin-top: 6px; }
+  .film small { font-size: 14px; color: var(--ink-2); }
+  .viewer { border: 0; padding: 0; background: transparent; max-width: min(92vw, 460px); }
+  .viewer::backdrop { background: rgba(28, 18, 14, .86); }
+  .viewer video { width: 100%; max-height: 86vh; aspect-ratio: 9 / 16; border-radius: 22px; background: #000; }
+  .x { position: fixed; top: 14px; inset-inline-end: 18px; background: var(--paper); color: var(--bunn); border: 0; width: 44px; height: 44px; border-radius: 50%; font-size: 26px; line-height: 1; }
+</style>
+
+<script>
+  const dlg = document.querySelector<HTMLDialogElement>('.viewer');
+  const vid = dlg?.querySelector('video');
+  document.querySelectorAll<HTMLButtonElement>('[data-film]').forEach(b => b.addEventListener('click', () => {
+    if (!dlg || !vid) return;
+    vid.src = `/media/vid/${b.dataset.film}.mp4`;
+    vid.poster = `/media/vid/${b.dataset.film}.jpg`;
+    dlg.showModal();
+    vid.play().catch(() => {});
+  }));
+  dlg?.addEventListener('close', () => { vid?.pause(); });
+  dlg?.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+</script>
