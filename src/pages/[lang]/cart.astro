@@ -82,4 +82,5 @@ const ar = lang === 'ar';
     $('free').textContent = sub >= 80 ? (lang === 'ar' ? 'التوصيل مجاني لهذا الطلب.' : 'Delivery is free on this order.') : sub > 0 ? (lang === 'ar' ? `أضف ${80 - sub} $ ليصبح التوصيل مجاناً.` : `Add $${80 - sub} for free delivery.`) : '';
   }
   paint();
+  document.addEventListener('catalog:live', () => paint());
 </script>

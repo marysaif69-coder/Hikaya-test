@@ -4,7 +4,10 @@ import { json, fail, body, str, siteUrl, HttpError } from '../lib/http';
 import { session } from '../lib/auth';
 import { sql, one } from '../lib/db';
 import { availability } from '../lib/slots';
-import { createOrder, publicOrder, findForGuest, notify, notifyTeam, event } from '../lib/orders';
+import { createOrder, publicOrder, findForGuest, notify, notifyTeam, event, releaseOrder } from '../lib/orders';
+import { liveCatalog, getSeasons } from '../lib/catalog';
+import { checkPromo } from '../lib/promos';
+import { priceCart } from '../lib/pricing';
 import { cardEnabled, paymentLink } from '../lib/square';
 import { DELIVERY_CENTS, FREE_DELIVERY_FROM } from '../lib/pricing';
 
@@ -15,6 +18,20 @@ export default async (req: Request) => {
 
     if (path === '/api/config' && req.method === 'GET') {
       return json({ card: cardEnabled(), deliveryCents: DELIVERY_CENTS, freeDeliveryFrom: FREE_DELIVERY_FROM });
+    }
+    // Live prices and sold-out switches; the static pages patch their prices from this.
+    if (path === '/api/catalog' && req.method === 'GET') {
+      const [live, seasons] = await Promise.all([liveCatalog(), getSeasons()]);
+      return json({ seasons, products: Object.fromEntries(Object.entries(live).map(([id, l]) => [id, { price: l.price_cents / 100, shown: l.shown, available: l.available && l.stock !== 0, left: l.stock !== null && l.stock <= 10 ? l.stock : null }])) },
+        200, { 'cache-control': 'public, max-age=30' });
+    }
+    // Check a promo code against the basket before ordering.
+    if (path === '/api/promo' && req.method === 'POST') {
+      const b = await body(req);
+      const lines = priceCart(b.lines, await liveCatalog());
+      const sub = lines.reduce((n, l) => n + l.unit_cents * l.qty, 0);
+      const p = await checkPromo(b.code, sub, str(b.email, 254));
+      return json({ code: p.code, discount: p.discount_cents, freeDelivery: p.free_delivery, label: p.label });
     }
     if (path === '/api/slots' && req.method === 'GET') {
       return json(await availability());
@@ -57,6 +74,7 @@ export default async (req: Request) => {
       const o = await one`UPDATE orders SET status = 'cancelled', updated_at = NOW()
         WHERE ref = ${str(b.ref, 12)} AND email = ${s.email} AND status = 'received' AND payment_status = 'unpaid' RETURNING *`;
       if (!o) throw new HttpError(409, 'cannot-cancel', 'This order can no longer be cancelled online. Reply to your confirmation email.');
+      await releaseOrder(o);
       await event(o.id, 'status', 'cancelled', s.email);
       await notify('cancelled', o, req);
       return json({ ok: true });
@@ -65,4 +83,4 @@ export default async (req: Request) => {
   } catch (e) { return fail(e); }
 };
 
-export const config: Config = { path: ['/api/config', '/api/slots', '/api/orders', '/api/orders/view', '/api/my/orders', '/api/my/orders/cancel'] };
+export const config: Config = { path: ['/api/config', '/api/catalog', '/api/promo', '/api/slots', '/api/orders', '/api/orders/view', '/api/my/orders', '/api/my/orders/cancel'] };

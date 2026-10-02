@@ -159,3 +159,19 @@ export function ticketReply(t: TicketForMail, message: string, siteUrl: string):
   const body = message.split(/\n{2,}/).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
   return { to: t.email, subject: s, html: layout(t.lang, ar ? 'رد من حكاية' : 'A reply from Hikaya', body, siteUrl), text: message, kind: 'ticket-reply', replyTo: env('EMAIL_REPLY_TO') || undefined };
 }
+
+// ---------- refunds ----------
+export function refundEmail(o: OrderForMail, amount_cents: number, method: string, creditCode: string | null, siteUrl: string): Mail {
+  const L = (o.lang === 'ar' ? 'ar' : 'en') as Lang, ar = L === 'ar';
+  const amt = dollars(amount_cents);
+  const how = method === 'card' ? (ar ? 'إلى البطاقة التي دفعت بها. يظهر عادةً خلال ٥ إلى ١٠ أيام عمل.' : 'to the card you paid with. It usually shows within 5 to 10 business days.')
+    : method === 'e-transfer' ? (ar ? 'بتحويل Interac إلى بريدك.' : 'by Interac e-Transfer to your email.')
+    : method === 'cash' ? (ar ? 'نقداً.' : 'in cash.')
+    : (ar ? 'رصيداً لطلبك القادم. استخدم هذا الرمز عند الطلب:' : 'as credit for your next order. Use this code at checkout:');
+  const s = ar ? `استرداد لطلبك ${o.ref}` : `A refund for order ${o.ref}`;
+  const h = ar ? `أعدنا ${amt}` : `We have refunded ${amt}`;
+  const body = `<p>${ar ? `أعدنا ${amt} من طلبك` : `We have refunded ${amt} from your order`} <span style="white-space:nowrap;direction:ltr">${o.ref}</span> ${how}</p>
+${creditCode ? `<p style="font-size:26px;font-weight:700;letter-spacing:2px;color:#A93B28;direction:ltr;text-align:center">${creditCode}</p>` : ''}
+<p>${ar ? 'نأسف لما حدث، وشكراً لصبرك.' : 'We are sorry for the trouble, and thank you for your patience.'}</p>`;
+  return { to: o.email, subject: s, html: layout(L, h, body, siteUrl), text: `${h}\n\n${o.ref}\n${creditCode ?? ''}`, kind: 'order-refund', orderId: o.id };
+}

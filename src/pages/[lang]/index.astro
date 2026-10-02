@@ -32,7 +32,7 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
           <p class="lead">{ar ? 'نحمّص بكميات صغيرة في كالغاري. استلام من الخميس إلى الأحد، أو نوصلها لبيتك.' : 'Roasted in small batches in Calgary. Pick up Thursday to Sunday, or we bring it to your door.'}</p>
           <div class="cta">
             <a class="btn primary" href={path(lang, 'shop')}>{ar ? 'تسوّق القهوة والتمر' : 'Shop coffee & dates'}</a>
-            <a class="btn tamr" href={path(lang, 'ramadan')}>{ar ? 'اطلب لرمضان مسبقاً' : 'Pre-order for Ramadan'}</a>
+            <a class="btn tamr" href={path(lang, 'ramadan')} data-season="ramadan">{ar ? 'اطلب لرمضان مسبقاً' : 'Pre-order for Ramadan'}</a>
           </div>
         </div>
       </div>
@@ -80,7 +80,7 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
                   tamr={{ ar: `خذ معها ${d.name.ar}.`, en: `Take ${d.name.en} with it.` }} />
                 <p class="why">{c.why[lang]} <span>{d.name[lang]} · {d.region[lang]}</span></p>
                 <div class="panel-buy">
-                  <p><span class="price">{money(c.price + dateBox.price, lang)}</span> <span class="muted">{ar ? `${c.name.ar} ${c.size} + ٥٠٠ غ ${d.name.ar}` : `${c.name.en} ${c.size} + 500 g ${d.name.en}`}</span></p>
+                  <p><span class="price" data-price-for={`${c.id},date-box`}>{money(c.price + dateBox.price, lang)}</span> <span class="muted">{ar ? `${c.name.ar} ${c.size} + ٥٠٠ غ ${d.name.ar}` : `${c.name.en} ${c.size} + 500 g ${d.name.en}`}</span></p>
                   <button class="btn tamr" type="button" data-add={`${c.id},date-box`} data-opt={`${c.grinds[0] ?? ""},${c.date}`}><span>{ar ? 'أضف الاثنين' : 'Add the pair'}</span></button>
                   <a href={path(lang, `shop/${c.id}`)}>{ar ? 'عن هذه القهوة' : 'About this coffee'}</a>
                 </div>
@@ -117,7 +117,7 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
   <BoxBuilder lang={lang} />
 
   <!-- Ramadan: the Calgary window at sunset. -->
-  <section class="ramadan-cta" aria-labelledby="ram-h">
+  <section class="ramadan-cta" aria-labelledby="ram-h" data-season="ramadan">
     <img src="/media/img/ramadan-window.webp" alt={ar ? 'غروب الشمس فوق كالغاري من نافذة بيت' : 'Sunset over Calgary from a home window'} loading="lazy" width="1000" height="1250" />
     <div class="wrap ram-inner">
       <div class="ram-card">

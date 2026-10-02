@@ -19,7 +19,10 @@ export async function paymentLink(o: Row, lines: PricedLine[], redirectUrl: stri
     headers: { authorization: `Bearer ${env('SQUARE_ACCESS_TOKEN')}`, 'content-type': 'application/json', 'square-version': '2025-01-23' },
     body: JSON.stringify({
       idempotency_key: o.ref,
-      order: { location_id: env('SQUARE_LOCATION_ID'), reference_id: o.ref, line_items: lineItems },
+      order: {
+        location_id: env('SQUARE_LOCATION_ID'), reference_id: o.ref, line_items: lineItems,
+        ...(o.discount_cents ? { discounts: [{ name: o.promo_code ? `Code ${o.promo_code}` : 'Discount', amount_money: { amount: o.discount_cents, currency: 'CAD' }, scope: 'ORDER' }] } : {}),
+      },
       checkout_options: { redirect_url: redirectUrl, ask_for_shipping_address: false },
       pre_populated_data: { buyer_email: o.email },
     }),
@@ -36,4 +39,16 @@ export function verifyWebhook(rawBody: string, signature: string | null, notific
   const expected = createHmac('sha256', key).update(notificationUrl + rawBody).digest('base64');
   const a = Buffer.from(expected), b = Buffer.from(signature);
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/** Refunds part or all of a card payment. Square returns the refund as PENDING, then COMPLETED. */
+export async function refundPayment(paymentId: string, amount_cents: number, reason: string, key: string) {
+  const r = await fetch(`${base()}/v2/refunds`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${env('SQUARE_ACCESS_TOKEN')}`, 'content-type': 'application/json', 'square-version': '2025-01-23' },
+    body: JSON.stringify({ idempotency_key: key, payment_id: paymentId, amount_money: { amount: amount_cents, currency: 'CAD' }, reason: reason.slice(0, 192) }),
+  });
+  const data: any = await r.json();
+  if (!r.ok) throw new Error(`Square refund: ${JSON.stringify(data.errors ?? data).slice(0, 300)}`);
+  return { id: data.refund.id as string, status: data.refund.status as string };
 }

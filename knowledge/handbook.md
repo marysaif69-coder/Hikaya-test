@@ -23,7 +23,7 @@ Edit this file to change what the assistant says, then run the test questions
 - Orders open for days from Friday 22 January 2027. Service days are Thursday, Friday, Saturday and Sunday.
 - Time windows: 11:00–14:00, 14:00–17:00, 17:00–20:00 (Calgary time).
 - Each window has limited room. If a window is full, the checkout will not offer it; the `check_availability` tool shows what is open.
-- Order cutoff: 8 pm Calgary time the evening before the chosen day.
+- Order-by deadline: each day closes for orders at a set time before it. The team chooses either 8 pm the evening before, or a weekly deadline such as "order by Tuesday 8 pm to get it this Thursday to Sunday". The current deadline is given below the handbook ("Next order-by deadline") and per day by `check_availability`; quote those, never a fixed rule. The checkout shows it too.
 - After ordering, the customer gets an email with the order number (looks like HK-7K3MD) and a link to follow the order. Statuses: received → confirmed → ready (pickup) or out for delivery → completed. Each step sends an email.
 - Signed-in customers see all their orders on the Account page. Guests use the link in their email.
 
@@ -55,7 +55,7 @@ Edit this file to change what the assistant says, then run the test questions
 ## Changing or cancelling an order
 
 - While an order is still "received", a signed-in customer can cancel it themselves on the Account page (if it is not paid yet).
-- Any other change (day, window, items, address) or cancellation: open a request for the team with `open_request` (kind: change-order). Changes are possible until 8 pm the evening before the order day, if there is room. Do not confirm the change yourself; say the team will confirm by email.
+- Any other change (day, window, items, address) or cancellation: open a request for the team with `open_request` (kind: change-order). Changes are possible until that day's order-by deadline, if there is room. Do not confirm the change yourself; say the team will confirm by email.
 - After a pickup is missed, the team holds the order and contacts the customer. Do not promise a refund for a missed pickup.
 
 ## Perishables, damage and refunds

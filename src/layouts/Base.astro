@@ -6,8 +6,8 @@ import { PRODUCTS, DATES, GRINDS } from '../data/products';
 import { UI, dir, other, path } from '../data/i18n';
 import AskHikaya from '../components/AskHikaya.astro';
 
-interface Props { lang: Lang; title: string; description?: string; current?: keyof typeof UI.nav; sleeve?: 'regular' | 'ramadan' | 'eid'; intro?: boolean; jsonld?: object; image?: string }
-const { lang, title, description = UI.footLine[lang], current, sleeve = 'regular', intro = false, jsonld, image = '/media/img/eid-coffee-dates.jpg' } = Astro.props;
+interface Props { season?: 'ramadan' | 'eid'; lang: Lang; title: string; description?: string; current?: keyof typeof UI.nav; sleeve?: 'regular' | 'ramadan' | 'eid'; intro?: boolean; jsonld?: object; image?: string }
+const { season, lang, title, description = UI.footLine[lang], current, sleeve = 'regular', intro = false, jsonld, image = '/media/img/eid-coffee-dates.jpg' } = Astro.props;
 // The business, on every page. No street address until it is confirmed.
 const org = { '@context': 'https://schema.org', '@type': 'Store', name: 'Hikaya Coffee & Dates', alternateName: 'حكاية', url: new URL(`/${lang}/`, Astro.site).href, logo: new URL('/brand/logo.svg', Astro.site).href, areaServed: { '@type': 'City', name: 'Calgary' }, sameAs: ['https://www.instagram.com/hikaya.yyc/'] };
 const alt = other(lang);
@@ -51,7 +51,7 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
 </head>
 <body>
   <a class="skip" href="#main">{UI.skip[lang]}</a>
-  <div class={`sleeve ${sleeve}`}><div class="wrap"><p>{UI.season[lang]}</p></div></div>
+  <div class={`sleeve ${sleeve}`}><div class="wrap"><p data-season="ramadan">{UI.season[lang]}</p><p data-season-off="ramadan" hidden>{UI.seasonOff[lang]}</p></div></div>
   <header class="top">
     <div class="wrap">
       <a class="lockup" href={path(lang)} aria-label={lang === 'ar' ? 'حكاية، الصفحة الرئيسية' : 'Hikaya, home'}>
@@ -59,7 +59,7 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
         <span class="wm"><b>حكاية</b><small>HIKAYA</small></span>
       </a>
       <nav id="nav" aria-label={lang === 'ar' ? 'الرئيسية' : 'Main'}>
-        {nav.map(([k, p]) => <a href={path(lang, p)} aria-current={current === k ? 'page' : undefined}>{UI.nav[k][lang]}</a>)}
+        {nav.map(([k, p]) => <a href={path(lang, p)} aria-current={current === k ? 'page' : undefined} data-season={k === 'ramadan' || k === 'eid' ? k : undefined}>{UI.nav[k][lang]}</a>)}
       </nav>
       <div class="acts">
         <a class="langsw" href={altHref} lang={alt} hreflang={alt}>{UI.langName[lang]}</a>
@@ -70,7 +70,16 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
     </div>
   </header>
 
-  <main id="main"><slot /></main>
+  <main id="main">
+    {season ? <>
+      <div data-season={season}><slot /></div>
+      <section class="wrap offseason" data-season-off={season} hidden>
+        <h1 class="h-l">{season === 'ramadan' ? (lang === 'ar' ? 'صناديق رمضان ترتاح حتى الموسم القادم.' : 'The Ramadan boxes are resting until next season.') : (lang === 'ar' ? 'إصدار العيد يعود في العيد القادم.' : 'The Eid edition returns next Eid.')}</h1>
+        <p class="lead">{lang === 'ar' ? 'القهوة والتمر معنا طوال السنة.' : 'Our coffee and dates are here all year.'}</p>
+        <p><a class="btn primary" href={path(lang, 'shop')}>{lang === 'ar' ? 'إلى المتجر' : 'To the shop'}</a></p>
+      </section>
+    </> : <slot />}
+  </main>
 
   <footer class="foot">
     <div class="wrap">
@@ -85,8 +94,8 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
           <h2 class="fh">{UI.nav.shop[lang]}</h2>
           <ul>
             <li><a href={path(lang, 'shop')}>{lang === 'ar' ? 'كل القهوة والتمر' : 'All coffee & dates'}</a></li>
-            <li><a href={path(lang, 'ramadan')}>{UI.nav.ramadan[lang]}</a></li>
-            <li><a href={path(lang, 'eid')}>{UI.nav.eid[lang]}</a></li>
+            <li data-season="ramadan"><a href={path(lang, 'ramadan')}>{UI.nav.ramadan[lang]}</a></li>
+            <li data-season="eid"><a href={path(lang, 'eid')}>{UI.nav.eid[lang]}</a></li>
             <li><a href={path(lang, 'brew')}>{UI.nav.brew[lang]}</a></li>
           </ul>
         </div>
@@ -142,7 +151,9 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
   <script type="application/json" id="catalog" set:html={JSON.stringify({ lang, cart: path(lang, 'cart'), added: UI.added[lang], add: UI.add[lang], items: catalog })} />
   <script>
     import { initCart } from '../scripts/cart';
+    import { applyLive } from '../scripts/live';
     initCart();
+    applyLive();
     const btn = document.getElementById('menuBtn');
     const nav = document.getElementById('nav');
     btn?.addEventListener('click', () => {
@@ -162,6 +173,9 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
     .open-line { font-family: var(--display); font-size: 22px; }
     .open-line .muted { font-family: var(--body); font-size: 15px; }
     .lockup img { width: 52px; height: auto; }
+    .offseason { display: grid; gap: 18px; padding-block: clamp(64px, 10vw, 140px); max-width: 760px; }
+    :global(.sold-out-tag) { font-size: 13px; font-weight: 600; color: var(--tamr-2); }
+    :global([data-product].is-sold-out .pc-media) { opacity: .55; }
     @media (max-width: 520px) { .top .lockup img { width: 42px; } }
   </style>
 </body>

@@ -27,11 +27,11 @@ const groups = [
   </section>
 
   <nav class="wrap fam-nav" aria-label={ar ? 'العائلات' : 'Families'}>
-    {groups.map(g => <a href={`#${g.id}`}>{FAMILIES[g.id].name[lang]}</a>)}
+    {groups.map(g => <a href={`#${g.id}`} data-season={g.id === 'ramadan' || g.id === 'eid' ? g.id : undefined}>{FAMILIES[g.id].name[lang]}</a>)}
   </nav>
 
   {groups.map((g, gi) => (
-    <section class={`fam ${gi % 2 ? 'alt' : ''}`} id={g.id} aria-labelledby={`h-${g.id}`}>
+    <section class={`fam ${gi % 2 ? 'alt' : ''}`} id={g.id} aria-labelledby={`h-${g.id}`} data-group data-season={g.id === 'ramadan' || g.id === 'eid' ? g.id : undefined}>
       <div class="wrap">
         <div class="fam-head">
           <h2 id={`h-${g.id}`} class="h-m">{FAMILIES[g.id].name[lang]}</h2>

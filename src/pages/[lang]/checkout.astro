@@ -43,6 +43,7 @@ const ar = lang === 'ar';
 
       <fieldset class="block">
         <legend class="h-s">{ar ? 'اليوم والوقت' : 'Day and time'}</legend>
+        <p class="orderby" id="orderBy" hidden></p>
         <p class="closed" id="closed" hidden>{ar ? 'الطلبات متوقفة مؤقتاً. عد قريباً.' : 'Orders are paused for the moment. Please check back soon.'}</p>
         <div class="field">
           <label for="f-day">{ar ? 'اليوم (الخميس إلى الأحد)' : 'Day (Thursday to Sunday)'}</label>
@@ -74,10 +75,16 @@ const ar = lang === 'ar';
       <dl class="tnum">
         <div><dt>{ar ? 'المجموع الفرعي' : 'Subtotal'}</dt><dd id="sSub"></dd></div>
         <div><dt>{ar ? 'التوصيل' : 'Delivery'}</dt><dd id="sFee"></dd></div>
+        <div id="sDiscRow" hidden><dt id="sDiscLabel"></dt><dd id="sDisc"></dd></div>
         <div><dt>{ar ? 'ضريبة السلع (مواد غذائية أساسية)' : 'GST (basic groceries)'}</dt><dd>{ar ? "0 $" : "$0"}</dd></div>
         <div class="tot"><dt>{ar ? 'الإجمالي' : 'Total'}</dt><dd id="sTot"></dd></div>
       </dl>
       <p class="muted small">{ar ? 'الأسعار مبدئية. معاملة الضريبة بانتظار التأكيد.' : 'Prices are drafts. GST treatment pending confirmation.'}</p>
+      <form class="promo" id="promoForm" novalidate>
+        <label for="f-promo">{ar ? 'رمز خصم' : 'Promo code'}</label>
+        <div class="promo-row"><input id="f-promo" autocomplete="off" autocapitalize="characters" dir="ltr" /><button type="submit" class="btn line">{ar ? 'طبّق' : 'Apply'}</button></div>
+        <p class="promo-msg" id="promoMsg" aria-live="polite"></p>
+      </form>
       <a href={path(lang, 'cart')} class="small">{ar ? 'عدّل السلة' : 'Edit cart'}</a>
     </aside>
   </section>
@@ -124,13 +131,21 @@ const ar = lang === 'ar';
   dd { margin: 0; font-weight: 600; }
   .tot { font-size: 20px; border-top: 1px solid var(--line); padding-top: 8px; }
   .small { font-size: 14px; }
+  .orderby { font-weight: 600; background: color-mix(in srgb, var(--khalal) 22%, transparent); border-radius: 14px; padding: 10px 14px; }
+  .promo { display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .promo label { font-size: 14px; font-weight: 600; }
+  .promo-row { display: flex; gap: 8px; }
+  .promo-row input { flex: 1; min-width: 0; border: 1.5px solid var(--line); border-radius: 12px; padding: 9px 12px; background: #fff; text-transform: uppercase; }
+  .promo-row .btn { min-height: 42px; padding: 8px 16px; font-size: 15px; }
+  .promo-msg { font-size: 14px; }
+  .promo-msg.bad { color: var(--tamr-2); font-weight: 500; }
 </style>
 
 <script>
   import { read, totals, describe, clear } from '../../scripts/cart';
   const lang = document.documentElement.lang as 'en' | 'ar';
   const ar = lang === 'ar';
-  const money = (n: number) => (ar ? `${n} $` : `$${n}`);
+  const money = (n: number) => { const v = Number.isInteger(n) ? String(n) : n.toFixed(2); return ar ? `${v} $` : `$${v}`; };
   const form = document.getElementById('co') as HTMLFormElement;
   const $ = (id: string) => document.getElementById(id)!;
   const val = (n: string) => (form.elements.namedItem(n) as RadioNodeList | HTMLInputElement).value;
@@ -138,6 +153,8 @@ const ar = lang === 'ar';
   type Day = { date: string; windows: { window: string; pickup: number; delivery: number }[] };
   let days: Day[] = [];
   let open = true;
+  type Promo = { code: string; discount: number; freeDelivery: boolean; label: { en: string; ar: string } };
+  let promo: Promo | null = null;
 
   function paint() {
     const lines = read();
@@ -152,9 +169,13 @@ const ar = lang === 'ar';
       const right = document.createElement('span'); right.className = 'tnum'; right.textContent = money(d.price * l.qty);
       li.append(left, right); $('sumLines').append(li);
     });
+    const fee = promo?.freeDelivery ? 0 : t.fee;
+    const disc = Math.min(promo ? promo.discount / 100 : 0, t.sub);
     $('sSub').textContent = money(t.sub);
-    $('sFee').textContent = delivery() ? (t.fee ? money(t.fee) : (ar ? 'مجاناً' : 'Free')) : (ar ? 'استلام · مجاناً' : 'Pickup · free');
-    $('sTot').textContent = money(t.total);
+    $('sFee').textContent = delivery() ? (fee ? money(fee) : (ar ? 'مجاناً' : 'Free')) : (ar ? 'استلام · مجاناً' : 'Pickup · free');
+    $('sDiscRow').hidden = !promo;
+    if (promo) { $('sDiscLabel').textContent = `${promo.code} · ${promo.label[lang]}`; $('sDisc').textContent = disc ? `−${money(+disc.toFixed(2))}` : '✓'; }
+    $('sTot').textContent = money(+(t.sub - disc + fee).toFixed(2));
     $('addr').hidden = !delivery();
     $('emptyCo').hidden = lines.length > 0;
     paintWindows();
@@ -189,6 +210,14 @@ const ar = lang === 'ar';
     try {
       const [slots, cfg, me] = await Promise.all([fetch('/api/slots').then(r => r.json()), fetch('/api/config').then(r => r.json()), fetch('/api/me').then(r => r.json())]);
       days = slots.days ?? []; open = slots.open !== false;
+      if (slots.next) {
+        const d = (iso: string, o: Intl.DateTimeFormatOptions) => new Date(iso + 'T12:00:00Z').toLocaleDateString(ar ? 'ar-u-nu-arab' : 'en-CA', { ...o, timeZone: 'UTC' });
+        const h = slots.next.orderBy.hour, hh = ar ? `${h > 12 ? h - 12 : h} ${h >= 12 ? 'مساءً' : 'صباحاً'}` : `${h > 12 ? h - 12 : h} ${h >= 12 ? 'pm' : 'am'}`;
+        const by = `${d(slots.next.orderBy.date, { weekday: 'long', day: 'numeric', month: 'long' })}, ${hh}`;
+        const range = slots.next.from === slots.next.to ? d(slots.next.from, { weekday: 'long', day: 'numeric', month: 'long' }) : `${d(slots.next.from, { weekday: 'long', day: 'numeric' })} – ${d(slots.next.to, { weekday: 'long', day: 'numeric', month: 'long' })}`;
+        $('orderBy').textContent = ar ? `اطلب قبل ${by} ليصلك ${range}.` : `Order by ${by} to get it ${range}.`;
+        $('orderBy').hidden = false;
+      }
       $('closed').hidden = open;
       $('payCard').hidden = !cfg.card;
       if (me.user) {
@@ -201,6 +230,22 @@ const ar = lang === 'ar';
     }
     paintDays(); paint();
   }
+  document.addEventListener('catalog:live', () => paint());
+  const cartLines = () => read().map(l => ({ id: l.id, opt: l.opt, qty: l.qty }));
+  async function applyPromo(code: string, quiet = false) {
+    const msg = $('promoMsg');
+    if (!code) { promo = null; msg.textContent = ''; paint(); return; }
+    try {
+      const r = await fetch('/api/promo', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code, lines: cartLines(), email: val('email') }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.message);
+      promo = d; msg.className = 'promo-msg'; msg.textContent = ar ? `طُبّق: ${d.label.ar}` : `Applied: ${d.label.en}`;
+    } catch (e) {
+      promo = null; if (!quiet) { msg.className = 'promo-msg bad'; msg.textContent = (e as Error).message || (ar ? 'تعذّر تطبيق الرمز.' : 'That code could not be applied.'); }
+    }
+    paint();
+  }
+  $('promoForm').addEventListener('submit', e => { e.preventDefault(); applyPromo(($('f-promo') as HTMLInputElement).value.trim()); });
   form.addEventListener('change', e => { if ((e.target as HTMLInputElement).name === 'method') paintDays(); paint(); });
   load();
 
@@ -231,7 +276,7 @@ const ar = lang === 'ar';
         body: JSON.stringify({
           lang, name: val('name'), phone: val('phone'), email: val('email'), method: val('method'), street: val('street'), postal: val('postal'),
           day: val('day'), window: val('window'), payment: val('payment'), notes: val('notes'),
-          lines: lines.map(l => ({ id: l.id, opt: l.opt, qty: l.qty })),
+          lines: lines.map(l => ({ id: l.id, opt: l.opt, qty: l.qty })), promo: promo?.code ?? '',
         }),
       });
       const data = await res.json();
@@ -240,6 +285,7 @@ const ar = lang === 'ar';
           for (const [k, v] of Object.entries(data.fields)) if (FIELD[k]) setErr($(FIELD[k]), MSG[v as string] ?? MSG.required);
           form.querySelector<HTMLElement>('[aria-invalid=true]')?.focus();
         }
+        if (data.error === 'promo') { promo = null; $('promoMsg').className = 'promo-msg bad'; $('promoMsg').textContent = data.message; paint(); }
         if (data.error === 'slot-full' || data.error === 'too-soon') { const s = await fetch('/api/slots').then(r => r.json()); days = s.days; paintDays(); paint(); }
         fe.textContent = data.message ?? (ar ? 'تعذّر إرسال الطلب.' : 'We could not send your order.'); fe.hidden = false;
         return;

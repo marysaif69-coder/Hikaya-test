@@ -10,7 +10,7 @@ const lang = Astro.params.lang as Lang;
 const ar = lang === 'ar';
 const eid = BOXES.filter(b => b.fam === 'eid');
 ---
-<Base lang={lang} title={ar ? 'العيد' : 'Eid'} current="eid" sleeve="eid" description={ar ? 'إصدار العيد من حكاية: قهوة وتمر للزيارات، في كالغاري.' : 'The Hikaya Eid edition: coffee and dates for the visits, in Calgary.'}>
+<Base season="eid" lang={lang} title={ar ? 'العيد' : 'Eid'} current="eid" sleeve="eid" description={ar ? 'إصدار العيد من حكاية: قهوة وتمر للزيارات، في كالغاري.' : 'The Hikaya Eid edition: coffee and dates for the visits, in Calgary.'}>
   <section class="e-hero">
     <div class="wrap e-grid">
       <div class="e-copy">

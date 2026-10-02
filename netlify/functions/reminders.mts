@@ -6,7 +6,7 @@ import { notify } from '../lib/orders';
 
 export default async () => {
   const tomorrow = addDays(calgaryNow().date, 1);
-  const rows = await sql`SELECT * FROM orders WHERE slot_date = ${tomorrow} AND status IN ('received', 'confirmed') AND reminded_at IS NULL`;
+  const rows = await sql`SELECT * FROM orders WHERE slot_date = ${tomorrow} AND status IN ('received', 'confirmed') AND reminded_at IS NULL AND NOT is_sample`;
   for (const o of rows) {
     await notify('reminder', o);
     await sql`UPDATE orders SET reminded_at = NOW() WHERE id = ${o.id}`;

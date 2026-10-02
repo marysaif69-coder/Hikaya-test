@@ -9,7 +9,7 @@ const href = path(lang, `shop/${p.id}`);
 const sub = p.kind === 'coffee' ? `${FAMILIES[p.fam].name[lang]} · ${p.size}` : `${FAMILIES[p.fam].name[lang]} · ${p.size[lang]}`;
 const defaultOpt = p.kind === 'coffee' ? (p.grinds[0] ?? '') : p.chooseDate ? 'khalas' : '';
 ---
-<article class={`pc pc-${p.kind}`}>
+<article class={`pc pc-${p.kind}`} data-product={p.id}>
   <a href={href} class="pc-media" tabindex="-1" aria-hidden="true">
     {p.kind === 'coffee'
       ? <div class={`pc-pouch ${p.art ? 'has-back' : ''}`}><div class="face"><Pouch coffee={p} lang={lang} label={false} /></div>{p.art && <div class="face back"><img src={p.art.back} alt="" loading="lazy" width="800" height="1257" /></div>}</div>
@@ -21,7 +21,7 @@ const defaultOpt = p.kind === 'coffee' ? (p.grinds[0] ?? '') : p.chooseDate ? 'k
     {p.kind === 'coffee' && <p class="pc-taste">{p.taste[lang]}</p>}
     {p.kind === 'coffee' && <p class="pc-with">{UI.withDate[lang]} <b>{DATES[p.date].name[lang]}</b></p>}
     <div class="pc-row">
-      <span class="price">{money(p.price, lang)}</span>
+      <span class="price" data-price-for={p.id}>{money(p.price, lang)}</span>
       <button class="pc-add" type="button" data-add={p.id} data-opt={defaultOpt} aria-label={`${UI.add[lang]}: ${p.name[lang]}`}>
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
         <span>{UI.add[lang]}</span>

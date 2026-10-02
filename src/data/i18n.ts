@@ -8,6 +8,7 @@ export const path = (l: Lang, p = '') => `/${l}/${p}${p && !p.endsWith('/') ? '/
 
 /** Interface copy. Bunn/Tamr lines live with the products; these are labels. */
 export const UI = {
+  seasonOff: { en: 'Coffee and dates for pickup and our own delivery across Calgary', ar: 'قهوة وتمر للاستلام والتوصيل داخل كالغاري' },
   season: { en: 'Ramadan pre-orders open January 2027 · pickup and our own delivery across Calgary', ar: 'الطلب المسبق لرمضان يفتح في يناير ٢٠٢٧ · استلام وتوصيل داخل كالغاري' },
   nav: {
     shop: { en: 'Shop', ar: 'المتجر' },

@@ -58,7 +58,7 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
 
     <div class="pdp-info">
       <h1 class="h-l">{p.name[lang]}{lang === 'en' && <span lang="ar">{p.name.ar}</span>}</h1>
-      <p class="pdp-price"><span class="price">{money(p.price, lang)}</span> <span class="draft">· {UI.draftPrice[lang]}</span> <span class="muted">· {p.kind === 'coffee' ? p.size : p.size[lang]} · {FAMILIES[p.fam].name[lang]}</span></p>
+      <p class="pdp-price"><span class="price" data-price-for={p.id}>{money(p.price, lang)}</span> <span class="draft">· {UI.draftPrice[lang]}</span> <span class="muted">· {p.kind === 'coffee' ? p.size : p.size[lang]} · {FAMILIES[p.fam].name[lang]}</span></p>
       <p class="pdp-notes">{p.notes[lang]}</p>
       {p.kind === 'coffee' && <p class="taste"><span class="label">{ar ? 'الطعم' : 'Tastes like'}</span> {p.taste[lang]}</p>}
 
@@ -88,7 +88,7 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
           <label class="qty"><span class="sr">{UI.qty[lang]}</span>
             <select name="qty">{[1, 2, 3, 4, 5, 6].map(n => <option value={n}>{n}</option>)}</select>
           </label>
-          <button class="btn primary grow" type="button" data-add={p.id} data-opt=""><span>{UI.add[lang]} · {money(p.price, lang)}</span></button>
+          <button class="btn primary grow" type="button" data-add={p.id} data-opt=""><span>{UI.add[lang]} · <span data-price-for={p.id}>{money(p.price, lang)}</span></span></button>
         </div>
       </form>
 
@@ -100,7 +100,7 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
             <p class="pw-name">{pairDate.name[lang]} <span>· {pairDate.region[lang]}</span></p>
             <p class="muted">{p.why[lang]}</p>
           </div>
-          <button class="btn tamr pw-add" type="button" data-add="date-box" data-opt={p.date}><span>{ar ? `أضف ٥٠٠ غ · ${money(dateBox.price, lang)}` : `Add 500 g · ${money(dateBox.price, lang)}`}</span></button>
+          <button class="btn tamr pw-add" type="button" data-add="date-box" data-opt={p.date}><span>{ar ? 'أضف ٥٠٠ غ · ' : 'Add 500 g · '}<span data-price-for="date-box">{money(dateBox.price, lang)}</span></span></button>
         </div>
       )}
 
@@ -138,7 +138,7 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
   </section>
 
   <div class="sticky-buy" id="stickyBuy" aria-hidden="true">
-    <div><b>{p.name[lang]}</b><span class="price">{money(p.price, lang)}</span></div>
+    <div><b>{p.name[lang]}</b><span class="price" data-price-for={p.id}>{money(p.price, lang)}</span></div>
     <button class="btn primary" type="button" id="stickyAdd" tabindex="-1">{UI.add[lang]}</button>
   </div>
 

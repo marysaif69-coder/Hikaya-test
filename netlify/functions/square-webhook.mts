@@ -2,7 +2,7 @@
 // In Square's Developer Dashboard, subscribe this URL to payment.updated.
 import type { Config } from '@netlify/functions';
 import { json, siteUrl } from '../lib/http';
-import { one } from '../lib/db';
+import { one, sql } from '../lib/db';
 import { verifyWebhook } from '../lib/square';
 import { setPayment } from '../lib/orders';
 
@@ -15,7 +15,8 @@ export default async (req: Request) => {
   const payment = evt?.data?.object?.payment;
   if (evt?.type === 'payment.updated' && payment?.status === 'COMPLETED' && payment.order_id) {
     const o = await one`SELECT ref, payment_status FROM orders WHERE square_order_id = ${payment.order_id}`;
-    if (o && o.payment_status !== 'paid') await setPayment(o.ref, 'paid', 'square');
+    if (o) await sql`UPDATE orders SET square_payment_id = ${payment.id} WHERE ref = ${o.ref}`;
+    if (o && o.payment_status === 'unpaid') await setPayment(o.ref, 'paid', 'square');
   }
   return json({ ok: true });
 };
