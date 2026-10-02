@@ -29,6 +29,11 @@ await pg.exec(`
 
 const { openChat, askTurn } = await import('../netlify/lib/ask');
 const client = new Anthropic();
+// Ask Hikaya turns a failed model call into its polite fallback, which would grade as 40 quiet
+// failures. Check the key and model first so a bad key stops the run with a clear message.
+const askModel = process.env.ASK_MODEL || 'claude-opus-5-5';
+try { await client.models.retrieve(askModel); }
+catch (e: any) { console.error(`Cannot reach ${askModel}: ${e?.status ?? ''} ${e?.error?.error?.message ?? e?.message ?? e}`); process.exit(1); }
 type Q = { id: string; lang: 'en' | 'ar'; q: string; must: string[]; must_not?: string[] };
 const filter = process.argv[2] ?? '';
 const all: Q[] = JSON.parse(fs.readFileSync('knowledge/test-questions.json', 'utf8')).questions;
@@ -55,11 +60,12 @@ for (const q of qs) {
   const ms = Date.now() - t0;
   const stored = (await pg.query(`SELECT messages FROM chats WHERE id = $1`, [chat.id])).rows[0] as any;
   const tools = stored.messages.flatMap((m: any) => Array.isArray(m.content) ? m.content.filter((b: any) => b.type === 'tool_use').map((b: any) => `${b.name} ${JSON.stringify(b.input)}`) : []);
-  const g = await grade(q, reply, [...tools, ...actions.map(a => `action:${a.type}`)]);
+  const g = await grade(q, reply, [...tools, ...actions.map(a => `action:${a.type}`)])
+    .catch((e: any) => ({ pass: false, reason: `Grader failed: ${e?.message ?? e}` }));
   if (g.pass) passed++;
   console.log(`${g.pass ? '✓' : '✗'} ${q.id.padEnd(20)} ${(ms / 1000).toFixed(1)}s  ${g.pass ? '' : g.reason}`);
   rows.push(`### ${g.pass ? '✓' : '✗'} ${q.id}\n\n**Q:** ${q.q}\n\n**A:** ${reply.replace(/\n/g, '  \n')}\n\n${tools.length ? `**Tools:** \`${tools.join('` · `')}\`\n\n` : ''}**Grader:** ${g.reason}\n`);
 }
 const summary = `${passed} of ${qs.length} passed`;
-fs.writeFileSync('knowledge/eval-report.md', `# Ask Hikaya test run\n\n${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC · model ${process.env.ASK_MODEL || 'claude-opus-5-5'} · ${summary}\n\n${rows.join('\n')}`);
+fs.writeFileSync('knowledge/eval-report.md', `# Ask Hikaya test run\n\n${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC · model ${askModel} · ${summary}\n\n${rows.join('\n')}`);
 console.log(`\n${summary}. Report: knowledge/eval-report.md`);
