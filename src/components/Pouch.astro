@@ -26,7 +26,7 @@ for (let r = 0; r < 17; r++) for (let c = 0; c < 8; c++) {
 {coffee.art ? (
   <img class={`pouch pouch-art ${cls}`} src={side === 'back' ? coffee.art.back : coffee.art.front} alt={label ? alt : ''} width="800" height={side === 'back' ? 1257 : 1590} loading="lazy" decoding="async" />
 ) : (
-<svg class={`pouch ${cls}`} viewBox="0 0 229 455" role={label ? 'img' : undefined} aria-hidden={label ? undefined : 'true'} aria-label={label ? alt : undefined}>
+<svg class={`pouch ${cls}`} viewBox="0 0 229 455" direction="ltr" role={label ? 'img' : undefined} aria-hidden={label ? undefined : 'true'} aria-label={label ? alt : undefined}>
   <defs>
     <clipPath id={`${uid}c`}><rect x="44" y="196" width="141" height="69" /></clipPath>
     <mask id={`${uid}m`}>
@@ -78,5 +78,5 @@ for (let r = 0; r < 17; r++) for (let c = 0; c < 8; c++) {
 )}
 
 <style>
-  .pouch { width: 100%; height: auto; display: block; border-radius: 6px; box-shadow: 0 1px 0 rgba(51, 33, 26, .06), 0 24px 34px -22px rgba(51, 33, 26, .5); }
+  .pouch { direction: ltr; width: 100%; height: auto; display: block; border-radius: 6px; box-shadow: 0 1px 0 rgba(51, 33, 26, .06), 0 24px 34px -22px rgba(51, 33, 26, .5); }
 </style>

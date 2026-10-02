@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /en/cart/
+Disallow: /ar/cart/
+Disallow: /en/checkout/
+Disallow: /ar/checkout/
+Disallow: /en/thanks/
+Disallow: /ar/thanks/
+
+Sitemap: https://hikayacoffee.ca/sitemap-index.xml

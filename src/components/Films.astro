@@ -23,7 +23,7 @@ const films = only ? ALL.filter(f => only.includes(f.id)) : ALL;
     {films.map(f => (
       <li>
         <button type="button" class="film" data-film={f.id} data-title={f.t[lang]}>
-          <span class="poster"><img src={`/media/vid/${f.id}.jpg`} alt="" loading="lazy" width="540" height="960" /><span class="play"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 4l10 6-10 6z" fill="currentColor" /></svg>{ar ? 'شغّل' : 'Play'}</span></span>
+          <span class="poster"><img src={`/media/vid/${f.id}.webp`} alt="" loading="lazy" width="540" height="960" /><span class="play"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 4l10 6-10 6z" fill="currentColor" /></svg>{ar ? 'شغّل' : 'Play'}</span></span>
           <b>{f.t[lang]}</b><small>{f.d[lang]}</small>
         </button>
       </li>
@@ -61,7 +61,7 @@ const films = only ? ALL.filter(f => only.includes(f.id)) : ALL;
   document.querySelectorAll<HTMLButtonElement>('[data-film]').forEach(b => b.addEventListener('click', () => {
     if (!dlg || !vid) return;
     vid.src = `/media/vid/${b.dataset.film}.mp4`;
-    vid.poster = `/media/vid/${b.dataset.film}.jpg`;
+    vid.poster = `/media/vid/${b.dataset.film}.webp`;
     dlg.showModal();
     vid.play().catch(() => {});
   }));

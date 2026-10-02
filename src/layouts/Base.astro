@@ -5,8 +5,10 @@ import type { Lang } from '../data/products';
 import { PRODUCTS, DATES, GRINDS } from '../data/products';
 import { UI, dir, other, path } from '../data/i18n';
 
-interface Props { lang: Lang; title: string; description?: string; current?: keyof typeof UI.nav; sleeve?: 'regular' | 'ramadan' | 'eid'; intro?: boolean }
-const { lang, title, description = UI.footLine[lang], current, sleeve = 'regular', intro = false } = Astro.props;
+interface Props { lang: Lang; title: string; description?: string; current?: keyof typeof UI.nav; sleeve?: 'regular' | 'ramadan' | 'eid'; intro?: boolean; jsonld?: object; image?: string }
+const { lang, title, description = UI.footLine[lang], current, sleeve = 'regular', intro = false, jsonld, image = '/media/img/eid-coffee-dates.jpg' } = Astro.props;
+// The business, on every page. No street address until it is confirmed.
+const org = { '@context': 'https://schema.org', '@type': 'Store', name: 'Hikaya Coffee & Dates', alternateName: 'حكاية', url: new URL(`/${lang}/`, Astro.site).href, logo: new URL('/brand/logo.svg', Astro.site).href, areaServed: { '@type': 'City', name: 'Calgary' }, sameAs: ['https://www.instagram.com/hikaya.yyc/'] };
 const alt = other(lang);
 const here = Astro.url.pathname;
 const altHref = here.replace(/^\/(en|ar)\//, `/${alt}/`);
@@ -29,11 +31,19 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
   <meta name="description" content={description} />
   <meta name="theme-color" content="#F5EFE3" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="canonical" href={new URL(here, Astro.site)} />
   <link rel="alternate" hreflang={lang} href={new URL(here, Astro.site)} />
+  <link rel="alternate" hreflang="x-default" href={new URL(here.replace(/^\/(en|ar)\//, '/en/'), Astro.site)} />
+  <link rel="sitemap" href="/sitemap-index.xml" />
   <link rel="alternate" hreflang={alt} href={new URL(altHref, Astro.site)} />
   <meta property="og:title" content={fullTitle} />
   <meta property="og:description" content={description} />
-  <meta property="og:image" content={new URL('/media/img/eid-coffee-dates.jpg', Astro.site)} />
+  <meta property="og:image" content={new URL(image, Astro.site)} />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content={lang === 'ar' ? 'ar_CA' : 'en_CA'} />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json" set:html={JSON.stringify(org)} />
+  {jsonld && <script type="application/ld+json" set:html={JSON.stringify(jsonld)} />}
   <link rel="preload" href="/fonts/ElMessiri-700-arabic.woff2" as="font" type="font/woff2" crossorigin />
   <script is:inline>document.documentElement.classList.add('js')</script>
   {intro && <script is:inline>try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!sessionStorage.getItem('hikaya-intro'))document.documentElement.classList.add('intro-on')}catch(e){}</script>}

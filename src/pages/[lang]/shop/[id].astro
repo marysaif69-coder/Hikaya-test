@@ -13,6 +13,16 @@ export function getStaticPaths() {
 const lang = Astro.params.lang as Lang;
 const { p } = Astro.props as { p: Product };
 const ar = lang === 'ar';
+const img = p.kind === 'coffee' ? (p.art?.front ?? '/brand/logo.svg') : p.img;
+const pageUrl = new URL(path(lang, `shop/${p.id}`), Astro.site).href;
+const jsonld = {
+  '@context': 'https://schema.org', '@type': 'Product', name: p.name[lang], alternateName: p.name[lang === 'en' ? 'ar' : 'en'],
+  description: p.notes[lang], image: new URL(img, Astro.site).href, brand: { '@type': 'Brand', name: 'Hikaya' }, sku: p.id,
+  offers: { '@type': 'Offer', price: p.price.toFixed(2), priceCurrency: 'CAD', availability: 'https://schema.org/PreOrder', url: pageUrl,
+    areaServed: { '@type': 'City', name: 'Calgary' } },
+};
+const pairDate = p.kind === 'coffee' ? DATES[p.date] : null;
+const dateBox = PRODUCTS.find(o => o.id === 'date-box')!;
 const related = PRODUCTS.filter(o => o.fam === p.fam && o.id !== p.id).slice(0, 4);
 const fill = related.length < 3 ? PRODUCTS.filter(o => o.kind !== p.kind && !related.includes(o)).slice(0, 3 - related.length) : [];
 const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { ar: string; en: string } }> = {
@@ -21,7 +31,7 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
   eid: { bunn: { ar: 'من نزور أولاً؟', en: 'Who do we visit first?' }, tamr: { ar: 'الكبار دائماً.', en: 'The elders, always.' } },
 };
 ---
-<Base lang={lang} title={p.name[lang]} current="shop" description={p.notes[lang]}>
+<Base lang={lang} title={p.name[lang]} current="shop" description={p.notes[lang]} jsonld={jsonld} image={img}>
   <nav class="wrap crumbs" aria-label={ar ? 'المسار' : 'Breadcrumb'}>
     <a href={path(lang, 'shop')}>{UI.nav.shop[lang]}</a><span aria-hidden="true">/</span>
     <a href={path(lang, 'shop') + `#${p.fam}`}>{FAMILIES[p.fam].name[lang]}</a><span aria-hidden="true">/</span>
@@ -84,6 +94,18 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
           <button class="btn primary grow" type="button" data-add={p.id} data-opt=""><span>{UI.add[lang]} · {money(p.price, lang)}</span></button>
         </div>
       </form>
+
+      {p.kind === 'coffee' && pairDate && (
+        <div class="pour-with">
+          <svg class="pw-date" viewBox="-26 -46 52 92" aria-hidden="true"><path fill={pairDate.c} d="M-2 -42c13 0 22 12 22 40c0 27-9 44-22 44c-12 0-21-15-21-43c0-29 8-41 21-41z" /><path d="M-12 -18q6 3 11 0M-14 4q7 4 14 0M-11 24q6 3 12-1M4 -30q5 2 9-1" stroke="#33211A" stroke-opacity=".3" stroke-width="2" fill="none" stroke-linecap="round" /></svg>
+          <div class="pw-text">
+            <p class="label">{UI.withDate[lang]}</p>
+            <p class="pw-name">{pairDate.name[lang]} <span>· {pairDate.region[lang]}</span></p>
+            <p class="muted">{p.why[lang]}</p>
+          </div>
+          <button class="btn tamr pw-add" type="button" data-add="date-box" data-opt={p.date}><span>{ar ? `أضف ٥٠٠ غ · ${money(dateBox.price, lang)}` : `Add 500 g · ${money(dateBox.price, lang)}`}</span></button>
+        </div>
+      )}
 
       <ul class="assure">
         <li>{ar ? 'طلب مسبق: نؤكد بالبريد قبل أي دفع.' : 'Pre-order: we confirm by email before anything is paid.'}</li>
@@ -197,6 +219,14 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
   .buy-row { display: flex; gap: 10px; }
   .qty select { height: 100%; min-height: 50px; border: 1.5px solid var(--line); background: var(--sheet); border-radius: 999px; padding: 0 16px; font-weight: 600; }
   .grow { flex: 1; }
+  .pour-with { display: grid; grid-template-columns: 40px 1fr auto; gap: 14px; align-items: center; padding: 16px 18px; border-radius: 24px; border-bottom-left-radius: 6px; background: color-mix(in srgb, var(--tamr) 8%, var(--sheet)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tamr) 25%, transparent); }
+  .pw-date { width: 34px; height: 60px; transform: rotate(-14deg); }
+  .pw-text { display: grid; gap: 2px; }
+  .pw-name { font-family: var(--display); font-weight: 700; font-size: 21px; }
+  .pw-name span { font-family: var(--body); font-weight: 500; font-size: 14px; color: var(--ink-2); }
+  .pw-text .muted { font-size: 14.5px; }
+  .pw-add { min-height: 44px; padding: 11px 16px; font-size: 14.5px; }
+  @media (max-width: 560px) { .pour-with { grid-template-columns: 34px 1fr; } .pw-add { grid-column: 1 / -1; } }
   .assure { list-style: none; margin: 0; padding: 16px 18px; display: grid; gap: 6px; background: var(--sheet); border-radius: 20px; font-size: 15px; }
   .assure li::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--khalal); margin-inline-end: 10px; vertical-align: middle; }
   .acc details { border-bottom: 1px solid var(--line); padding-block: 16px; }
