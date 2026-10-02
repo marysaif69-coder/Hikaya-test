@@ -70,12 +70,12 @@ const slots = pickupSlots(8);
       </fieldset>
 
       <p class="err form-err" id="formErr" hidden></p>
-      <p class="empty-co" id="emptyCo" hidden>{ar ? 'سلتك فارغة.' : 'Your cart is empty.'} <a href={path(lang, 'shop')}>{ar ? 'إلى المتجر' : 'To the shop'}</a></p>
       <button class="btn tamr submit" type="submit">{ar ? 'أرسل الطلب المسبق' : 'Send my pre-order'}</button>
     </form>
 
     <aside class="co-sum">
       <h2 class="h-s">{ar ? 'طلبك' : 'Your order'}</h2>
+      <p class="empty-co" id="emptyCo" hidden>{ar ? 'سلتك فارغة، فلا شيء نرسله بعد.' : 'Your cart is empty, so there is nothing to send yet.'} <a class="btn primary" href={path(lang, 'shop')}>{ar ? 'إلى المتجر' : 'To the shop'}</a></p>
       <ul id="sumLines"></ul>
       <dl class="tnum">
         <div><dt>{ar ? 'المجموع الفرعي' : 'Subtotal'}</dt><dd id="sSub"></dd></div>
@@ -112,8 +112,7 @@ const slots = pickupSlots(8);
   @media (max-width: 560px) { .addr { grid-template-columns: 1fr; } }
   .submit { justify-self: start; font-size: 17px; padding-inline: 28px; }
   .form-err { font-size: 15px; }
-  .empty-co { font-weight: 600; }
-  .empty-co a { color: var(--tamr); }
+  .empty-co { font-weight: 600; display: grid; gap: 12px; justify-items: start; }
   .submit:disabled { opacity: .45; cursor: not-allowed; }
   .co-sum { background: var(--sheet); border-radius: 32px; border-bottom-right-radius: 6px; padding: 26px; display: grid; gap: 14px; position: sticky; top: 100px; }
   .co-sum ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }

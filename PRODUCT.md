@@ -49,6 +49,8 @@ Every cup comes with a date. The brand is a conversation between Bunn (the coffe
 - Voice: Bunn (coffee: the traveller, bitter, quick, proud) speaks first; Tamr (date: the host, sweet, patient, teasing) answers. Lines always come in pairs, Arabic first, 8 words or fewer, tell don't sell (no "best", no "premium", no "!"), and leave the story open (وللحكاية بقية).
 - Culture: no "chai"; avoid accidental ties to another culture. People are Calgary people (winter coats, knitwear). Coffee goes to adults; children get a date. Gulf qahwa is a third of a cup, clear and golden, no foam; foam only for Shami coffee. Najdi has no cinnamon.
 
+- Instagram: @hikaya.yyc (https://www.instagram.com/hikaya.yyc/), confirmed by the user.
+
 ## Evidence on Hand
 
 - Logo pack v0.8.1, colours, patterns (cream conversation, seed), packaging brief v2 and drawings: Google Drive (Hikaya folders).

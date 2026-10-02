@@ -43,6 +43,8 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
     </div>
   </section>
 
+  <div class="print-band patterned" aria-hidden="true"></div>
+
   <!-- Signature: choose a coffee, Tamr answers with its date. Works without JS via :checked. -->
   <section class="pairing" aria-labelledby="pairing-h">
     <div class="wrap">
@@ -146,6 +148,8 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
     .pack-panel { aspect-ratio: 5 / 4; }
     .pack-pouch { width: 34%; }
   }
+
+  .print-band { height: clamp(72px, 9vw, 120px); background-color: var(--paper); background-position: center; }
 
   /* ---------- pairing (Bunn-drenched) ---------- */
   .pairing { background: var(--bunn); color: var(--paper); padding-block: clamp(64px, 8vw, 120px); }

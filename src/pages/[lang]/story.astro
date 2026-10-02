@@ -58,7 +58,7 @@ const STAGES = [
       <ul class="d-row">
         {Object.values(DATES).map(d => (
           <li>
-            <span class="date" style={`--c:${d.c}`} aria-hidden="true"></span>
+            <svg class="date" viewBox="-26 -46 52 92" aria-hidden="true"><path fill={d.c} d="M-2 -42c13 0 22 12 22 40c0 27-9 44-22 44c-12 0-21-15-21-43c0-29 8-41 21-41z" /><path d="M-12 -18q6 3 11 0M-14 4q7 4 14 0M-11 24q6 3 12-1M4 -30q5 2 9-1" stroke="#33211A" stroke-opacity=".3" stroke-width="2" fill="none" stroke-linecap="round" /></svg>
             <h3>{d.name[lang]}{lang === 'en' && <span lang="ar">{d.name.ar}</span>}</h3>
             <p class="rg">{d.region[lang]}</p>
             <p class="muted">{d.notes[lang]}</p>
@@ -99,8 +99,7 @@ const STAGES = [
   .d-row { list-style: none; margin: 36px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 28px 22px; }
   @media (max-width: 960px) { .d-row { grid-template-columns: repeat(2, 1fr); } }
   .d-row li { display: grid; gap: 6px; align-content: start; }
-  .date { width: 46px; height: 66px; border-radius: 50%; background: var(--c); position: relative; margin-bottom: 8px; transform: rotate(-14deg); }
-  .date::after { content: ''; position: absolute; inset: 16% 46% 16% 46%; border-radius: 50%; box-shadow: -2px 0 0 1.5px rgba(51, 33, 26, .35); }
+  .date { width: 40px; height: 72px; margin-bottom: 8px; transform: rotate(-14deg); }
   .d-row h3 { font-size: 24px; display: flex; gap: 10px; align-items: baseline; }
   .d-row h3 span { font-size: 19px; color: var(--tamr); }
   .rg { font-size: 14px; font-weight: 600; color: var(--ink-2); }
