@@ -32,7 +32,12 @@ Order received · confirmed · ready for pickup · out for delivery · completed
 | `SITE_URL` | `https://hikayacoffee.ca` once the domain points here |
 | `ANTHROPIC_API_KEY` | From console.anthropic.com. Turns on Ask Hikaya. Until set, the chat button points people to the help form. |
 | `ASK_MODEL` | Optional. The Claude model for Ask Hikaya; default `claude-opus-5-5`. |
+| `PREVIEW_PASSWORD` | Keeps the whole site private: visitors see a "Coming soon" screen and need this code; search engines are told not to index anything. Delete it and redeploy to open the site. |
 | `SQUARE_ACCESS_TOKEN`, `SQUARE_LOCATION_ID`, `SQUARE_ENV`, `SQUARE_WEBHOOK_SIGNATURE_KEY` | Optional: turns on card payment through Square. Webhook URL: `<SITE_URL>/api/square/webhook`, event `payment.updated`. |
+
+## Private preview and going live
+- While `PREVIEW_PASSWORD` is set, an edge function (`netlify/edge-functions/preview-gate.ts`) sits in front of every page and API call. Entering the code keeps a person in for 30 days; changing the code signs everyone out. Square's webhook stays reachable.
+- Going live: in Netlify move the domain hikayacoffee.ca from the old project to this one (Domain management), delete `PREVIEW_PASSWORD`, set `SITE_URL` to `https://hikayacoffee.ca`, and trigger a deploy.
 
 ## Ask Hikaya: how it knows things, and how to improve it
 - What it may say lives in `knowledge/handbook.md` (policies, delivery, Ramadan, storage, health rules, voice). The product list, prices, ingredients and brewing steps are added automatically from `src/data/products.ts` and `src/data/brew.ts`, so it never drifts from the shop.

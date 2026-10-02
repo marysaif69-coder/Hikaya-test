@@ -6,7 +6,7 @@
     "dev": "astro dev",
     "build": "node scripts/build-handbook.mjs && astro build",
     "preview": "astro preview",
-    "test": "node scripts/build-handbook.mjs && tsx tests/api.test.mts",
+    "test": "node scripts/build-handbook.mjs && tsx tests/api.test.mts && tsx tests/preview-gate.test.mts",
     "dev:full": "astro build && tsx tests/dev-server.mts",
     "ask:eval": "node scripts/build-handbook.mjs && tsx tests/ask-eval.mts"
   },
