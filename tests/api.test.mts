@@ -26,10 +26,11 @@ const orders = (await import('../netlify/functions/api-orders.mts')).default;
 const admin = (await import('../netlify/functions/api-admin.mts')).default;
 const help = (await import('../netlify/functions/api-help.mts')).default;
 const H = 'https://hikaya.test';
+let ipN = 0; // each request from a different address, so the rate limits don't trip
 const call = async (fn: any, path: string, opts: { method?: string; body?: any; cookie?: string } = {}) => {
   const res: Response = await fn(new Request(H + path, {
     method: opts.method ?? (opts.body ? 'POST' : 'GET'),
-    headers: { 'content-type': 'application/json', origin: H, ...(opts.cookie ? { cookie: opts.cookie } : {}) },
+    headers: { 'content-type': 'application/json', origin: H, 'x-nf-client-connection-ip': `10.0.0.${++ipN % 250}`, ...(opts.cookie ? { cookie: opts.cookie } : {}) },
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   }));
   const text = await res.text();

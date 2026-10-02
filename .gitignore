@@ -28,3 +28,5 @@ dist/
 hikaya-site-dist.zip
 .netlify/
 knowledge/eval-report.md
+.env
+.env.*

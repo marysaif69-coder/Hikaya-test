@@ -8,6 +8,7 @@ import { createOrder, publicOrder, findForGuest, notify, notifyTeam, event, rele
 import { liveCatalog, getSeasons } from '../lib/catalog';
 import { checkPromo } from '../lib/promos';
 import { priceCart } from '../lib/pricing';
+import { limit, ipKey } from '../lib/rate';
 import { cardEnabled, paymentLink } from '../lib/square';
 import { DELIVERY_CENTS, FREE_DELIVERY_FROM } from '../lib/pricing';
 
@@ -27,6 +28,7 @@ export default async (req: Request) => {
     }
     // Check a promo code against the basket before ordering.
     if (path === '/api/promo' && req.method === 'POST') {
+      await limit(`promo:${ipKey(req)}`, 30, 60);
       const b = await body(req);
       const lines = priceCart(b.lines, await liveCatalog());
       const sub = lines.reduce((n, l) => n + l.unit_cents * l.qty, 0);
@@ -38,6 +40,7 @@ export default async (req: Request) => {
     }
     if (path === '/api/orders' && req.method === 'POST') {
       const s = await session(req);
+      if (s?.role !== 'admin') await limit(`order:${ipKey(req)}`, 8, 60, 'Too many orders from here in a short time. Please wait, or write to us with the help form.');
       const input = await body(req);
       const { order, lines, guestToken } = await createOrder(input, s, cardEnabled());
       let payUrl: string | null = null;

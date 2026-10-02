@@ -24,8 +24,9 @@ const orders = (await import('../netlify/functions/api-orders.mts')).default;
 const admin = (await import('../netlify/functions/api-admin.mts')).default;
 const help = (await import('../netlify/functions/api-help.mts')).default;
 const H = 'https://hikaya.test';
+let ipN = 0; // each request from a different address, so the rate limits don't trip
 const call = async (fn: any, path: string, opts: { body?: any; cookie?: string } = {}) => {
-  const res: Response = await fn(new Request(H + path, { method: opts.body ? 'POST' : 'GET', headers: { 'content-type': 'application/json', origin: H, ...(opts.cookie ? { cookie: opts.cookie } : {}) }, body: opts.body ? JSON.stringify(opts.body) : undefined }));
+  const res: Response = await fn(new Request(H + path, { method: opts.body ? 'POST' : 'GET', headers: { 'content-type': 'application/json', origin: H, 'x-nf-client-connection-ip': `10.0.0.${++ipN % 250}`, ...(opts.cookie ? { cookie: opts.cookie } : {}) }, body: opts.body ? JSON.stringify(opts.body) : undefined }));
   const text = await res.text(); let data: any; try { data = JSON.parse(text); } catch { data = text; }
   return { status: res.status, data };
 };
@@ -165,5 +166,11 @@ ask.setCreate(async () => ({ id: 'm', type: 'message', role: 'assistant', model:
 await call(help, '/api/ask', { body: { text: 'hi', lang: 'en' } });
 st = (await call(admin, '/api/admin/ask', { cookie: adm })).data;
 assert.equal(st.status.ok, true); assert.equal(st.notes.length, 1); ok('recovers by itself when the model answers again');
+
+// ---------- rate limits ----------
+const rl = await import('../netlify/lib/rate');
+let blocked = false;
+for (let i = 0; i < 40 && !blocked; i++) { try { await rl.limit('order:test-ip', 8, 60); } catch (e: any) { blocked = e.status === 429; } }
+assert.ok(blocked); ok('a script placing many orders from one place is stopped after 8 an hour');
 
 console.log(`\n${pass} checks passed`);

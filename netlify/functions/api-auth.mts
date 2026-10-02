@@ -1,6 +1,7 @@
 // /api/auth/* and /api/me — email-code login for customers and the team.
 import type { Config } from '@netlify/functions';
 import { json, fail, body, str, isEmail, siteUrl, HttpError } from '../lib/http';
+import { limit, ipKey } from '../lib/rate';
 import { issueCode, verifyCode, session, sessionCookie, clearCookie, endSession } from '../lib/auth';
 import { send, codeEmail } from '../lib/email';
 
@@ -16,6 +17,7 @@ export default async (req: Request) => {
       const b = await body(req);
       const email = str(b.email, 254).toLowerCase();
       if (!isEmail(email)) throw new HttpError(400, 'email', 'Check the email address.');
+      await limit(`login:${ipKey(req)}`, 20, 60);
       const code = await issueCode(email);
       await send(codeEmail(email, code, b.lang === 'ar' ? 'ar' : 'en', siteUrl(req)));
       return json({ ok: true });

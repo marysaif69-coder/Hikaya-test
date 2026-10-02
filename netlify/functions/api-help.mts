@@ -5,6 +5,7 @@ import { session, hash } from '../lib/auth';
 import { sql } from '../lib/db';
 import { askEnabled, openChat, askTurn, MAX_CHARS } from '../lib/ask';
 import { createTicket, addPhoto, MAX_PHOTO } from '../lib/tickets';
+import { limit, ipKey } from '../lib/rate';
 
 const ipHash = (req: Request) => hash((req.headers.get('x-nf-client-connection-ip') ?? req.headers.get('x-forwarded-for') ?? 'local') + (env('IP_SALT') || 'hikaya'));
 
@@ -36,6 +37,7 @@ export default async (req: Request) => {
     }
 
     if (path === '/api/help' && req.method === 'POST') {
+      await limit(`help:${ipKey(req)}`, 10, 60);
       const b = await body(req);
       const s = await session(req);
       const { ticket, uploadToken } = await createTicket({ ...b, email: s?.email ?? b.email }, 'form', req);
