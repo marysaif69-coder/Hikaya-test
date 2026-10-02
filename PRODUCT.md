@@ -25,7 +25,7 @@ Two sites share one brand: hikayacoffee.ca (the story) and the shop (hikaya-shop
 
 ## Positioning
 
-Every cup comes with a date. The brand is a conversation between Bunn (the coffee) and Tamr (the date); the logo is their two speech bubbles meeting at a khalal-gold seed. No other Calgary roaster pairs coffee and date as one product and one voice.
+Coffee and dates belong to the same table: Gulf qahwa is poured with a date, other coffees simply sit well beside one. The brand is a conversation between Bunn (the coffee) and Tamr (the date); the logo is their two speech bubbles meeting at a khalal-gold seed. No other Calgary roaster pairs coffee and date as one product and one voice.
 
 ## Operating Context
 
@@ -60,7 +60,7 @@ Every cup comes with a date. The brand is a conversation between Bunn (the coffe
 
 ## Product Principles
 
-1. Coffee and date are always offered together.
+1. A date is always offered, never imposed: Gulf qahwa comes with one by custom; for other coffees it is a suggestion.
 2. The conversation leads; selling follows.
 3. Arabic is a first language here, never a translation layer.
 4. Show only what exists now; the café waits its turn.

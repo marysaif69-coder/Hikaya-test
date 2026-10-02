@@ -28,7 +28,7 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
           bunn={{ ar: 'ضيف جديد في كالغاري.', en: 'A new guest in Calgary.' }}
           tamr={{ ar: 'مكانك محفوظ، والتمرة جاهزة.', en: 'Your seat is kept, the date is ready.' }} />
         <div class="hero-copy">
-          <h1 class="h-m">{ar ? 'قهوة اليمن والخليج والشام، وكل فنجان معه تمرة.' : 'Coffee from Yemen, the Gulf and the Levant. Every cup comes with a date.'}</h1>
+          <h1 class="h-m">{ar ? 'قهوة اليمن والخليج والشام، وتمرٌ لمن يحبّ التمر معها.' : 'Coffee from Yemen, the Gulf and the Levant, and dates for those who take one with it.'}</h1>
           <p class="lead">{ar ? 'نحمّص بكميات صغيرة في كالغاري. استلام من الخميس إلى الأحد، أو نوصلها لبيتك.' : 'Roasted in small batches in Calgary. Pick up Thursday to Sunday, or we bring it to your door.'}</p>
           <div class="cta">
             <a class="btn primary" href={path(lang, 'shop')}>{ar ? 'تسوّق القهوة والتمر' : 'Shop coffee & dates'}</a>
@@ -60,7 +60,7 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
     <div class="wrap">
       <div class="pairing-head">
         <h2 id="pairing-h" class="h-l">{ar ? 'اختر قهوتك، وتمر تردّ.' : 'Choose a coffee. Tamr answers.'}</h2>
-        <p class="lead">{ar ? 'لكل قهوة تمرة تليق بها. نرسلهما معاً.' : 'Every coffee has a date that suits it. We send them together.'}</p>
+        <p class="lead">{ar ? 'بعض القهوة تُشرب مع تمرة، وبعضها لا. اختر قهوتك، وتمر تقترح ما يليق بها إن أردت.' : 'Some coffees are drunk with a date, some are not. Choose yours, and Tamr will suggest one if you want it.'}</p>
       </div>
       <fieldset class="chips">
         <legend class="sr">{ar ? 'القهوة' : 'Coffee'}</legend>
