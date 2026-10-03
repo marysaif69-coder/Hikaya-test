@@ -44,6 +44,8 @@ export interface Box {
   contents: L;
   chooseDate?: boolean;
   preorder: true;
+  /** What goes inside, for the weekly roast and pack sheet: 250 g pouches by coffee, dates by variety (pieces). */
+  packs?: { coffee?: Record<string, number>; dates?: Partial<Record<DateId, number>> };
 }
 
 export type Product = Coffee | Box;
@@ -151,11 +153,20 @@ export const BOXES: Box[] = [
     notes: { en: 'One variety, chosen by you. For the house, not for wrapping.', ar: 'صنف واحد تختاره. للبيت، لا للتغليف.' },
     contents: { en: '500 g of one date variety in a clear tray.', ar: '٥٠٠ غ من صنف واحد في علبة شفافة.' }, preorder: true },
   { kind: 'box', id: 'four-palms', fam: 'dates', name: { en: 'Four Palms', ar: 'أربع نخلات' }, price: 44, size: { en: '24 dates', ar: '٢٤ تمرة' }, img: '/media/img/ramadan-date.webp',
-    insert: 'D24', sleeve: 'regular',
+    insert: 'D24', sleeve: 'regular', packs: { dates: { sukkari: 6, khalas: 6, khudri: 6, ajwa: 6 } },
     notes: { en: 'Sukkari, Khalas, Khudri and Ajwa, six of each, side by side.', ar: 'سكري وخلاص وخضري وعجوة، ست من كل صنف، جنباً إلى جنب.' },
     contents: { en: 'Gift box, 24 dates in paper cups, four varieties.', ar: 'صندوق هدية، ٢٤ تمرة في أكواب ورقية، أربعة أصناف.' }, preorder: true },
+  // Year-round gift boxes in the regular gold sleeve: they stay when Ramadan and Eid are switched off.
+  { kind: 'box', id: 'guest-box', fam: 'dates', name: { en: 'The Guest Box', ar: 'صندوق الضيف' }, price: 54, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/giftbox.webp',
+    insert: 'C12', sleeve: 'regular', packs: { coffee: { najdi: 1 }, dates: { khalas: 12 } },
+    notes: { en: 'One coffee and twelve dates in the gold sleeve, for any visit, any time of year.', ar: 'قهوة واثنتا عشرة تمرة بالحزام الذهبي، لأي زيارة في أي وقت من السنة.' },
+    contents: { en: 'Gift box with Najdi coffee and 12 Khalas dates.', ar: 'صندوق هدية فيه قهوة نجدية و١٢ تمرة خلاص.' }, preorder: true },
+  { kind: 'box', id: 'coffee-duo', fam: 'dates', name: { en: 'The Coffee Duo', ar: 'ثنائي القهوة' }, price: 46, size: { en: '2 × 250 g', ar: '٢ × ٢٥٠ غ' }, img: '/media/img/giftbox.webp',
+    insert: 'C2', sleeve: 'regular', packs: { coffee: { najdi: 1, khaleeji: 1 } },
+    notes: { en: 'Najdi and Khaleeji side by side, for the house that pours all year.', ar: 'نجدية وخليجية جنباً إلى جنب، للبيت الذي يصبّ طوال السنة.' },
+    contents: { en: 'Gift box, gold sleeve, two coffees: Najdi and Khaleeji.', ar: 'صندوق هدية بالحزام الذهبي، قهوتان: نجدية وخليجية.' }, preorder: true },
   { kind: 'box', id: 'iftar-pair', fam: 'ramadan', name: { en: 'The Iftar Pair', ar: 'ثنائي الإفطار' }, price: 54, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/iftar-pair.webp',
-    insert: 'C12', sleeve: 'ramadan',
+    insert: 'C12', sleeve: 'ramadan', packs: { coffee: { najdi: 1 }, dates: { khalas: 12 } },
     notes: { en: 'One coffee and twelve dates, for the first cup after sunset.', ar: 'قهوة واثنتا عشرة تمرة، لأول فنجان بعد الغروب.' },
     contents: { en: 'Gift box with Najdi coffee and 12 Khalas dates.', ar: 'صندوق هدية فيه قهوة نجدية و١٢ تمرة خلاص.' }, preorder: true },
   { kind: 'box', id: 'ramadan-box', fam: 'ramadan', name: { en: 'Ramadan Date Box', ar: 'صندوق تمر رمضان' }, price: 34, size: { en: '500 g', ar: '٥٠٠ غ' }, img: '/media/img/giftbox.webp',
@@ -163,15 +174,15 @@ export const BOXES: Box[] = [
     notes: { en: 'The everyday box in its Ramadan sleeve.', ar: 'العلبة اليومية بحزام رمضان.' },
     contents: { en: '500 g of one variety, Ramadan sleeve.', ar: '٥٠٠ غ من صنف واحد، بحزام رمضان.' }, preorder: true },
   { kind: 'box', id: 'eid-coffee-dates', fam: 'eid', name: { en: 'Eid Coffee & Dates', ar: 'قهوة وتمر العيد' }, price: 56, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/eid-coffee-dates.webp',
-    insert: 'C12', sleeve: 'eid',
+    insert: 'C12', sleeve: 'eid', packs: { coffee: { najdi: 1 }, dates: { khalas: 12 } },
     notes: { en: 'For the first house you visit. The elders, always.', ar: 'لأول بيت تزورونه. الكبار دائماً.' },
     contents: { en: 'Gold Eid band, Najdi coffee and 12 dates.', ar: 'حزام العيد الذهبي، قهوة نجدية و١٢ تمرة.' }, preorder: true },
   { kind: 'box', id: 'eid-dates', fam: 'eid', name: { en: 'Eid Dates', ar: 'تمر العيد' }, price: 58, size: { en: '24 dates', ar: '٢٤ تمرة' }, img: '/media/img/eid-dates.webp',
-    insert: 'D24', sleeve: 'eid',
+    insert: 'D24', sleeve: 'eid', packs: { dates: { sukkari: 6, khalas: 6, khudri: 6, ajwa: 6 } },
     notes: { en: 'Four varieties for the table that fills all day.', ar: 'أربعة أصناف لمائدة تمتلئ طوال اليوم.' },
     contents: { en: 'Gold Eid band, 24 dates, four varieties.', ar: 'حزام العيد الذهبي، ٢٤ تمرة، أربعة أصناف.' }, preorder: true },
   { kind: 'box', id: 'eid-duo', fam: 'eid', name: { en: 'Eid Coffee Duo', ar: 'ثنائي قهوة العيد' }, price: 46, size: { en: '2 × 250 g', ar: '٢ × ٢٥٠ غ' }, img: '/media/img/eid-coffee.webp',
-    insert: 'C2', sleeve: 'eid',
+    insert: 'C2', sleeve: 'eid', packs: { coffee: { najdi: 1, khaleeji: 1 } },
     notes: { en: 'Najdi and Khaleeji, for the house that pours all day.', ar: 'نجدية وخليجية، للبيت الذي يصبّ طوال اليوم.' },
     contents: { en: 'Gold Eid band, two coffees.', ar: 'حزام العيد الذهبي، قهوتان.' }, preorder: true },
 ];

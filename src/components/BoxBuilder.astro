@@ -21,8 +21,8 @@ const OCC = [
 // Which real product each combination is. Missing combinations fall back to the any-day box.
 const MATCH: Record<string, string> = {
   'D24-regular': 'four-palms', 'D24-ramadan': 'four-palms', 'D24-eid': 'eid-dates',
-  'C12-regular': 'iftar-pair', 'C12-ramadan': 'iftar-pair', 'C12-eid': 'eid-coffee-dates',
-  'C2-regular': 'eid-duo', 'C2-ramadan': 'eid-duo', 'C2-eid': 'eid-duo',
+  'C12-regular': 'guest-box', 'C12-ramadan': 'iftar-pair', 'C12-eid': 'eid-coffee-dates',
+  'C2-regular': 'coffee-duo', 'C2-ramadan': 'coffee-duo', 'C2-eid': 'eid-duo',
 };
 const products = Object.fromEntries(BOXES.map(b => [b.id, { id: b.id, name: b.name[lang], price: money(b.price, lang), href: path(lang, `shop/${b.id}`), contents: b.contents[lang] }]));
 const dc = Object.values(DATES).map(d => d.c);

@@ -15,7 +15,7 @@ import { availability, calgaryNow } from './slots';
 import { priceCart, DELIVERY_CENTS, FREE_DELIVERY_FROM } from './pricing';
 import { calgaryPostal, publicOrder } from './orders';
 import { createTicket, KINDS, ramadanNow } from './tickets';
-import { liveCatalog } from './catalog';
+import { liveCatalog, getSeasons } from './catalog';
 import { offlineAnswer, classify, markDown, markOk } from './ask-fallback';
 
 export const MAX_TURNS = 30;
@@ -84,7 +84,7 @@ const systemText = () => (staticSystem ??= `${ROLE}\n\n${HANDBOOK}\n\n${catalog(
 
 async function context(lang: 'en' | 'ar', s: Session | null) {
   const now = calgaryNow();
-  const [live, slots, notes] = await Promise.all([liveCatalog(), availability(28).catch(() => null), sql`SELECT question, answer FROM ask_notes WHERE active ORDER BY updated_at DESC LIMIT 60`]);
+  const [live, slots, notes, seasons] = await Promise.all([liveCatalog(), availability(28).catch(() => null), sql`SELECT question, answer FROM ask_notes WHERE active ORDER BY updated_at DESC LIMIT 60`, getSeasons()]);
   const name = (id: string) => PRODUCTS.find(p => p.id === id)?.name.en ?? id;
   const notShown = Object.entries(live).filter(([, l]) => !l.shown).map(([id]) => name(id));
   const soldOut = Object.entries(live).filter(([, l]) => l.shown && (!l.available || l.stock === 0)).map(([id]) => name(id));
@@ -97,6 +97,7 @@ async function context(lang: 'en' | 'ar', s: Session | null) {
     s ? `The visitor is signed in as ${s.email}. Their own orders can be listed with my_orders, without asking for the email.` : 'The visitor is not signed in.',
     slots?.next ? `Next order-by deadline: ${fmt(slots.next.orderBy)} Calgary time, for orders on ${slots.next.from}${slots.next.to !== slots.next.from ? ` to ${slots.next.to}` : ''}. Later days have later deadlines; check_availability shows each day's.` : '',
     slots && !slots.open ? 'Ordering is paused by the team right now: no new orders can be placed. Say so, and offer the help form for questions.' : '',
+    ...(['ramadan', 'eid'] as const).filter(k => !seasons[k]).map(k => `The ${k === 'ramadan' ? 'Ramadan' : 'Eid'} season is switched off on the site: its page and boxes are hidden. Do not promote ${k === 'ramadan' ? 'Ramadan' : 'Eid'} boxes; if asked, say they return next season and suggest the year-round boxes.`),
     notShown.length ? `Not offered right now (off season or not launched): ${notShown.join(', ')}. Do not offer, recommend or add these; say they are not available at the moment.` : '',
     soldOut.length ? `Sold out right now: ${soldOut.join(', ')}.` : '',
     priced.length ? `Current prices that replace the product list: ${priced.join(', ')}.` : '',

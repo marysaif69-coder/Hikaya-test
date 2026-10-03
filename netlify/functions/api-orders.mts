@@ -24,7 +24,7 @@ export default async (req: Request) => {
     if (path === '/api/catalog' && req.method === 'GET') {
       const [live, seasons] = await Promise.all([liveCatalog(), getSeasons()]);
       return json({ seasons, products: Object.fromEntries(Object.entries(live).map(([id, l]) => [id, { price: l.price_cents / 100, shown: l.shown, available: l.available && l.stock !== 0, left: l.stock !== null && l.stock <= 10 ? l.stock : null }])) },
-        200, { 'cache-control': 'public, max-age=30' });
+        200, { 'cache-control': 'no-store' });
     }
     // Check a promo code against the basket before ordering.
     if (path === '/api/promo' && req.method === 'POST') {

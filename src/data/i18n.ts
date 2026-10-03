@@ -41,6 +41,6 @@ export const UI = {
   openEn: { en: 'And the story goes on.', ar: '' },
   email: { en: 'Email', ar: 'البريد الإلكتروني' },
   join: { en: 'Write to me', ar: 'راسلوني' },
-  listLine: { en: 'Three emails a year: pre-orders, Ramadan, Eid.', ar: 'ثلاث رسائل في السنة: الطلب المسبق، رمضان، العيد.' },
+  listLine: { en: 'Three emails a year, when something new is ready.', ar: 'ثلاث رسائل في السنة، حين يكون عندنا جديد.' },
   skip: { en: 'Skip to content', ar: 'انتقل إلى المحتوى' },
 } satisfies Record<string, L | Record<string, L>>;

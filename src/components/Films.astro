@@ -21,7 +21,7 @@ const films = only ? ALL.filter(f => only.includes(f.id)) : ALL;
   </div>
   <ul class="reel" role="list">
     {films.map(f => (
-      <li>
+      <li data-season={f.id === 'ramadan' || f.id === 'eid' ? f.id : undefined}>
         <button type="button" class="film" data-film={f.id} data-title={f.t[lang]}>
           <span class="poster"><img src={`/media/vid/${f.id}.webp`} alt="" loading="lazy" width="540" height="960" /><span class="play"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 4l10 6-10 6z" fill="currentColor" /></svg>{ar ? 'شغّل' : 'Play'}</span></span>
           <b>{f.t[lang]}</b><small>{f.d[lang]}</small>

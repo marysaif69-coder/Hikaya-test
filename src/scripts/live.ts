@@ -16,11 +16,11 @@ function apply(live: Live) {
   current = live;
   const P = live.products;
   // Seasons: whole pages, nav links, banners and sections.
-  for (const s of ['ramadan', 'eid'] as const) {
-    const on = live.seasons[s];
-    document.querySelectorAll<HTMLElement>(`[data-season="${s}"]`).forEach(el => { el.hidden = !on; });
-    document.querySelectorAll<HTMLElement>(`[data-season-off="${s}"]`).forEach(el => { el.hidden = on; });
-  }
+  // data-season="ramadan" or "ramadan eid": shown while any of those seasons is on.
+  // data-season-off: the opposite, for text that stands in when the season is off.
+  const anyOn = (v: string) => v.split(/\s+/).some(s => live.seasons[s as 'ramadan' | 'eid']);
+  document.querySelectorAll<HTMLElement>('[data-season]').forEach(el => { el.hidden = !anyOn(el.dataset.season!); });
+  document.querySelectorAll<HTMLElement>('[data-season-off]').forEach(el => { el.hidden = anyOn(el.dataset.seasonOff!); });
   // Prices (a comma list shows the sum, e.g. a coffee plus a date box).
   document.querySelectorAll<HTMLElement>('[data-price-for]').forEach(el => {
     const ids = el.dataset.priceFor!.split(',');

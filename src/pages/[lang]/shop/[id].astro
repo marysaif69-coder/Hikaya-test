@@ -31,7 +31,7 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
   eid: { bunn: { ar: 'من نزور أولاً؟', en: 'Who do we visit first?' }, tamr: { ar: 'الكبار دائماً.', en: 'The elders, always.' } },
 };
 ---
-<Base lang={lang} title={p.name[lang]} current="shop" description={p.notes[lang]} jsonld={jsonld} image={img}>
+<Base season={p.fam === 'ramadan' || p.fam === 'eid' ? p.fam : undefined} lang={lang} title={p.name[lang]} current="shop" description={p.notes[lang]} jsonld={jsonld} image={img}>
   <nav class="wrap crumbs" aria-label={ar ? 'المسار' : 'Breadcrumb'}>
     <a href={path(lang, 'shop')}>{UI.nav.shop[lang]}</a><span aria-hidden="true">/</span>
     <a href={path(lang, 'shop') + `#${p.fam}`}>{FAMILIES[p.fam].name[lang]}</a><span aria-hidden="true">/</span>

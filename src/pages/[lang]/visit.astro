@@ -7,11 +7,11 @@ const lang = Astro.params.lang as Lang;
 const ar = lang === 'ar';
 const WAYS = [
   { h: { en: 'Pickup', ar: 'الاستلام' }, p: { en: 'Free, at [address], Calgary. Thursday to Sunday, 11:00 to 20:00, from 22 January 2027. Pick a time window at checkout.', ar: 'مجاناً من [العنوان]، كالغاري. من الخميس إلى الأحد، ١١:٠٠ حتى ٢٠:٠٠، من ٢٢ يناير ٢٠٢٧. اختر موعدك عند الطلب.' } },
-  { h: { en: 'Calgary delivery', ar: 'التوصيل داخل كالغاري' }, p: { en: 'We deliver ourselves, $9, free over $80. Postal codes starting T1, T2 or T3. Ramadan orders arrive before sunset; Eid orders before Eid morning.', ar: 'نوصل بأنفسنا، ٩ $، ومجاناً فوق ٨٠ $. للرموز البريدية التي تبدأ بـ T1 أو T2 أو T3. طلبات رمضان تصل قبل الغروب، وطلبات العيد قبل صباح العيد.' } },
+  { h: { en: 'Calgary delivery', ar: 'التوصيل داخل كالغاري' }, p: { en: 'We deliver ourselves, $9, free over $80. Postal codes starting T1, T2 or T3.', ar: 'نوصل بأنفسنا، ٩ $، ومجاناً فوق ٨٠ $. للرموز البريدية التي تبدأ بـ T1 أو T2 أو T3.' }, ps: [{ s: 'ramadan', en: 'Ramadan orders arrive before sunset.', ar: 'طلبات رمضان تصل قبل الغروب.' }, { s: 'eid', en: 'Eid orders arrive before Eid morning.', ar: 'وطلبات العيد قبل صباح العيد.' }] },
   { h: { en: 'Paying', ar: 'الدفع' }, p: { en: 'For now: at pickup (card or cash) or by Interac e-Transfer once we confirm your order. Card payment online comes with the full launch.', ar: 'حالياً: عند الاستلام (بطاقة أو نقداً) أو بتحويل Interac بعد تأكيد طلبك. الدفع بالبطاقة عبر الموقع يأتي مع الإطلاق الكامل.' } },
 ];
 const FAQ = [
-  { q: { en: 'When can I order?', ar: 'متى أستطيع الطلب؟' }, a: { en: 'Pre-orders open in January 2027. Ramadan is expected to begin around 8 February 2027, and Eid around 9 March. Orders placed now are saved as pre-orders and confirmed by email when we open.', ar: 'يفتح الطلب المسبق في يناير ٢٠٢٧. يُتوقع أن يبدأ رمضان نحو ٨ فبراير ٢٠٢٧ والعيد نحو ٩ مارس. الطلبات الآن تُحفظ كطلبات مسبقة ونؤكدها بالبريد عند الافتتاح.' } },
+  { q: { en: 'When can I order?', ar: 'متى أستطيع الطلب؟' }, a: { en: 'Pre-orders open in January 2027. Orders placed now are saved as pre-orders and confirmed by email when we open.', ar: 'يفتح الطلب المسبق في يناير ٢٠٢٧. الطلبات الآن تُحفظ كطلبات مسبقة ونؤكدها بالبريد عند الافتتاح.' }, ps: [{ s: 'ramadan eid', en: 'Ramadan is expected to begin around 8 February 2027, and Eid around 9 March.', ar: 'يُتوقع أن يبدأ رمضان نحو ٨ فبراير ٢٠٢٧ والعيد نحو ٩ مارس.' }] },
   { q: { en: 'Is the coffee ground?', ar: 'هل القهوة مطحونة؟' }, a: { en: 'Yes, every coffee comes ground and ready to brew: Gulf and Yemeni coffees for the dallah, Levantine fine for the pot. Every bag has its roast date on the back.', ar: 'نعم، كل قهوتنا تأتي مطحونة وجاهزة: الخليجية واليمنية للدلّة، والشامية ناعمة للركوة. وتاريخ التحميص على ظهر كل كيس.' } },
   { q: { en: 'Do you ship outside Calgary?', ar: 'هل تشحنون خارج كالغاري؟' }, a: { en: 'Not yet. Pickup and our own delivery in Calgary only, for now.', ar: 'ليس بعد. الاستلام وتوصيلنا داخل كالغاري فقط حالياً.' } },
   { q: { en: 'Is there a café?', ar: 'هل هناك مقهى؟' }, a: { en: 'Not yet. The café comes after the shop grows.', ar: 'ليس بعد. يأتي المقهى بعد أن يكبر المتجر.' } },
@@ -29,11 +29,11 @@ const POL = [
     <p class="lead">{ar ? '[العنوان]، كالغاري. العنوان والساعات النهائية تُعلن قبل افتتاح الطلبات.' : '[address], Calgary. The final address and hours are announced before pre-orders open.'}</p>
   </section>
   <section class="wrap ways">
-    {WAYS.map((w, i) => <div class={`way w${i}`}><h2 class="h-s">{w.h[lang]}</h2><p>{w.p[lang]}</p></div>)}
+    {WAYS.map((w: any, i) => <div class={`way w${i}`}><h2 class="h-s">{w.h[lang]}</h2><p>{w.p[lang]}{(w.ps ?? []).map((x: any) => <span data-season={x.s}> {x[lang]}</span>)}</p></div>)}
   </section>
   <section class="sec wrap faq" id="questions" aria-labelledby="q-h">
     <h2 id="q-h" class="h-l">{ar ? 'أسئلة' : 'Questions'}</h2>
-    <div class="acc">{FAQ.map(f => <details><summary>{f.q[lang]}</summary><p>{f.a[lang]}</p></details>)}</div>
+    <div class="acc">{FAQ.map((f: any) => <details><summary>{f.q[lang]}</summary><p>{f.a[lang]}{(f.ps ?? []).map((x: any) => <span data-season={x.s}> {x[lang]}</span>)}</p></details>)}</div>
     <p class="more">{ar ? 'سؤالك ليس هنا؟' : 'Question not here?'} <a href="#ask">{ar ? 'اسأل حكاية' : 'Ask Hikaya'}</a> {ar ? 'أو' : 'or'} <a href={`/${lang}/help/`}>{ar ? 'راسل الفريق' : 'write to the team'}</a>.</p>
   </section>
   <section class="sec-tight wrap pol" id="policies" aria-labelledby="p-h">

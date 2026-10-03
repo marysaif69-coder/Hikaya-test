@@ -13,7 +13,7 @@ const CH = {
 };
 const STAGES = [
   { t: { en: 'Now', ar: 'الآن' }, d: { en: 'Setting up in Calgary: roasting, tasting, packaging.', ar: 'نؤسس في كالغاري: تحميص وتذوق وتغليف.' }, on: true },
-  { t: { en: 'January 2027', ar: 'يناير ٢٠٢٧' }, d: { en: 'Online pre-orders open, for Ramadan and Eid.', ar: 'يفتح الطلب المسبق عبر الإنترنت، لرمضان والعيد.' }, on: false },
+  { t: { en: 'January 2027', ar: 'يناير ٢٠٢٧' }, d: { en: 'Online pre-orders open.', ar: 'يفتح الطلب المسبق عبر الإنترنت.' }, ds: { en: 'Ramadan and Eid boxes with them.', ar: 'ومعه صناديق رمضان والعيد.' }, on: false },
   { t: { en: 'Later', ar: 'لاحقاً' }, d: { en: 'More shops, more houses, more tables.', ar: 'متاجر أكثر، وبيوت أكثر، وموائد أكثر.' }, on: false },
   { t: { en: 'One day', ar: 'يوماً ما' }, d: { en: 'The café. Its menu is already being written.', ar: 'المقهى. قائمته تُكتب منذ الآن.' }, on: false },
 ];
@@ -72,7 +72,7 @@ const STAGES = [
   <section class="sec wrap stages" aria-labelledby="st-h">
     <h2 id="st-h" class="h-l">{ar ? 'خطوة بخطوة' : 'One step at a time'}</h2>
     <ol>
-      {STAGES.map(s => <li class={s.on ? 'on' : ''}><b>{s.t[lang]}</b><p class="muted">{s.d[lang]}</p></li>)}
+      {STAGES.map((s: any) => <li class={s.on ? 'on' : ''}><b>{s.t[lang]}</b><p class="muted">{s.d[lang]}{s.ds && <span data-season="ramadan eid"> {s.ds[lang]}</span>}</p></li>)}
     </ol>
     <a class="btn primary" href={path(lang, 'shop')}>{ar ? 'إلى المتجر' : 'To the shop'}</a>
   </section>
