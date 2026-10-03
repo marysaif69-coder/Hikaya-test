@@ -161,7 +161,7 @@ inspectors; treat this as a checklist to confirm.
 
 1. Final prices in Admin → Shop → Products; pickup address and hours in Admin → Settings → Business details.
 2. Square keys added, a $1 test order paid and refunded.
-3. Domain: in Netlify move hikayacoffee.ca to this project; set `SITE_URL=https://hikayacoffee.ca`.
+3. ✅ Domain: hikayacoffee.ca moved to this project and `SITE_URL=https://hikayacoffee.ca` set (3 October 2026). The real website shows the Coming soon page + waitlist until the owners open it in Settings.
 4. Resend domain verified; place one real order and check every email.
 5. Remove sample orders (Admin → Orders).
 6. Set `SITE_PUBLIC=true`, redeploy, open the site in a private window.

@@ -6,7 +6,7 @@ in the desk under Numbers → Plan.
 
 | # | Phase | When | What the public sees | Ordering |
 |---|---|---|---|---|
-| 1 | **Coming soon + waitlist** (now) | from now until the paperwork is done | The Coming soon page with the official lockup and an email sign-up (Arabic or English, CASL consent, confirm by email). The team gets in with the preview code under "Team". | No |
+| 1 | **Coming soon + waitlist** (now, live on hikayacoffee.ca since 3 October) | from now until the paperwork is done | The Coming soon page with the official lockup and an email sign-up (Arabic or English, CASL consent, confirm by email). The team gets in with the preview code under "Team". | No |
 | 2 | **Ramadan pre-orders** | as soon as the paperwork is done; aim for early January | The whole site, Ramadan switched on | Yes; pickup and delivery from 22 January (Thu–Sun) |
 | 3 | **During Ramadan** | about 8 Feb – 8 Mar | Ramadan boxes and iftar times; Eid boxes switched on about halfway | Yes, with order-by deadlines and daily limits |
 | 4 | **Eid** | about 9 – 14 Mar | Eid boxes, then Ramadan and Eid switched off | Last Eid orders, then Eid deliveries |
