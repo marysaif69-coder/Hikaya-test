@@ -804,7 +804,7 @@
       "q": "Can you text me before my pickup? I always forget emails",
       "must": [
         "says yes: tick Text me a reminder the evening before at checkout",
-        "is honest that it is for new orders (they can reply to the confirmation email for an existing one)"
+        "is honest that it is chosen when ordering, and that the email reminder still comes for an order already placed"
       ],
       "must_not": [
         "promises a text for an order without the tick"
