@@ -1,5 +1,6 @@
 // Square tells us when a card payment completes; we mark the order paid.
 // In Square's Developer Dashboard, subscribe this URL to payment.updated.
+import { loadOverrides } from '../lib/business';
 import type { Config } from '@netlify/functions';
 import { json, siteUrl } from '../lib/http';
 import { one, sql } from '../lib/db';
@@ -8,6 +9,7 @@ import { setPayment } from '../lib/orders';
 import { giftCardPaid } from '../lib/giftcards';
 
 export default async (req: Request) => {
+    await loadOverrides();
   if (req.method !== 'POST') return json({ error: 'method' }, 405);
   const raw = await req.text();
   const notificationUrl = `${siteUrl(req)}/api/square/webhook`;

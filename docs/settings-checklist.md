@@ -7,7 +7,7 @@ The same list, with a tick for each one already added, is in **Admin → Setting
 
 ## Already added (you told me on 2–3 October)
 
-- [x] `ADMIN_EMAILS`: owners, comma-separated
+- [x] `ADMIN_EMAILS`: owners, comma-separated (more owners can be added in Admin → Settings → Business details)
 - [x] `RESEND_API_KEY` 🔒
 - [x] `EMAIL_FROM`: e.g. `Hikaya <hello@hikayacoffee.ca>`
 - [x] `EMAIL_REPLY_TO`: `hello@hikayacoffee.ca`

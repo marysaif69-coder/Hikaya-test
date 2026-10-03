@@ -121,7 +121,7 @@ export function orderEmail(kind: OrderMailKind, o: OrderForMail, items: ItemForM
   const ar = L === 'ar';
   const rows = items.map(i => `<tr><td style="padding:6px 0">${i.qty} × ${esc(ar ? i.name_ar : i.name_en)}${i.option_en ? `<br><span style="color:#66503F;font-size:14px">${esc(ar ? i.option_ar : i.option_en)}</span>` : ''}</td><td style="padding:6px 0;text-align:${ar ? 'left' : 'right'};white-space:nowrap">${dollars(i.unit_cents * i.qty)}</td></tr>`).join('');
   const where = o.method === 'pickup'
-    ? (ar ? 'استلام من [العنوان]، كالغاري' : 'Pickup at [address], Calgary')
+    ? (ar ? `استلام من ${esc(env('PICKUP_ADDRESS') || '[العنوان]، كالغاري')}${env('PICKUP_HOURS') ? ` · ${esc(env('PICKUP_HOURS'))}` : ''}` : `Pickup at ${esc(env('PICKUP_ADDRESS') || '[address], Calgary')}${env('PICKUP_HOURS') ? ` · ${esc(env('PICKUP_HOURS'))}` : ''}`)
     : (ar ? `توصيل إلى ${esc(o.street)}، ${esc(o.postal)}` : `Delivery to ${esc(o.street)}, ${esc(o.postal)}`);
   const pay = o.total_cents === 0 ? (ar ? 'دُفع كاملاً ببطاقة الهدية.' : 'Paid in full with your gift card.') : o.payment_status === 'paid' ? (ar ? 'مدفوع. شكراً.' : 'Paid. Thank you.')
     : o.payment === 'e-transfer' ? (ar ? `أرسل ${dollars(o.total_cents)} بتحويل Interac إلى ${esc(env('ETRANSFER_EMAIL') || 'orders@hikayacoffee.ca')}، واكتب رقم الطلب <span style="white-space:nowrap">${o.ref}</span> في الرسالة.` : `Send ${dollars(o.total_cents)} by Interac e-Transfer to ${esc(env('ETRANSFER_EMAIL') || 'orders@hikayacoffee.ca')} with <span style="white-space:nowrap">${o.ref}</span> in the message.`)

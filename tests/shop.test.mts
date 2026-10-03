@@ -757,6 +757,24 @@ assert.ok(bkj.tables.delivery_photos.every((r: any) => !('data' in r))); ok('bac
 const act = (await call(admin, '/api/admin/activity', { cookie: adm })).data.activity;
 assert.ok(act.some((a: any) => a.action === 'POST announce' && /Eid week/.test(a.detail))); assert.ok(act.some((a: any) => a.action.startsWith('POST products/'))); assert.equal((await call(admin, '/api/admin/activity', { cookie: helper })).status, 403); ok('activity log: who changed what in the desk');
 
+// ---------- business details from the desk ----------
+assert.equal((await call(admin, '/api/admin/business', { cookie: helper, body: { PICKUP_ADDRESS: 'x' } })).status, 403);
+assert.equal((await call(admin, '/api/admin/business', { cookie: adm, body: { ETRANSFER_EMAIL: 'not-an-email' } })).status, 400);
+await call(admin, '/api/admin/business', { cookie: adm, body: { PICKUP_ADDRESS: '12 Test Ave SW, Calgary, AB T2P 1J9', PICKUP_HOURS: 'Thu–Sun 11:00–20:00', ETRANSFER_EMAIL: 'Pay@HikayaCoffee.ca', OWNER_EMAILS: 'shadi.owner@example.com' } });
+const biz = (await call(orders, '/api/catalog')).data.business;
+assert.equal(biz.address, '12 Test Ave SW, Calgary, AB T2P 1J9'); ok('owners set the pickup address and other details in the desk; the site gets them');
+const bzM = sent.length;
+const bzO = await order({ payment: 'e-transfer', email: 'biz@example.com', day: '2027-03-05' }); if (bzO.status !== 201) console.log('bzO', bzO.data);
+const bzMail = sent.slice(bzM).find(m => m.to.includes('biz@example.com'));
+assert.match(bzMail.html, /Pickup at 12 Test Ave SW, Calgary, AB T2P 1J9 · Thu–Sun 11:00–20:00/); assert.match(bzMail.html, /pay@hikayacoffee\.ca/); ok('emails use the address, hours and e-Transfer email from the desk');
+const shadiOwner = await login('shadi.owner@example.com');
+assert.equal((await call(auth, '/api/me', { cookie: shadiOwner })).data.user.role, 'admin'); ok('an owner added in the desk is an owner');
+let seenCtx: any = null; ask.setCreate(async (p: any) => { seenCtx = p; return { id: 'm', type: 'message', role: 'assistant', model: 'x', stop_reason: 'end_turn', content: [{ type: 'text', text: 'ok' }], usage: {} } as any; });
+await call(help, '/api/ask', { body: { text: 'Where do I pick up?', lang: 'en' } });
+assert.ok(seenCtx.system[1].text.includes('12 Test Ave SW')); ok('Ask Hikaya knows the address once it is set');
+await call(admin, '/api/admin/business', { cookie: adm, body: { PICKUP_ADDRESS: '', PICKUP_HOURS: '', ETRANSFER_EMAIL: '', OWNER_EMAILS: '' } });
+assert.equal((await call(auth, '/api/me', { cookie: shadiOwner })).data.user.role, 'customer'); ok('removing an owner takes effect at once');
+
 // ---------- confirming orders ----------
 const newO = await order({ day: '2027-01-31' });
 const cMails = sent.length;

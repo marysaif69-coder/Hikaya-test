@@ -2,6 +2,7 @@
 // tomorrow's orders (email, and a text for those who asked), review requests, regular orders
 // coming up, tomorrow's run sheet to the team, and on the 1st the monthly report to the owners.
 import type { Config } from '@netlify/functions';
+import { loadOverrides } from '../lib/business';
 import { sql } from '../lib/db';
 import { calgaryNow, addDays } from '../lib/slots';
 import { notify, event } from '../lib/orders';
@@ -14,6 +15,7 @@ import { tomorrowEmail } from '../lib/tomorrow';
 import { shiftReminders, paperReminders } from '../lib/team';
 
 export async function daily(today = calgaryNow().date) {
+  await loadOverrides(true);
   const tomorrow = addDays(today, 1);
   const rows = await sql`SELECT * FROM orders WHERE slot_date = ${tomorrow} AND status IN ('received', 'confirmed') AND reminded_at IS NULL AND NOT is_sample`;
   for (const o of rows) {

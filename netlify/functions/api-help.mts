@@ -1,4 +1,5 @@
 // Ask Hikaya (the chat assistant) and the help form. Both end in the admin Inbox.
+import { loadOverrides } from '../lib/business';
 import type { Config } from '@netlify/functions';
 import { json, fail, body, str, sameOrigin, HttpError, env } from '../lib/http';
 import { session, hash } from '../lib/auth';
@@ -11,6 +12,7 @@ const ipHash = (req: Request) => hash((req.headers.get('x-nf-client-connection-i
 
 export default async (req: Request) => {
   try {
+    await loadOverrides();
     const url = new URL(req.url);
     const path = url.pathname.replace(/\/$/, '');
 

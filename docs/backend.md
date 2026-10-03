@@ -10,7 +10,8 @@ Everything runs on Netlify: the website, the server code (Netlify Functions in `
 - Help form at `/en/help/` and `/ar/help/`: the same requests without the chat, with up to 4 photos.
 
 ## What the team can do — `/admin/`
-- Log in with a team email (listed in `ADMIN_EMAILS`).
+- Log in with a team email (listed in `ADMIN_EMAILS`, or added as an owner in Admin → Settings → Business details).
+- **Business details** (Admin → Settings, owners only): pickup address and hours, phone, e-Transfer email, reply-to, Google review link, shop start address for routes, GST number and extra owner emails. Saved in `settings.business`; they override the Netlify variables of the same name (`netlify/lib/business.ts`, `loadOverrides()` at the start of each function). The address replaces "[address]" on the site and appears in emails, labels and Ask Hikaya. Owners listed in Netlify can't be removed from the desk.
 - Orders: search and filter, open an order, move it Received → Confirmed → Ready / Out for delivery → Completed (or Cancel), mark Paid / Unpaid / Refunded, add team notes, see history and every email sent.
 - Day sheet: what to pack, pickups by time window, deliveries sorted by postal area with map links. Printable.
 - Settings: pause new orders; places per time window.

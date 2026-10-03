@@ -10,7 +10,7 @@ export type Plan = { order: string[]; meters: number | null; seconds: number | n
 
 const WINDOWS = ['11:00–14:00', '14:00–17:00', '17:00–20:00'];
 export const mapsEnabled = () => Boolean(env('GOOGLE_MAPS_API_KEY'));
-export const shopAddress = () => env('SHOP_ADDRESS');
+export const shopAddress = () => env('SHOP_ADDRESS') || env('PICKUP_ADDRESS');
 
 const point = (o: Origin | string) => typeof o === 'string' ? { address: o }
   : o.lat !== undefined && o.lng !== undefined ? { location: { latLng: { latitude: o.lat, longitude: o.lng } } } : { address: o.address ?? '' };

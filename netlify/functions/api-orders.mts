@@ -1,4 +1,5 @@
 // Customer-facing order API: place an order (guest or logged in), see slots, view orders.
+import { loadOverrides, publicBusiness } from '../lib/business';
 import type { Config } from '@netlify/functions';
 import { json, fail, body, str, siteUrl, HttpError } from '../lib/http';
 import { session } from '../lib/auth';
@@ -19,6 +20,7 @@ import { DELIVERY_CENTS, FREE_DELIVERY_FROM } from '../lib/pricing';
 
 export default async (req: Request) => {
   try {
+    await loadOverrides();
     const url = new URL(req.url);
     const path = url.pathname;
 
@@ -28,7 +30,7 @@ export default async (req: Request) => {
     // Live prices and sold-out switches; the static pages patch their prices from this.
     if (path === '/api/catalog' && req.method === 'GET') {
       const [live, seasons] = await Promise.all([liveCatalog(), getSeasons()]);
-      return json({ seasons, products: Object.fromEntries(Object.entries(live).map(([id, l]) => [id, { price: l.price_cents / 100, shown: l.shown, available: l.available && l.stock !== 0, left: l.stock !== null && l.stock <= 10 ? l.stock : null }])) },
+      return json({ business: await publicBusiness(), seasons, products: Object.fromEntries(Object.entries(live).map(([id, l]) => [id, { price: l.price_cents / 100, shown: l.shown, available: l.available && l.stock !== 0, left: l.stock !== null && l.stock <= 10 ? l.stock : null }])) },
         200, { 'cache-control': 'no-store' });
     }
     // Check a promo code against the basket before ordering.

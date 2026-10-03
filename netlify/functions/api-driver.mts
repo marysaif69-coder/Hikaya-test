@@ -1,5 +1,6 @@
 // The delivery app (/admin/driver/): for drivers, owners and helpers. Drivers only see and
 // change their own stops; they never reach the order desk.
+import { loadOverrides } from '../lib/business';
 import type { Config } from '@netlify/functions';
 import { json, fail, body, str, HttpError, sameOrigin } from '../lib/http';
 import { requireCrew } from '../lib/auth';
@@ -13,6 +14,7 @@ import GUIDE from '../../src/content/driver-guide.json';
 
 export default async (req: Request) => {
   try {
+    await loadOverrides();
     const s = await requireCrew(req);
     const url = new URL(req.url);
     const path = url.pathname.replace(/^\/api\/driver\/?/, '');

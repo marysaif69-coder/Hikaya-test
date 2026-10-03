@@ -26,7 +26,7 @@ const POL = [
 <Base lang={lang} title={ar ? 'الاستلام والتوصيل' : 'Pickup & delivery'} current="visit">
   <section class="wrap v-head">
     <h1 class="h-l">{ar ? 'كيف تصلك' : 'How it reaches you'}</h1>
-    <p class="lead">{ar ? '[العنوان]، كالغاري. العنوان والساعات النهائية تُعلن قبل افتتاح الطلبات.' : '[address], Calgary. The final address and hours are announced before pre-orders open.'}</p>
+    <p class="lead">{ar ? '[العنوان]، كالغاري.' : '[address], Calgary.'} <span data-biz-pending>{ar ? 'العنوان والساعات النهائية تُعلن قبل افتتاح الطلبات.' : 'The final address and hours are announced before pre-orders open.'}</span> <span data-biz-hours hidden></span></p>
   </section>
   <section class="wrap ways">
     {WAYS.map((w: any, i) => <div class={`way w${i}`}><h2 class="h-s">{w.h[lang]}</h2><p>{w.p[lang]}{(w.ps ?? []).map((x: any) => <span data-season={x.s}> {x[lang]}</span>)}</p></div>)}

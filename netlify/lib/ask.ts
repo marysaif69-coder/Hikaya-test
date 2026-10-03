@@ -94,6 +94,8 @@ async function context(lang: 'en' | 'ar', s: Session | null) {
     `Today in Calgary: ${now.date}.`,
     `Ramadan expected from ${RAMADAN_START}; Eid expected ${EID}.${ramadanNow() ? ' It is Ramadan or Eid now: requests are answered within two days.' : ''}`,
     `The visitor opened the chat on the ${lang === 'ar' ? 'Arabic' : 'English'} site.`,
+    env('PICKUP_ADDRESS') ? `The pickup address is now set: ${env('PICKUP_ADDRESS')}.${env('PICKUP_HOURS') ? ` Pickup hours: ${env('PICKUP_HOURS')}.` : ''} Give it when asked (it replaces "not public yet" in the handbook).` : '',
+    env('BUSINESS_PHONE') ? `Customers can also call or text ${env('BUSINESS_PHONE')}.` : '',
     s ? `The visitor is signed in as ${s.email}. Their own orders can be listed with my_orders, without asking for the email.` : 'The visitor is not signed in.',
     slots?.next ? `Next order-by deadline: ${fmt(slots.next.orderBy)} Calgary time, for orders on ${slots.next.from}${slots.next.to !== slots.next.from ? ` to ${slots.next.to}` : ''}. Later days have later deadlines; check_availability shows each day's.` : '',
     slots && !slots.open ? 'Ordering is paused by the team right now: no new orders can be placed. Say so, and offer the help form for questions.' : '',

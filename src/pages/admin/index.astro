@@ -384,6 +384,9 @@ import '../../styles/global.css';
     <!-- SETTINGS -->
     <section id="v-settings" hidden class="a-settings">
       <div class="conn" id="conn"></div>
+      <div class="conn owner-only"><h2 class="h-s">Business details</h2>
+        <p class="muted">Set these here instead of in Netlify; they're used on the site, in emails, labels, delivery routes and by Ask Hikaya. Empty = use the Netlify value (shown in grey). Keys and passwords stay in Netlify.</p>
+        <form id="bizForm" class="biz" novalidate></form></div>
       <div class="conn owner-only"><h2 class="h-s">Backup and activity</h2>
         <p class="muted">Download everything (orders, customers, team, settings…) as one file, e.g. once a month, and keep it somewhere safe. Login codes and sessions are left out.</p>
         <p><a class="btn line sm" href="/api/admin/backup.json">Download a backup</a> <button type="button" class="btn line sm" id="actShow">Show the activity log</button></p>
@@ -581,6 +584,10 @@ import '../../styles/global.css';
   .ann :global(small) { color: var(--ink-2); }
   .fs-l { display: grid; gap: 6px; margin-bottom: 10px; }
   .edit-items { margin: 10px 0; } .edit-items summary { cursor: pointer; font-weight: 700; }
+  .biz { display: grid; gap: 10px; }
+  .biz label { display: grid; gap: 4px; font-weight: 600; font-size: 14px; }
+  .biz small { font-weight: 400; color: var(--ink-2); }
+  .biz input, .biz textarea { border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 10px; font: inherit; font-weight: 400; background: var(--paper); }
   .plan { display: grid; gap: 16px; max-width: 900px; }
   .plan-list { margin: 8px 0 0; padding-inline-start: 22px; display: grid; gap: 8px; line-height: 1.5; }
   .plan-list.done li::marker { content: '✓  '; color: #6E8B4A; }
@@ -1063,6 +1070,8 @@ import '../../styles/global.css';
   const MON = ['JA', 'FE', 'MR', 'AL', 'MA', 'JN', 'JL', 'AU', 'SE', 'OC', 'NO', 'DE']; // bilingual month symbols
   const bb = (iso: string) => `${iso.slice(2, 4)} ${MON[Number(iso.slice(5, 7)) - 1]} ${iso.slice(8, 10)}`;
   let LOTS: any[] = [];
+  let BIZ_ADDRESS = '';
+  api('/api/catalog').then(c => { BIZ_ADDRESS = c.business?.address ?? ''; }).catch(() => {});
   $('labelForm').addEventListener('submit', e => {
     e.preventDefault(); const f = e.target as HTMLFormElement, v = (k: string) => (f.elements.namedItem(k) as HTMLInputElement).value;
     const lot = LOTS.find(x => x.code === v('lot')); if (!lot) { alert('Add a lot first (above).'); return; }
@@ -1076,7 +1085,7 @@ import '../../styles/global.css';
       <div class="i"><b>Ingredients:</b> ${esc(ing[0])} <b>Ingrédients :</b> ${esc(ing[1])}</div>
       <div class="r"><span><b>${esc(net)}</b></span><span>${lot.bestBefore ? `BEST BEFORE / MEILLEUR AVANT <b>${bb(lot.bestBefore)}</b>` : ''}</span></div>
       <div class="r"><span style="white-space:nowrap">Lot ${esc(lot.code)}</span><span>Store in a cool, dry place. / Conserver dans un endroit frais et sec.</span></div>
-      <div class="a">Hikaya Coffee Ltd., [address], Calgary, AB</div></div>`;
+      <div class="a">Hikaya Coffee Ltd., ${esc(BIZ_ADDRESS || '[address], Calgary, AB')}</div></div>`;
     const w = window.open('', '_blank'); if (!w) { alert('Allow pop-ups to print the labels.'); return; }
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Labels ${esc(lot.code)}</title><style>
       @page{size:letter;margin:0.5in 0.19in} body{margin:0;font:8.5pt/1.25 Arial,sans-serif;color:#000}
@@ -1423,7 +1432,19 @@ import '../../styles/global.css';
     const d = await api('/api/admin/activity'); $('actBox').hidden = false;
     $('actTable').innerHTML = '<tr><th>When</th><th>Who</th><th>What</th><th>Details</th></tr>' + d.activity.map((a: any) => `<tr><td>${new Date(a.created_at).toLocaleString('en-CA', { dateStyle: 'short', timeStyle: 'short' })}</td><td>${esc(a.actor)}</td><td>${esc(a.action.replace(/^POST /, ''))}</td><td><small>${esc(a.detail ?? '')}</small></td></tr>`).join('');
   });
+  async function loadBusiness() {
+    const d = await api('/api/admin/business');
+    const long = new Set(['PICKUP_ADDRESS', 'PICKUP_HOURS', 'OWNER_EMAILS']);
+    $('bizForm').innerHTML = Object.entries(d).map(([k, x]: [string, any]) => `<label>${esc(x.label)}${k === 'OWNER_EMAILS' && x.netlify ? `<small>Owners set in Netlify (can't be removed here): ${esc(x.netlify)}</small>` : ''}
+      ${long.has(k) ? `<textarea name="${k}" rows="2" placeholder="${esc(k === 'OWNER_EMAILS' ? 'e.g. ahmed@gmail.com' : x.netlify || '')}">${esc(x.value)}</textarea>` : `<input name="${k}" value="${esc(x.value)}" placeholder="${esc(x.netlify || '')}" />`}</label>`).join('') + '<button class="btn primary sm" type="submit">Save business details</button>';
+  }
+  $('bizForm').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target as HTMLFormElement;
+    const data = Object.fromEntries([...f.querySelectorAll<HTMLInputElement>('[name]')].map(i => [i.name, i.value]));
+    await api('/api/admin/business', data); alert('Saved. The site and emails use it within a minute.'); loadBusiness(); loadConnections();
+  });
   async function loadSettings() {
+    if (ROLE === 'admin') loadBusiness();
     loadConnections();
     const s = await api('/api/admin/settings');
     const f = $('setForm') as HTMLFormElement;

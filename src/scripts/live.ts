@@ -2,7 +2,7 @@
 // seasons change from the admin desk. This applies the live values on every page: the last
 // known values straight away (from this browser), then fresh ones from /api/catalog.
 type LiveProduct = { price: number; shown: boolean; available: boolean; left: number | null };
-type Live = { seasons: { ramadan: boolean; eid: boolean }; products: Record<string, LiveProduct> };
+type Live = { seasons: { ramadan: boolean; eid: boolean }; products: Record<string, LiveProduct>; business?: { address: string; hours: string; phone: string } };
 
 const KEY = 'hikaya-live-v1';
 const lang = () => (document.documentElement.lang === 'ar' ? 'ar' : 'en');
@@ -12,8 +12,26 @@ let current: Live | null = null;
 /** For scripts that show prices they build themselves (the box builder). */
 (window as any).hikayaPrice = (id: string) => current?.products[id] ? money(current.products[id].price) : undefined;
 
+// The pickup address the owners set in the desk replaces "[address]" everywhere, including text
+// added later (orders in My account).
+let address = '';
+function fillAddress(root: Node) {
+  if (!address) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const swap: Text[] = [];
+  for (let n = w.nextNode(); n; n = w.nextNode()) if (/\[address\]|\[العنوان\]/.test(n.nodeValue ?? '')) swap.push(n as Text);
+  for (const t of swap) t.nodeValue = t.nodeValue!.replace(/\[address\],? Calgary(, AB)?/g, address).replace(/\[العنوان\]،? كالغاري/g, address).replace(/\[address\]|\[العنوان\]/g, address);
+}
+let watching = false;
 function apply(live: Live) {
   current = live;
+  if (live.business?.address) {
+    address = live.business.address;
+    fillAddress(document.body);
+    document.querySelectorAll<HTMLElement>('[data-biz-pending]').forEach(el => { el.hidden = true; });
+    document.querySelectorAll<HTMLElement>('[data-biz-hours]').forEach(el => { if (live.business!.hours) { el.textContent = live.business!.hours; el.hidden = false; } });
+    if (!watching) { watching = true; new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => fillAddress(n)))).observe(document.body, { childList: true, subtree: true }); }
+  }
   const P = live.products;
   // Seasons: whole pages, nav links, banners and sections.
   // data-season="ramadan" or "ramadan eid": shown while any of those seasons is on.

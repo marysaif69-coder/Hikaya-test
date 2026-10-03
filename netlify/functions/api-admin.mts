@@ -1,4 +1,5 @@
 // /api/admin/* — the team's order desk. Every route requires an admin session (ADMIN_EMAILS).
+import { loadOverrides } from '../lib/business';
 import type { Config } from '@netlify/functions';
 import { json, fail, body, str, HttpError, siteUrl, env } from '../lib/http';
 import { cardEnabled, squareCheck } from '../lib/square';
@@ -11,6 +12,7 @@ import { shiftsFrom, saveShift, deleteShift, assignShift, unassign, fixTimes, ho
 import { listLots, addLot, usedUp, recall, supplies, saveSupply, lotsOn, lotsForLines } from '../lib/production';
 import { saveLetter, listLetters, testLetter, sendLetter } from '../lib/letters';
 import { checklists, saveChecklists, checklistLog, announce, announcements, deleteAnnouncement, backup, activity, logActivity } from '../lib/ops';
+import { businessDetails, saveBusiness } from '../lib/business';
 import { readContent, saveContent, type FileId } from '../lib/content';
 import { requireTeam } from '../lib/auth';
 import { sql, one } from '../lib/db';
@@ -37,8 +39,8 @@ const SETTINGS = [
   { group: 'Basics', name: 'PREVIEW_PASSWORD', secret: true, what: 'The code on the "Coming soon" screen.', where: 'Any code you choose.' },
   { group: 'Emails', name: 'RESEND_API_KEY', secret: true, what: 'Sends every email (orders, codes, reminders).', where: 'resend.com → API Keys.' },
   { group: 'Emails', name: 'EMAIL_FROM', secret: false, what: 'Who emails come from.', where: 'e.g. Hikaya <hello@hikayacoffee.ca> (domain verified in Resend).' },
-  { group: 'Emails', name: 'EMAIL_REPLY_TO', secret: false, what: 'Where customer replies go.', where: 'e.g. hello@hikayacoffee.ca' },
-  { group: 'Payments', name: 'ETRANSFER_EMAIL', secret: false, what: 'Where customers send Interac e-Transfers.', where: "Your bank's e-Transfer email." },
+  { group: 'Emails', name: 'EMAIL_REPLY_TO', secret: false, what: '(Or set it in Settings → Business details.) Where customer replies go.', where: 'e.g. hello@hikayacoffee.ca' },
+  { group: 'Payments', name: 'ETRANSFER_EMAIL', secret: false, what: '(Or set it in Settings → Business details.) Where customers send Interac e-Transfers.', where: "Your bank's e-Transfer email." },
   { group: 'Payments', name: 'SQUARE_ACCESS_TOKEN', secret: true, what: 'Card payments and card refunds.', where: 'developer.squareup.com → your app → Credentials → Production → Access token.' },
   { group: 'Payments', name: 'SQUARE_LOCATION_ID', secret: false, what: 'Which Square location takes the money.', where: 'Same app → Locations.' },
   { group: 'Payments', name: 'SQUARE_ENV', secret: false, what: 'Live or test payments.', where: 'Type production (sandbox while testing).' },
@@ -48,9 +50,9 @@ const SETTINGS = [
   { group: 'Text messages', name: 'TWILIO_FROM', secret: false, what: 'The number texts come from.', where: 'Twilio → Phone Numbers → buy a Canadian (403/587) number, e.g. +15875550100.' },
   { group: 'Assistant', name: 'ANTHROPIC_API_KEY', secret: true, what: 'Turns on Ask Hikaya.', where: 'console.anthropic.com → API Keys.' },
   { group: 'Deliveries', name: 'GOOGLE_MAPS_API_KEY', secret: true, what: 'Shortest route for each driver, planned km and driving time; km counted by the app.', where: 'console.cloud.google.com → new project → enable "Routes API" → Credentials → API key (restrict it to Routes API). Free monthly allowance covers a small shop.' },
-  { group: 'Deliveries', name: 'SHOP_ADDRESS', secret: false, what: 'Where routes start and end (the pickup address).', where: 'e.g. 123 Example St SW, Calgary, AB T2P 1J9' },
+  { group: 'Deliveries', name: 'SHOP_ADDRESS', secret: false, what: '(Or set it in Settings → Business details.) Where routes start and end (the pickup address).', where: 'e.g. 123 Example St SW, Calgary, AB T2P 1J9' },
   { group: 'Extras', name: 'STAFF_EMAILS', secret: false, what: 'Helpers: orders, Inbox, sheets, Driver. No money or settings.', where: 'Helper emails, separated by commas.' },
-  { group: 'Extras', name: 'GOOGLE_REVIEW_URL', secret: false, what: 'One "How was it?" email after a completed order.', where: 'Google Business Profile → Ask for reviews → copy link.' },
+  { group: 'Extras', name: 'GOOGLE_REVIEW_URL', secret: false, what: '(Or set it in Settings → Business details.) One "How was it?" email after a completed order.', where: 'Google Business Profile → Ask for reviews → copy link.' },
   { group: 'Extras', name: 'GITHUB_CONTENT_TOKEN', secret: true, what: 'Turns on saving in the Words tab.', where: 'GitHub → Settings → Developer settings → Fine-grained token, only Hikaya-test, Contents: read and write.' },
   { group: 'Launch day only', name: 'SITE_URL', secret: false, what: 'The address used in emails and links.', where: 'https://hikayacoffee.ca' },
   { group: 'Launch day only', name: 'SITE_PUBLIC', secret: false, what: 'Opens the site to everyone. Leave empty until launch.', where: 'Type true on launch day.' },
@@ -78,13 +80,14 @@ export default async (req: Request) => {
 
 async function handle(req: Request) {
   try {
+    await loadOverrides();
     const admin = await requireTeam(req);
     const url = new URL(req.url);
     const parts = url.pathname.replace(/^\/api\/admin\/?/, '').split('/').filter(Boolean);
     // Helpers can read everything and run orders; money, catalog, settings and exports are owners only.
     if (admin.role !== 'admin') {
       const write = req.method !== 'GET';
-      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write) || parts[0] === 'recall.csv' || parts[0] === 'hours.csv' || parts[0] === 'letters' || parts[0] === 'backup.json' || parts[0] === 'activity' || (parts[0] === 'checklists' && write)
+      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write) || parts[0] === 'recall.csv' || parts[0] === 'hours.csv' || parts[0] === 'letters' || parts[0] === 'business' || parts[0] === 'backup.json' || parts[0] === 'activity' || (parts[0] === 'checklists' && write)
         || (write && ['products', 'settings', 'ask', 'connections', 'content', 'giftcards', 'report', 'pay'].includes(parts[0])) || (parts[0] === 'orders' && parts[2] === 'refund');
       if (ownersOnly) throw new HttpError(403, 'owners-only', 'Only the owners can do this.');
     }
@@ -223,6 +226,7 @@ async function handle(req: Request) {
         etransfer: env('ETRANSFER_EMAIL') || null,
         // Which Netlify settings exist. Only yes/no: values never leave the server.
         checklist: admin.role === 'admin' ? SETTINGS.map(x => ({ ...x, set: Boolean(env(x.name)) })) : [],
+        business: { pickupAddress: env('PICKUP_ADDRESS') || null },
       });
     }
     if (parts[0] === 'connections' && parts[1] === 'test-email' && req.method === 'POST') {
@@ -359,6 +363,10 @@ async function handle(req: Request) {
       return json({ month: r.month, name: r.name, html: r.html });
     }
     if (parts[0] === 'report' && req.method === 'POST') return json({ sent: await sendMonthlyReport(calgaryNow().date, true) });
+
+    // ---------- business details (owners) ----------
+    if (parts[0] === 'business' && req.method === 'GET') return json(await businessDetails());
+    if (parts[0] === 'business' && req.method === 'POST') return json(await saveBusiness(await body(req)));
 
     // ---------- food safety, announcements, backup, activity ----------
     if (parts[0] === 'checklists' && req.method === 'GET') {

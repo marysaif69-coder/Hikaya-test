@@ -34,5 +34,15 @@ export const cookie = (req: Request, name: string) => {
 
 export const str = (v: unknown, max = 200) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 export const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) && v.length <= 254;
-export const env = (k: string) => (globalThis as any).Netlify?.env?.get(k) ?? process.env[k] ?? '';
+const fromNetlify = (k: string): string => (globalThis as any).Netlify?.env?.get(k) ?? process.env[k] ?? '';
+/** Business details the owners set in the desk (Settings → Business details) override the
+ * Netlify value of the same name. Never secrets: only the keys in EDITABLE. Loaded by
+ * loadOverrides() at the start of each request. */
+let overrides: Record<string, string> = {};
+export const setOverrides = (o: Record<string, string>) => { overrides = o; };
+export const env = (k: string): string => {
+  if (k === 'ADMIN_EMAILS') return [fromNetlify('ADMIN_EMAILS'), overrides.OWNER_EMAILS ?? ''].filter(Boolean).join(',');
+  return overrides[k] || fromNetlify(k);
+};
+export const netlifyEnv = fromNetlify;
 export const siteUrl = (req?: Request) => env('SITE_URL') || env('URL') || (req ? new URL(req.url).origin : 'https://hikayacoffee.ca');

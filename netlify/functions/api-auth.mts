@@ -1,4 +1,5 @@
 // /api/auth/* and /api/me — email-code login for customers and the team.
+import { loadOverrides } from '../lib/business';
 import type { Config } from '@netlify/functions';
 import { json, fail, body, str, isEmail, siteUrl, HttpError } from '../lib/http';
 import { limit, ipKey } from '../lib/rate';
@@ -7,6 +8,7 @@ import { send, codeEmail } from '../lib/email';
 
 export default async (req: Request) => {
   try {
+    await loadOverrides();
     const path = new URL(req.url).pathname;
     if (path === '/api/me' && req.method === 'GET') {
       const s = await session(req);
