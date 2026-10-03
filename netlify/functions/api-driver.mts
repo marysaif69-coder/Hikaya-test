@@ -16,6 +16,7 @@ import GUIDE from '../../src/content/driver-guide.json';
 export default async (req: Request) => {
   try {
     await loadOverrides();
+    if (req.method !== 'GET') sameOrigin(req);
     const s = await requireCrew(req);
     const url = new URL(req.url);
     const path = url.pathname.replace(/^\/api\/driver\/?/, '');

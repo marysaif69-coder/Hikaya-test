@@ -21,9 +21,16 @@ export async function pushKeys() {
   return (keys = { publicKey: r!.public_key, privateKey: r!.private_key });
 }
 
+/** Only the browsers' own push services: the server sends to this address, so it must never be
+ * somewhere else (an internal address, another site). */
+const PUSH_HOSTS = [/^fcm\.googleapis\.com$/, /^android\.googleapis\.com$/, /^updates\.push\.services\.mozilla\.com$/, /^web\.push\.apple\.com$/, /^[a-z0-9.-]+\.push\.apple\.com$/, /^[a-z0-9.-]+\.notify\.windows\.com$/];
+export function pushHost(endpoint: string) {
+  try { const u = new URL(endpoint); return u.protocol === 'https:' && !u.port && PUSH_HOSTS.some(h => h.test(u.hostname)); } catch { return false; }
+}
+
 export async function subscribe(email: string, b: any) {
   const endpoint = str(b?.endpoint, 1000), p256dh = str(b?.keys?.p256dh, 200), auth = str(b?.keys?.auth, 100);
-  if (!/^https:\/\//.test(endpoint) || !p256dh || !auth) throw new HttpError(400, 'push', 'This phone could not turn on notifications.');
+  if (!pushHost(endpoint) || !p256dh || !auth) throw new HttpError(400, 'push', 'This phone could not turn on notifications.');
   await sql`INSERT INTO push_subs (email, endpoint, p256dh, auth, device) VALUES (${email}, ${endpoint}, ${p256dh}, ${auth}, ${str(b?.device, 120) || null})
     ON CONFLICT (endpoint) DO UPDATE SET email = EXCLUDED.email, p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth, device = EXCLUDED.device`;
   return { ok: true };

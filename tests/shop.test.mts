@@ -820,12 +820,17 @@ const vk1 = (await call(driverApi, '/api/driver/push', { cookie: dan2 })).data;
 assert.ok(vk1.publicKey.length > 60); assert.equal(vk1.devices, 0);
 assert.equal((await call(driverApi, '/api/driver/push', { cookie: adm })).data.publicKey, vk1.publicKey); ok('the site makes its notification key once and keeps it');
 assert.equal((await call(driverApi, '/api/driver/push/subscribe', { cookie: dan2, body: { endpoint: 'http://bad', keys: {} } })).status, 400);
-const psub = (ep: string) => ({ endpoint: `https://push.example.com/${ep}`, keys: { p256dh: 'BPx' + ep, auth: 'au' + ep } });
+for (const bad of ['https://169.254.169.254/latest', 'https://localhost/x', 'https://fcm.googleapis.com.evil.example/x', 'https://fcm.googleapis.com:8443/x'])
+  assert.equal((await call(driverApi, '/api/driver/push/subscribe', { cookie: dan2, body: { endpoint: bad, keys: { p256dh: 'BPx', auth: 'au' } } })).status, 400);
+ok('only the real push services are accepted as a phone address');
+assert.equal((await driverApi(new Request(`${H}/api/driver/push/test`, { method: 'POST', headers: { origin: 'https://evil.example', cookie: dan2 } }))).status, 403);
+assert.equal((await admin(new Request(`${H}/api/admin/giftcards/GC-NOPE/paid`, { method: 'POST', headers: { origin: 'https://evil.example', cookie: adm } }))).status, 403); ok('posts from another site are refused, even without a body');
+const psub = (ep: string) => ({ endpoint: `https://fcm.googleapis.com/fcm/send/${ep}`, keys: { p256dh: 'BPx' + ep, auth: 'au' + ep } });
 await call(driverApi, '/api/driver/push/subscribe', { cookie: dan2, body: psub('dan-phone') });
 await call(driverApi, '/api/driver/push/subscribe', { cookie: adm, body: psub('maryam-phone') });
 assert.equal((await call(driverApi, '/api/driver/push', { cookie: dan2 })).data.devices, 1);
 assert.equal((await call(driverApi, '/api/driver/push/test', { cookie: dan2, body: {} })).data.sent, 1);
-assert.equal(pushed.at(-1)!.endpoint, 'https://push.example.com/dan-phone'); ok('a driver turns notifications on and gets a test');
+assert.equal(pushed.at(-1)!.endpoint, 'https://fcm.googleapis.com/fcm/send/dan-phone'); ok('a driver turns notifications on and gets a test');
 pushed.length = 0;
 const pu1 = await order({ method: 'delivery', street: '9 Push St', postal: 'T2P1J9', day: '2027-03-19', email: 'push1@example.com' });
 const pu2 = await order({ method: 'delivery', street: '8 Push St', postal: 'T2P1J8', day: '2027-03-19', email: 'push2@example.com' });
@@ -838,12 +843,12 @@ assert.equal(pushed.length, 1); assert.equal(pushed[0].msg.title, '2 new deliver
 pushed.length = 0;
 const an = (await call(admin, '/api/admin/announce', { cookie: adm, body: { body: 'Roastery closed Monday.' } })).data;
 assert.equal(an.pushed, 2); assert.ok(pushed.every(x => x.msg.body === 'Roastery closed Monday.')); ok('team messages go to every phone with notifications on');
-gone.add('https://push.example.com/dan-phone');
+gone.add('https://fcm.googleapis.com/fcm/send/dan-phone');
 await call(driverApi, '/api/driver/push/test', { cookie: dan2, body: {} });
 assert.equal((await call(driverApi, '/api/driver/push', { cookie: dan2 })).data.devices, 0); ok('a phone that is gone is forgotten');
 const bk2 = await (await admin(new Request(`${H}/api/admin/backup.json`, { headers: { cookie: adm } }))).json();
 assert.ok(bk2.tables.push_subs && !bk2.tables.push_keys); ok('the notification key is not in the backup');
-await call(driverApi, '/api/driver/push/unsubscribe', { cookie: adm, body: { endpoint: 'https://push.example.com/maryam-phone' } });
+await call(driverApi, '/api/driver/push/unsubscribe', { cookie: adm, body: { endpoint: 'https://fcm.googleapis.com/fcm/send/maryam-phone' } });
 
 // ---------- today page ----------
 const tdA = await order({ day: '2027-03-26', payment: 'e-transfer', email: 'today1@example.com' });

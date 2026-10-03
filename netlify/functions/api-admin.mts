@@ -1,7 +1,7 @@
 // /api/admin/* — the team's order desk. Every route requires an admin session (ADMIN_EMAILS).
 import { loadOverrides } from '../lib/business';
 import type { Config } from '@netlify/functions';
-import { json, fail, body, str, HttpError, siteUrl, env } from '../lib/http';
+import { json, fail, body, str, HttpError, siteUrl, env, sameOrigin } from '../lib/http';
 import { cardEnabled, squareCheck } from '../lib/square';
 import { listGiftCards, giftCardPaid, sellGiftCardHere } from '../lib/giftcards';
 import { listCosts, saveCost, margins } from '../lib/costs';
@@ -83,6 +83,7 @@ export default async (req: Request) => {
 async function handle(req: Request) {
   try {
     await loadOverrides();
+    if (req.method !== 'GET') sameOrigin(req); // also checked by body(); this covers actions without one
     const admin = await requireTeam(req);
     const url = new URL(req.url);
     const parts = url.pathname.replace(/^\/api\/admin\/?/, '').split('/').filter(Boolean);

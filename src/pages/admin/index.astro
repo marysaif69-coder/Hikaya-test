@@ -784,7 +784,7 @@ import '../../styles/global.css';
     if (v.length < 2) { qsList.hidden = true; return; }
     const d = await api(`/api/admin/search?q=${encodeURIComponent(v)}`); if (seq !== qsSeq) return;
     const rows = [
-      ...d.orders.map((o: any) => `<button type="button" role="option" data-order="${esc(o.ref)}"><span><b>${esc(o.ref)}</b> ${esc(o.name)}</span><small>${fmtDay(o.day)} · ${o.method} · ${STATUS_LABEL[o.status] ?? o.status} · ${money(o.total_cents)}</small></button>`),
+      ...d.orders.map((o: any) => `<button type="button" role="option" data-order="${esc(o.ref)}"><span><b>${esc(o.ref)}</b> ${esc(o.name)}</span><small>${fmtDay(o.day)} · ${esc(o.method)} · ${esc(STATUS_LABEL[o.status] ?? o.status)} · ${money(o.total_cents)}</small></button>`),
       ...d.customers.map((c: any) => `<button type="button" role="option" data-cust="${c.id}"><span><b>${esc(c.name || c.email)}</b> · customer</span><small>${esc(c.email)}${c.phone ? ` · ${esc(c.phone)}` : ''}</small></button>`),
       ...d.tickets.map((t: any) => `<button type="button" role="option" data-ticket="${esc(t.ref)}"><span><b>${esc(t.ref)}</b> message from ${esc(t.name || t.email)}</span><small>${esc(t.kind)} · ${esc(t.status)}</small></button>`),
     ];
@@ -1480,7 +1480,7 @@ import '../../styles/global.css';
     $('gcTable').innerHTML = '<tr><th>Ref</th><th>Amount</th><th>Left</th><th>From → to</th><th>Paid</th><th></th></tr>' + (d.giftcards.map((g: any) => `<tr>
       <td class="ref">${esc(g.ref)}${g.sent_at ? `<br><small>${esc(g.code)}</small>` : ''}</td><td>${money(g.amount_cents)}</td><td>${g.paid_at ? money(g.balance_cents) : '–'}</td>
       <td>${esc(g.buyer_name)} → ${esc(g.to_name)}<br><small>${esc(g.to_email || g.buyer_email)}</small></td>
-      <td>${g.paid_at ? `Yes, ${GC_PAY[g.payment] ?? g.payment}${g.sold_by ? `<br><small>in person, ${esc(g.sold_by)}</small>` : ''}` : `<b>Not yet</b> (${GC_PAY[g.payment] ?? g.payment})`}</td>
+      <td>${g.paid_at ? `Yes, ${esc(GC_PAY[g.payment] ?? g.payment)}${g.sold_by ? `<br><small>in person, ${esc(g.sold_by)}</small>` : ''}` : `<b>Not yet</b> (${esc(GC_PAY[g.payment] ?? g.payment)})`}</td>
       <td>${g.paid_at ? '' : `<button type="button" data-gcpaid="${esc(g.ref)}">Money received</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">None sold yet.</td></tr>');
   }
   $('gcTable').addEventListener('click', async e => {
