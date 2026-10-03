@@ -19,12 +19,25 @@ Everything runs on Netlify: the website, the server code (Netlify Functions in `
 - Conversations: every Ask Hikaya chat, with "helpful?" answers, to see what people ask and where answers fall short.
 
 ## Emails sent automatically (in the customer's language)
-Order received · confirmed · ready for pickup · out for delivery · completed · cancelled · reminder the evening before (5–6 pm Calgary) · login codes · new-order alert to the team · help request received (to the customer) · help request alert (to the team) · replies written in the Inbox.
+Order received (with the gift details and any discount) · confirmed · ready for pickup · out for delivery · completed · cancelled · reminder the evening before (5–6 pm Calgary) · login codes · new-order alert to the team · help request received (to the customer) · help request alert (to the team) · replies written in the Inbox · back in stock ("email me when it's back") · mailing list confirmation · Google review request (when `GOOGLE_REVIEW_URL` is set).
+All sent through Resend from the site itself; no n8n or Zapier needed. Admin → Settings → Connections shows the last email and has "Send me a test email".
+
+## The desk at a glance
+- **Orders, Inbox, Day sheet** as before. **Week sheet**: coffee to roast and grind (kg, pouches, how many go in gift boxes), dates to portion, boxes, sleeves and cups for Thursday–Wednesday; printable.
+- **Driver** (`/admin/driver/`, made for a phone): the day's deliveries in postal-code order, Map and Call buttons, gift recipient and card message, "Collect $X" when paying on delivery, On my way / Delivered (emails the customer) / Couldn't deliver (note for the team).
+- **Products**: also shows how many people wait for a sold-out product; switching it back on emails them.
+- **Promotions**: mailing list numbers and a CSV of confirmed subscribers with when and what they agreed to (CASL).
+- **Numbers**: page visits per day and page, sites that sent visitors, sales per week and best sellers. Counted without cookies (one number per page per day).
+- **Words**: product names and descriptions and the brew recipes in English and Arabic. Saving writes `src/content/*.json` on GitHub and Netlify rebuilds (about 2 minutes).
+- **Settings → Connections**: Emails, Square, e-Transfer and Ask Hikaya at a glance, with "Send me a test email" and "Test Square".
 
 ## Settings to add in Netlify (Project configuration → Environment variables)
 | Name | What |
 |---|---|
-| `ADMIN_EMAILS` | Team emails, comma-separated, e.g. `maryam@hikayacoffee.ca,shadi@hikayacoffee.ca` |
+| `ADMIN_EMAILS` | Owners: can do everything. Comma-separated, e.g. `maryam@hikayacoffee.ca,shadi@hikayacoffee.ca` |
+| `STAFF_EMAILS` | Optional. Helpers: orders, Inbox, day and week sheets, the driver page. Not refunds, prices, promo codes, settings, words or exports. |
+| `GOOGLE_REVIEW_URL` | Optional. Your Google review link (Google Business Profile → Ask for reviews). When set, completed orders get one "How was it?" email 3–10 days later. |
+| `GITHUB_CONTENT_TOKEN` | Optional. Turns on saving in Admin → Words. A fine-grained GitHub token for the Hikaya-test repository only, with "Contents: read and write". Secret. |
 | `RESEND_API_KEY` | From resend.com (free tier: 3,000 emails/month). Until set, emails are logged but not sent. |
 | `EMAIL_FROM` | e.g. `Hikaya <orders@hikayacoffee.ca>` (domain must be verified in Resend) |
 | `EMAIL_REPLY_TO` | Where customer replies go, e.g. `hello@hikayacoffee.ca` |

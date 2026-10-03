@@ -46,7 +46,13 @@ function apply(live: Live) {
     let tag = b.parentElement?.querySelector<HTMLElement>('.sold-out-tag');
     if (off && !tag) { tag = document.createElement('span'); tag.className = 'sold-out-tag'; b.after(tag); }
     if (tag) { tag.hidden = !off; tag.textContent = ids.some(id => P[id] && !P[id].shown) ? (lang() === 'ar' ? 'غير متوفر الآن' : 'Not available now') : (lang() === 'ar' ? 'نفد' : 'Sold out'); }
+    // On a product page, offer "Email me when it's back".
+    const own = ids.length === 1 && document.querySelector('main [data-pdp]')?.getAttribute('data-pdp') === ids[0] && b.closest('main');
+    let nf = b.parentElement?.querySelector<HTMLFormElement>('.notify-me');
+    if (off && own && !nf) { nf = notifyForm(ids[0]); b.parentElement!.append(nf); }
+    if (nf) nf.hidden = !off;
   });
+  document.querySelectorAll<HTMLElement>('[data-notify]').forEach(el => { if (!el.firstChild) el.append(notifyForm(el.dataset.notify!)); });
   // The cart reads prices from the page's catalog; keep it in step.
   const cat = document.getElementById('catalog');
   if (cat) {
@@ -57,6 +63,22 @@ function apply(live: Live) {
       document.dispatchEvent(new CustomEvent('catalog:live'));
     } catch { /* leave the built-in prices */ }
   }
+}
+
+function notifyForm(product: string) {
+  const ar = lang() === 'ar';
+  const f = document.createElement('form'); f.className = 'notify-me'; f.noValidate = true;
+  f.innerHTML = `<input type="email" required autocomplete="email" placeholder="${ar ? 'بريدك الإلكتروني' : 'Your email'}" aria-label="${ar ? 'بريدك الإلكتروني' : 'Your email'}" dir="ltr" /><button type="submit">${ar ? 'أخبروني حين يعود' : "Email me when it's back"}</button><p aria-live="polite"></p>`;
+  f.addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = (f.querySelector('input') as HTMLInputElement).value.trim(), out = f.querySelector('p')!;
+    try {
+      const r = await fetch('/api/notify-me', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ product, email, lang: ar ? 'ar' : 'en' }) });
+      const d = await r.json(); if (!r.ok) throw new Error(d.message);
+      out.textContent = ar ? 'سنرسل لك رسالة واحدة حين يعود.' : "We'll send you one email when it's back.";
+    } catch (x) { out.textContent = (x as Error).message || (ar ? 'تحقق من البريد.' : 'Check the email.'); }
+  });
+  return f;
 }
 
 export async function applyLive() {

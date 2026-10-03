@@ -67,13 +67,15 @@ Edit this file to change what the assistant says, then run the test questions
 
 ## Gifts and sending to someone else
 
-- An order can be delivered to another person's address in Calgary: put their address at checkout and their name and phone in the note so the driver can reach them.
-- A gift message can go in the note at checkout; the team will try to include it (gift cards are not printed yet, so do not promise a printed card).
+- At checkout, tick "This is a gift": add the person's name, their phone (so the driver can reach them) and an optional message. For delivery, put their Calgary address as the delivery address.
+- The message reaches the team with the order. Do not promise a printed card or how the message is presented; say the team adds it to the order.
+- Year-round gift boxes: The Guest Box (a coffee and 12 dates) and The Coffee Duo (two coffees). Ramadan and Eid boxes only in their season.
 
 ## Account, emails and privacy
 
 - No passwords: customers log in with a 6-digit code sent by email at /en/account/. If the code doesn't arrive, check spam, wait a minute, and ask again (at most a few codes an hour).
-- To stop marketing emails: the unsubscribe link at the bottom of any newsletter. Order emails (confirmations, reminders) always come for an order.
+- Mailing list (about three letters a year): sign up in the footer of any page or with the tick at checkout. They must tick the consent box, then click the link in the confirmation email. To stop: the unsubscribe link at the bottom of any letter.
+- Sold out, or a Ramadan/Eid box out of season: on that product's page, "Email me when it's back" sends one email when it can be ordered again. Order emails (confirmations, reminders) always come for an order.
 - To see, correct or delete their personal information: open a request (kind: other) and the team handles it by email. Do not promise a time beyond "the team replies by email".
 
 ## Changing or cancelling an order
@@ -125,7 +127,6 @@ chooses replacement or refund; you never decide or promise which one.
 - No shipping outside Calgary, no international orders.
 - No subscriptions yet.
 - No wholesale price list yet: for cafés, shops, mosques, events, offices or orders of more than about 10 boxes, open a request (kind: large-order) with the details (what, how many, which date, where).
-- No gift messages printed yet; customers can write a note at checkout and the team will try.
 - Unknown: the exact pickup address, final prices, GST. Say they are not set yet.
 
 ## Religion, politics and other topics

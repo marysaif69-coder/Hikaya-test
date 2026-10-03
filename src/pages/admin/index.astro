@@ -20,11 +20,15 @@ import '../../styles/global.css';
       <button type="button" data-tab="orders" aria-pressed="true">Orders</button>
       <button type="button" data-tab="inbox" aria-pressed="false">Inbox <span class="badge" id="inboxN" hidden></span></button>
       <button type="button" data-tab="day" aria-pressed="false">Day sheet</button>
-      <button type="button" data-tab="products" aria-pressed="false">Products</button>
-      <button type="button" data-tab="promos" aria-pressed="false">Promotions</button>
-      <button type="button" data-tab="assistant" aria-pressed="false">Assistant <span class="badge warn-badge" id="askWarn" hidden>!</span></button>
+      <button type="button" data-tab="week" aria-pressed="false">Week sheet</button>
+      <button type="button" data-tab="products" aria-pressed="false" class="owner-only">Products</button>
+      <button type="button" data-tab="promos" aria-pressed="false" class="owner-only">Promotions</button>
+      <button type="button" data-tab="assistant" aria-pressed="false" class="owner-only">Assistant <span class="badge warn-badge" id="askWarn" hidden>!</span></button>
       <button type="button" data-tab="chats" aria-pressed="false">Conversations</button>
-      <button type="button" data-tab="settings" aria-pressed="false">Settings</button>
+      <button type="button" data-tab="numbers" aria-pressed="false" class="owner-only">Numbers</button>
+      <button type="button" data-tab="words" aria-pressed="false" class="owner-only">Words</button>
+      <a class="drv-link" href="/admin/driver/">Driver</a>
+      <button type="button" data-tab="settings" aria-pressed="false" class="owner-only">Settings</button>
     </nav>
     <div class="a-who" id="who" hidden><span id="whoEmail"></span><button type="button" id="logout">Log out</button></div>
   </header>
@@ -34,7 +38,7 @@ import '../../styles/global.css';
       <h1 class="h-m">Team login</h1>
       <p class="muted">Use your Hikaya email. Only emails on the team list can open the desk.</p>
       <div id="loginBox"></div>
-      <p class="err" id="notAdmin" hidden>This email is not on the team list. Ask Maryam to add it in Netlify (ADMIN_EMAILS).</p>
+      <p class="err" id="notAdmin" hidden>This email is not on the team list. An owner can add it in Netlify: ADMIN_EMAILS for owners, STAFF_EMAILS for helpers.</p>
     </section>
 
     <!-- ORDERS -->
@@ -47,9 +51,9 @@ import '../../styles/global.css';
         <label>From <input type="date" name="from" /></label>
         <label>To <input type="date" name="to" /></label>
         <select name="sample"><option value="">Real & sample orders</option><option value="hide">Real orders only</option><option value="only">Sample orders only</option></select>
-        <a class="btn line sm" id="csv" href="/api/admin/export.csv">Export CSV</a>
+        <a class="btn line sm owner-only" id="csv" href="/api/admin/export.csv">Export CSV</a>
       </form>
-      <div class="samples">
+      <div class="samples owner-only">
         <span class="muted">Sample orders are made up, marked <span class="pill sample">SAMPLE</span>, never email anyone and are left out of the CSV.</span>
         <button type="button" class="btn line sm" id="mkSamples">Add sample orders (5 weeks)</button>
         <button type="button" class="btn line sm danger" id="rmSamples">Remove all sample orders</button>
@@ -101,9 +105,9 @@ import '../../styles/global.css';
     <!-- PRODUCTS: price, shown on the site, sold out, stock; seasons -->
     <section id="v-products" hidden>
       <div class="seasons" id="seasons"></div>
-      <p class="muted a-intro">Changes show on the site within a minute. <b>Shown</b> off hides a product everywhere (not launched, out of season). <b>Sold out</b> keeps it visible but stops orders. <b>Stock</b> left empty means no limit; a number counts down with each order and comes back when an order is cancelled. Leave the price empty to use the price from the product file.</p>
+      <p class="muted a-intro">Changes show on the site within a minute. <b>Shown</b> off hides a product everywhere (not launched, out of season). <b>Sold out</b> keeps it visible but stops orders. <b>Stock</b> left empty means no limit; a number counts down with each order and comes back when an order is cancelled. Leave the price empty to use the price from the product file. <b>Waiting</b> is how many people asked to be emailed when a product is back; they are emailed automatically when you turn it on again.</p>
       <div class="a-table-wrap"><table class="a-table" id="products">
-        <thead><tr><th>Product</th><th>Family</th><th>Price</th><th>Shown</th><th>Sold out</th><th>Stock left</th><th></th></tr></thead>
+        <thead><tr><th>Product</th><th>Family</th><th>Price</th><th>Shown</th><th>Sold out</th><th>Stock left</th><th>Waiting</th><th></th></tr></thead>
         <tbody></tbody>
       </table></div>
     </section>
@@ -125,6 +129,7 @@ import '../../styles/global.css';
         </div>
         <button class="btn primary" type="submit">Save code</button>
       </form>
+      <div class="promo-form" id="listBox"></div>
       <div class="a-table-wrap"><table class="a-table" id="promos">
         <thead><tr><th>Code</th><th>Gives</th><th>When</th><th>Used</th><th>Discount given</th><th>Note</th><th></th></tr></thead>
         <tbody></tbody>
@@ -156,8 +161,47 @@ import '../../styles/global.css';
       </div>
     </section>
 
+    <!-- WEEK: roast and pack sheet -->
+    <section id="v-week" hidden>
+      <div class="a-dayhead">
+        <label class="h-s">Week from <input type="date" id="weekPick" /></label>
+        <select id="weekSample"><option value="hide">Real orders</option><option value="only">Sample orders</option><option value="">Both</option></select>
+        <button type="button" class="btn line sm" onclick="window.print()">Print</button>
+      </div>
+      <p class="muted" id="weekHead"></p>
+      <div class="a-daygrid week">
+        <div><h2 class="h-s">Coffee to roast and grind</h2><table class="a-table mini-t" id="wkCoffee"></table><p class="ev" id="wkCoffeeTot"></p></div>
+        <div><h2 class="h-s">Dates</h2><table class="a-table mini-t" id="wkDates"></table><p class="ev">Pieces go in gift boxes (24 and 12). Grams are 500 g everyday boxes of one variety.</p></div>
+        <div><h2 class="h-s">Packaging</h2><ul class="a-pack" id="wkPack"></ul></div>
+        <div><h2 class="h-s">Orders by day</h2><ul class="a-pack" id="wkDays"></ul><h2 class="h-s" style="margin-top:10px">Everything ordered</h2><ul class="a-pack" id="wkItems"></ul></div>
+      </div>
+    </section>
+
+    <!-- NUMBERS: visits and sales -->
+    <section id="v-numbers" hidden>
+      <p class="muted a-intro">Last 30 days. Visits are counted without cookies: one number per page and day, nothing about the visitor. Sales leave out sample and cancelled orders and subtract refunds.</p>
+      <div class="a-daygrid week">
+        <div><h2 class="h-s">Visits by day</h2><table class="a-table mini-t" id="nDays"></table></div>
+        <div><h2 class="h-s">Sales by week</h2><table class="a-table mini-t" id="nWeeks"></table><h2 class="h-s" style="margin-top:12px">Best sellers</h2><table class="a-table mini-t" id="nTop"></table></div>
+        <div><h2 class="h-s">Most visited pages</h2><table class="a-table mini-t" id="nPages"></table></div>
+        <div><h2 class="h-s">Sites that sent visitors</h2><table class="a-table mini-t" id="nRefs"></table></div>
+      </div>
+    </section>
+
+    <!-- WORDS: recipes and product text -->
+    <section id="v-words" hidden>
+      <div class="w-top">
+        <select id="wFile"><option value="products">Product names and descriptions</option><option value="recipes">Recipes (brew guides)</option></select>
+        <button type="button" class="btn primary sm" id="wSave">Save and publish</button>
+        <span class="muted" id="wNote"></span>
+      </div>
+      <p class="muted a-intro">Change the words in English and Arabic, then save. The site updates in about two minutes. Prices, sold out and seasons are in Products.</p>
+      <div id="wForm" class="w-form"></div>
+    </section>
+
     <!-- SETTINGS -->
     <section id="v-settings" hidden class="a-settings">
+      <div class="conn" id="conn"></div>
       <form id="setForm">
         <h2 class="h-s">Taking orders</h2>
         <label class="a-switch"><input type="checkbox" name="open" /> <span>Open for new orders</span></label>
@@ -194,6 +238,7 @@ import '../../styles/global.css';
 
 <style>
   .adm { background: var(--paper); }
+  :global(.role-staff .owner-only) { display: none !important; }
   .a-top { position: sticky; top: 0; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 12px clamp(16px, 3vw, 32px); background: var(--paper); border-bottom: 1px solid var(--line); }
   .a-top .lockup img { width: 40px; }
   .a-top .wm b { font-size: 24px; }
@@ -234,6 +279,9 @@ import '../../styles/global.css';
   :global(.pill.paid) { background: #DCE6CF; }
   :global(.pill.unpaid) { background: #F1DCD3; color: var(--tamr-2); }
   :global(.pill.due) { background: #F4E6BF; }
+  :global(.pill.gift) { background: #F1DCD3; color: var(--tamr-2); }
+  .a-pbody :global(.gift-note) { background: #F1DCD3; border-radius: 12px; padding: 10px 12px; }
+  .drv-link { font-weight: 600; padding: 9px 14px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--line); text-decoration: none; }
   :global(.st.warn) b { color: var(--tamr-2); }
   :global(.pill.sample) { background: #E4DDF0; color: #4B3A6B; }
   :global(.pill.partly-refunded), :global(.pill.refunded) { background: #EDE3D0; }
@@ -292,7 +340,13 @@ import '../../styles/global.css';
   :global(.mini) { border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 2px; font-size: 14.5px; margin-bottom: 8px; cursor: pointer; background: var(--paper); }
   :global(.mini b) { color: var(--tamr); }
   .a-route { margin: 0; padding-inline-start: 22px; display: grid; gap: 8px; }
-  .a-settings { max-width: 560px; }
+  .a-settings { max-width: 640px; display: grid; gap: 18px; }
+  .conn { display: grid; gap: 10px; background: var(--sheet); padding: 22px; border-radius: 24px; }
+  .conn :global(.cn) { border-radius: 14px; padding: 10px 14px; background: var(--paper); font-size: 14.5px; }
+  .conn :global(.cn.ok) { box-shadow: inset 4px 0 0 #6E8B4A; }
+  .conn :global(.cn.bad) { box-shadow: inset 4px 0 0 var(--tamr); }
+  .conn :global(.cn p) { margin-top: 4px; color: var(--ink-2); }
+  .conn :global(.acts button) { border: 1.5px solid var(--bunn); background: none; border-radius: 999px; padding: 6px 14px; font-weight: 600; font-size: 14px; }
   .a-settings form { display: grid; gap: 14px; background: var(--sheet); padding: 24px; border-radius: 24px; }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .a-switch { display: flex; gap: 10px; align-items: center; font-weight: 600; }
@@ -309,8 +363,31 @@ import '../../styles/global.css';
   .a-pbody :global(.ev) { font-size: 13.5px; color: var(--ink-2); }
   .a-pbody :global(textarea) { width: 100%; border: 1.5px solid var(--line); border-radius: 12px; padding: 10px; font: inherit; }
   .a-pbody :global(.notify) { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+  .a-daygrid.week { grid-template-columns: 1.2fr 1fr; }
+  @media (max-width: 1000px) { .a-daygrid.week { grid-template-columns: 1fr; } }
+  .mini-t { font-size: 14px; }
+  .mini-t :global(th) { padding: 6px 8px !important; }
+  .mini-t :global(td) { padding: 8px !important; }
+  .w-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  #wFile { border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 10px; font: inherit; background: var(--sheet); }
+  .w-form { display: grid; gap: 10px; }
+  .w-form :global(.w-item) { background: var(--sheet); border-radius: 16px; padding: 12px 16px; box-shadow: inset 0 0 0 1px var(--line); }
+  .w-form :global(summary) { cursor: pointer; font-weight: 700; }
+  .w-form :global(summary small) { font-weight: 400; color: var(--ink-2); margin-inline-start: 8px; }
+  .w-form :global(.w-pair) { display: grid; grid-template-columns: 130px 1fr 1fr; gap: 8px; align-items: start; margin-top: 10px; }
+  .w-form :global(.w-l) { font-size: 13px; font-weight: 600; color: var(--ink-2); padding-top: 8px; }
+  .w-form :global(input), .w-form :global(textarea) { width: 100%; border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 10px; font: inherit; font-size: 14px; background: var(--paper); resize: vertical; }
+  .w-form :global(.w-list) { margin-top: 10px; display: grid; gap: 6px; }
+  .w-form :global(.w-step) { display: grid; grid-template-columns: 24px 1fr; gap: 0 6px; align-items: start; }
+  .w-form :global(.w-step > b) { padding-top: 18px; color: var(--tamr); }
+  .w-form :global(.w-step .w-pair) { grid-template-columns: 1fr 1fr; grid-column: 2; }
+  .w-form :global(.w-step .w-pair .w-l:empty) { display: none; }
+  .w-form :global(.w-num) { grid-column: 2; display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--ink-2); margin-top: 4px; }
+  .w-form :global(.w-num input) { width: 110px; }
+  @media (max-width: 760px) { .w-form :global(.w-pair) { grid-template-columns: 1fr; } }
+  #weekSample { border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 10px; font: inherit; background: var(--sheet); }
   @media print {
-    .a-top, .a-dayhead button, #v-orders, #v-settings { display: none !important; }
+    .a-top, .a-dayhead button, .a-dayhead select, #v-orders, #v-settings { display: none !important; }
     .a-daygrid { grid-template-columns: 1fr; }
     .a-daygrid > div { break-inside: avoid; }
   }
@@ -346,14 +423,16 @@ import '../../styles/global.css';
 
   // ---------- auth ----------
   function showLogin() {
-    for (const id of ['v-orders', 'v-inbox', 'v-day', 'v-products', 'v-promos', 'v-assistant', 'v-chats', 'v-settings', 'tabs', 'who']) $(id).hidden = true;
+    for (const id of ['v-orders', 'v-inbox', 'v-day', 'v-week', 'v-numbers', 'v-words', 'v-products', 'v-promos', 'v-assistant', 'v-chats', 'v-settings', 'tabs', 'who']) $(id).hidden = true;
     $('login').hidden = false;
     mountLogin($('loginBox'), 'en', user => {
-      if (user.role !== 'admin') { $('notAdmin').hidden = false; return; }
-      start(user.email);
+      if (user.role !== 'admin' && user.role !== 'staff') { $('notAdmin').hidden = false; return; }
+      start(user.email, user.role);
     });
   }
-  function start(email: string) {
+  let ROLE = 'admin';
+  function start(email: string, role = 'admin') {
+    ROLE = role; document.body.classList.toggle('role-staff', role !== 'admin');
     $('login').hidden = true; $('tabs').hidden = false; $('who').hidden = false; $('whoEmail').textContent = email;
     const sel = document.querySelector<HTMLSelectElement>('#filters [name=status]')!;
     if (sel.options.length === 1) Object.entries(STATUS_LABEL).forEach(([k, v]) => sel.add(new Option(v, k)));
@@ -368,8 +447,11 @@ import '../../styles/global.css';
   // ---------- tabs ----------
   function tab(name: string) {
     document.querySelectorAll<HTMLButtonElement>('#tabs [data-tab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === name)));
-    for (const v of ['orders', 'inbox', 'day', 'products', 'promos', 'assistant', 'chats', 'settings']) $(`v-${v}`).hidden = v !== name;
+    for (const v of ['orders', 'inbox', 'day', 'week', 'numbers', 'words', 'products', 'promos', 'assistant', 'chats', 'settings']) $(`v-${v}`).hidden = v !== name;
     if (name === 'products') loadProducts();
+    if (name === 'week') loadWeek();
+    if (name === 'numbers') loadNumbers();
+    if (name === 'words') loadWords();
     if (name === 'promos') loadPromos();
     if (name === 'assistant') loadAssistant();
     if (name === 'orders') loadOrders();
@@ -397,7 +479,7 @@ import '../../styles/global.css';
     $('none').hidden = d.orders.length > 0;
     document.querySelector('#list tbody')!.innerHTML = d.orders.map((o: any) => `<tr class="row" data-ref="${esc(o.ref)}">
       <td class="ref">${esc(o.ref)}${o.sample ? '<br><span class="pill sample">SAMPLE</span>' : ''}</td><td>${fmtDay(o.day)}<br><small>${esc(o.window)}</small></td>
-      <td>${esc(o.name)}<br><small>${esc(o.phone)}</small></td>
+      <td>${esc(o.name)}<br><small>${esc(o.phone)}</small>${o.gift ? `<br><span class="pill gift">Gift → ${esc(o.gift.to)}</span>` : ''}</td>
       <td>${o.method === 'delivery' ? `Delivery<br><small>${esc(o.postal)}</small>` : 'Pickup'}</td>
       <td class="its">${(o.items ?? []).map((i: any) => `${i.qty}× ${esc(i.name)}${i.option ? ` (${esc(i.option)})` : ''}`).join(', ')}</td>
       <td>${money(o.total)}${o.discount ? `<br><small>−${money(o.discount)} ${esc(o.promo ?? '')}</small>` : ''}</td><td>${payPill(o)}</td>
@@ -428,6 +510,7 @@ import '../../styles/global.css';
       <p><b>${fmtDay(o.day)} · ${esc(o.window)}</b><br>${o.method === 'delivery' ? `Delivery: ${esc(o.street)}, ${esc(o.postal)} · <a href="https://maps.google.com/?q=${encodeURIComponent(`${o.street}, ${o.postal}, Calgary`)}" target="_blank" rel="noopener">Map</a>` : 'Pickup'}</p>
       <p>${esc(o.name)} · <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a> · <a href="mailto:${esc(o.email)}">${esc(o.email)}</a> · ${o.lang === 'ar' ? 'Arabic' : 'English'}</p>
       ${o.notes ? `<p><b>Customer note:</b> ${esc(o.notes)}</p>` : ''}
+      ${o.gift ? `<p class="gift-note">Gift for <b>${esc(o.gift.to)}</b>${o.gift.phone ? ` · <a href="tel:${esc(o.gift.phone)}">${esc(o.gift.phone)}</a>` : ''}${o.gift.message ? `<br>Card: <i>“${esc(o.gift.message)}”</i>` : ''}</p>` : ''}
       <h3>Items</h3><ul class="its">${o.items.map((i: any) => `<li><span>${i.qty} × ${esc(i.name_en)}${i.option_en ? ` <small>(${esc(i.option_en)})</small>` : ''}</span><span>${money(i.unit_cents * i.qty)}</span></li>`).join('')}
         ${o.delivery ? `<li><span>Delivery</span><span>${money(o.delivery)}</span></li>` : ''}${o.discount ? `<li><span>Discount ${esc(o.promo ?? '')}</span><span>−${money(o.discount)}</span></li>` : ''}<li><b>Total</b><b>${money(o.total)}</b></li>${o.refunded ? `<li><span>Refunded</span><span>−${money(o.refunded)}</span></li>` : ''}</ul>
       <h3>Move the order</h3>
@@ -435,8 +518,8 @@ import '../../styles/global.css';
       <label class="notify"><input type="checkbox" id="pNotify" checked /> Email the customer about the change</label>
       <h3>Payment</h3>
       <div class="acts"><button type="button" data-pay="paid" class="${o.paymentStatus === 'paid' ? 'cur' : ''}">Money received</button><button type="button" data-pay="unpaid" class="${o.paymentStatus === 'unpaid' ? 'cur' : ''}">Not received yet</button></div>
-      <h3>Refund</h3>
-      ${o.refundable > 0 ? `<div class="refund">
+      ${ROLE !== 'admin' ? '' : `<h3>Refund</h3>`}
+      ${ROLE !== 'admin' ? '' : o.refundable > 0 ? `<div class="refund">
         <div class="acts"><input id="rAmt" type="number" min="0.01" step="0.01" max="${(o.refundable / 100).toFixed(2)}" value="${(o.refundable / 100).toFixed(2)}" aria-label="Amount in dollars" />
         <select id="rHow" aria-label="How">${o.payment === 'card' && o.paidByCard ? '<option value="card">Back to their card (Square)</option>' : ''}<option value="e-transfer">e-Transfer (you send it)</option><option value="cash">Cash (you hand it back)</option><option value="store-credit">Store credit (a one-time code)</option></select></div>
         <input id="rWhy" placeholder="Reason, e.g. box arrived crushed" />
@@ -445,7 +528,7 @@ import '../../styles/global.css';
         <p class="ev">Up to ${money(o.refundable)} can still be refunded. Full refund = the whole amount; partial = any smaller amount.</p></div>` : '<p class="ev">Nothing left to refund.</p>'}
       ${d.refunds.length ? `<ul>${d.refunds.map((x: any) => `<li class="ev">${new Date(x.created_at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })} · <b>${money(x.amount_cents)}</b> by ${esc(x.method)}${x.credit_code ? ` · code <b>${esc(x.credit_code)}</b>` : ''}${x.status !== 'done' ? ` · ${esc(x.status)}` : ''} ${x.reason ? '· ' + esc(x.reason) : ''} <small>${esc(x.actor)}</small></li>`).join('')}</ul>` : ''}
       <h3>Team note</h3><textarea id="pNote" rows="2" placeholder="Only the team sees this"></textarea><div class="acts"><button type="button" id="pAddNote">Add note</button></div>
-      <label class="notify"><input type="checkbox" id="pSample" ${o.sample ? 'checked' : ''} /> This is a sample / test order (no emails, not counted, not in the CSV)</label>
+      <label class="notify owner-only"><input type="checkbox" id="pSample" ${o.sample ? 'checked' : ''} /> This is a sample / test order (no emails, not counted, not in the CSV)</label>
       <h3>History</h3><ul>${d.events.map((e: any) => `<li class="ev">${new Date(e.created_at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })} · <b>${esc(e.kind)}</b> ${esc(e.detail ?? '')} <small>${esc(e.actor ?? '')}</small></li>`).join('')}</ul>
       <h3>Emails</h3><ul>${d.emails.map((m: any) => `<li class="ev">${esc(m.subject)} → ${esc(m.to_email)} · <b>${esc(m.status)}</b></li>`).join('') || '<li class="ev">None yet.</li>'}</ul>`;
     scrim.hidden = false; panel.removeAttribute('inert'); panel.setAttribute('aria-hidden', 'false');
@@ -549,6 +632,76 @@ import '../../styles/global.css';
     });
   }
 
+  // ---------- week sheet ----------
+  const weekPick = $('weekPick') as HTMLInputElement;
+  weekPick.addEventListener('change', loadWeek); $('weekSample').addEventListener('change', loadWeek);
+  async function loadWeek() {
+    const d = await api(`/api/admin/week?sample=${($('weekSample') as HTMLSelectElement).value}${weekPick.value ? `&from=${weekPick.value}` : ''}`);
+    weekPick.value = d.from;
+    $('weekHead').textContent = `${fmtDay(d.from)} to ${fmtDay(d.to)} · ${d.orders} order${d.orders === 1 ? '' : 's'} (cancelled orders left out)`;
+    $('wkCoffee').innerHTML = '<tr><th>Coffee</th><th>Grind</th><th>Pouches</th><th>Weight</th></tr>' + (d.coffee.map((c: any) => `<tr><td>${esc(c.name)}${c.inBoxes ? `<br><small>${c.inBoxes} in gift boxes</small>` : ''}</td><td>${esc(c.grind)}</td><td>${c.pouches}</td><td>${(c.grams / 1000).toFixed(2)} kg</td></tr>`).join('') || '<tr><td colspan="4" class="muted">No coffee this week.</td></tr>');
+    $('wkCoffeeTot').textContent = `Total ground coffee: ${d.coffeeTotalKg} kg (add your roast loss on top).`;
+    $('wkDates').innerHTML = '<tr><th>Variety</th><th>Pieces</th><th>Grams</th></tr>' + (d.dates.map((x: any) => `<tr><td>${esc(x.name)}</td><td>${x.pieces || ''}</td><td>${x.grams ? `${(x.grams / 1000).toFixed(1)} kg` : ''}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">No dates this week.</td></tr>');
+    const pk = d.packaging;
+    $('wkPack').innerHTML = [['250 g pouches', pk.pouches250], ['100 g pouches (qishr)', pk.pouches100], ['Gift boxes · D24 insert', pk.giftBoxes.D24], ['Gift boxes · C12 insert', pk.giftBoxes.C12], ['Gift boxes · C2 insert', pk.giftBoxes.C2],
+      ['Everyday 500 g trays', pk.everydayTrays], ['Gold sleeves', pk.sleeves.regular], ['Ramadan sleeves', pk.sleeves.ramadan], ['Eid sleeves', pk.sleeves.eid], ['Paper cups for dates', pk.paperCups]]
+      .filter(([, n]) => n).map(([k, n]) => `<li><span>${k}</span><b>${n}</b></li>`).join('') || '<li class="muted">Nothing to pack.</li>';
+    $('wkDays').innerHTML = d.days.map((x: any) => `<li><span>${fmtDay(x.day)}</span><b>${x.pickup} pickup · ${x.delivery} delivery</b></li>`).join('') || '<li class="muted">No orders.</li>';
+    $('wkItems').innerHTML = d.products.map((x: any) => `<li><span>${esc(x.name)}${x.option ? ` <small>(${esc(x.option)})</small>` : ''}</span><b>${x.qty}</b></li>`).join('');
+  }
+
+  // ---------- numbers ----------
+  async function loadNumbers() {
+    const d = await api('/api/admin/numbers');
+    const rows = (list: any[], cols: (x: any) => string[], head: string[], empty: string) => `<tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>` + (list.map(x => `<tr>${cols(x).map(c => `<td>${c}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${head.length}" class="muted">${empty}</td></tr>`);
+    $('nDays').innerHTML = rows(d.byDay.slice().reverse(), x => [fmtDay(x.day), String(x.views)], ['Day', 'Views'], 'No visits yet.');
+    $('nPages').innerHTML = rows(d.pages, x => [esc(x.path), String(x.views)], ['Page', 'Views'], 'No visits yet.');
+    $('nRefs').innerHTML = rows(d.refs, x => [esc(x.ref), String(x.views)], ['Site', 'Visits'], 'None yet: most people type the address or use Instagram’s app.');
+    $('nWeeks').innerHTML = rows(d.weeks.slice().reverse(), x => [`Week of ${fmtDay(x.week)}`, String(x.orders), money(x.cents)], ['Week', 'Orders', 'Sales'], 'No real orders yet.');
+    $('nTop').innerHTML = rows(d.top, x => [esc(x.name), String(x.qty)], ['Product', 'Sold'], 'No real orders yet.');
+  }
+
+  // ---------- words: recipes and product text ----------
+  const W_LABEL: Record<string, string> = { name: 'Name', taste: 'Taste line', notes: 'Description', story: 'Story', bunn: 'What Bunn says', why: 'Why this date', contents: "What's inside", size: 'Size', title: 'Title', vessel: 'You need', yields: 'Makes', steps: 'Steps', serve: 'How to serve', secs: 'Timer (seconds)' };
+  let words: { file: string; data: any; sha: string | null } | null = null;
+  const isPair = (v: any) => v && typeof v === 'object' && !Array.isArray(v) && typeof v.en === 'string' && typeof v.ar === 'string' && Object.keys(v).length === 2;
+  function wField(v: any, path: (string | number)[], label: string): string {
+    const p = esc(JSON.stringify(path));
+    if (isPair(v)) {
+      const long = Math.max(v.en.length, v.ar.length) > 70;
+      const box = (l: 'en' | 'ar') => long ? `<textarea data-wpath="${esc(JSON.stringify([...path, l]))}" rows="3" ${l === 'ar' ? 'dir="rtl" lang="ar"' : ''}>${esc(v[l])}</textarea>` : `<input data-wpath="${esc(JSON.stringify([...path, l]))}" value="${esc(v[l])}" ${l === 'ar' ? 'dir="rtl" lang="ar"' : ''} />`;
+      return `<div class="w-pair"><span class="w-l">${esc(label)}</span>${box('en')}${box('ar')}</div>`;
+    }
+    if (typeof v === 'number') return `<label class="w-num">${esc(label)} <input type="number" min="0" max="86400" data-wpath="${p}" data-num value="${v}" /></label>`;
+    if (Array.isArray(v)) return `<div class="w-list"><span class="w-l">${esc(label)}</span>${v.map((x, i) => `<div class="w-step"><b>${i + 1}</b>${Object.entries(x).map(([k, y]) => wField(y, [...path, i, k], k === 't' ? '' : W_LABEL[k] ?? k)).join('')}</div>`).join('')}</div>`;
+    if (v && typeof v === 'object') return Object.entries(v).map(([k, y]) => wField(y, [...path, k], W_LABEL[k] ?? k)).join('');
+    return '';
+  }
+  async function loadWords() {
+    const file = ($('wFile') as HTMLSelectElement).value;
+    const d = await api(`/api/admin/content/${file}`);
+    words = { file, data: d.data, sha: d.sha };
+    ($('wSave') as HTMLButtonElement).disabled = !d.canSave;
+    $('wNote').textContent = d.canSave ? '' : 'Saving is off until GITHUB_CONTENT_TOKEN is added in Netlify (see the guide).';
+    $('wForm').innerHTML = Object.entries(d.data).map(([id, v]: [string, any]) => `<details class="w-item"><summary>${esc(v.name?.en ?? v.title?.en ?? id)} <small>${esc(v.name?.ar ?? v.title?.ar ?? '')}</small></summary>${wField(v, [id], '')}</details>`).join('');
+  }
+  $('wFile').addEventListener('change', loadWords);
+  $('wSave').addEventListener('click', async () => {
+    if (!words) return;
+    const data = JSON.parse(JSON.stringify(words.data));
+    document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('#wForm [data-wpath]').forEach(el => {
+      const path = JSON.parse(el.dataset.wpath!); let o = data;
+      for (const k of path.slice(0, -1)) o = o[k];
+      o[path.at(-1)] = 'num' in el.dataset ? Number(el.value) : el.value;
+    });
+    const btn = $('wSave') as HTMLButtonElement; btn.disabled = true;
+    try {
+      const r = await api(`/api/admin/content/${words.file}`, { data, sha: words.sha });
+      $('wNote').textContent = r.saved ? 'Saved. The site shows it in about two minutes.' : 'Nothing changed.';
+      if (r.saved) { words.sha = r.sha; words.data = data; }
+    } finally { btn.disabled = false; }
+  });
+
   // ---------- sample orders ----------
   $('mkSamples').addEventListener('click', async () => {
     const r = await api('/api/admin/samples', { action: 'create' });
@@ -566,7 +719,7 @@ import '../../styles/global.css';
     const d = await api('/api/admin/products');
     $('seasons').innerHTML = (['ramadan', 'eid'] as const).map(k => `<label class="season ${d.seasons[k] ? 'on' : ''}"><input type="checkbox" data-season-sw="${k}" ${d.seasons[k] ? 'checked' : ''} />
       <span><b>${k === 'ramadan' ? 'Ramadan' : 'Eid'} season</b><small>${d.seasons[k] ? 'On: the page, menu link, banner and boxes are on the site' : 'Off: the page says “back next season” and its boxes are hidden'}</small></span></label>`).join('');
-    $('seasons').querySelectorAll<HTMLInputElement>('[data-season-sw]').forEach(i => i.addEventListener('change', async () => { await api('/api/admin/seasons', { [i.dataset.seasonSw!]: i.checked }); loadProducts(); }));
+    $('seasons').querySelectorAll<HTMLInputElement>('[data-season-sw]').forEach(i => i.addEventListener('change', async () => { const r = await api('/api/admin/seasons', { [i.dataset.seasonSw!]: i.checked }); if (r.told) alert(`Emailed ${r.told} waiting ${r.told === 1 ? 'person' : 'people'} that the boxes are back.`); loadProducts(); }));
     document.querySelector('#products tbody')!.innerHTML = d.products.map((p: any) => `<tr data-pid="${esc(p.id)}" class="${p.shown ? '' : 'off'}">
       <td><b>${esc(p.name.en)}</b> <span lang="ar">${esc(p.name.ar)}</span>${p.season && !p.shown && p.visible ? `<br><small>Hidden: ${p.season} season is off</small>` : ''}</td>
       <td>${esc(p.family)}</td>
@@ -574,9 +727,10 @@ import '../../styles/global.css';
       <td><input type="checkbox" class="vis" ${p.visible ? 'checked' : ''} aria-label="Shown on the site" /></td>
       <td><input type="checkbox" class="sold" ${p.available ? '' : (p.visible && (!p.season || d.seasons[p.season]) ? 'checked' : '')} aria-label="Sold out" /></td>
       <td><input class="stock-in" type="number" min="0" step="1" value="${p.stock ?? ''}" placeholder="No limit" aria-label="Stock left" /></td>
+      <td>${p.waiting ? `<b title="People who asked to be emailed when it is back">${p.waiting}</b>` : ''}</td>
       <td><button type="button" class="save">Save</button></td></tr>`).join('');
     document.querySelectorAll<HTMLTableRowElement>('#products tbody tr').forEach(tr => {
-      const save = async (body: object) => { await api(`/api/admin/products/${encodeURIComponent(tr.dataset.pid!)}`, body); loadProducts(); };
+      const save = async (body: object) => { const r = await api(`/api/admin/products/${encodeURIComponent(tr.dataset.pid!)}`, body); if (r.told) alert(`Emailed ${r.told} ${r.told === 1 ? 'person' : 'people'} that it is back.`); loadProducts(); };
       tr.querySelector('.vis')!.addEventListener('change', e => save({ visible: (e.target as HTMLInputElement).checked }));
       tr.querySelector('.sold')!.addEventListener('change', e => save({ available: !(e.target as HTMLInputElement).checked }));
       tr.querySelector('.save')!.addEventListener('click', () => save({
@@ -588,6 +742,11 @@ import '../../styles/global.css';
 
   // ---------- promotions ----------
   async function loadPromos() {
+    api('/api/admin/list').then(l => {
+      $('listBox').innerHTML = `<h2 class="h-s">Mailing list</h2><p><b>${l.confirmed}</b> confirmed · ${l.waiting} waiting to confirm · ${l.left} unsubscribed</p>
+        <p class="muted">People sign up at the bottom of every page or at checkout, tick the consent box, and confirm by email (Canada's anti-spam law). Download the confirmed list to send your letters from Mailchimp, Buttondown or Resend; every letter must include an unsubscribe link.</p>
+        <p><a class="btn line sm" href="/api/admin/list.csv">Download the list (CSV)</a></p>`;
+    });
     const d = await api('/api/admin/promos');
     const gives = (p: any) => p.kind === 'percent' ? `${p.value}% off` : p.kind === 'amount' ? `${money(p.value)} off` : 'Free delivery';
     const when = (p: any) => [p.starts_on ? `from ${fmtDay(String(p.starts_on).slice(0, 10))}` : '', p.ends_on ? `until ${fmtDay(String(p.ends_on).slice(0, 10))}` : ''].filter(Boolean).join(' ') || 'Any time';
@@ -644,11 +803,40 @@ import '../../styles/global.css';
     dayPick.value = d.date;
     $('pack').innerHTML = d.pack.map((p: any) => `<li><span>${esc(p.name_en)}${p.option ? ` <small>(${esc(p.option)})</small>` : ''}</span><b>${p.qty}</b></li>`).join('') || '<li class="muted">Nothing to pack.</li>';
     $('pickups').innerHTML = d.pickups.map((w: any) => `<h3>${esc(w.window)} · ${w.orders.length}</h3>${w.orders.map((o: any) => `<div class="mini" data-ref="${esc(o.ref)}"><span><b>${esc(o.ref)}</b> · ${esc(o.name)} · ${esc(o.phone)}</span><span>${o.items.map((i: any) => `${i.qty}× ${esc(i.name_en)}`).join(', ')} · ${money(o.total)} · ${payPill(o)}</span></div>`).join('')}`).join('');
-    $('deliveries').innerHTML = d.deliveries.map((o: any) => `<li><div class="mini" data-ref="${esc(o.ref)}"><span><b>${esc(o.postal)}</b> · ${esc(o.street)} · ${esc(o.window)}</span><span>${esc(o.name)} · <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a> · ${money(o.total)} · ${payPill(o)}</span></div></li>`).join('') || '<li class="muted">No deliveries.</li>';
+    $('deliveries').innerHTML = d.deliveries.map((o: any) => `<li><div class="mini" data-ref="${esc(o.ref)}"><span><b>${esc(o.postal)}</b> · ${esc(o.street)} · ${esc(o.window)}${o.gift ? ` · <span class="pill gift">Gift → ${esc(o.gift.to)}${o.gift.phone ? ' ' + esc(o.gift.phone) : ''}</span>` : ''}</span><span>${esc(o.name)} · <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a> · ${money(o.total)} · ${payPill(o)}</span></div></li>`).join('') || '<li class="muted">No deliveries.</li>';
   }
 
   // ---------- settings ----------
+  // ---------- connections ----------
+  const line = (ok: boolean | null, title: string, body: string) => `<div class="cn ${ok === null ? '' : ok ? 'ok' : 'bad'}"><b>${ok === null ? '•' : ok ? '✓' : '!'} ${title}</b><p>${body}</p></div>`;
+  async function loadConnections() {
+    const c = await api('/api/admin/connections');
+    const last = c.email.last;
+    $('conn').innerHTML = `<h2 class="h-s">Connections</h2>
+      ${line(c.email.key && (!last || last.status === 'sent'), 'Emails (Resend)', !c.email.key
+        ? 'Off: RESEND_API_KEY is not set in Netlify, so no emails go out. Customers still get their order on screen.'
+        : `Sending as ${esc(c.email.from)}${c.email.replyTo ? `, replies go to ${esc(c.email.replyTo)}` : ''}. ${last ? `Last email: “${esc(last.subject)}” to ${esc(last.to_email)}, <b>${esc(last.status)}</b>${last.error ? ` — ${esc(last.error).slice(0, 220)}` : ''}.` : ''}${c.email.failedThisWeek ? ` ${c.email.failedThisWeek} failed this week.` : ''}`)}
+      <div class="acts"><button type="button" id="testMail">Send me a test email</button> <span id="testMailRes" class="ev"></span></div>
+      ${line(c.square.enabled, 'Card payments (Square)', c.square.enabled
+        ? `On, ${c.square.env === 'production' ? '<b>live</b> payments' : '<b>sandbox</b> (test cards only)'}. ${c.square.webhook ? 'Payment confirmations are connected.' : `Payment confirmations are <b>not</b> connected yet: in Square add the webhook <code>${esc(c.square.webhookUrl)}</code> for <code>payment.updated</code> and put its signature key in SQUARE_WEBHOOK_SIGNATURE_KEY.`}`
+        : 'Off: checkout offers pay at pickup and e-Transfer. Add the Square keys in Netlify to turn card payment on.')}
+      <div class="acts"><button type="button" id="testSquare">Test Square</button> <span id="testSquareRes" class="ev"></span></div>
+      ${line(Boolean(c.etransfer), 'e-Transfer', c.etransfer ? `Customers are told to send e-Transfers to ${esc(c.etransfer)}.` : 'ETRANSFER_EMAIL is not set: the e-Transfer instructions have no address.')}
+      ${line(c.ask.enabled, 'Ask Hikaya', c.ask.enabled ? 'On. Status and training are in the Assistant tab.' : 'Off: ANTHROPIC_API_KEY is not set.')}`;
+    $('testMail').addEventListener('click', async () => {
+      $('testMailRes').textContent = 'Sending…';
+      const r = await api('/api/admin/connections/test-email', {});
+      $('testMailRes').textContent = r.status === 'sent' ? `Sent to ${r.to}. Check the inbox (and spam).` : r.status === 'skipped' ? 'Not sent: no RESEND_API_KEY.' : `Failed: ${r.error ?? 'unknown'}`;
+    });
+    $('testSquare').addEventListener('click', async () => {
+      $('testSquareRes').textContent = 'Checking…';
+      const r = await api('/api/admin/connections/test-square', {});
+      $('testSquareRes').innerHTML = `${r.ok ? '✓' : '!'} ${esc(r.message)}${r.locations?.length && !r.ok ? '<br>' + r.locations.map((l: any) => `${esc(l.name)}: <code>${esc(l.id)}</code>`).join('<br>') : ''}`;
+    });
+  }
+
   async function loadSettings() {
+    loadConnections();
     const s = await api('/api/admin/settings');
     const f = $('setForm') as HTMLFormElement;
     (f.elements.namedItem('open') as HTMLInputElement).checked = s.ordering.open;
@@ -690,6 +878,6 @@ import '../../styles/global.css';
   (async () => {
     const me = await fetch('/api/me').then(r => r.json()).catch(() => ({ user: null }));
     if (me.error === 'preview') { location.replace(`/admin/?code=${Date.now()}`); return; }
-    if (me.user?.role === 'admin') start(me.user.email); else showLogin();
+    if (me.user?.role === 'admin' || me.user?.role === 'staff') start(me.user.email, me.user.role); else showLogin();
   })();
 </script>

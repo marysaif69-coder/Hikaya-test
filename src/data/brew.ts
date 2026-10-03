@@ -1,53 +1,6 @@
 import type { L } from './products';
+import RECIPES from '../content/recipes.json';
 
 export type Step = { t: L; secs?: number };
-export const BREW: Record<'palm' | 'mountain' | 'house' | 'husk', { title: L; vessel: L; yields: L; steps: Step[]; serve: L }> = {
-  palm: {
-    title: { en: 'The dallah, Gulf way', ar: 'الدلّة على طريقة الخليج' },
-    vessel: { en: 'Dallah or small pot', ar: 'دلّة أو إبريق صغير' },
-    yields: { en: 'About 8 small cups', ar: 'نحو ٨ فناجين صغيرة' },
-    steps: [
-      { t: { en: 'Boil 500 ml of water.', ar: 'اغلِ ٥٠٠ مل من الماء.' } },
-      { t: { en: 'Add 2 heaped tablespoons (about 15 g) of coffee. Simmer gently.', ar: 'أضف ملعقتين كبيرتين ممتلئتين (نحو ١٥ غ) من القهوة، واتركها تغلي بهدوء.' }, secs: 600 },
-      { t: { en: 'Off the heat. Let it settle.', ar: 'ارفعها عن النار ودعها تهدأ.' }, secs: 120 },
-      { t: { en: 'Pour through a fine filter into the serving dallah.', ar: 'صبّها عبر مصفاة ناعمة في دلّة التقديم.' } },
-    ],
-    serve: { en: 'Pour a third of the small cup, never to the rim. Clear and golden, no foam. A date beside it. Shake the cup when you have had enough.', ar: 'املأ ثلث الفنجان فقط، لا إلى الحافة. صافية وذهبية بلا رغوة. وبجانبها تمرة. هزّ الفنجان حين تكتفي.' },
-  },
-  mountain: {
-    title: { en: 'The Yemeni pot', ar: 'الإبريق اليمني' },
-    vessel: { en: 'Small pot', ar: 'إبريق صغير' },
-    yields: { en: '3 to 4 cups', ar: '٣ إلى ٤ فناجين' },
-    steps: [
-      { t: { en: 'Bring 400 ml of water to a boil.', ar: 'اغلِ ٤٠٠ مل من الماء.' } },
-      { t: { en: 'Add 2 tablespoons (about 14 g) of coffee and let it rise (mufawar).', ar: 'أضف ملعقتين كبيرتين (نحو ١٤ غ) من القهوة ودعها تفور.' }, secs: 180 },
-      { t: { en: 'Lower the heat and let it rise twice more.', ar: 'خفّف النار ودعها تفور مرتين أخريين.' }, secs: 240 },
-      { t: { en: 'Rest so the grounds settle, then pour.', ar: 'اتركها لتهدأ الحبيبات، ثم صبّ.' }, secs: 60 },
-    ],
-    serve: { en: 'Sweeten with sugar or sidr honey if you like. A date on the side.', ar: 'حلّها بالسكر أو بعسل السدر إن شئت. وتمرة بجانبها.' },
-  },
-  house: {
-    title: { en: 'The Shami pot (rakweh)', ar: 'الركوة الشامية' },
-    vessel: { en: 'Rakweh', ar: 'ركوة' },
-    yields: { en: '1 cup per 90 ml', ar: 'فنجان لكل ٩٠ مل' },
-    steps: [
-      { t: { en: 'Per cup: 90 ml of cold water and 1 heaped teaspoon (about 7 g) of coffee. Sugar now, if you take it.', ar: 'لكل فنجان: ٩٠ مل ماء بارد وملعقة صغيرة ممتلئة (نحو ٧ غ) من القهوة. والسكر الآن إن كنت تشربها حلوة.' } },
-      { t: { en: 'Stir once. Set on low heat.', ar: 'حرّك مرة واحدة، وضعها على نار هادئة.' }, secs: 150 },
-      { t: { en: 'As the foam reaches the rim, lift it off. Settle, then bring it up once more.', ar: 'حين تصل الرغوة إلى الحافة ارفعها، ثم أعدها مرة أخرى.' }, secs: 30 },
-      { t: { en: 'Pour slowly so the foam lands on top. Wait a minute before the first sip.', ar: 'صبّ ببطء لتبقى الرغوة في الأعلى، وانتظر دقيقة قبل أول رشفة.' }, secs: 60 },
-    ],
-    serve: { en: 'Shami coffee keeps its foam. A soft date after the cup.', ar: 'القهوة الشامية تحتفظ برغوتها. وتمرة طرية بعد الفنجان.' },
-  },
-  husk: {
-    title: { en: 'Qishr, hot or cold', ar: 'القشر ساخناً أو بارداً' },
-    vessel: { en: 'Pot, or a jar for cold', ar: 'إبريق، أو مرطبان للبارد' },
-    yields: { en: '2 cups hot, 1 litre cold', ar: 'فنجانان ساخناً، لتر بارداً' },
-    steps: [
-      { t: { en: 'Hot: 2 tablespoons (about 10 g) of husk and a slice of ginger in 500 ml of water. Simmer.', ar: 'ساخناً: ملعقتان كبيرتان (نحو ١٠ غ) من القشر وشريحة زنجبيل في ٥٠٠ مل ماء، على نار هادئة.' }, secs: 600 },
-      { t: { en: 'Strain. Sweeten lightly if you like.', ar: 'صفِّه، وحلِّه قليلاً إن شئت.' } },
-      { t: { en: 'Cold: steep 20 g of husk in 1 litre of cold water in the fridge for 12 hours.', ar: 'بارداً: انقع ٢٠ غ من القشر في لتر ماء بارد في الثلاجة ١٢ ساعة.' } },
-      { t: { en: 'Strain over ice. Add peach, hibiscus, pomegranate or mango.', ar: 'صفِّه على الثلج، وأضف الخوخ أو الكركديه أو الرمان أو المانجو.' } },
-    ],
-    serve: { en: 'Light on caffeine. Good with Sukkari.', ar: 'قليل الكافيين، ويليق به السكري.' },
-  },
-};
+// The recipes are edited in the desk (Admin → Words), which saves them to src/content/recipes.json.
+export const BREW = RECIPES as Record<'palm' | 'mountain' | 'house' | 'husk', { title: L; vessel: L; yields: L; steps: Step[]; serve: L }>;

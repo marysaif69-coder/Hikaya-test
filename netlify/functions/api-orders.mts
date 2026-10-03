@@ -9,6 +9,9 @@ import { liveCatalog, getSeasons } from '../lib/catalog';
 import { checkPromo } from '../lib/promos';
 import { priceCart } from '../lib/pricing';
 import { limit, ipKey } from '../lib/rate';
+import { addAlert } from '../lib/alerts';
+import { subscribe, confirm, unsubscribe } from '../lib/list';
+import { countView } from '../lib/visits';
 import { cardEnabled, paymentLink } from '../lib/square';
 import { DELIVERY_CENTS, FREE_DELIVERY_FROM } from '../lib/pricing';
 
@@ -35,12 +38,40 @@ export default async (req: Request) => {
       const p = await checkPromo(b.code, sub, str(b.email, 254));
       return json({ code: p.code, discount: p.discount_cents, freeDelivery: p.free_delivery, label: p.label });
     }
+    // "Email me when it's back"
+    if (path === '/api/notify-me' && req.method === 'POST') {
+      await limit(`alert:${ipKey(req)}`, 20, 60);
+      const b = await body(req);
+      await addAlert(str(b.product, 40), str(b.email, 254), b.lang === 'ar' ? 'ar' : 'en');
+      return json({ ok: true });
+    }
+    // Mailing list: sign up (needs the consent tick), confirm from the email, leave in one click.
+    if (path === '/api/list' && req.method === 'POST') {
+      await limit(`list:${ipKey(req)}`, 10, 60);
+      const b = await body(req);
+      if (b.consent !== true) throw Object.assign(new HttpError(400, 'consent', 'Tick the box to agree to receive our emails.'), { fields: { consent: 'required' } });
+      return json(await subscribe(str(b.email, 254), b.lang === 'ar' ? 'ar' : 'en', 'footer', req));
+    }
+    if (path === '/api/list/confirm' && req.method === 'GET') {
+      try { const lang = await confirm(str(url.searchParams.get('t'), 64)); return Response.redirect(`${siteUrl(req)}/${lang}/thanks/?list=1`, 303); }
+      catch { return Response.redirect(`${siteUrl(req)}/en/thanks/?listexpired=1`, 303); }
+    }
+    if (path === '/api/list/unsubscribe' && req.method === 'GET') {
+      const lang = await unsubscribe(str(url.searchParams.get('t'), 64));
+      return Response.redirect(`${siteUrl(req)}/${lang}/thanks/?unsub=1`, 303);
+    }
+    // Cookie-free page counts.
+    if (path === '/api/hit' && req.method === 'POST') {
+      const b = await body(req, 2000);
+      await countView(str(b.path, 200), str(b.ref, 300), url.hostname);
+      return new Response(null, { status: 204 });
+    }
     if (path === '/api/slots' && req.method === 'GET') {
       return json(await availability());
     }
     if (path === '/api/orders' && req.method === 'POST') {
       const s = await session(req);
-      if (s?.role !== 'admin') await limit(`order:${ipKey(req)}`, 8, 60, 'Too many orders from here in a short time. Please wait, or write to us with the help form.');
+      if (!s || s.role === 'customer') await limit(`order:${ipKey(req)}`, 8, 60, 'Too many orders from here in a short time. Please wait, or write to us with the help form.');
       const input = await body(req);
       const { order, lines, guestToken } = await createOrder(input, s, cardEnabled());
       let payUrl: string | null = null;
@@ -54,6 +85,7 @@ export default async (req: Request) => {
           await event(order.id, 'payment-link-failed', String(e).slice(0, 300), 'system');
         }
       }
+      if (input.newsletter === true) await subscribe(order.email, order.lang, 'checkout', req).catch(e => console.error('newsletter', e));
       await notify('received', order, req, guestToken);
       await notifyTeam(order, req);
       return json({ ref: order.ref, token: guestToken, payUrl }, 201);
@@ -86,4 +118,4 @@ export default async (req: Request) => {
   } catch (e) { return fail(e); }
 };
 
-export const config: Config = { path: ['/api/config', '/api/catalog', '/api/promo', '/api/slots', '/api/orders', '/api/orders/view', '/api/my/orders', '/api/my/orders/cancel'] };
+export const config: Config = { path: ['/api/config', '/api/catalog', '/api/promo', '/api/notify-me', '/api/list', '/api/list/confirm', '/api/list/unsubscribe', '/api/hit', '/api/slots', '/api/orders', '/api/orders/view', '/api/my/orders', '/api/my/orders/cancel'] };

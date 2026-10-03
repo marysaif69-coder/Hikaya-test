@@ -52,3 +52,18 @@ export async function refundPayment(paymentId: string, amount_cents: number, rea
   if (!r.ok) throw new Error(`Square refund: ${JSON.stringify(data.errors ?? data).slice(0, 300)}`);
   return { id: data.refund.id as string, status: data.refund.status as string };
 }
+
+/** Checks the token and location from the admin desk: lists the account's locations. */
+export async function squareCheck() {
+  if (!cardEnabled()) return { ok: false, message: 'Card payments are off: SQUARE_ACCESS_TOKEN and SQUARE_LOCATION_ID are not both set in Netlify.' };
+  try {
+    const r = await fetch(`${base()}/v2/locations`, { headers: { authorization: `Bearer ${env('SQUARE_ACCESS_TOKEN')}`, 'square-version': '2025-01-23' } });
+    const d: any = await r.json();
+    if (!r.ok) return { ok: false, message: `Square refused the token: ${d.errors?.[0]?.detail ?? r.status}. Check SQUARE_ACCESS_TOKEN and that SQUARE_ENV matches it (sandbox or production).` };
+    const locs = (d.locations ?? []).map((l: any) => ({ id: l.id, name: l.name, currency: l.currency }));
+    const match = locs.find((l: any) => l.id === env('SQUARE_LOCATION_ID'));
+    return match
+      ? { ok: true, message: `Connected to Square (${env('SQUARE_ENV') === 'production' ? 'live payments' : 'sandbox, test payments only'}) at “${match.name}”.`, locations: locs }
+      : { ok: false, message: 'The token works, but SQUARE_LOCATION_ID is not one of this account’s locations. Copy the right ID from the list.', locations: locs };
+  } catch (e) { return { ok: false, message: `Could not reach Square: ${String(e).slice(0, 200)}` }; }
+}

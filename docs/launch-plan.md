@@ -2,7 +2,7 @@
 
 What small food businesses selling pre-orders online actually run on, checked against what the
 Hikaya site already does. ✅ built · 🟡 partly / needs you · ⬜ not built yet.
-Written 2 October 2026.
+Written 2 October 2026, updated 3 October.
 
 ## 1. Selling
 
@@ -13,12 +13,13 @@ Written 2 October 2026.
 | ✅ | Order-by deadline: the evening before, or weekly ("order by Tuesday 8 pm for Thursday–Sunday") | Admin → Settings |
 | ✅ | Closed days (Eid day, holidays) and the first day orders open | Admin → Settings |
 | ✅ | Change prices, hide products, mark sold out, limit stock | Admin → Products |
-| ✅ | Ramadan and Eid switch on/off: pages, menu, banner and boxes | Admin → Products (top) |
+| ✅ | Ramadan and Eid switch on/off: pages, menu, banner, boxes and every mention | Admin → Products (top) |
+| ✅ | Gift orders: recipient, phone and message; year-round Guest Box and Coffee Duo (names and prices are drafts) | Checkout |
 | ✅ | Promo codes: % off, $ off, free delivery; dates, minimum, uses, once per customer | Admin → Promotions |
 | ✅ | Refunds: full or partial, card, e-Transfer, cash or store credit | Admin → order → Refund |
 | 🟡 | Card payment online | Built for Square; turns on when you add the Square keys (section 4) |
 | ⬜ | Gift cards you can sell | Not built. Store-credit codes already work as a simple version |
-| ⬜ | "Tell me when it's back" for sold-out products | Not built; worth adding before Ramadan |
+| ✅ | "Email me when it's back" for sold-out products and out-of-season boxes | Product pages; Admin → Products shows who waits |
 | ⬜ | Subscriptions (a coffee every month) | Not built; only after launch, if customers ask |
 
 ## 2. Running the orders
@@ -29,9 +30,9 @@ Written 2 October 2026.
 | ✅ | Day sheet: what to pack, pickups by window, deliveries sorted by area with map links, printable | Admin → Day sheet |
 | ✅ | Sample orders over five weeks to practise on; one click removes them | Admin → Orders |
 | ✅ | CSV export for the accountant | Admin → Orders |
-| ⬜ | **Weekly roast and pack sheet**: total kg of each coffee to roast and grind, dates to portion, boxes and sleeves to prepare for the coming week | Not built. Highest-value next step for pre-orders: it is what you hand the roaster |
-| ⬜ | Driver view on a phone (today's deliveries in order, tap to call, "delivered") | Not built; the day sheet works on a phone meanwhile |
-| ⬜ | Team roles (e.g. a helper who can pack and mark ready but not refund) | Not built; everyone on ADMIN_EMAILS can do everything |
+| ✅ | Weekly roast and pack sheet: kg of each coffee, dates to portion, boxes, sleeves, cups | Admin → Week sheet |
+| ✅ | Driver view on a phone: deliveries by postal area, map, call, collect, delivered | Admin → Driver |
+| ✅ | Team roles: owners (ADMIN_EMAILS) and helpers (STAFF_EMAILS, no money or settings) | Netlify settings |
 
 ## 3. Customers and support
 
@@ -42,8 +43,8 @@ Written 2 October 2026.
 | ✅ | Team answers you write in the desk, used straight away | Admin → Assistant |
 | ✅ | Backup answers and an email to you if the AI runs out of credit | Built |
 | ✅ | Help form and Inbox with photos, replies by email, outcomes | Built |
-| ⬜ | Ask for a Google review a few days after an order is completed | Not built; easy to add once the Google Business Profile exists |
-| 🟡 | Mailing list | Collected with Netlify Forms. Needs a CASL consent line and a tool to send from (section 6) |
+| 🟡 | Ask for a Google review 3–10 days after a completed order | Built; turns on when you add GOOGLE_REVIEW_URL |
+| ✅ | Mailing list with CASL consent, email confirmation and one-click unsubscribe | Footer and checkout; CSV in Admin → Promotions. Send letters with a mailing tool (section 6) |
 
 ## 4. Payments: Square or Shopify?
 
@@ -69,7 +70,8 @@ nothing.
 application → copy the *production* access token and location ID → in Netlify add
 `SQUARE_ACCESS_TOKEN`, `SQUARE_LOCATION_ID`, `SQUARE_ENV=production`, then add the webhook
 `<site>/api/square/webhook` for `payment.updated` and put its signature key in
-`SQUARE_WEBHOOK_SIGNATURE_KEY`. Redeploy. Test with a $1 product first.
+`SQUARE_WEBHOOK_SIGNATURE_KEY`. Redeploy. Nothing else to change on the site: "Card, now" appears at
+checkout by itself. Check Admin → Settings → Connections → "Test Square", then test with a $1 product.
 
 Fees from Square Canada (squareup.com/ca/en/payments/our-fees, checked 2 October 2026) and
 published Shopify Canada pricing for 2026. Cards issued outside Canada cost about 1.5% more on Square.
@@ -98,23 +100,21 @@ inspectors; treat this as a checklist to confirm.
 ## 6. After launch
 
 - Google Business Profile with the pickup address and hours (most "near me" searches start there).
-- Privacy-friendly visit numbers (Netlify Analytics or Plausible; no cookie banner needed).
-- A free uptime check (e.g. UptimeRobot) emailing you if the site goes down.
-- A mailing tool for the three yearly letters (Mailchimp, Buttondown or Resend Broadcasts), with
-  the CASL consent checkbox added to the footer form.
+- Visit numbers: built (Admin → Numbers), no cookies.
+- A free uptime check: uptimerobot.com → New monitor → HTTPS → `https://hikayacoffee.ca/api/config`
+  every 5 minutes, alert to hello@hikayacoffee.ca. (Add it at launch: while the site is private,
+  that address answers "private preview", which the monitor would count as down.)
+- A mailing tool for the three yearly letters (Resend Broadcasts, Buttondown or Mailchimp): import
+  the CSV from Admin → Promotions; it already holds the consent record.
 - Monthly: CSV export to the accountant; read Ask Hikaya's conversations weekly.
 
 ## 7. Editing words, recipes and products
 
-- **Prices, what's shown, sold out, stock, seasons, promo codes, deadlines:** in the admin desk,
-  live in a minute.
+- **Prices, what's shown, sold out, stock, seasons, promo codes, deadlines:** Admin desk, live in a minute.
 - **Assistant answers:** Admin → Assistant, live immediately.
-- **Text, recipes (brew guides), product descriptions, photos, new products:** these live in the
-  site's files (`src/data/products.ts`, `src/data/brew.ts`, the pages). Today: tell Claude in a
-  session what to change; it edits, tests and deploys in a few minutes.
-- **Later, if you want to edit text yourself:** add a content editor (Sveltia CMS or Decap CMS)
-  that edits those files through a web form and publishes through GitHub. Worth doing once the
-  wording settles, probably after the first Ramadan.
+- **Product names and descriptions, brew recipes:** Admin → Words, live in about two minutes.
+  Needs `GITHUB_CONTENT_TOKEN` once (see docs/backend.md).
+- **Photos, new products, page layouts:** tell Claude in a session.
 
 ## 8. Security (done 2 October 2026)
 
@@ -123,7 +123,7 @@ inspectors; treat this as a checklist to confirm.
   watch for new ones; CodeQL scans the code.
 - Security headers on every page; admin never cached or indexed.
 - Rate limits on orders, promo codes, help requests and login codes.
-- Passwordless login with short-lived codes; team rights only for emails in ADMIN_EMAILS.
+- Passwordless login with short-lived codes; team rights only for ADMIN_EMAILS (owners) and STAFF_EMAILS (helpers).
 - Prices always recalculated on the server; card details never touch the site (Square's page).
 - Still to do by you: turn on GitHub's secret scanning and push protection (repo Settings →
   Code security), and turn on two-factor login for GitHub, Netlify, Square, Resend and Anthropic.

@@ -21,6 +21,14 @@ const ar = lang === 'ar';
       <Pair lang={lang} size="l" bunn={{ ar: 'سجّلنا بريدك.', en: 'We have your email.' }} tamr={{ ar: 'ثلاث رسائل فقط في السنة.', en: 'Only three letters a year.' }} />
       <h1 class="h-m">{ar ? 'أنت على القائمة.' : 'You’re on the list.'}</h1>
     </div>
+    <div data-kind="unsub" hidden>
+      <h1 class="h-m">{ar ? 'ألغينا اشتراكك. لن تصلك رسائل حكاية بعد الآن.' : 'You’re unsubscribed. No more Hikaya letters.'}</h1>
+      <p class="muted">{ar ? 'رسائل الطلبات تصلك فقط حين تطلب.' : 'You’ll still get emails about any order you place.'}</p>
+    </div>
+    <div data-kind="listexpired" hidden>
+      <h1 class="h-m">{ar ? 'انتهت صلاحية هذا الرابط أو استُخدم.' : 'That link has expired or was already used.'}</h1>
+      <p class="muted">{ar ? 'اشترك مرة أخرى من أسفل أي صفحة.' : 'Sign up again at the bottom of any page.'}</p>
+    </div>
     <div data-kind="story" hidden>
       <Pair lang={lang} size="l" bunn={{ ar: 'وصل سطرك.', en: 'Your line arrived.' }} tamr={{ ar: 'وللحكاية بقية.', en: 'And the story goes on.' }} />
       <h1 class="h-m">{ar ? 'شكراً على حكايتك.' : 'Thank you for your story.'}</h1>
@@ -42,7 +50,7 @@ const ar = lang === 'ar';
 <script>
   import { clear } from '../../scripts/cart';
   const q = new URLSearchParams(location.search);
-  const kind = q.has('list') ? 'list' : q.has('story') ? 'story' : 'order';
+  const kind = q.has('list') ? 'list' : q.has('unsub') ? 'unsub' : q.has('listexpired') ? 'listexpired' : q.has('story') ? 'story' : 'order';
   document.querySelector<HTMLElement>(`[data-kind="${kind}"]`)!.hidden = false;
   if (kind === 'order') {
     clear();

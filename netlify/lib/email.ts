@@ -57,6 +57,7 @@ export type OrderForMail = {
   id: number; ref: string; email: string; name: string; lang: Lang; method: string; street: string | null; postal: string | null;
   slot_date: string; slot_window: string; payment: string; payment_status: string; status: string;
   subtotal_cents: number; delivery_cents: number; total_cents: number; notes?: string | null;
+  gift?: boolean; gift_to?: string | null; gift_message?: string | null; discount_cents?: number; promo_code?: string | null;
 };
 export type ItemForMail = { name_en: string; name_ar: string; option_en: string | null; option_ar: string | null; qty: number; unit_cents: number };
 
@@ -109,9 +110,11 @@ export function orderEmail(kind: OrderMailKind, o: OrderForMail, items: ItemForM
   const showDetails = kind !== 'cancelled';
   const body = `<p>${c.p}</p>
 <p style="margin:16px 0 6px;font-size:14px;color:#66503F">${ar ? 'رقم الطلب' : 'Order number'}</p><p style="margin:0;font-size:22px;font-weight:700;color:#A93B28;direction:ltr;${ar ? 'text-align:right' : ''}">${o.ref}</p>
-${showDetails ? `<p style="margin:16px 0 0"><strong>${day(o.slot_date, L)}</strong> · <span style="direction:ltr;unicode-bidi:embed">${esc(o.slot_window)}</span><br>${where}</p>
+${showDetails ? `${o.gift ? `<p style="margin:16px 0 0;background:#EDE3D0;border-radius:12px;padding:10px 14px">${ar ? 'هدية إلى' : 'A gift for'} <b>${esc(o.gift_to)}</b>${o.gift_message ? `<br><i>“${esc(o.gift_message)}”</i>` : ''}</p>` : ''}
+<p style="margin:16px 0 0"><strong>${day(o.slot_date, L)}</strong> · <span style="direction:ltr;unicode-bidi:embed">${esc(o.slot_window)}</span><br>${where}</p>
 <table role="presentation" width="100%" style="margin:16px 0;border-top:1px solid #DFD1BA;border-bottom:1px solid #DFD1BA;font-size:15px">${rows}
 ${o.delivery_cents ? `<tr><td style="padding:6px 0">${ar ? 'التوصيل' : 'Delivery'}</td><td style="text-align:${ar ? 'left' : 'right'}">${dollars(o.delivery_cents)}</td></tr>` : ''}
+${o.discount_cents ? `<tr><td style="padding:6px 0">${ar ? 'الخصم' : 'Discount'}${o.promo_code ? ` (${esc(o.promo_code)})` : ''}</td><td style="text-align:${ar ? 'left' : 'right'}">−${dollars(o.discount_cents)}</td></tr>` : ''}
 <tr><td style="padding:8px 0;font-weight:700">${ar ? 'الإجمالي' : 'Total'}</td><td style="text-align:${ar ? 'left' : 'right'};font-weight:700">${dollars(o.total_cents)}</td></tr></table>
 <p>${pay}</p>` : ''}
 ${btn(viewUrl, ar ? 'عرض طلبك' : 'View your order')}
@@ -123,7 +126,7 @@ ${kind === 'completed' ? `<p><a href="${siteUrl}/${L}/brew/" style="color:#A93B2
 /** New-order alert for the team. */
 export function teamAlert(o: OrderForMail, items: ItemForMail[], adminUrl: string): Mail[] {
   const lines = items.map(i => `${i.qty} × ${i.name_en}${i.option_en ? ` (${i.option_en})` : ''}`).join('\n');
-  const text = `New order ${o.ref} — ${dollars(o.total_cents)}\n${o.name} · ${o.email}\n${o.method} · ${o.slot_date} ${o.slot_window}${o.method === 'delivery' ? `\n${o.street}, ${o.postal}` : ''}\nPayment: ${o.payment}\n\n${lines}\n${o.notes ? `\nNote: ${o.notes}\n` : ''}\n${adminUrl}`;
+  const text = `New order ${o.ref} — ${dollars(o.total_cents)}\n${o.name} · ${o.email}\n${o.method} · ${o.slot_date} ${o.slot_window}${o.method === 'delivery' ? `\n${o.street}, ${o.postal}` : ''}\nPayment: ${o.payment}\n${o.gift ? `GIFT for ${o.gift_to}${o.gift_message ? ` — card: "${o.gift_message}"` : ''}\n` : ''}\n${lines}\n${o.notes ? `\nNote: ${o.notes}\n` : ''}\n${adminUrl}`;
   const html = `<pre style="font:15px/1.5 Arial,sans-serif;white-space:pre-wrap">${esc(text)}</pre>`;
   return env('ADMIN_EMAILS').split(',').map((e: string) => e.trim()).filter(Boolean)
     .map((to: string) => ({ to, subject: `New order ${o.ref} · ${dollars(o.total_cents)} · ${o.slot_date}`, html, text, kind: 'team-new-order', orderId: o.id }));
@@ -174,4 +177,28 @@ export function refundEmail(o: OrderForMail, amount_cents: number, method: strin
 ${creditCode ? `<p style="font-size:26px;font-weight:700;letter-spacing:2px;color:#A93B28;direction:ltr;text-align:center">${creditCode}</p>` : ''}
 <p>${ar ? 'نأسف لما حدث، وشكراً لصبرك.' : 'We are sorry for the trouble, and thank you for your patience.'}</p>`;
   return { to: o.email, subject: s, html: layout(L, h, body, siteUrl), text: `${h}\n\n${o.ref}\n${creditCode ?? ''}`, kind: 'order-refund', orderId: o.id };
+}
+
+// ---------- back in stock, mailing list, reviews ----------
+export function backInStockEmail(to: string, lang: Lang, name: { en: string; ar: string }, url: string, siteUrl: string, unsub: string | null): Mail {
+  const ar = lang === 'ar';
+  const s = ar ? `عاد إلى المتجر: ${name.ar}` : `Back in the shop: ${name.en}`;
+  const body = `<p>${ar ? `طلبتَ أن نخبرك حين يعود <b>${esc(name.ar)}</b>. عاد الآن، والكمية محدودة.` : `You asked us to tell you when <b>${esc(name.en)}</b> came back. It's back now, while it lasts.`}</p>${btn(url, ar ? 'اطلبه الآن' : 'Order it now')}
+<p style="font-size:13px;color:#66503F">${ar ? 'هذه رسالة واحدة فقط لهذا المنتج.' : 'This is the only email about this product.'}</p>`;
+  return { to, subject: s, html: layout(lang, ar ? 'عاد إلى المتجر' : 'It’s back', body, siteUrl), text: `${s}\n\n${url}`, kind: 'back-in-stock' };
+}
+
+export function listConfirmEmail(to: string, lang: Lang, confirmUrl: string, siteUrl: string): Mail {
+  const ar = lang === 'ar';
+  const s = ar ? 'أكّد اشتراكك في رسائل حكاية' : 'Confirm your Hikaya letters';
+  const body = `<p>${ar ? 'طلبتَ أن تصلك رسائل حكاية: ثلاث رسائل في السنة. اضغط للتأكيد. إن لم تطلب ذلك فتجاهل هذه الرسالة ولن نرسل شيئاً.' : 'You asked for Hikaya letters: three emails a year. Click to confirm. If this wasn’t you, ignore this email and we won’t write again.'}</p>${btn(confirmUrl, ar ? 'نعم، أرسلوا لي' : 'Yes, write to me')}`;
+  return { to, subject: s, html: layout(lang, s, body, siteUrl), text: `${s}\n\n${confirmUrl}`, kind: 'list-confirm' };
+}
+
+export function reviewEmail(o: OrderForMail, reviewUrl: string, siteUrl: string): Mail {
+  const L = (o.lang === 'ar' ? 'ar' : 'en') as Lang, ar = L === 'ar';
+  const s = ar ? 'كيف كانت القهوة والتمر؟' : 'How was it?';
+  const body = `<p>${ar ? `نرجو أن طلبك ${o.ref} أعجبك. إن أعجبك، كلمتان على Google تساعدان الناس في كالغاري على إيجادنا.` : `We hope you enjoyed order ${o.ref}. If you did, a few words on Google help people in Calgary find us.`}</p>${btn(reviewUrl, ar ? 'اكتب رأيك' : 'Leave a review')}
+<p>${ar ? 'وإن لم يكن كل شيء كما يجب، ردّ على هذه الرسالة وأخبرنا.' : 'And if something wasn’t right, reply to this email and tell us.'}</p>`;
+  return { to: o.email, subject: s, html: layout(L, s, body, siteUrl), text: `${s}\n\n${reviewUrl}`, kind: 'review-request', orderId: o.id };
 }

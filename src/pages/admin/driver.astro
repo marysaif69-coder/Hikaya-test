@@ -1,0 +1,124 @@
+---
+// The driver's phone page: today's deliveries in route order (sorted by postal area), tap to
+// call or open the map, and mark each one on its way or delivered. Owners and helpers can use it.
+import '../../styles/fonts.css';
+import '../../styles/global.css';
+---
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#33211A" />
+  <title>Deliveries · Hikaya</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body class="drv">
+  <header class="d-top">
+    <a href="/admin/" class="back">← Desk</a>
+    <input type="date" id="day" aria-label="Day" />
+    <button type="button" id="reload" aria-label="Refresh">↻</button>
+  </header>
+  <main>
+    <section id="login" hidden><h1 class="h-m">Team login</h1><div id="loginBox"></div><p class="err" id="notTeam" hidden>This email is not on the team list.</p></section>
+    <p id="summary" class="muted"></p>
+    <ol id="stops" class="stops"></ol>
+  </main>
+</body>
+</html>
+
+<style>
+  .drv { background: var(--paper); }
+  .d-top { position: sticky; top: 0; z-index: 5; display: flex; gap: 10px; align-items: center; padding: 10px 14px; background: var(--bunn); color: var(--paper); }
+  .d-top .back { color: var(--paper); font-weight: 600; text-decoration: none; margin-inline-end: auto; }
+  .d-top input { color: var(--ink); background: var(--sheet); border: 0; border-radius: 10px; padding: 8px 10px; font: inherit; }
+  .d-top button { border: 0; background: var(--khalal); color: var(--bunn); border-radius: 10px; width: 42px; height: 40px; font-size: 20px; }
+  main { padding: 14px; display: grid; gap: 12px; max-width: 640px; margin: 0 auto; }
+  .stops { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; counter-reset: stop; }
+  .stops :global(li) { background: var(--sheet); border-radius: 20px; padding: 16px; display: grid; gap: 8px; box-shadow: inset 0 0 0 1px var(--line); counter-increment: stop; }
+  .stops :global(li.done) { opacity: .55; }
+  .stops :global(.h) { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .stops :global(.h b::before) { content: counter(stop) '. '; color: var(--tamr); }
+  .stops :global(.addr) { font-size: 19px; font-weight: 600; }
+  .stops :global(.gift) { background: #F1DCD3; border-radius: 12px; padding: 8px 10px; }
+  .stops :global(.collect) { background: #F4E6BF; border-radius: 12px; padding: 8px 10px; font-weight: 600; }
+  .stops :global(.row) { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stops :global(a.b), .stops :global(button.b) { display: grid; place-items: center; min-height: 52px; border-radius: 14px; font-weight: 700; font-size: 16px; text-decoration: none; border: 0; }
+  .stops :global(.b.map) { background: var(--paper-2); color: var(--bunn); }
+  .stops :global(.b.call) { background: var(--paper-2); color: var(--bunn); }
+  .stops :global(.b.go) { background: var(--khalal); color: var(--bunn); }
+  .stops :global(.b.done) { background: var(--bunn); color: var(--paper); }
+  .stops :global(.b.miss) { background: none; color: var(--tamr-2); box-shadow: inset 0 0 0 1.5px var(--tamr); }
+  .stops :global(small) { color: var(--ink-2); }
+</style>
+
+<script>
+  import { mountLogin } from '../../scripts/login';
+  const $ = (id: string) => document.getElementById(id)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+  const money = (c: number) => `$${(c / 100).toFixed(c % 100 ? 2 : 0)}`;
+  const api = async (url: string, data?: object) => {
+    const r = await fetch(url, data ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) } : undefined);
+    const body = await r.json().catch(() => ({}));
+    if (r.status === 401 && body.error === 'preview') { location.replace(`/admin/driver/?code=${Date.now()}`); throw new Error('preview'); }
+    if (r.status === 401) { showLogin(); throw new Error('login'); }
+    if (!r.ok) { alert(body.message ?? 'Something went wrong.'); throw new Error(body.error); }
+    return body;
+  };
+  const dayIn = $('day') as HTMLInputElement;
+
+  async function load() {
+    const d = await api(`/api/admin/day${dayIn.value ? `?date=${dayIn.value}` : ''}`);
+    dayIn.value = d.date;
+    const left = d.deliveries.filter((o: any) => o.status !== 'completed').length;
+    $('summary').textContent = d.deliveries.length ? `${d.deliveries.length} ${d.deliveries.length === 1 ? 'delivery' : 'deliveries'}, ${left} to go. In order of postal area.` : 'No deliveries this day.';
+    $('stops').innerHTML = d.deliveries.map((o: any) => {
+      const addr = `${o.street}, ${o.postal}, Calgary`;
+      const collect = o.paymentStatus === 'unpaid' && o.payment === 'at-pickup';
+      const phone = o.gift?.phone || o.phone;
+      return `<li class="${o.status === 'completed' ? 'done' : ''}" data-ref="${esc(o.ref)}" data-collect="${collect ? o.total : ''}">
+        <div class="h"><b>${esc(o.window)}</b><small>${esc(o.ref)} · ${o.status === 'completed' ? 'Delivered' : o.status === 'out-for-delivery' ? 'On the way' : 'Not left yet'}</small></div>
+        <div class="addr">${esc(o.street)}<br><small>${esc(o.postal)}</small></div>
+        <div>${esc(o.gift ? o.gift.to : o.name)}${o.gift ? ` <small>(gift from ${esc(o.name)})</small>` : ''}</div>
+        ${o.gift ? `<div class="gift">Gift${o.gift.message ? `: card says “${esc(o.gift.message)}”` : ''}</div>` : ''}
+        ${collect ? `<div class="collect">Collect ${money(o.total)} (card or cash)</div>` : ''}
+        ${o.notes ? `<div><small>Note: ${esc(o.notes)}</small></div>` : ''}
+        <div><small>${(o.items ?? []).map((i: any) => `${i.qty}× ${esc(i.name_en)}`).join(', ')}</small></div>
+        <div class="row"><a class="b map" href="https://maps.google.com/?q=${encodeURIComponent(addr)}" target="_blank" rel="noopener">Map</a><a class="b call" href="tel:${esc(phone)}">Call</a></div>
+        ${o.status === 'completed' ? '' : `<div class="row">${o.status !== 'out-for-delivery' ? '<button type="button" class="b go" data-act="go">On my way</button>' : ''}<button type="button" class="b done" data-act="done">Delivered</button></div>
+        <button type="button" class="b miss" data-act="miss">Couldn't deliver</button>`}
+      </li>`;
+    }).join('');
+  }
+
+  $('stops').addEventListener('click', async e => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-act]');
+    if (!b) return;
+    const li = b.closest<HTMLElement>('li')!, ref = li.dataset.ref!;
+    if (b.dataset.act === 'go') await api(`/api/admin/orders/${ref}`, { status: 'out-for-delivery', notify: true });
+    if (b.dataset.act === 'done') {
+      if (li.dataset.collect && !confirm(`Did you collect ${money(Number(li.dataset.collect))}?`)) return;
+      await api(`/api/admin/orders/${ref}`, { status: 'completed', notify: true, ...(li.dataset.collect ? { paymentStatus: 'paid' } : {}) });
+    }
+    if (b.dataset.act === 'miss') {
+      const why = prompt('What happened? (the team sees this)', 'Nobody home, called, no answer');
+      if (!why) return;
+      await api(`/api/admin/orders/${ref}`, { note: `Couldn't deliver: ${why}` });
+      alert('Noted. The order stays open; the team will contact the customer.');
+    }
+    load();
+  });
+  dayIn.addEventListener('change', load);
+  $('reload').addEventListener('click', load);
+
+  function showLogin() {
+    $('login').hidden = false; $('stops').innerHTML = ''; $('summary').textContent = '';
+    mountLogin($('loginBox'), 'en', user => { if (user.role !== 'admin' && user.role !== 'staff') { $('notTeam').hidden = false; return; } $('login').hidden = true; load(); });
+  }
+  (async () => {
+    const me = await fetch('/api/me').then(r => r.json()).catch(() => ({ user: null }));
+    if (me.error === 'preview') { location.replace(`/admin/driver/?code=${Date.now()}`); return; }
+    if (me.user?.role === 'admin' || me.user?.role === 'staff') load(); else showLogin();
+  })();
+</script>

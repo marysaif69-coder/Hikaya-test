@@ -11,6 +11,10 @@ export const hash = (v: string) => createHash('sha256').update(v).digest('hex');
 export const token = (bytes = 24) => randomBytes(bytes).toString('base64url');
 export const adminEmails = () => env('ADMIN_EMAILS').split(',').map((e: string) => e.trim().toLowerCase()).filter(Boolean);
 export const isAdminEmail = (email: string) => adminEmails().includes(email.toLowerCase());
+/** Helpers (STAFF_EMAILS) can run orders, the day and week sheets, deliveries and the Inbox, but not
+ * refunds, prices, promo codes, settings or exports. */
+export const isStaffEmail = (email: string) => env('STAFF_EMAILS').split(',').map((e: string) => e.trim().toLowerCase()).filter(Boolean).includes(email.toLowerCase());
+const roleFor = (email: string): Role => (isAdminEmail(email) ? 'admin' : isStaffEmail(email) ? 'staff' : 'customer');
 
 export async function issueCode(email: string) {
   const recent = await one`SELECT COUNT(*)::int AS n FROM auth_codes WHERE email = ${email} AND created_at > NOW() - INTERVAL '1 hour'`;
@@ -31,7 +35,7 @@ export async function verifyCode(email: string, code: string) {
   }
   await sql`UPDATE auth_codes SET used = TRUE WHERE id = ${row.id}`;
   const t = token();
-  const role = isAdminEmail(email) ? 'admin' : 'customer';
+  const role = roleFor(email);
   await sql`INSERT INTO sessions (token_hash, email, role, expires_at) VALUES (${hash(t)}, ${email}, ${role}, NOW() + make_interval(days => ${DAYS}))`;
   await sql`INSERT INTO customers (email) VALUES (${email}) ON CONFLICT (email) DO NOTHING`;
   return { token: t, role };
@@ -40,21 +44,29 @@ export async function verifyCode(email: string, code: string) {
 export const sessionCookie = (t: string) => `${COOKIE}=${t}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${DAYS * 86400}`;
 export const clearCookie = () => `${COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 
-export type Session = { email: string; role: 'customer' | 'admin' };
+export type Role = 'customer' | 'staff' | 'admin';
+export type Session = { email: string; role: Role };
 
 export async function session(req: Request): Promise<Session | null> {
   const t = cookie(req, COOKIE);
   if (!t) return null;
   const row = await one`SELECT email, role FROM sessions WHERE token_hash = ${hash(t)} AND expires_at > NOW()`;
   if (!row) return null;
-  // Admin rights follow ADMIN_EMAILS at all times, so removing someone takes effect immediately.
-  return { email: row.email, role: row.role === 'admin' && isAdminEmail(row.email) ? 'admin' : 'customer' };
+  // Team rights follow ADMIN_EMAILS and STAFF_EMAILS at all times, so removing someone takes effect immediately.
+  return { email: row.email, role: roleFor(row.email) };
 }
 
 export async function requireAdmin(req: Request) {
+  const s = await requireTeam(req);
+  if (s.role !== 'admin') throw new HttpError(403, 'admin-only', 'Only the owners can do this.');
+  return s;
+}
+
+/** Anyone on the team: owners (ADMIN_EMAILS) or helpers (STAFF_EMAILS). */
+export async function requireTeam(req: Request) {
   const s = await session(req);
   if (!s) throw new HttpError(401, 'login');
-  if (s.role !== 'admin') throw new HttpError(403, 'admin-only');
+  if (s.role === 'customer') throw new HttpError(403, 'admin-only');
   return s;
 }
 

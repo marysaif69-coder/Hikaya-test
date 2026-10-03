@@ -6,8 +6,8 @@ import { PRODUCTS, DATES, GRINDS } from '../data/products';
 import { UI, dir, other, path } from '../data/i18n';
 import AskHikaya from '../components/AskHikaya.astro';
 
-interface Props { season?: 'ramadan' | 'eid'; lang: Lang; title: string; description?: string; current?: keyof typeof UI.nav; sleeve?: 'regular' | 'ramadan' | 'eid'; intro?: boolean; jsonld?: object; image?: string }
-const { season, lang, title, description = UI.footLine[lang], current, sleeve = 'regular', intro = false, jsonld, image = '/media/img/eid-coffee-dates.jpg' } = Astro.props;
+interface Props { alertFor?: string; season?: 'ramadan' | 'eid'; lang: Lang; title: string; description?: string; current?: keyof typeof UI.nav; sleeve?: 'regular' | 'ramadan' | 'eid'; intro?: boolean; jsonld?: object; image?: string }
+const { alertFor, season, lang, title, description = UI.footLine[lang], current, sleeve = 'regular', intro = false, jsonld, image = '/media/img/eid-coffee-dates.jpg' } = Astro.props;
 // The business, on every page. No street address until it is confirmed.
 const org = { '@context': 'https://schema.org', '@type': 'Store', name: 'Hikaya Coffee & Dates', alternateName: 'حكاية', url: new URL(`/${lang}/`, Astro.site).href, logo: new URL('/brand/logo.svg', Astro.site).href, areaServed: { '@type': 'City', name: 'Calgary' }, sameAs: ['https://www.instagram.com/hikaya.yyc/'] };
 const alt = other(lang);
@@ -76,6 +76,7 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
       <section class="wrap offseason" data-season-off={season} hidden>
         <h1 class="h-l">{season === 'ramadan' ? (lang === 'ar' ? 'صناديق رمضان ترتاح حتى الموسم القادم.' : 'The Ramadan boxes are resting until next season.') : (lang === 'ar' ? 'إصدار العيد يعود في العيد القادم.' : 'The Eid edition returns next Eid.')}</h1>
         <p class="lead">{lang === 'ar' ? 'القهوة والتمر معنا طوال السنة.' : 'Our coffee and dates are here all year.'}</p>
+        {alertFor && <div data-notify={alertFor}></div>}
         <p><a class="btn primary" href={path(lang, 'shop')}>{lang === 'ar' ? 'إلى المتجر' : 'To the shop'}</a></p>
       </section>
     </> : <slot />}
@@ -112,13 +113,12 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
         <div>
           <h2 class="fh">{lang === 'ar' ? 'قائمة البريد' : 'The list'}</h2>
           <p class="muted">{UI.listLine[lang]}</p>
-          <form class="listform" name="list" method="POST" data-netlify="true" netlify-honeypot="company" action={path(lang, 'thanks') + '?list=1'}>
-            <input type="hidden" name="form-name" value="list" />
-            <input type="hidden" name="lang" value={lang} />
-            <p class="sr"><label>Company <input name="company" tabindex="-1" autocomplete="off" /></label></p>
+          <form class="listform" id="listForm" novalidate>
             <label class="sr" for={`list-${lang}`}>{UI.email[lang]}</label>
             <input id={`list-${lang}`} type="email" name="email" required autocomplete="email" placeholder={UI.email[lang]} />
             <button class="btn primary" type="submit" style="min-height:46px;padding:11px 18px">{UI.join[lang]}</button>
+            <label class="consent"><input type="checkbox" name="consent" required /> <span>{lang === 'ar' ? 'أوافق على أن تصلني رسائل حكاية (نحو ثلاث في السنة). أستطيع إلغاء الاشتراك في أي وقت.' : 'I agree to receive Hikaya letters (about three a year). I can unsubscribe at any time.'}</span></label>
+            <p class="list-msg" id="listMsg" aria-live="polite"></p>
           </form>
         </div>
       </div>
@@ -154,6 +154,26 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
     import { applyLive } from '../scripts/live';
     initCart();
     applyLive();
+    // Cookie-free visit count: just the page and the site that linked here.
+    try { navigator.sendBeacon?.('/api/hit', new Blob([JSON.stringify({ path: location.pathname, ref: document.referrer })], { type: 'application/json' })); } catch { /* not important */ }
+    // Mailing list: express consent (CASL), then a confirmation email.
+    const lf = document.getElementById('listForm') as HTMLFormElement | null;
+    lf?.addEventListener('submit', async e => {
+      e.preventDefault();
+      const ar = document.documentElement.lang === 'ar';
+      const msg = document.getElementById('listMsg')!;
+      const email = (lf.elements.namedItem('email') as HTMLInputElement).value.trim();
+      const consent = (lf.elements.namedItem('consent') as HTMLInputElement).checked;
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { msg.textContent = ar ? 'تحقق من البريد.' : 'Check the email.'; return; }
+      if (!consent) { msg.textContent = ar ? 'ضع علامة في المربع للموافقة.' : 'Tick the box to agree.'; return; }
+      try {
+        const r = await fetch('/api/list', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, consent, lang: ar ? 'ar' : 'en' }) });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.message);
+        msg.textContent = d.already ? (ar ? 'أنت على القائمة بالفعل.' : 'You are already on the list.') : (ar ? 'أرسلنا لك رسالة للتأكيد. افتحها واضغط الزر.' : 'We sent you an email to confirm. Open it and click the button.');
+        lf.reset();
+      } catch (x) { msg.textContent = (x as Error).message || (ar ? 'حدث خطأ.' : 'Something went wrong.'); }
+    });
     const btn = document.getElementById('menuBtn');
     const nav = document.getElementById('nav');
     btn?.addEventListener('click', () => {
@@ -175,6 +195,15 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
     .lockup img { width: 52px; height: auto; }
     .offseason { display: grid; gap: 18px; padding-block: clamp(64px, 10vw, 140px); max-width: 760px; }
     :global(.sold-out-tag) { font-size: 13px; font-weight: 600; color: var(--tamr-2); }
+    .listform { flex-wrap: wrap; }
+    .listform .consent { flex: 1 0 100%; display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; color: var(--ink-2); line-height: 1.4; }
+    .listform .consent input { flex: none; width: 18px; height: 18px; padding: 0; margin: 2px 0 0; border-radius: 4px; accent-color: var(--bunn); }
+    .listform .list-msg { flex: 1 0 100%; margin: 0; }
+    .list-msg { grid-column: 1 / -1; font-size: 14px; font-weight: 500; }
+    :global(.notify-me) { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; width: 100%; }
+    :global(.notify-me input) { flex: 1; min-width: 150px; border: 1.5px solid var(--line); border-radius: 999px; padding: 8px 12px; font: inherit; font-size: 14px; background: #fff; }
+    :global(.notify-me button) { border: 1.5px solid var(--bunn); background: none; border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+    :global(.notify-me p) { width: 100%; font-size: 13.5px; }
     :global([data-product].is-sold-out .pc-media) { opacity: .55; }
     @media (max-width: 520px) { .top .lockup img { width: 42px; } }
   </style>

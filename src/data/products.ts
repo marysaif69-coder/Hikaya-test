@@ -1,4 +1,5 @@
 // Single source of truth for both sites. Prices are drafts (CAD) until launch.
+import TEXT from '../content/products.json';
 
 export type Lang = 'en' | 'ar';
 export type L = { en: string; ar: string };
@@ -188,6 +189,9 @@ export const BOXES: Box[] = [
 ];
 
 export const PRODUCTS: Product[] = [...COFFEES, ...BOXES];
+// Names, descriptions and the other words are edited in the desk (Admin → Words), which saves them
+// to src/content/products.json. That file wins over the text written above.
+for (const p of PRODUCTS) Object.assign(p, (TEXT as Record<string, Partial<Record<string, L>>>)[p.id] ?? {});
 export const byId = (id: string) => PRODUCTS.find(p => p.id === id);
 
 export const money = (n: number, lang: Lang) => (lang === 'ar' ? `${n} $` : `$${n}`);

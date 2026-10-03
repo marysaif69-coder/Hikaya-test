@@ -39,6 +39,9 @@ export async function createOrder(input: any, s: Session | null, cardEnabled: bo
     if (!postal) errors.postal = 'postal';
   }
   const payment = PAYMENTS.includes(input?.payment) ? input.payment : 'at-pickup';
+  const gift = input?.gift === true;
+  const giftTo = gift ? str(input?.gift_to, 120) || null : null, giftPhone = gift ? str(input?.gift_phone, 40) || null : null, giftMessage = gift ? str(input?.gift_message, 300) || null : null;
+  if (gift && !giftTo) errors.gift_to = 'required';
   if (payment === 'card' && !cardEnabled) errors.payment = 'card-off';
   if (Object.keys(errors).length) throw Object.assign(new HttpError(400, 'invalid', 'Check the highlighted fields.'), { fields: errors });
 
@@ -65,9 +68,9 @@ export async function createOrder(input: any, s: Session | null, cardEnabled: bo
   for (let i = 0; i < 5 && !order; i++) {
     try {
       order = await one`INSERT INTO orders (ref, customer_id, email, name, phone, lang, method, street, postal, slot_date, slot_window, payment,
-          subtotal_cents, delivery_cents, discount_cents, total_cents, promo_code, notes, guest_token_hash, is_sample)
+          subtotal_cents, delivery_cents, discount_cents, total_cents, promo_code, notes, guest_token_hash, is_sample, gift, gift_to, gift_phone, gift_message)
         VALUES (${newRef()}, ${customer!.id}, ${email}, ${name}, ${phone}, ${lang}, ${method}, ${street}, ${postal}, ${str(input.day, 10)}, ${str(input.window, 20)}, ${payment},
-          ${t.subtotal_cents}, ${t.delivery_cents}, ${t.discount_cents}, ${t.total_cents}, ${promo?.code ?? null}, ${notes || null}, ${hash(guestToken)}, ${isSample})
+          ${t.subtotal_cents}, ${t.delivery_cents}, ${t.discount_cents}, ${t.total_cents}, ${promo?.code ?? null}, ${notes || null}, ${hash(guestToken)}, ${isSample}, ${gift}, ${giftTo}, ${giftPhone}, ${giftMessage})
         RETURNING *`;
     } catch (e: any) { if (!String(e?.message).includes('unique')) throw e; }
   }
@@ -109,7 +112,7 @@ export async function publicOrder(o: Row) {
   return {
     ref: o.ref, status: o.status, paymentStatus: o.payment_status, payment: o.payment, method: o.method,
     day: mailShape(o).slot_date, window: o.slot_window, street: o.street, postal: o.postal, name: o.name,
-    subtotal: o.subtotal_cents, delivery: o.delivery_cents, discount: o.discount_cents ?? 0, promo: o.promo_code ?? null, refunded: o.refunded_cents ?? 0, total: o.total_cents, notes: o.notes, payUrl: o.payment_status === 'unpaid' ? o.square_link_url : null,
+    subtotal: o.subtotal_cents, delivery: o.delivery_cents, discount: o.discount_cents ?? 0, promo: o.promo_code ?? null, gift: o.gift ? { to: o.gift_to, phone: o.gift_phone, message: o.gift_message } : null, refunded: o.refunded_cents ?? 0, total: o.total_cents, notes: o.notes, payUrl: o.payment_status === 'unpaid' ? o.square_link_url : null,
     created: o.created_at, items: await items(o.id),
   };
 }

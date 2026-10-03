@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { setSql } from '../netlify/lib/db';
 
 process.env.ADMIN_EMAILS = 'maryam@hikayacoffee.ca';
+process.env.STAFF_EMAILS = 'helper@hikayacoffee.ca';
 process.env.RESEND_API_KEY = 'test-key';
 process.env.SITE_URL = 'https://hikaya.test';
 
@@ -177,6 +178,114 @@ ask.setCreate(async () => ({ id: 'm', type: 'message', role: 'assistant', model:
 await call(help, '/api/ask', { body: { text: 'hi', lang: 'en' } });
 st = (await call(admin, '/api/admin/ask', { cookie: adm })).data;
 assert.equal(st.status.ok, true); assert.equal(st.notes.length, 1); ok('recovers by itself when the model answers again');
+
+// ---------- weekly roast and pack sheet ----------
+const { weekStart } = await import('../netlify/lib/week');
+assert.equal(weekStart('2027-01-22'), '2027-01-21'); assert.equal(weekStart('2027-01-19'), '2027-01-21'); assert.equal(weekStart('2027-01-24'), '2027-01-21'); ok('a service week runs Thursday to Wednesday');
+const sheet = async () => (await call(admin, '/api/admin/week?from=2027-01-21', { cookie: adm })).data;
+const najdiPouches = (s: any) => s.coffee.filter((r: any) => r.id === 'najdi').reduce((a: number, r: any) => a + r.pouches, 0);
+const w0 = await sheet();
+assert.equal((await order({ lines: [{ id: 'guest-box', qty: 1 }, { id: 'najdi', opt: 'dallah', qty: 2 }] })).status, 201);
+const w1 = await sheet();
+assert.equal(najdiPouches(w1) - najdiPouches(w0), 3); assert.equal(w1.packaging.giftBoxes.C12 - w0.packaging.giftBoxes.C12, 1);
+assert.equal((w1.dates.find((d: any) => d.id === 'khalas')?.pieces ?? 0) - (w0.dates.find((d: any) => d.id === 'khalas')?.pieces ?? 0), 12);
+assert.equal(w1.packaging.sleeves.regular - w0.packaging.sleeves.regular, 1); ok('week sheet counts coffee inside gift boxes, dates to portion, boxes and sleeves');
+
+// ---------- gift orders ----------
+assert.equal((await order({ gift: true })).status, 400); ok('a gift needs the name of the person receiving it');
+const mailsG = sent.length;
+const g = await order({ gift: true, gift_to: 'Aunt Huda', gift_phone: '403-555-0199', gift_message: 'Eid Mubarak!', method: 'delivery', street: '1 Main St', postal: 'T2P1J9' });
+assert.equal(g.status, 201);
+const gMails = sent.slice(mailsG);
+assert.ok(gMails.some(m => m.html?.includes('Aunt Huda') && m.html.includes('Eid Mubarak!'))); assert.ok(gMails.some(m => /GIFT for Aunt Huda/.test(m.text))); ok('gift shows in the customer email and the team alert');
+const gd = (await call(admin, `/api/admin/day?date=2027-01-22`, { cookie: adm })).data;
+assert.equal(gd.deliveries.find((o: any) => o.ref === g.data.ref).gift.phone, '403-555-0199'); ok('the driver sees who receives it and their phone');
+
+// ---------- back-in-stock alerts ----------
+await call(admin, '/api/admin/products/qishr', { cookie: adm, body: { available: false } });
+assert.equal((await call(orders, '/api/notify-me', { body: { product: 'qishr', email: 'not-an-email', lang: 'en' } })).status, 400);
+assert.equal((await call(orders, '/api/notify-me', { body: { product: 'qishr', email: 'Wait@Example.com', lang: 'ar' } })).status, 200);
+await call(orders, '/api/notify-me', { body: { product: 'qishr', email: 'wait@example.com', lang: 'ar' } });
+assert.equal((await call(admin, '/api/admin/products', { cookie: adm })).data.products.find((p: any) => p.id === 'qishr').waiting, 1); ok('one waiting entry per email, shown in Products');
+const mailsA = sent.length;
+const back = await call(admin, '/api/admin/products/qishr', { cookie: adm, body: { available: true, stock: null } });
+assert.equal(back.data.told, 1); assert.equal(sent.length, mailsA + 1); assert.deepEqual(sent.at(-1).to, ['wait@example.com']); assert.match(sent.at(-1).html, /\/ar\/shop\/qishr\//); ok('back on sale emails the waiting list once, in their language');
+assert.equal((await call(admin, '/api/admin/products/qishr', { cookie: adm, body: { available: true } })).data.told, 0); ok('nobody is emailed twice');
+await call(admin, '/api/admin/seasons', { cookie: adm, body: { ramadan: false } });
+await call(orders, '/api/notify-me', { body: { product: 'iftar-pair', email: 'ramadan@example.com', lang: 'en' } });
+assert.equal((await call(admin, '/api/admin/seasons', { cookie: adm, body: { ramadan: true } })).data.told, 1); ok('switching Ramadan on tells people waiting for Ramadan boxes');
+
+// ---------- mailing list (CASL) ----------
+const noTick = await call(orders, '/api/list', { body: { email: 'news@example.com', lang: 'en' } });
+assert.equal(noTick.status, 400); assert.equal(noTick.data.error, 'consent'); ok('no sign-up without ticking the consent box');
+assert.equal((await call(orders, '/api/list', { body: { email: 'news@example.com', lang: 'en', consent: true } })).status, 200);
+const confirmUrl = new URL(sent.at(-1).html.match(/https:\/\/hikaya\.test\/api\/list\/confirm\?t=[\w-]+/)[0]);
+assert.equal((await call(admin, '/api/admin/list', { cookie: adm })).data.waiting, 1); ok('sign-up waits for the email confirmation');
+const conf: Response = await orders(new Request(confirmUrl.href));
+assert.equal(conf.status, 303); assert.match(conf.headers.get('location')!, /\/en\/thanks\/\?list=1/);
+assert.equal((await orders(new Request(confirmUrl.href))).headers.get('location')!.includes('listexpired'), true);
+const csvList = String((await call(admin, '/api/admin/list.csv', { cookie: adm })).data);
+assert.ok(csvList.includes('news@example.com') && csvList.includes('unsubscribe at any time')); ok('confirmed; the CSV keeps when and what they agreed to');
+const unsubT = (await pg.query(`SELECT unsub_token FROM subscribers WHERE email = 'news@example.com'`)).rows[0] as any;
+await orders(new Request(`${H}/api/list/unsubscribe?t=${unsubT.unsub_token}`));
+const ls = (await call(admin, '/api/admin/list', { cookie: adm })).data;
+assert.equal(ls.confirmed, 0); assert.equal(ls.left, 1); ok('one click unsubscribes');
+await order({ newsletter: true, email: 'buyer-news@example.com' });
+assert.ok(sent.some(m => m.to?.includes('buyer-news@example.com') && /confirm/i.test(m.subject))); ok('the checkout tick sends the same confirmation email');
+
+// ---------- visit numbers ----------
+assert.equal((await call(orders, '/api/hit', { body: { path: '/en/shop/?x=1', ref: 'https://www.instagram.com/hikaya' } })).status, 204);
+await call(orders, '/api/hit', { body: { path: '/admin/', ref: '' } });
+const nums = (await call(admin, '/api/admin/numbers', { cookie: adm })).data;
+assert.equal(nums.pages.find((p: any) => p.path === '/en/shop/').views, 1); assert.ok(!nums.pages.some((p: any) => p.path === '/admin/'));
+assert.equal(nums.refs[0].ref, 'instagram.com'); ok('page counts without cookies; admin pages not counted; where visitors came from');
+
+// ---------- connections ----------
+const con = (await call(admin, '/api/admin/connections', { cookie: adm })).data;
+assert.equal(con.email.key, true); assert.equal(con.square.enabled, false); assert.match(con.square.webhookUrl, /\/api\/square\/webhook$/);
+const te = await call(admin, '/api/admin/connections/test-email', { cookie: adm, body: {} });
+assert.deepEqual(sent.at(-1).to, ['maryam@hikayacoffee.ca']); assert.match(sent.at(-1).subject, /test email/); assert.equal(te.data.to, 'maryam@hikayacoffee.ca'); ok('Settings shows the connections and sends a test email');
+
+// ---------- team roles ----------
+const helper = await login('helper@hikayacoffee.ca');
+const hOrders = await call(admin, '/api/admin/orders', { cookie: helper });
+assert.equal(hOrders.status, 200);
+assert.equal((await call(admin, `/api/admin/orders/${g.data.ref}`, { cookie: helper, body: { status: 'out-for-delivery', notify: false } })).status, 200);
+assert.equal((await call(admin, '/api/admin/week', { cookie: helper })).status, 200); ok('a helper can run orders, deliveries and the week sheet');
+for (const [path, body] of [[`/api/admin/orders/${g.data.ref}/refund`, { amount_cents: 100, method: 'cash' }], ['/api/admin/products/najdi', { price_cents: 100 }], ['/api/admin/seasons', { eid: false }], ['/api/admin/promos', { code: 'FREE', kind: 'percent', value: 100 }], ['/api/admin/settings', { open: false }]] as const)
+  assert.equal((await call(admin, path, { cookie: helper, body })).status, 403, path);
+for (const path of ['/api/admin/export.csv', '/api/admin/list.csv']) assert.equal((await call(admin, path, { cookie: helper })).status, 403, path);
+assert.equal((await call(admin, `/api/admin/orders/${g.data.ref}`, { cookie: helper, body: { sample: true } })).status, 400); ok('a helper cannot refund, change prices, seasons, promo codes, settings or export');
+assert.equal((await call(admin, '/api/admin/orders', { cookie: await login('someone@example.com') })).status, 403); ok('customers stay out of the desk');
+
+// ---------- words: recipes and product text ----------
+const noTok = (await call(admin, '/api/admin/content/recipes', { cookie: adm })).data;
+assert.equal(noTok.canSave, false); assert.ok(noTok.data.palm.steps.length); ok('Words shows the built text when GitHub is not connected');
+assert.equal((await call(admin, '/api/admin/content/toString', { cookie: adm })).status, 404);
+process.env.GITHUB_CONTENT_TOKEN = 'test-token';
+let ghFile = fs.readFileSync('src/content/recipes.json', 'utf8'); let ghSha = 'sha1'; const puts: any[] = [];
+const prevFetch = globalThis.fetch;
+globalThis.fetch = (async (url: string, init: any = {}) => {
+  if (String(url).startsWith('https://api.github.com/')) {
+    assert.equal(init.headers.authorization, 'Bearer test-token');
+    if (init.method === 'PUT') { const b = JSON.parse(init.body); if (b.sha !== ghSha) return new Response('{}', { status: 409 }); puts.push(b); ghFile = Buffer.from(b.content, 'base64').toString('utf8'); ghSha = 'sha2'; return new Response(JSON.stringify({ content: { sha: ghSha } }), { status: 200 }); }
+    return new Response(JSON.stringify({ content: Buffer.from(ghFile).toString('base64'), sha: ghSha }), { status: 200 });
+  }
+  return prevFetch(url, init);
+}) as any;
+const rc = (await call(admin, '/api/admin/content/recipes', { cookie: adm })).data;
+assert.equal(rc.canSave, true); assert.equal(rc.sha, 'sha1');
+const edited = JSON.parse(JSON.stringify(rc.data));
+edited.palm.serve.en = 'Pour a third of the cup.'; edited.palm.steps[1].secs = 540; edited.palm.extra = 'sneaky'; edited.sneaky = { a: 1 };
+assert.equal((await call(admin, '/api/admin/content/recipes', { cookie: helper, body: { data: edited, sha: 'sha1' } })).status, 403);
+const sv = await call(admin, '/api/admin/content/recipes', { cookie: adm, body: { data: edited, sha: 'sha1' } });
+assert.equal(sv.data.saved, true); const savedJson = JSON.parse(ghFile);
+assert.equal(savedJson.palm.serve.en, 'Pour a third of the cup.'); assert.equal(savedJson.palm.steps[1].secs, 540); assert.equal(savedJson.palm.extra, undefined); assert.equal(savedJson.sneaky, undefined);
+assert.match(puts[0].message, /by maryam@hikayacoffee.ca/); assert.equal(puts[0].branch, 'claude/frontend-design-skills-setup-2e6lwc'); ok('saving writes only the existing words to GitHub, with who changed it');
+assert.equal((await call(admin, '/api/admin/content/recipes', { cookie: adm, body: { data: edited, sha: 'sha1' } })).status, 409); ok('two people saving at once: the second is asked to reload');
+edited.palm.serve.ar = '  '; assert.equal((await call(admin, '/api/admin/content/recipes', { cookie: adm, body: { data: edited, sha: 'sha2' } })).status, 400);
+edited.palm.serve.ar = 'x'; edited.palm.steps.pop(); assert.equal((await call(admin, '/api/admin/content/recipes', { cookie: adm, body: { data: edited, sha: 'sha2' } })).status, 400); ok('empty text and missing steps are refused');
+globalThis.fetch = prevFetch; delete process.env.GITHUB_CONTENT_TOKEN;
 
 // ---------- rate limits ----------
 const rl = await import('../netlify/lib/rate');

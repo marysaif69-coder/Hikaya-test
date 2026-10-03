@@ -18,6 +18,12 @@ Read `docs/backend.md` for how everything works, `docs/launch-plan.md` for what 
   workflow (about $1). 37/40 passed on the first run; keep it at least there.
 - New database changes go in a new numbered migration folder; never edit one that has deployed.
 
+## Where text lives
+- Product names, descriptions, taste lines and the brew recipes are in `src/content/products.json`
+  and `src/content/recipes.json`; the owners edit them in Admin → Words, which commits to this
+  branch. Those files override the text in `src/data/products.ts`, so edit the JSON, and pull
+  before editing (the owners may have saved changes).
+
 ## Rules
 - No secrets in code, commits or chat. Keys live in Netlify environment variables (and the
   `ANTHROPIC_API_KEY` repository secret for the eval).

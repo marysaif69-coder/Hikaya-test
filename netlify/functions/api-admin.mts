@@ -1,7 +1,9 @@
 // /api/admin/* — the team's order desk. Every route requires an admin session (ADMIN_EMAILS).
 import type { Config } from '@netlify/functions';
-import { json, fail, body, str, HttpError, siteUrl } from '../lib/http';
-import { requireAdmin } from '../lib/auth';
+import { json, fail, body, str, HttpError, siteUrl, env } from '../lib/http';
+import { cardEnabled, squareCheck } from '../lib/square';
+import { readContent, saveContent, type FileId } from '../lib/content';
+import { requireTeam } from '../lib/auth';
 import { sql, one } from '../lib/db';
 import { getSettings, WINDOWS, calgaryNow } from '../lib/slots';
 import { items, setStatus, setPayment, event, STATUSES } from '../lib/orders';
@@ -12,6 +14,10 @@ import { refundOrder, refundsFor } from '../lib/refunds';
 import { createSamples, removeSamples } from '../lib/samples';
 import { askStatus } from '../lib/ask-fallback';
 import { askEnabled } from '../lib/ask';
+import { weekSheet, weekStart } from '../lib/week';
+import { sendBackInStock, waitingByProduct } from '../lib/alerts';
+import { listStats } from '../lib/list';
+import { numbers } from '../lib/visits';
 import { PRODUCTS, FAMILIES } from '../../src/data/products';
 import { send, ticketReply } from '../lib/email';
 
@@ -21,13 +27,21 @@ const summary = (o: any) => ({
   day: day(o.slot_date), window: o.slot_window, payment: o.payment, paymentStatus: o.payment_status, status: o.status,
   total: o.total_cents, lang: o.lang, notes: o.notes, created: o.created_at, items: o.items ?? null,
   discount: o.discount_cents ?? 0, promo: o.promo_code ?? null, refunded: o.refunded_cents ?? 0, sample: Boolean(o.is_sample),
+  gift: o.gift ? { to: o.gift_to, phone: o.gift_phone, message: o.gift_message } : null,
 });
 
 export default async (req: Request) => {
   try {
-    const admin = await requireAdmin(req);
+    const admin = await requireTeam(req);
     const url = new URL(req.url);
     const parts = url.pathname.replace(/^\/api\/admin\/?/, '').split('/').filter(Boolean);
+    // Helpers can read everything and run orders; money, catalog, settings and exports are owners only.
+    if (admin.role !== 'admin') {
+      const write = req.method !== 'GET';
+      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos'
+        || (write && ['products', 'settings', 'ask', 'connections', 'content'].includes(parts[0])) || (parts[0] === 'orders' && parts[2] === 'refund');
+      if (ownersOnly) throw new HttpError(403, 'owners-only', 'Only the owners can do this.');
+    }
     const q = (k: string, max = 40) => str(url.searchParams.get(k), max);
 
     // GET /api/admin/orders — filterable list
@@ -69,7 +83,7 @@ export default async (req: Request) => {
     if (parts[0] === 'orders' && parts[1] && req.method === 'POST') {
       const b = await body(req);
       let o: any = null;
-      if (typeof b.sample === 'boolean') {
+      if (typeof b.sample === 'boolean' && admin.role === 'admin') {
         o = await one`UPDATE orders SET is_sample = ${b.sample} WHERE ref = ${parts[1]} RETURNING *`;
         if (!o) throw new HttpError(404, 'not-found');
         await event(o.id, 'note', b.sample ? 'Marked as a sample order' : 'Marked as a real order', admin.email);
@@ -121,11 +135,37 @@ export default async (req: Request) => {
       return json(await getSettings());
     }
 
+    // GET /api/admin/week?from=&sample= — the weekly roast and pack sheet
+    if (parts[0] === 'week' && req.method === 'GET') {
+      const sample = q('sample') as '' | 'hide' | 'only';
+      return json(await weekSheet(/^\d{4}-\d{2}-\d{2}$/.test(q('from', 10)) ? q('from', 10) : weekStart(), ['', 'hide', 'only'].includes(sample) ? sample : 'hide'));
+    }
+
+    // ---------- connections: email, card payments, assistant ----------
+    if (parts[0] === 'connections' && req.method === 'GET') {
+      const last = await one`SELECT to_email, subject, status, error, created_at FROM email_log ORDER BY id DESC LIMIT 1`;
+      const failed = await one`SELECT COUNT(*)::int AS n FROM email_log WHERE status = 'failed' AND created_at > NOW() - INTERVAL '7 days'`;
+      return json({
+        email: { key: Boolean(env('RESEND_API_KEY')), from: env('EMAIL_FROM') || 'Hikaya <orders@hikayacoffee.ca>', replyTo: env('EMAIL_REPLY_TO') || null, last, failedThisWeek: failed?.n ?? 0, team: env('ADMIN_EMAILS') },
+        square: { enabled: cardEnabled(), env: env('SQUARE_ENV') || 'sandbox', webhook: Boolean(env('SQUARE_WEBHOOK_SIGNATURE_KEY')), webhookUrl: `${siteUrl(req)}/api/square/webhook` },
+        ask: { enabled: askEnabled() },
+        etransfer: env('ETRANSFER_EMAIL') || null,
+      });
+    }
+    if (parts[0] === 'connections' && parts[1] === 'test-email' && req.method === 'POST') {
+      const status = await send({ to: admin.email, subject: 'Hikaya test email · رسالة تجريبية', text: 'If you can read this, order emails are working.\n\nإن وصلتك هذه الرسالة فرسائل الطلبات تعمل.', html: '<p>If you can read this, order emails are working.</p><p dir="rtl">إن وصلتك هذه الرسالة فرسائل الطلبات تعمل.</p>', kind: 'test' });
+      const row = await one`SELECT error FROM email_log ORDER BY id DESC LIMIT 1`;
+      return json({ status, to: admin.email, error: row?.error ?? null });
+    }
+    if (parts[0] === 'connections' && parts[1] === 'test-square' && req.method === 'POST') {
+      return json(await squareCheck());
+    }
+
     // ---------- products: prices, shown on the site, sold out, stock ----------
     if (parts[0] === 'products' && !parts[1] && req.method === 'GET') {
-      const live = await liveCatalog();
+      const [live, waiting] = await Promise.all([liveCatalog(), waitingByProduct()]);
       return json({ seasons: await getSeasons(), products: PRODUCTS.map(p => ({
-        id: p.id, name: p.name, kind: p.kind, family: FAMILIES[p.fam].name.en, defaultPrice: p.price * 100, ...live[p.id],
+        id: p.id, name: p.name, kind: p.kind, family: FAMILIES[p.fam].name.en, defaultPrice: p.price * 100, ...live[p.id], waiting: waiting[p.id] ?? 0,
       })) });
     }
     if (parts[0] === 'products' && parts[1] && req.method === 'POST') {
@@ -137,9 +177,31 @@ export default async (req: Request) => {
         ...(typeof b.available === 'boolean' ? { available: b.available } : {}),
         ...(b.stock !== undefined ? { stock: b.stock === null || b.stock === '' ? null : Math.round(Number(b.stock)) } : {}),
       }, admin.email);
-      return json({ ok: true });
+      return json({ ok: true, told: await sendBackInStock(req) });
     }
-    if (parts[0] === 'seasons' && req.method === 'POST') return json(await saveSeasons(await body(req)));
+    if (parts[0] === 'seasons' && req.method === 'POST') {
+      const v = await saveSeasons(await body(req));
+      return json({ ...v, told: await sendBackInStock(req) });
+    }
+
+    // ---------- words: recipes and product text (saved to GitHub, the site rebuilds) ----------
+    if (parts[0] === 'content' && parts[1] && req.method === 'GET') return json(await readContent(parts[1] as FileId));
+    if (parts[0] === 'content' && parts[1] && req.method === 'POST') {
+      const b = await body(req, 200_000);
+      return json(await saveContent(parts[1] as FileId, b.data, str(b.sha, 64), admin.email));
+    }
+
+    // ---------- mailing list ----------
+    if (parts[0] === 'list' && req.method === 'GET') return json(await listStats());
+    if (parts[0] === 'list.csv' && req.method === 'GET') {
+      const rows = await sql`SELECT email, lang, source, consent_at, confirmed_at, consent_text FROM subscribers WHERE confirmed_at IS NOT NULL AND unsubscribed_at IS NULL ORDER BY confirmed_at`;
+      const cell = (v: unknown) => { const t = v instanceof Date ? v.toISOString() : String(v ?? ''); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+      const out = ['email,language,source,consented_at,confirmed_at,consent_wording', ...rows.map(r => [r.email, r.lang, r.source, r.consent_at, r.confirmed_at, r.consent_text].map(cell).join(','))].join('\n');
+      return new Response(out, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="hikaya-mailing-list.csv"', 'cache-control': 'no-store' } });
+    }
+
+    // ---------- numbers: visits and sales ----------
+    if (parts[0] === 'numbers' && req.method === 'GET') return json(await numbers(30));
 
     // ---------- promo codes ----------
     if (parts[0] === 'promos' && !parts[1] && req.method === 'GET') {
