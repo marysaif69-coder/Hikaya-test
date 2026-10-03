@@ -1068,9 +1068,14 @@ import '../../styles/global.css';
   // ---------- drivers ----------
   const asgDay = $('asgDay') as HTMLInputElement;
   let OWNERS: string[] = [];
+  let driversSeq = 0;
   async function loadDrivers() {
+    // A slower, older load must not overwrite a day picked since (or its table).
+    const seq = ++driversSeq;
     OWNERS = (await api('/api/admin/connections').catch(() => ({ email: { team: '' } }))).email?.team?.split(',').map((e: string) => e.trim().toLowerCase()).filter(Boolean) ?? OWNERS;
-    const [t, d] = await Promise.all([api('/api/admin/team'), api(`/api/admin/day${asgDay.value ? `?date=${asgDay.value}` : ''}`)]);
+    const asked = asgDay.value;
+    const [t, d] = await Promise.all([api('/api/admin/team'), api(`/api/admin/day${asked ? `?date=${asked}` : ''}`)]);
+    if (seq !== driversSeq || asgDay.value !== asked) return;
     asgDay.value = d.date;
     const opts = (cur: string | null) => `<option value="">Not assigned</option>${t.drivers.map((x: any) => `<option value="${esc(x.email)}" ${x.email === cur ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}`;
     ($('asgAll') as HTMLSelectElement).innerHTML = t.drivers.map((x: any) => `<option value="${esc(x.email)}">${esc(x.name)}</option>`).join('');
@@ -1576,8 +1581,11 @@ import '../../styles/global.css';
   // ---------- day sheet ----------
   const dayPick = $('dayPick') as HTMLInputElement;
   dayPick.addEventListener('change', loadDay);
+  let daySeq = 0;
   async function loadDay() {
-    const d = await api(`/api/admin/day${dayPick.value ? `?date=${dayPick.value}` : ''}`);
+    const seq = ++daySeq, asked = dayPick.value;
+    const d = await api(`/api/admin/day${asked ? `?date=${asked}` : ''}`);
+    if (seq !== daySeq || dayPick.value !== asked) return;
     dayPick.value = d.date;
     $('pack').innerHTML = d.pack.map((p: any) => `<li><span>${esc(p.name_en)}${p.option ? ` <small>(${esc(p.option)})</small>` : ''}</span><b>${p.qty}</b></li>`).join('') || '<li class="muted">Nothing to pack.</li>';
     $('pickups').innerHTML = d.pickups.map((w: any) => `<h3>${esc(w.window)} · ${w.orders.length}</h3>${w.orders.map((o: any) => `<div class="mini" data-ref="${esc(o.ref)}"><span><b>${esc(o.ref)}</b> · ${esc(o.name)} · ${esc(o.phone)}</span><span>${o.items.map((i: any) => `${i.qty}× ${esc(i.name_en)}`).join(', ')} · ${money(o.total)} · ${payPill(o)}</span></div>`).join('')}`).join('');

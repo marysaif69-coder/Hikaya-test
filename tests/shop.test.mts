@@ -863,6 +863,9 @@ assert.equal(td.todo[0].level, 'now'); ok('Today lists what needs doing first: n
 const tdH = (await call(admin, '/api/admin/today', { cookie: helper })).data;
 assert.equal(tdH.money, null); assert.ok(Array.isArray(tdH.todo)); ok('helpers see Today without the money');
 await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [tdB.data.ref], driver: 'dan@example.com' } });
+await pg.query(`UPDATE orders SET status = 'completed' WHERE ref = $1`, [tdA.data.ref]);
+const tdOwed = (await todayFn('admin', '2027-03-26')).todo.map(t => t.text).join('\n');
+assert.match(tdOwed, new RegExp(`Handed over but e-Transfer not in: .*${tdA.data.ref}`)); ok('an order handed over without its e-Transfer stays on Today as money owed');
 assert.ok(!(await todayFn('admin', '2027-03-26')).todo.some(t => /no driver/.test(t.text))); ok('assigning a driver clears that line');
 
 // ---------- quick search ----------

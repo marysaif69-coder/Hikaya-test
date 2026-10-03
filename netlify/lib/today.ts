@@ -30,8 +30,13 @@ export async function today(role: string, date = calgaryNow().date) {
   const unassigned = await sql`SELECT slot_date::text AS day, COUNT(*)::int AS n FROM orders WHERE method = 'delivery' AND driver_email IS NULL AND status NOT IN ('completed', 'cancelled') AND NOT is_sample AND slot_date IN (${date}, ${tomorrow}) GROUP BY 1`;
   for (const u of unassigned) todo.push({ level: u.day === date ? 'now' : 'soon', text: `${plural(u.n, 'delivery', 'deliveries')} ${u.day === date ? 'today' : 'tomorrow'} with no driver`, tab: 'day' });
 
-  const owed = await sql`SELECT ref, slot_date::text AS day, total_cents FROM orders WHERE payment = 'e-transfer' AND payment_status = 'unpaid' AND total_cents > 0 AND NOT is_sample AND status <> 'cancelled' AND status <> 'completed' AND slot_date BETWEEN ${addDays(date, -14)} AND ${tomorrow} ORDER BY slot_date`;
-  if (owed.length) todo.push({ level: 'now', text: `e-Transfer not in yet for ${owed.map(o => o.ref).slice(0, 6).join(', ')}${owed.length > 6 ? ` and ${owed.length - 6} more` : ''} (due by tomorrow)`, tab: 'orders' });
+  // e-Transfers not in: orders due by tomorrow, and orders already handed over (money owed).
+  const owed = await sql`SELECT ref, status, slot_date::text AS day, total_cents FROM orders WHERE payment = 'e-transfer' AND payment_status = 'unpaid' AND total_cents > 0 AND NOT is_sample AND status <> 'cancelled'
+    AND (slot_date BETWEEN ${addDays(date, -14)} AND ${tomorrow} OR (status = 'completed' AND slot_date >= ${addDays(date, -60)})) ORDER BY slot_date`;
+  const handed = owed.filter(o => o.status === 'completed'), due = owed.filter(o => o.status !== 'completed');
+  const refs = (l: any[]) => `${l.map(o => o.ref).slice(0, 6).join(', ')}${l.length > 6 ? ` and ${l.length - 6} more` : ''}`;
+  if (handed.length) todo.push({ level: 'now', text: `Handed over but e-Transfer not in: ${refs(handed)} (${dollars(handed.reduce((n, o) => n + o.total_cents, 0))} owed)`, tab: 'orders' });
+  if (due.length) todo.push({ level: 'now', text: `e-Transfer not in yet for ${refs(due)} (due by tomorrow)`, tab: 'orders' });
 
   const gc = (await one`SELECT COUNT(*)::int AS n FROM gift_cards WHERE paid_at IS NULL AND cancelled_at IS NULL AND payment = 'e-transfer' AND created_at > NOW() - INTERVAL '30 days'`)!.n;
   if (gc) todo.push({ level: 'soon', text: `${plural(gc, 'gift card')} waiting for an e-Transfer`, tab: 'promos' });

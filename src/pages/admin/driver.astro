@@ -272,9 +272,13 @@ import '../../styles/global.css';
 
   // ---------- stops ----------
   const addrOf = (o: any) => `${o.street}, ${o.postal}, Calgary, AB`;
+  // Loads can overlap (a day changed while one is on its way): only the newest one draws.
+  let loadSeq = 0;
   async function load() {
+    const seq = ++loadSeq, asked = dayIn.value;
     const mine = me.role === 'driver' || (document.querySelector<HTMLInputElement>('input[name=who]:checked')?.value ?? '1') === '1';
-    const d = await api(`/api/driver/stops?mine=${mine ? 1 : 0}${dayIn.value ? `&date=${dayIn.value}` : ''}`);
+    const d = await api(`/api/driver/stops?mine=${mine ? 1 : 0}${asked ? `&date=${asked}` : ''}`);
+    if (seq !== loadSeq || dayIn.value !== asked) return;
     dayIn.value = d.date; list = d.stops;
     const left = list.filter(o => o.status !== 'completed');
     const notOut = left.filter(o => o.status !== 'out-for-delivery' && o.driver === me.email);
@@ -306,7 +310,7 @@ import '../../styles/global.css';
         ${o.photos.length ? `<div class="thumbs">${o.photos.map((id: number) => `<img src="/api/driver/photo/${id}" alt="Delivery photo" loading="lazy" />`).join('')}</div>` : ''}
         ${done ? (o.collected ? `<small>Collected ${money(o.collected.cents)} by ${esc(o.collected.method)}</small>` : '') : `
           <button type="button" class="b photo" data-act="photo">${o.photos.length ? 'Add another photo' : 'Photo at the door'}</button>
-          ${o.collect ? `<div class="collect">Collect ${money(o.collect)}<div><label><input type="radio" name="c-${esc(o.ref)}" value="cash" /> Cash</label><label><input type="radio" name="c-${esc(o.ref)}" value="card" /> Card</label></div></div>` : ''}
+          ${o.collect ? `<div class="collect">Collect ${money(o.collect)}<div><label><input type="radio" name="c-${esc(o.ref)}" value="cash" ${collectChoice[o.ref] === 'cash' ? 'checked' : ''} /> Cash</label><label><input type="radio" name="c-${esc(o.ref)}" value="card" ${collectChoice[o.ref] === 'card' ? 'checked' : ''} /> Card</label></div></div>` : ''}
           <button type="button" class="b done" data-act="done" ${o.photos.length ? '' : 'disabled'}>${o.photos.length ? 'Delivered' : 'Delivered (photo first)'}</button>
           <button type="button" class="b miss" data-act="miss">Couldn't deliver</button>`}
       </li>`;
@@ -331,6 +335,9 @@ import '../../styles/global.css';
     load();
   });
 
+  // Cash or card picked at the door survives the list redrawing (after a photo, a refresh).
+  const collectChoice: Record<string, string> = {};
+  $('stops').addEventListener('change', e => { const i = e.target as HTMLInputElement; if (i.name?.startsWith('c-') && i.checked) collectChoice[i.name.slice(2)] = i.value; });
   $('stops').addEventListener('click', async e => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-act]');
     if (!b) return;
@@ -495,7 +502,9 @@ import '../../styles/global.css';
   // ---------- packing ----------
   let packFilter: 'all' | 'todo' = 'todo';
   async function loadPack() {
-    const d = await api(`/api/driver/pack${dayIn.value ? `?date=${dayIn.value}` : ''}`);
+    const seq = ++loadSeq, asked = dayIn.value;
+    const d = await api(`/api/driver/pack${asked ? `?date=${asked}` : ''}`);
+    if (seq !== loadSeq || dayIn.value !== asked) return;
     dayIn.value = d.date;
     const todo = d.orders.filter((o: any) => !o.packed);
     $('packSummary').textContent = d.orders.length ? `${d.orders.length} order${d.orders.length === 1 ? '' : 's'}, ${todo.length} still to pack.` : 'No orders this day.';
