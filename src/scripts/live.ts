@@ -30,6 +30,15 @@ function apply(live: Live) {
     fillAddress(document.body);
     document.querySelectorAll<HTMLElement>('[data-biz-pending]').forEach(el => { el.hidden = true; });
     document.querySelectorAll<HTMLElement>('[data-biz-hours]').forEach(el => { if (live.business!.hours) { el.textContent = live.business!.hours; el.hidden = false; } });
+    // Search engines: the shop's address and phone in the Store details.
+    document.querySelectorAll<HTMLScriptElement>('script[type="application/ld+json"]').forEach(el => {
+      try {
+        const d = JSON.parse(el.textContent || '');
+        if (d['@type'] !== 'Store') return;
+        d.address = live.business!.address; if (live.business!.phone) d.telephone = live.business!.phone;
+        el.textContent = JSON.stringify(d);
+      } catch { /* not ours */ }
+    });
     if (!watching) { watching = true; new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => fillAddress(n)))).observe(document.body, { childList: true, subtree: true }); }
   }
   const P = live.products;
