@@ -7,6 +7,7 @@
 // consent and an email to confirm); only the sign-up, confirm and unsubscribe links get through.
 // With PREVIEW_PASSWORD set, a "Team" box lets testers in; without it nobody gets in.
 import { CONSENT } from '../lib/consent.ts';
+import { BREWING_HTML } from './brewing-page.ts';
 
 const COOKIE = 'hk_preview';
 const DAYS = 30;
@@ -38,15 +39,15 @@ const safeNext = (v: unknown) => (typeof v === 'string' && /^\/(?!\/)[^\s]*$/.te
 const NOINDEX = 'noindex, nofollow, noarchive';
 
 // The owners' switch in Settings ("Who can see the website"), read from the site and kept for
-// 20 seconds. If it cannot be read, the site stays hidden.
-type State = { live: 'hidden' | 'open'; preview: 'code' | 'open' };
+// 20 seconds. If it cannot be read, the real website shows Something is brewing.
+type State = { live: 'brewing' | 'hidden' | 'open'; preview: 'code' | 'open' };
 let cached: { at: number; state: State } | null = null;
 async function siteState(url: URL): Promise<State> {
   if (cached && Date.now() - cached.at < 20_000) return cached.state;
-  let state: State = { live: 'hidden', preview: 'code' };
+  let state: State = { live: 'brewing', preview: 'code' };
   try {
     const r = await fetch(new URL('/api/site-state', url.origin), { headers: { 'x-from-gate': '1' } });
-    if (r.ok) { const d = await r.json(); state = { live: d.live === 'open' ? 'open' : 'hidden', preview: d.preview === 'open' ? 'open' : 'code' }; }
+    if (r.ok) { const d = await r.json(); state = { live: d.live === 'open' ? 'open' : d.live === 'hidden' ? 'hidden' : 'brewing', preview: d.preview === 'open' ? 'open' : 'code' }; }
   } catch { /* stay hidden */ }
   cached = { at: Date.now(), state };
   return state;
@@ -125,6 +126,12 @@ export default async (req: Request, context: { next: () => Promise<Response> }) 
     return new Response(JSON.stringify({ error: 'preview', message: 'This site is in private preview.' }), { status: 401, headers: { 'content-type': 'application/json', 'x-robots-tag': NOINDEX, 'cache-control': 'no-store' } });
   }
   const note = url.searchParams.has('list') ? 'list' : url.searchParams.has('listexpired') ? 'expired' : url.searchParams.has('unsub') ? 'unsub' : '';
+  // Team way in on the real website: /team shows the code box.
+  if (url.pathname === '/team') return gate('/', 'ask', '', true);
+  // Phase 0 on the real website: "Something is brewing" on every page.
+  if (live && state.live === 'brewing' && !note) {
+    return new Response(BREWING_HTML, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': NOINDEX } });
+  }
   return gate(note ? '/' : url.pathname + url.search, 'ask', note);
 };
 
@@ -134,8 +141,8 @@ const NOTES: Record<string, [string, string]> = {
   unsub: ['ألغينا اشتراكك، ولن نراسلك بعد الآن.', 'You are off the list. We will not email you again.'],
 };
 
-function gate(next: string, state: 'ask' | 'wrong' | 'unset', note = '') {
-  const wrong = state !== 'ask';
+function gate(next: string, state: 'ask' | 'wrong' | 'unset', note = '', team = false) {
+  const wrong = state !== 'ask' || team;
   const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
   const html = `<!doctype html>
 <html lang="ar" dir="rtl">
@@ -241,7 +248,7 @@ function gate(next: string, state: 'ask' | 'wrong' | 'unset', note = '') {
 </script>
 </body>
 </html>`;
-  return new Response(html, { status: wrong ? 401 : 200, headers: { 'content-type': 'text/html; charset=utf-8', 'x-robots-tag': NOINDEX, 'cache-control': 'no-store' } });
+  return new Response(html, { status: state !== 'ask' ? 401 : 200, headers: { 'content-type': 'text/html; charset=utf-8', 'x-robots-tag': NOINDEX, 'cache-control': 'no-store' } });
 }
 
 // Everything except what the passcode page itself needs, and Square's payment webhook.

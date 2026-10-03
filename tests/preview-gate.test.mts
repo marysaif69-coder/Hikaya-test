@@ -58,6 +58,15 @@ assert.ok(!(await (await run('/?list=1')).text()).includes('<details open>')); a
 // ---------- the owners' switch: real website and preview ----------
 const LIVE = 'https://hikayacoffee.ca';
 const runAt = (base: string, path: string) => gate(new Request(base + path), { next: async () => page() });
+setState({ live: 'brewing', preview: 'code' });
+const brew = await (await runAt(LIVE, '/')).text();
+assert.ok(brew.includes('Something is brewing') && brew.includes('hello@hikayacoffee.ca') && !brew.includes('id="wl"') && !brew.includes('fonts.googleapis'));
+assert.ok((await (await runAt(LIVE, '/en/shop/')).text()).includes('Something is brewing')); ok('phase 0: the real website shows Something is brewing on every page, no sign-up, own fonts');
+const teamDoor = await runAt(LIVE, '/team'); const teamHtml = await teamDoor.text();
+assert.equal(teamDoor.status, 200); assert.ok(teamHtml.includes('<details open>') && teamHtml.includes('Preview code')); ok('the team gets in at hikayacoffee.ca/team');
+assert.ok((await (await run('/en/')).text()).includes('id="wl"')); ok('the preview keeps the Coming soon page');
+stateDown = true; gateMod.resetGateCache();
+assert.ok((await (await runAt(LIVE, '/')).text()).includes('Something is brewing')); stateDown = false; ok('if the switch cannot be read, the real website shows Something is brewing');
 setState({ live: 'hidden', preview: 'code' });
 assert.ok((await (await runAt(LIVE, '/en/')).text()).includes('Coming soon')); assert.ok((await (await runAt('https://www.hikayacoffee.ca', '/en/')).text()).includes('Coming soon')); ok('the real website is hidden by default');
 setState({ live: 'open', preview: 'code' });
@@ -70,7 +79,7 @@ assert.equal(await prev.text(), '<h1>shop</h1>'); assert.match(prev.headers.get(
 assert.equal(await (await run('/robots.txt')).text(), 'User-agent: *\nDisallow: /\n');
 assert.ok((await (await runAt(LIVE, '/en/')).text()).includes('Coming soon')); ok('an open preview needs no code, is never indexed, and leaves the real website hidden');
 stateDown = true; setState({ live: 'open', preview: 'open' });
-assert.ok((await (await runAt(LIVE, '/en/')).text()).includes('Coming soon')); assert.ok((await (await run('/en/')).text()).includes('Coming soon')); ok('if the switch cannot be read, everything stays hidden');
+assert.ok((await (await runAt(LIVE, '/en/')).text()).includes('Something is brewing')); assert.ok((await (await run('/en/')).text()).includes('Coming soon')); ok('if the switch cannot be read, everything stays hidden');
 stateDown = false; setState({ live: 'hidden', preview: 'code' });
 process.env.SITE_PUBLIC = 'true';
 assert.equal(await (await runAt(LIVE, '/en/')).text(), '<h1>shop</h1>'); ok('SITE_PUBLIC=true in Netlify still opens the real website');

@@ -6,7 +6,7 @@ import { loadOverrides } from '../lib/business';
 
 export default async () => {
   await loadOverrides().catch(() => {});
-  const v = await getVisibility().catch(() => ({ live: 'hidden', preview: 'code' }));
+  const v = await getVisibility().catch(() => ({ live: 'brewing', preview: 'code' }));
   return new Response(JSON.stringify({ live: v.live, preview: v.preview }), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 };
 export const config: Config = { path: '/api/site-state' };

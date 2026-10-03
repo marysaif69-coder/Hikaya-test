@@ -890,7 +890,7 @@ assert.ok(tdList.confirmed >= 1 && tdList.fromSoon === 1 && tdList.thisWeek >= 1
 
 // ---------- who can see the website ----------
 const siteStateFn = (await import('../netlify/functions/site-state.mts')).default;
-assert.deepEqual(await (await siteStateFn()).json(), { live: 'hidden', preview: 'code' }); ok('the real website starts hidden, the preview starts with the team code');
+assert.deepEqual(await (await siteStateFn()).json(), { live: 'brewing', preview: 'code' }); ok('the real website starts on Something is brewing, the preview with the team code');
 assert.equal((await call(admin, '/api/admin/visibility', { cookie: helper, body: { preview: 'open' } })).status, 403);
 assert.equal((await call(admin, '/api/admin/visibility', { cookie: adm, body: { preview: 'open' } })).status, 200);
 assert.equal((await (await siteStateFn()).json()).preview, 'open'); ok('owners open the preview to anyone with the link in one click; helpers cannot');
@@ -898,13 +898,16 @@ const vM = sent.length;
 const lk = await call(admin, '/api/admin/visibility', { cookie: adm, body: { live: 'open' } });
 assert.equal(lk.status, 400); assert.equal(lk.data.error, 'locked');
 assert.equal((await call(admin, '/api/admin/visibility', { cookie: adm, body: { live: 'open', confirm: 'hikaya' } })).data.error, 'locked');
-assert.equal((await (await siteStateFn()).json()).live, 'hidden'); ok('the real website is locked: it does not open without typing the domain');
+assert.equal((await (await siteStateFn()).json()).live, 'brewing'); ok('the real website is locked: it does not open without typing the domain');
 assert.equal((await call(admin, '/api/admin/visibility', { cookie: adm, body: { live: 'open', confirm: ' HikayaCoffee.ca ' } })).status, 200);
 assert.equal((await (await siteStateFn()).json()).live, 'open');
 assert.ok(sent.slice(vM).some(m => /website opened to everyone/.test(m.subject))); ok('typing the domain opens it, and the owners are emailed');
 await call(admin, '/api/admin/visibility', { cookie: adm, body: { live: 'hidden', confirm: 'hikayacoffee.ca' } });
 await call(admin, '/api/admin/visibility', { cookie: adm, body: { preview: 'code' } });
 const vis = (await call(admin, '/api/admin/visibility', { cookie: adm })).data;
+assert.equal((await call(admin, '/api/admin/visibility', { cookie: adm, body: { live: 'soon', confirm: 'hikayacoffee.ca' } })).status, 400);
+await call(admin, '/api/admin/visibility', { cookie: adm, body: { live: 'brewing', confirm: 'hikayacoffee.ca' } });
+assert.equal((await call(admin, '/api/admin/visibility', { cookie: adm })).data.live, 'brewing');
 assert.equal(vis.live, 'hidden'); assert.equal(vis.domain, 'hikayacoffee.ca'); assert.ok(vis.changedBy); ok('hiding it again also needs the domain; the desk shows who changed it last');
 
 // ---------- confirming orders ----------

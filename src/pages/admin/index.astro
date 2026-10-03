@@ -449,7 +449,7 @@ import '../../styles/global.css';
             <button type="button" class="btn line sm" id="visUnlock">Unlock to change</button>
             <div id="visUnlocked" hidden>
               <label>Type <b dir="ltr">hikayacoffee.ca</b> to confirm<input id="visConfirm" autocomplete="off" spellcheck="false" dir="ltr" /></label>
-              <div class="vis-btns"><button type="button" class="btn primary sm" data-live="open">Open to everyone</button><button type="button" class="btn line sm" data-live="hidden">Hide (Coming soon page)</button><button type="button" class="btn line sm" id="visRelock">Lock again</button></div>
+              <div class="vis-btns"><button type="button" class="btn line sm" data-live="brewing">0 · Something is brewing</button><button type="button" class="btn line sm" data-live="hidden">1 · Coming soon + waitlist</button><button type="button" class="btn primary sm" data-live="open">Open to everyone</button><button type="button" class="btn line sm" id="visRelock">Lock again</button></div>
               <p class="muted small">Every owner gets an email when this changes.</p>
             </div>
           </div>
@@ -1684,7 +1684,8 @@ import '../../styles/global.css';
   async function loadVisibility() {
     const v = await api('/api/admin/visibility');
     const pill = (on: boolean, yes: string, no: string) => `<span class="vis-pill ${on ? 'on' : ''}">${on ? yes : no}</span>`;
-    $('visLive').innerHTML = v.forcedOpen ? pill(true, 'Open to everyone (SITE_PUBLIC in Netlify)', '') : pill(v.live === 'open', 'Open to everyone', 'Hidden: Coming soon page + waitlist');
+    const LIVE_LABEL: Record<string, string> = { brewing: 'Phase 0 · Something is brewing', hidden: 'Phase 1 · Coming soon + waitlist', open: 'Open to everyone' };
+    $('visLive').innerHTML = v.forcedOpen ? pill(true, 'Open to everyone (SITE_PUBLIC in Netlify)', '') : pill(v.live === 'open', LIVE_LABEL.open, LIVE_LABEL[v.live]) + ' <a class="small" href="https://hikayacoffee.ca/" target="_blank" rel="noopener">See it</a>';
     $('visPrev').innerHTML = pill(v.preview === 'open', 'Anyone with the link can see the whole preview', 'Team code needed') + ' <small class="muted">Never shown to Google.</small>';
     document.querySelectorAll<HTMLButtonElement>('[data-preview]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.preview === v.preview)));
     $('visNote').textContent = v.changedAt ? `Last changed by ${v.changedBy}, ${new Date(v.changedAt).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })}; changes reach the site within about 20 seconds.` : 'Changes reach the site within about 20 seconds.';
@@ -1696,7 +1697,8 @@ import '../../styles/global.css';
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-live]'); if (!b) return;
     const confirmTxt = ($('visConfirm') as HTMLInputElement).value;
     if (confirmTxt.trim().toLowerCase() !== 'hikayacoffee.ca') { alert('Type hikayacoffee.ca in the box first.'); return; }
-    if (!confirm(b.dataset.live === 'open' ? 'Open hikayacoffee.ca to everyone now? Customers will be able to see the shop and order.' : 'Hide hikayacoffee.ca behind the Coming soon page now? Customers will not be able to order.')) return;
+    const ask: Record<string, string> = { open: 'Open hikayacoffee.ca to everyone now? Customers will be able to see the shop and order.', hidden: 'Show the Coming soon page with the waitlist on hikayacoffee.ca now?', brewing: 'Show the Something is brewing page on hikayacoffee.ca now?' };
+    if (!confirm(ask[b.dataset.live!])) return;
     await api('/api/admin/visibility', { live: b.dataset.live, confirm: confirmTxt });
     $('visRelock').click(); loadVisibility();
   });
