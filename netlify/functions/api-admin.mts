@@ -6,6 +6,7 @@ import { cardEnabled, squareCheck } from '../lib/square';
 import { listGiftCards, giftCardPaid, sellGiftCardHere } from '../lib/giftcards';
 import { listCosts, saveCost, margins } from '../lib/costs';
 import { today } from '../lib/today';
+import { getVisibility, setVisibility, LIVE_DOMAIN } from '../lib/visibility';
 import { listSubscriptions } from '../lib/subscriptions';
 import { monthlyReport, sendMonthlyReport } from '../lib/report';
 import { smsEnabled } from '../lib/sms';
@@ -90,7 +91,7 @@ async function handle(req: Request) {
     // Helpers can read everything and run orders; money, catalog, settings and exports are owners only.
     if (admin.role !== 'admin') {
       const write = req.method !== 'GET';
-      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write) || parts[0] === 'recall.csv' || parts[0] === 'hours.csv' || parts[0] === 'letters' || parts[0] === 'business' || parts[0] === 'costs' || parts[0] === 'margins' || parts[0] === 'backup.json' || parts[0] === 'activity' || (parts[0] === 'checklists' && write)
+      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write) || parts[0] === 'recall.csv' || parts[0] === 'hours.csv' || parts[0] === 'letters' || parts[0] === 'business' || parts[0] === 'visibility' || parts[0] === 'costs' || parts[0] === 'margins' || parts[0] === 'backup.json' || parts[0] === 'activity' || (parts[0] === 'checklists' && write)
         || (write && ['products', 'settings', 'ask', 'connections', 'content', 'giftcards', 'report', 'pay'].includes(parts[0])) || (parts[0] === 'orders' && parts[2] === 'refund');
       if (ownersOnly) throw new HttpError(403, 'owners-only', 'Only the owners can do this.');
     }
@@ -414,6 +415,8 @@ async function handle(req: Request) {
     // ---------- numbers: visits and sales ----------
     if (parts[0] === 'numbers' && req.method === 'GET') return json(await numbers(30));
     if (parts[0] === 'today' && req.method === 'GET') return json(await today(admin.role));
+    if (parts[0] === 'visibility' && req.method === 'GET') return json({ ...(await getVisibility()), domain: LIVE_DOMAIN, forcedOpen: env('SITE_PUBLIC').toLowerCase() === 'true' });
+    if (parts[0] === 'visibility' && req.method === 'POST') return json(await setVisibility(await body(req), admin.as?.name ?? admin.email, req));
     // ---------- quick search (header): orders, customers, messages ----------
     if (parts[0] === 'search' && req.method === 'GET') {
       const raw = q('q', 80).toLowerCase();

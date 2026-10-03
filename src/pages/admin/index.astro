@@ -442,6 +442,23 @@ import '../../styles/global.css';
     <!-- SETTINGS -->
     <section id="v-settings" hidden class="a-settings">
       <div class="conn" id="conn"></div>
+      <div class="conn owner-only vis"><h2 class="h-s">Who can see the website</h2>
+        <div class="vis-row">
+          <div><h3>Real website · <span dir="ltr">hikayacoffee.ca</span></h3><p class="vis-state" id="visLive"></p></div>
+          <div class="vis-lock" id="visLock">
+            <button type="button" class="btn line sm" id="visUnlock">Unlock to change</button>
+            <div id="visUnlocked" hidden>
+              <label>Type <b dir="ltr">hikayacoffee.ca</b> to confirm<input id="visConfirm" autocomplete="off" spellcheck="false" dir="ltr" /></label>
+              <div class="vis-btns"><button type="button" class="btn primary sm" data-live="open">Open to everyone</button><button type="button" class="btn line sm" data-live="hidden">Hide (Coming soon page)</button><button type="button" class="btn line sm" id="visRelock">Lock again</button></div>
+              <p class="muted small">Every owner gets an email when this changes.</p>
+            </div>
+          </div>
+        </div>
+        <div class="vis-row">
+          <div><h3>Preview · <span dir="ltr" id="visPrevHost">hikaya-v4-preview.netlify.app</span></h3><p class="vis-state" id="visPrev"></p></div>
+          <div class="vis-btns"><button type="button" class="btn line sm" data-preview="code">Team code needed</button><button type="button" class="btn line sm" data-preview="open">Anyone with the link</button></div>
+        </div>
+        <p class="muted" id="visNote"></p></div>
       <div class="conn owner-only"><h2 class="h-s">Business details</h2>
         <p class="muted">Set these here instead of in Netlify; they're used on the site, in emails, labels, delivery routes and by Ask Hikaya. Empty = use the Netlify value (shown in grey). Keys and passwords stay in Netlify.</p>
         <form id="bizForm" class="biz" novalidate></form></div>
@@ -524,6 +541,15 @@ import '../../styles/global.css';
   .qs-list :global(small) { color: var(--ink-2); font-size: 13px; }
   .qs-list :global(p) { margin: 6px 10px; }
   .td-h { margin-top: 10px; }
+  .vis-row { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .vis-row h3 { font-size: 15px; margin: 0 0 6px; font-family: var(--body); }
+  .vis-state { margin: 0; }
+  .vis-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .vis-btns [aria-pressed='true'] { background: var(--bunn); color: var(--paper); }
+  .vis-lock label { display: grid; gap: 4px; font-size: 14px; }
+  .vis-lock input { border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 10px; font: inherit; width: 220px; }
+  :global(.vis-pill) { display: inline-block; border-radius: 999px; padding: 4px 12px; font-weight: 600; font-size: 14px; background: var(--sheet); border: 1.5px solid var(--line); }
+  :global(.vis-pill.on) { background: #F4E6BF; border-color: var(--khalal, #CF9C0C); }
   .td-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .td-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-width: 900px; }
   .td-list :global(li) { display: flex; align-items: center; gap: 12px; background: var(--sheet); border-radius: 14px; padding: 10px 14px; border-inline-start: 5px solid var(--line); }
@@ -1654,6 +1680,27 @@ import '../../styles/global.css';
     const d = await api('/api/admin/activity'); $('actBox').hidden = false;
     $('actTable').innerHTML = '<tr><th>When</th><th>Who</th><th>What</th><th>Details</th></tr>' + d.activity.map((a: any) => `<tr><td>${new Date(a.created_at).toLocaleString('en-CA', { dateStyle: 'short', timeStyle: 'short' })}</td><td>${esc(a.actor)}</td><td>${esc(a.action.replace(/^POST /, ''))}</td><td><small>${esc(a.detail ?? '')}</small></td></tr>`).join('');
   });
+  // ---------- who can see the website ----------
+  async function loadVisibility() {
+    const v = await api('/api/admin/visibility');
+    const pill = (on: boolean, yes: string, no: string) => `<span class="vis-pill ${on ? 'on' : ''}">${on ? yes : no}</span>`;
+    $('visLive').innerHTML = v.forcedOpen ? pill(true, 'Open to everyone (SITE_PUBLIC in Netlify)', '') : pill(v.live === 'open', 'Open to everyone', 'Hidden: Coming soon page + waitlist');
+    $('visPrev').innerHTML = pill(v.preview === 'open', 'Anyone with the link can see the whole preview', 'Team code needed') + ' <small class="muted">Never shown to Google.</small>';
+    document.querySelectorAll<HTMLButtonElement>('[data-preview]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.preview === v.preview)));
+    $('visNote').textContent = v.changedAt ? `Last changed by ${v.changedBy}, ${new Date(v.changedAt).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })}; changes reach the site within about 20 seconds.` : 'Changes reach the site within about 20 seconds.';
+    if (!location.hostname.endsWith('hikayacoffee.ca')) $('visPrevHost').textContent = location.hostname;
+  }
+  $('visUnlock').addEventListener('click', () => { $('visUnlock').hidden = true; $('visUnlocked').hidden = false; ($('visConfirm') as HTMLInputElement).focus(); });
+  $('visRelock').addEventListener('click', () => { $('visUnlock').hidden = false; $('visUnlocked').hidden = true; ($('visConfirm') as HTMLInputElement).value = ''; });
+  $('visUnlocked').addEventListener('click', async e => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-live]'); if (!b) return;
+    const confirmTxt = ($('visConfirm') as HTMLInputElement).value;
+    if (confirmTxt.trim().toLowerCase() !== 'hikayacoffee.ca') { alert('Type hikayacoffee.ca in the box first.'); return; }
+    if (!confirm(b.dataset.live === 'open' ? 'Open hikayacoffee.ca to everyone now? Customers will be able to see the shop and order.' : 'Hide hikayacoffee.ca behind the Coming soon page now? Customers will not be able to order.')) return;
+    await api('/api/admin/visibility', { live: b.dataset.live, confirm: confirmTxt });
+    $('visRelock').click(); loadVisibility();
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-preview]').forEach(b => b.addEventListener('click', async () => { await api('/api/admin/visibility', { preview: b.dataset.preview }); loadVisibility(); }));
   async function loadBusiness() {
     const d = await api('/api/admin/business');
     const long = new Set(['PICKUP_ADDRESS', 'PICKUP_HOURS', 'OWNER_EMAILS']);
@@ -1666,7 +1713,7 @@ import '../../styles/global.css';
     await api('/api/admin/business', data); alert('Saved. The site and emails use it within a minute.'); loadBusiness(); loadConnections();
   });
   async function loadSettings() {
-    if (ROLE === 'admin') loadBusiness();
+    if (ROLE === 'admin') { loadBusiness(); loadVisibility(); }
     loadConnections();
     const s = await api('/api/admin/settings');
     const f = $('setForm') as HTMLFormElement;

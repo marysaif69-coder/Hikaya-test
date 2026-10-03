@@ -1,7 +1,13 @@
 // The private-preview passcode screen (netlify/edge-functions/preview-gate.ts).
 // Run: npx tsx tests/preview-gate.test.mts
 import assert from 'node:assert/strict';
-const gate = (await import('../netlify/edge-functions/preview-gate.ts')).default;
+const gateMod = await import('../netlify/edge-functions/preview-gate.ts');
+const gate = gateMod.default;
+// The owners' switch, as /api/site-state would answer it.
+let siteState: any = { live: 'hidden', preview: 'code' }; let stateDown = false;
+const realFetch = globalThis.fetch;
+globalThis.fetch = (async (u: any, i: any) => String(u).endsWith('/api/site-state') ? (stateDown ? Promise.reject(new Error('down')) : new Response(JSON.stringify(siteState))) : realFetch(u, i)) as any;
+const setState = (v: any) => { siteState = v; gateMod.resetGateCache(); };
 const H = 'https://hikaya.test';
 const page = () => new Response('<h1>shop</h1>', { headers: { 'content-type': 'text/html' } });
 const run = (path: string, init: RequestInit = {}) => gate(new Request(H + path, init), { next: async () => page() });
@@ -48,6 +54,28 @@ const un = await runWith('/api/list/unsubscribe?t=abc', {}, new Response(null, {
 assert.equal(un.headers.get('location'), '/?unsub=1'); assert.ok((await (await run('/?unsub=1')).text()).includes('You are off the list')); ok('unsubscribe links work while the site is hidden');
 assert.equal((await run('/api/list/confirm', { method: 'POST' })).status, 401); assert.equal((await run('/api/orders', { method: 'POST' })).status, 401); ok('everything else on the API stays closed');
 assert.ok(!(await (await run('/?list=1')).text()).includes('<details open>')); assert.ok((await (await post('wrong')).text()).includes('<details open>')); ok('a wrong code opens the Team box again');
+
+// ---------- the owners' switch: real website and preview ----------
+const LIVE = 'https://hikayacoffee.ca';
+const runAt = (base: string, path: string) => gate(new Request(base + path), { next: async () => page() });
+setState({ live: 'hidden', preview: 'code' });
+assert.ok((await (await runAt(LIVE, '/en/')).text()).includes('Coming soon')); assert.ok((await (await runAt('https://www.hikayacoffee.ca', '/en/')).text()).includes('Coming soon')); ok('the real website is hidden by default');
+setState({ live: 'open', preview: 'code' });
+const opened = await runAt(LIVE, '/en/');
+assert.equal(await opened.text(), '<h1>shop</h1>'); assert.equal(opened.headers.get('x-robots-tag'), null);
+assert.ok((await (await run('/en/')).text()).includes('Coming soon')); ok('opening the real website does not open the preview; the real website can be found by Google');
+setState({ live: 'hidden', preview: 'open' });
+const prev = await run('/en/shop/');
+assert.equal(await prev.text(), '<h1>shop</h1>'); assert.match(prev.headers.get('x-robots-tag')!, /noindex/);
+assert.equal(await (await run('/robots.txt')).text(), 'User-agent: *\nDisallow: /\n');
+assert.ok((await (await runAt(LIVE, '/en/')).text()).includes('Coming soon')); ok('an open preview needs no code, is never indexed, and leaves the real website hidden');
+stateDown = true; setState({ live: 'open', preview: 'open' });
+assert.ok((await (await runAt(LIVE, '/en/')).text()).includes('Coming soon')); assert.ok((await (await run('/en/')).text()).includes('Coming soon')); ok('if the switch cannot be read, everything stays hidden');
+stateDown = false; setState({ live: 'hidden', preview: 'code' });
+process.env.SITE_PUBLIC = 'true';
+assert.equal(await (await runAt(LIVE, '/en/')).text(), '<h1>shop</h1>'); ok('SITE_PUBLIC=true in Netlify still opens the real website');
+delete process.env.SITE_PUBLIC;
+assert.ok(gateMod.config.excludedPath.includes('/api/site-state')); ok('the gate can read the switch without going through itself');
 
 process.env.PREVIEW_PASSWORD = 'new-code';
 assert.notEqual(await (await run('/en/', { headers: { cookie } })).text(), '<h1>shop</h1>'); ok('changing the passcode signs everyone out');

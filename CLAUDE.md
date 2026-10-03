@@ -8,8 +8,10 @@ Read `docs/backend.md` for how everything works, `docs/launch-plan.md` for what 
 ## Branch and deploys
 - Work on `claude/frontend-design-skills-setup-2e6lwc`. It is the repo's default branch and
   Netlify (project hikaya-v4-preview) deploys every push to it.
-- The site stays hidden ("Coming soon") until `SITE_PUBLIC=true` is set in Netlify. Never set or
-  suggest setting it unless the owners say they are launching.
+- The real website stays hidden ("Coming soon" + waitlist) until the owners open it in Admin →
+  Settings → "Who can see the website" (locked: they type the domain to confirm) or set
+  `SITE_PUBLIC=true` in Netlify. Never open it, or suggest opening it, unless the owners say they
+  are launching. The preview address has its own switch (team code or anyone with the link).
 
 ## Before every push
 - `npm test` (API, shop management and preview-gate checks) and `npm run build` must pass.

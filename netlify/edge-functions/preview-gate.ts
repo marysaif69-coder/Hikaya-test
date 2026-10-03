@@ -1,9 +1,11 @@
-// Private preview, hidden by default. Unless SITE_PUBLIC is "true" in Netlify, every page and API
-// call shows a "Coming soon" screen first, search engines are told not to index anything, and
-// robots.txt blocks crawlers. The screen collects waitlist emails (the mailing list, with CASL
+// Private preview, hidden by default. The owners decide who sees the website in Admin → Settings →
+// "Who can see the website": the real website (hikayacoffee.ca) is hidden or open (locked: they type
+// the domain to change it), the preview address needs the team code or is open to anyone with the
+// link (never indexed). SITE_PUBLIC=true in Netlify also opens the real website. While hidden, every
+// page and API call shows a "Coming soon" screen first, search engines are told not to index
+// anything, and robots.txt blocks crawlers. The screen collects waitlist emails (the mailing list, with CASL
 // consent and an email to confirm); only the sign-up, confirm and unsubscribe links get through.
-// With PREVIEW_PASSWORD set, a "Team" box lets testers in; without it nobody gets in. To open the
-// site to everyone at launch: set SITE_PUBLIC=true and redeploy.
+// With PREVIEW_PASSWORD set, a "Team" box lets testers in; without it nobody gets in.
 import { CONSENT } from '../lib/consent.ts';
 
 const COOKIE = 'hk_preview';
@@ -35,11 +37,46 @@ const safeNext = (v: unknown) => (typeof v === 'string' && /^\/(?!\/)[^\s]*$/.te
 
 const NOINDEX = 'noindex, nofollow, noarchive';
 
+// The owners' switch in Settings ("Who can see the website"), read from the site and kept for
+// 20 seconds. If it cannot be read, the site stays hidden.
+type State = { live: 'hidden' | 'open'; preview: 'code' | 'open' };
+let cached: { at: number; state: State } | null = null;
+async function siteState(url: URL): Promise<State> {
+  if (cached && Date.now() - cached.at < 20_000) return cached.state;
+  let state: State = { live: 'hidden', preview: 'code' };
+  try {
+    const r = await fetch(new URL('/api/site-state', url.origin), { headers: { 'x-from-gate': '1' } });
+    if (r.ok) { const d = await r.json(); state = { live: d.live === 'open' ? 'open' : 'hidden', preview: d.preview === 'open' ? 'open' : 'code' }; }
+  } catch { /* stay hidden */ }
+  cached = { at: Date.now(), state };
+  return state;
+}
+/** For tests. */
+export const resetGateCache = () => { cached = null; };
+// The real website: hikayacoffee.ca (and www), or SITE_URL when it is not a netlify.app address.
+const isLive = (host: string) => {
+  const h = host.toLowerCase().replace(/^www\./, '');
+  let site = '';
+  try { site = new URL(env('SITE_URL')).hostname.toLowerCase().replace(/^www\./, ''); } catch { /* not set */ }
+  return h === 'hikayacoffee.ca' || (Boolean(site) && !site.endsWith('.netlify.app') && h === site);
+};
+
 export default async (req: Request, context: { next: () => Promise<Response> }) => {
-  if (env('SITE_PUBLIC').toLowerCase() === 'true') return context.next();
+  const url = new URL(req.url);
+  const live = isLive(url.hostname);
+  if (live && env('SITE_PUBLIC').toLowerCase() === 'true') return context.next();
+  const state = await siteState(url);
+  if (live && state.live === 'open') return context.next();
+  if (!live && (state.preview === 'open' || env('SITE_PUBLIC').toLowerCase() === 'true')) {
+    // Open preview: anyone with the link, never in search engines.
+    if (url.pathname === '/robots.txt') return new Response('User-agent: *\nDisallow: /\n', { headers: { 'content-type': 'text/plain; charset=utf-8', 'x-robots-tag': NOINDEX } });
+    const res = await context.next();
+    const out = new Response(res.body, res);
+    out.headers.set('x-robots-tag', NOINDEX);
+    return out;
+  }
   const password = norm(env('PREVIEW_PASSWORD'));
 
-  const url = new URL(req.url);
   // The cookie holds a hash of the passcode, so changing the passcode signs everyone out.
   const token = password ? await digest(`hikaya-preview:${password}`) : 'closed';
 
@@ -210,5 +247,5 @@ function gate(next: string, state: 'ask' | 'wrong' | 'unset', note = '') {
 // Everything except what the passcode page itself needs, and Square's payment webhook.
 export const config = {
   path: '/*',
-  excludedPath: ['/brand/*', '/fonts/*', '/favicon.svg', '/api/square/webhook'],
+  excludedPath: ['/brand/*', '/fonts/*', '/favicon.svg', '/api/square/webhook', '/api/site-state'],
 };
