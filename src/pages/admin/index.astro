@@ -26,7 +26,8 @@ import '../../styles/global.css';
     </nav>
     <div class="a-who" id="who" hidden><span id="whoEmail"></span><button type="button" id="switchWho" hidden>Switch person</button><button type="button" id="logout">Log out</button></div>
     <nav class="a-sub" id="subtabs" hidden aria-label="Section">
-      <button type="button" data-tab="orders" data-group="orders" aria-pressed="true">Orders</button>
+      <button type="button" data-tab="today" data-group="orders" aria-pressed="false">Today</button>
+      <button type="button" data-tab="orders" data-group="orders" aria-pressed="true">All orders</button>
       <button type="button" data-tab="day" data-group="orders" aria-pressed="false">Day sheet</button>
       <button type="button" data-tab="week" data-group="orders" aria-pressed="false">Week sheet</button>
       <button type="button" data-tab="customers" data-group="customers" aria-pressed="false">Customers</button>
@@ -54,6 +55,13 @@ import '../../styles/global.css';
     </section>
 
     <!-- ORDERS -->
+    <section id="v-today" hidden>
+      <div class="td-head"><h1 class="h-m" id="tdTitle">Today</h1><button type="button" class="btn line sm" id="tdReload">Refresh</button></div>
+      <div class="a-stats" id="tdStats"></div>
+      <h2 class="h-s">To do</h2>
+      <ul class="td-list" id="tdList"></ul>
+    </section>
+
     <section id="v-orders" hidden>
       <div class="a-stats" id="stats"></div>
       <form class="a-filters" id="filters">
@@ -388,6 +396,7 @@ import '../../styles/global.css';
           <li>Shared team login with “Who's working?” confirmed by a code to each person's own email; owners and managers who also drive</li>
           <li>Change items in an order; “you're next” message to the next customer on a route; letters to the mailing list from the desk</li>
           <li>Printable English/French labels per lot; food-safety checklists signed in the team app; team messages; backup download; activity log</li>
+          <li>Today page: everything waiting (new orders, packing, deliveries with no driver, e-Transfers not in, messages, cash, low stock, shift gaps, papers, food-safety checklists)</li>
           <li>Phone notifications in the team app (Me → Turn on): new stops for drivers, team messages, shift reminders, new orders for owners</li>
           <li>Business details and extra owners in Settings; costs and margins in Numbers; gift cards sold in person with a printable card</li>
           <li>Words editor for product text and recipes; settings checklist; private preview gate</li>
@@ -480,6 +489,15 @@ import '../../styles/global.css';
   .a-login :global(.lg-back) { border: 0; background: none; text-decoration: underline; color: var(--ink-2); }
   .a-login :global(#lg-c) { font-size: 26px; letter-spacing: .35em; text-align: center; }
   .a-stats { display: flex; flex-wrap: wrap; gap: 10px; }
+  .td-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .td-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-width: 900px; }
+  .td-list :global(li) { display: flex; align-items: center; gap: 12px; background: var(--sheet); border-radius: 14px; padding: 10px 14px; border-inline-start: 5px solid var(--line); }
+  .td-list :global(li > span:nth-child(2)) { flex: 1; min-width: 0; }
+  .td-list :global(.td-now) { border-inline-start-color: var(--tamr); }
+  .td-list :global(.td-soon) { border-inline-start-color: #C9A227; }
+  .td-list :global(.td-lv) { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); min-width: 42px; }
+  .td-list :global(.td-now .td-lv) { color: var(--tamr); }
+  .td-list :global(.td-clear) { color: var(--ink-2); }
   .a-stats :global(.st) { background: var(--sheet); border-radius: 16px; padding: 10px 14px; min-width: 120px; }
   .a-stats :global(.st b) { display: block; font-family: var(--display); font-size: 26px; }
   .a-stats :global(.st span) { font-size: 13px; color: var(--ink-2); }
@@ -683,7 +701,7 @@ import '../../styles/global.css';
 
   // ---------- auth ----------
   function showLogin() {
-    for (const id of ['v-orders', 'v-inbox', 'v-day', 'v-week', 'v-numbers', 'v-words', 'v-plan', 'v-drivers', 'v-customers', 'v-production', 'v-products', 'v-promos', 'v-assistant', 'v-chats', 'v-settings', 'tabs', 'subtabs', 'who']) $(id).hidden = true;
+    for (const id of ['v-today', 'v-orders', 'v-inbox', 'v-day', 'v-week', 'v-numbers', 'v-words', 'v-plan', 'v-drivers', 'v-customers', 'v-production', 'v-products', 'v-promos', 'v-assistant', 'v-chats', 'v-settings', 'tabs', 'subtabs', 'who']) $(id).hidden = true;
     $('login').hidden = false;
     mountLogin($('loginBox'), 'en', user => {
       if (user.role === 'driver' || user.role === 'packer') { location.href = '/admin/driver/'; return; }
@@ -698,7 +716,7 @@ import '../../styles/global.css';
     $('login').hidden = true; $('tabs').hidden = false; $('who').hidden = false; $('whoEmail').textContent = email;
     const sel = document.querySelector<HTMLSelectElement>('#filters [name=status]')!;
     if (sel.options.length === 1) Object.entries(STATUS_LABEL).forEach(([k, v]) => sel.add(new Option(v, k)));
-    tab('orders');
+    tab('today');
     const qs = new URLSearchParams(location.search);
     if (qs.get('order')) openOrder(qs.get('order')!);
     if (qs.get('ticket')) { tab('inbox'); openTicket(qs.get('ticket')!); }
@@ -721,7 +739,7 @@ import '../../styles/global.css';
       if (on && !(ROLE !== 'admin' && b.classList.contains('owner-only'))) shown++;
     });
     $('subtabs').hidden = shown < 2;
-    for (const v of ['orders', 'inbox', 'day', 'week', 'numbers', 'words', 'plan', 'drivers', 'customers', 'production', 'products', 'promos', 'assistant', 'chats', 'settings']) $(`v-${v}`).hidden = v !== name;
+    for (const v of ['today', 'orders', 'inbox', 'day', 'week', 'numbers', 'words', 'plan', 'drivers', 'customers', 'production', 'products', 'promos', 'assistant', 'chats', 'settings']) $(`v-${v}`).hidden = v !== name;
     if (name === 'products') loadProducts();
     if (name === 'week') loadWeek();
     if (name === 'numbers') { loadNumbers(); if (ROLE === 'admin') { loadMargins(); loadCosts(); } }
@@ -732,6 +750,7 @@ import '../../styles/global.css';
     if (name === 'promos') loadPromos();
     if (name === 'assistant') loadAssistant();
     if (name === 'orders') loadOrders();
+    if (name === 'today') loadToday();
     if (name === 'inbox') loadTickets();
     if (name === 'chats') loadChats();
     if (name === 'day') loadDay();
@@ -744,6 +763,22 @@ import '../../styles/global.css';
     tab(lastIn[g] ?? first?.dataset.tab ?? 'orders');
   });
   $('subtabs').addEventListener('click', e => { const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-tab]'); if (b) tab(b.dataset.tab!); });
+
+  // ---------- today ----------
+  const LEVEL: Record<string, string> = { now: 'Now', soon: 'Soon', fyi: 'Note' };
+  const TAB_NAME: Record<string, string> = { orders: 'All orders', day: 'Day sheet', inbox: 'Inbox', drivers: 'Team', products: 'Products', promos: 'Promotions', production: 'Production' };
+  async function loadToday() {
+    const d = await api('/api/admin/today'); const c = d.counts;
+    $('tdTitle').textContent = `Today, ${fmtDay(d.date)}`;
+    $('tdStats').innerHTML = [[c.orders, 'orders today'], [c.pickups, 'pickups'], [c.deliveries, 'deliveries'], [c.toPack, 'still to pack'], [c.out, 'out for delivery'], [c.done, 'done']]
+      .map(([v, k]) => `<div class="st"><b>${v}</b><span>${k}</span></div>`).join('')
+      + (d.money ? `<div class="st"><b>${money(d.money.today)}</b><span>ordered today (${d.money.orders})</span></div><div class="st"><b>${money(d.money.week)}</b><span>last 7 days</span></div>` : '');
+    $('tdList').innerHTML = d.todo.map((t: any) => `<li class="td-${t.level}"><span class="td-lv">${LEVEL[t.level]}</span><span>${esc(t.text)}</span>${!(ROLE !== 'admin' && ['products', 'promos'].includes(t.tab)) ? `<button type="button" class="btn line sm" data-go="${t.tab}">${TAB_NAME[t.tab] ?? 'Open'}</button>` : ''}</li>`).join('')
+      || '<li class="td-clear">Nothing waiting. All caught up.</li>';
+  }
+  $('tdList').addEventListener('click', e => { const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-go]'); if (b) tab(b.dataset.go!); });
+  $('tdReload').addEventListener('click', loadToday);
+  setInterval(() => { if (!$('v-today').hidden && document.visibilityState === 'visible') loadToday().catch(() => {}); }, 120000);
 
   // ---------- orders ----------
   let timer: number | undefined;

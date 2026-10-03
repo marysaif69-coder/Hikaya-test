@@ -841,6 +841,21 @@ const bk2 = await (await admin(new Request(`${H}/api/admin/backup.json`, { heade
 assert.ok(bk2.tables.push_subs && !bk2.tables.push_keys); ok('the notification key is not in the backup');
 await call(driverApi, '/api/driver/push/unsubscribe', { cookie: adm, body: { endpoint: 'https://push.example.com/maryam-phone' } });
 
+// ---------- today page ----------
+const tdA = await order({ day: '2027-03-26', payment: 'e-transfer', email: 'today1@example.com' });
+const tdB = await order({ day: '2027-03-26', method: 'delivery', street: '5 Today St', postal: 'T2P1J9', payment: 'at-pickup', email: 'today2@example.com' });
+const { today: todayFn } = await import('../netlify/lib/today');
+const td = await todayFn('admin', '2027-03-26');
+assert.equal(td.counts.orders, 2); assert.equal(td.counts.pickups, 1); assert.equal(td.counts.deliveries, 1); assert.equal(td.counts.toPack, 2);
+const tdText = td.todo.map(t => t.text).join('\n');
+assert.match(tdText, /new orders? to confirm/); assert.match(tdText, /2 orders for today still to pack/); assert.match(tdText, /1 delivery today with no driver/);
+assert.match(tdText, /e-Transfer not in yet for/); assert.ok(!tdText.includes(tdB.data.ref)); assert.ok(td.money);
+assert.equal(td.todo[0].level, 'now'); ok('Today lists what needs doing first: new orders, packing, deliveries with no driver, e-Transfers not in');
+const tdH = (await call(admin, '/api/admin/today', { cookie: helper })).data;
+assert.equal(tdH.money, null); assert.ok(Array.isArray(tdH.todo)); ok('helpers see Today without the money');
+await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [tdB.data.ref], driver: 'dan@example.com' } });
+assert.ok(!(await todayFn('admin', '2027-03-26')).todo.some(t => /no driver/.test(t.text))); ok('assigning a driver clears that line');
+
 // ---------- confirming orders ----------
 const newO = await order({ day: '2027-01-31' });
 const cMails = sent.length;

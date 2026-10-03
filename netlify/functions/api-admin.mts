@@ -5,6 +5,7 @@ import { json, fail, body, str, HttpError, siteUrl, env } from '../lib/http';
 import { cardEnabled, squareCheck } from '../lib/square';
 import { listGiftCards, giftCardPaid, sellGiftCardHere } from '../lib/giftcards';
 import { listCosts, saveCost, margins } from '../lib/costs';
+import { today } from '../lib/today';
 import { listSubscriptions } from '../lib/subscriptions';
 import { monthlyReport, sendMonthlyReport } from '../lib/report';
 import { smsEnabled } from '../lib/sms';
@@ -411,6 +412,7 @@ async function handle(req: Request) {
 
     // ---------- numbers: visits and sales ----------
     if (parts[0] === 'numbers' && req.method === 'GET') return json(await numbers(30));
+    if (parts[0] === 'today' && req.method === 'GET') return json(await today(admin.role));
 
     // ---------- promo codes ----------
     if (parts[0] === 'promos' && !parts[1] && req.method === 'GET') {

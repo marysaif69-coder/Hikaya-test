@@ -62,7 +62,7 @@ h1, h2, h3 { font-family: var(--display); font-weight: 700; line-height: 1.12; m
 .say.bunn { background: var(--bunn); color: var(--paper); border-bottom-right-radius: 5px; margin-left: auto; }
 .say.tamr { background: var(--tamr); color: var(--tamr-ink); border-bottom-left-radius: 5px; margin-right: auto; }
 .say.guest { background: var(--sheet); color: var(--bunn); border: 1.5px solid var(--line); }
-.say .en { display: block; font-family: var(--body); font-weight: 400; font-size: max(14px, .62em); opacity: .82; margin-top: .3em; letter-spacing: .005em; }
+.say .en { display: block; font-family: var(--body); font-weight: 400; font-size: max(14px, .62em); opacity: .88; margin-top: .3em; letter-spacing: .005em; }
 .say [lang='ar'] { display: block; direction: rtl; }
 .say.bunn [lang='ar'], .say.bunn .en { text-align: right; }
 

@@ -51,7 +51,7 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
 </head>
 <body>
   <a class="skip" href="#main">{UI.skip[lang]}</a>
-  <div class={`sleeve ${sleeve}`}><div class="wrap"><p data-season="ramadan">{UI.season[lang]}</p><p data-season-off="ramadan" hidden>{UI.seasonOff[lang]}</p></div></div>
+  <div class={`sleeve ${sleeve}`} role="region" aria-label={lang === 'ar' ? 'الموسم' : 'Season'}><div class="wrap"><p data-season="ramadan">{UI.season[lang]}</p><p data-season-off="ramadan" hidden>{UI.seasonOff[lang]}</p></div></div>
   <header class="top">
     <div class="wrap">
       <a class="lockup" href={path(lang)} aria-label={lang === 'ar' ? 'حكاية، الصفحة الرئيسية' : 'Hikaya, home'}>
