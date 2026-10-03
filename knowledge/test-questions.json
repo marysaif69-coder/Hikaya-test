@@ -715,7 +715,7 @@
       "lang": "en",
       "q": "Do you deliver on Sundays? And is Baydani OK for someone allergic to sesame?",
       "must": [
-        "answers both: yes, Thursday to Sunday",
+        "answers both: yes, Sunday is a delivery day (naming the full Thursday-to-Sunday schedule is fine but not required)",
         "Baydani contains sesame, so not for a sesame allergy"
       ]
     },
