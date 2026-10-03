@@ -120,7 +120,7 @@ export const TOOLS: BetaTool[] = [
     description: 'The next days and time windows still open for pickup or delivery, with how many places are left.',
     input_schema: S({ method: { type: 'string', enum: ['pickup', 'delivery'] } }) },
   { name: 'check_postal_code', strict: true,
-    description: 'Check whether a postal code is inside our Calgary delivery area.',
+    description: 'Check whether a postal code is inside our Calgary delivery area. The first three characters (e.g. T3A) are enough.',
     input_schema: S({ postal_code: { type: 'string' } }) },
   { name: 'add_to_cart', strict: true,
     description: "Put products in the visitor's cart on this website. Use the product ids from the product list. option is the grind for coffees (e.g. \"dallah\" or \"fine\") or the date variety for boxes where the customer chooses one; null otherwise. Only use after the customer asked for it.",
@@ -168,6 +168,9 @@ async function runTool(name: string, input: any, c: ToolCtx): Promise<unknown> {
       return { ordering_open: a.open, earliest_day: a.from, method, days, note: 'order_by is the Calgary date and hour when orders for that day close' };
     }
     case 'check_postal_code': {
+      // The first three characters (e.g. "T3A") are enough to know the area.
+      const fsa = String(input.postal_code ?? '').toUpperCase().replace(/[\s-]+/g, '');
+      if (/^T[123][A-Z]\d?$/.test(fsa) && fsa.length <= 4) return { delivers: true, area: fsa.slice(0, 3), fee: `$${DELIVERY_CENTS / 100}, free from $${FREE_DELIVERY_FROM / 100}`, note: 'This area is in Calgary, so we deliver there. The full postal code goes in at checkout.' };
       const p = calgaryPostal(String(input.postal_code ?? ''));
       return p ? { delivers: true, postal_code: p, fee: `$${DELIVERY_CENTS / 100}, free from $${FREE_DELIVERY_FROM / 100}` } : { delivers: false, note: 'Outside our Calgary delivery area (codes start T1, T2 or T3), or not a valid postal code. Pickup is free.' };
     }

@@ -624,7 +624,7 @@
       "lang": "en",
       "q": "Why is your coffee more expensive than Costco's?",
       "must": [
-        "calm, plain answer about what the coffee is (spices, small batches, roasted in Calgary)"
+        "calm, plain answer about what goes into the coffee (the regional recipes and spices) without inventing facts about roasting or sourcing that the handbook doesn't give"
       ],
       "must_not": [
         "uses the words best or premium",
