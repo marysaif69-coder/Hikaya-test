@@ -72,10 +72,10 @@ export async function leave(s: Session, id: number) {
 export async function assignShift(id: number, email: string, by: string) {
   const sh = await one`SELECT * FROM shifts WHERE id = ${id}`;
   if (!sh) throw new HttpError(404, 'not-found');
-  const m = await one`SELECT role FROM team_members WHERE email = ${email} AND status <> 'off'`;
+  const m = await one`SELECT role, drives FROM team_members WHERE email = ${email} AND status <> 'off'`;
   const isOwner = env('ADMIN_EMAILS').split(',').map((e: string) => e.trim().toLowerCase()).includes(email);
   if (!m && !isOwner) throw new HttpError(400, 'who', 'That person is not on the team.');
-  if (sh.kind === 'driving' && m && m.role !== 'driver') throw new HttpError(400, 'role', 'Driving shifts are for drivers.');
+  if (sh.kind === 'driving' && m && m.role !== 'driver' && !m.drives) throw new HttpError(400, 'role', 'Driving shifts are for drivers (or people marked "also drives").');
   if (sh.kind === 'driving' && m) await assertPapers(email, day(sh.day));
   await sql`INSERT INTO shift_people (shift_id, email, how) VALUES (${id}, ${email}, 'assigned') ON CONFLICT (shift_id, email) DO UPDATE SET how = 'assigned'`;
   await send({ to: email, subject: `You're on: ${KIND_LABEL[sh.kind]} ${day(sh.day)} ${sh.starts}–${sh.ends}`, text: `The owners put you on a ${KIND_LABEL[sh.kind].toLowerCase()} shift: ${day(sh.day)}, ${sh.starts}–${sh.ends}.${sh.note ? `\n${sh.note}` : ''}\n\nSee it in the team app: ${siteUrl()}/admin/driver/`, html: `<p style="font:15px Arial,sans-serif">The owners put you on a ${esc(KIND_LABEL[sh.kind].toLowerCase())} shift: <b>${day(sh.day)}, ${sh.starts}–${sh.ends}</b>.${sh.note ? `<br>${esc(sh.note)}` : ''}<br><br><a href="${siteUrl()}/admin/driver/">Open the team app</a></p>`, kind: 'team-shift-assigned' });
@@ -134,8 +134,8 @@ const DOCS = [
 
 /** Drivers need a licence and insurance that are valid on the day. */
 export async function assertPapers(email: string, onDay: string) {
-  const m = await one`SELECT role, licence_expires, insurance_expires FROM team_members WHERE email = ${email}`;
-  if (!m || m.role !== 'driver') return;
+  const m = await one`SELECT role, drives, licence_expires, insurance_expires FROM team_members WHERE email = ${email}`;
+  if (!m || (m.role !== 'driver' && !m.drives)) return;
   for (const k of ['licence_expires', 'insurance_expires'] as const) {
     const v = m[k] ? day(m[k]) : null;
     if (!v) throw new HttpError(400, 'papers', `Add the ${k === 'licence_expires' ? "driver's licence" : 'car insurance'} expiry date in the team app (My details) first.`);
@@ -159,7 +159,7 @@ export async function paperReminders(today = calgaryNow().date) {
   for (const m of rows) {
     const reminded = (typeof m.docs_reminded === 'string' ? JSON.parse(m.docs_reminded) : m.docs_reminded) ?? {};
     for (const doc of DOCS) {
-      if (doc.forDrivers && m.role !== 'driver') continue;
+      if (doc.forDrivers && m.role !== 'driver' && !m.drives) continue;
       const v = m[doc.key] ? day(m[doc.key]) : null;
       if (!v || v > addDays(today, 30) || reminded[doc.key] === v) continue;
       const expired = v < today;

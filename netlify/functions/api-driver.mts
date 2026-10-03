@@ -19,7 +19,7 @@ export default async (req: Request) => {
 
     if (path === 'me' && req.method === 'GET') {
       const m = await member(s.email);
-      return json({ email: s.email, role: s.role, member: m, needsOnboarding: (s.role === 'driver' || s.role === 'packer') && !m?.agreed_at, guide: GUIDE.guide, routing: routing() });
+      return json({ email: s.email, role: s.role, member: m, needsOnboarding: (s.role === 'driver' || s.role === 'packer' || Boolean(m?.drives)) && !m?.agreed_at, guide: GUIDE.guide, routing: routing() });
     }
     if (path === 'onboard' && req.method === 'POST') return json({ member: await onboard(s, await body(req)) });
     // Until onboarding is done a driver sees nothing else.

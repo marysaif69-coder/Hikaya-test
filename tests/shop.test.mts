@@ -626,6 +626,21 @@ const sup = (await call(admin, '/api/admin/supplies?from=2027-02-11', { cookie: 
 assert.ok(sup.needThisWeek >= 1); assert.equal(sup.short, sup.needThisWeek); assert.equal(sup.low, true);
 assert.equal((await call(admin, '/api/admin/supplies/boxC12', { cookie: adm, body: { onHand: -3 } })).status, 400); ok("supplies on hand against the week's needs, with low warnings");
 
+// ---------- owners and managers who also drive ----------
+await call(admin, '/api/admin/team', { cookie: adm, body: { email: 'maryam@hikayacoffee.ca', name: 'Maryam', role: 'helper', drives: true } });
+await call(admin, '/api/admin/team', { cookie: adm, body: { email: 'ahmed@example.com', name: 'Ahmed', role: 'helper', drives: true } });
+const ahmed = await login('ahmed@example.com');
+assert.equal((await call(auth, '/api/me', { cookie: ahmed })).data.user.role, 'staff');
+assert.equal((await call(auth, '/api/me', { cookie: adm })).data.user.role, 'admin'); ok('a manager who drives keeps the desk; an owner who drives stays an owner');
+const dl = (await call(admin, '/api/admin/team', { cookie: adm })).data.drivers.map((d: any) => d.email);
+assert.ok(dl.includes('ahmed@example.com') && dl.includes('maryam@hikayacoffee.ca'));
+const ao = await order({ method: 'delivery', street: '7 Ahmed Way', postal: 'T2P1J9', day: '2027-02-18', email: 'ao@example.com' });
+assert.equal((await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [ao.data.ref], driver: 'ahmed@example.com' } })).data.error, 'papers');
+assert.equal((await call(driverApi, '/api/driver/me', { cookie: ahmed })).data.needsOnboarding, true);
+await call(driverApi, '/api/driver/onboard', { cookie: ahmed, body: { name: 'Ahmed', phone: '403 555 0140', agree: true, licence_expires: '2029-01-01', insurance_expires: '2028-01-01' } });
+assert.equal((await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [ao.data.ref], driver: 'ahmed@example.com' } })).data.assigned, 1);
+assert.equal((await call(driverApi, '/api/driver/stops?date=2027-02-18&mine=1', { cookie: ahmed })).data.stops[0].ref, ao.data.ref); ok('"also drives": they get deliveries once their licence and insurance are in');
+
 // ---------- confirming orders ----------
 const newO = await order({ day: '2027-01-31' });
 const cMails = sent.length;
