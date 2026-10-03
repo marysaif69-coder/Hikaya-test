@@ -29,6 +29,8 @@ All sent through Resend from the site itself; no n8n or Zapier needed. Admin →
 - **Text reminders**: checkout tick; sent by the same daily job through Twilio when its three settings exist.
 - **Order again**: My account puts a past order's items back in the cart.
 - **Ask Hikaya voice**: the browser's own speech-to-text fills the box (Chrome, Safari, Edge); no audio is sent to us.
+- **Costs and margins** (Admin → Numbers, owners): cost of one per product (`product_settings.cost_cents`); sales, cost and what is left for any range of days (by pickup/delivery day; discounts and refunds off the total). `netlify/lib/costs.ts`.
+- **Gift cards in person** (Admin → Promotions → Sell one here, owners): $5–$500, cash, card on the reader or e-Transfer; paid at once, emailed if there is an address, printable card. `sellGiftCardHere` in `netlify/lib/giftcards.ts`.
 - **Monthly report**: emailed to ADMIN_EMAILS on the 1st (Calgary); preview or send in Admin → Numbers.
 - **Plan tab**: what's built, what's left before launch, the rehearsal steps and ideas for later.
 

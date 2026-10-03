@@ -3,7 +3,8 @@ import { loadOverrides } from '../lib/business';
 import type { Config } from '@netlify/functions';
 import { json, fail, body, str, HttpError, siteUrl, env } from '../lib/http';
 import { cardEnabled, squareCheck } from '../lib/square';
-import { listGiftCards, giftCardPaid } from '../lib/giftcards';
+import { listGiftCards, giftCardPaid, sellGiftCardHere } from '../lib/giftcards';
+import { listCosts, saveCost, margins } from '../lib/costs';
 import { listSubscriptions } from '../lib/subscriptions';
 import { monthlyReport, sendMonthlyReport } from '../lib/report';
 import { smsEnabled } from '../lib/sms';
@@ -87,7 +88,7 @@ async function handle(req: Request) {
     // Helpers can read everything and run orders; money, catalog, settings and exports are owners only.
     if (admin.role !== 'admin') {
       const write = req.method !== 'GET';
-      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write) || parts[0] === 'recall.csv' || parts[0] === 'hours.csv' || parts[0] === 'letters' || parts[0] === 'business' || parts[0] === 'backup.json' || parts[0] === 'activity' || (parts[0] === 'checklists' && write)
+      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write) || parts[0] === 'recall.csv' || parts[0] === 'hours.csv' || parts[0] === 'letters' || parts[0] === 'business' || parts[0] === 'costs' || parts[0] === 'margins' || parts[0] === 'backup.json' || parts[0] === 'activity' || (parts[0] === 'checklists' && write)
         || (write && ['products', 'settings', 'ask', 'connections', 'content', 'giftcards', 'report', 'pay'].includes(parts[0])) || (parts[0] === 'orders' && parts[2] === 'refund');
       if (ownersOnly) throw new HttpError(403, 'owners-only', 'Only the owners can do this.');
     }
@@ -353,6 +354,12 @@ async function handle(req: Request) {
       const g = await giftCardPaid(parts[1], req);
       return json({ ok: true, sentTo: g.to_email || g.buyer_email });
     }
+    if (parts[0] === 'giftcards' && parts[1] === 'sell' && req.method === 'POST') return json(await sellGiftCardHere(await body(req), admin.as?.name ?? admin.email, req));
+
+    // ---------- costs and margins (owners) ----------
+    if (parts[0] === 'costs' && req.method === 'GET') return json({ costs: await listCosts() });
+    if (parts[0] === 'costs' && parts[1] && req.method === 'POST') { await saveCost(parts[1], (await body(req)).cost_cents, admin.email); return json({ ok: true }); }
+    if (parts[0] === 'margins' && req.method === 'GET') return json(await margins(q('from', 10), q('to', 10)));
 
     // ---------- regular orders ----------
     if (parts[0] === 'subscriptions' && req.method === 'GET') return json({ subscriptions: await listSubscriptions() });

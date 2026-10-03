@@ -151,6 +151,18 @@ import '../../styles/global.css';
         <div class="a-table-wrap"><table class="a-table mini-t" id="letterTable"></table></div>
       </div>
       <div class="promo-form" id="gcBox"><h2 class="h-s">Gift cards</h2><p class="muted">Sold on the Gift cards page (footer link). Card payments send the code by themselves. For e-Transfer, press “Money received” when it arrives and the code is emailed.</p>
+        <details class="owner-only gc-sell"><summary><b>Sell one here</b> (market, pop-up, at the door)</summary>
+          <form id="gcSell" class="biz" novalidate>
+            <label>Amount ($5 to $500)<input name="amount" type="number" min="5" max="500" step="1" inputmode="numeric" required /></label>
+            <label>Paid by<select name="payment"><option value="cash">Cash</option><option value="card-here">Card on the reader</option><option value="e-transfer">e-Transfer (already received)</option></select></label>
+            <label>For<input name="to_name" placeholder="Their name (optional)" /></label>
+            <label>Their email<small>Optional. The code is emailed to them.</small><input name="to_email" type="email" /></label>
+            <label>From<small>Needed when it is emailed to someone else.</small><input name="buyer_name" /></label>
+            <label>Buyer's email<small>Optional. If there is no email for them, the code goes here.</small><input name="buyer_email" type="email" /></label>
+            <label>Message<input name="message" maxlength="300" /></label>
+            <label>Language of the email<select name="lang"><option value="en">English</option><option value="ar">العربية</option></select></label>
+            <button type="submit" class="btn primary sm">Sell and show the code</button></form>
+          <div id="gcSold"></div></details>
         <div class="a-table-wrap"><table class="a-table mini-t" id="gcTable"></table></div></div>
       <div class="a-table-wrap"><table class="a-table" id="promos">
         <thead><tr><th>Code</th><th>Gives</th><th>When</th><th>Used</th><th>Discount given</th><th>Note</th><th></th></tr></thead>
@@ -213,6 +225,10 @@ import '../../styles/global.css';
       <div class="promo-form"><h2 class="h-s">Monthly report</h2><p class="muted">Emailed to the owners on the 1st of every month. Preview it here, or send last month's now.</p>
         <p><button type="button" class="btn line sm" id="repShow">Preview last month</button> <button type="button" class="btn line sm" id="repSend">Email it to the owners now</button> <span class="ev" id="repMsg"></span></p>
         <div id="repBody"></div></div>
+      <div class="promo-form owner-only"><h2 class="h-s">Costs and margins</h2><p class="muted">Enter what one of each costs to make: coffee or dates, pouch or box, sleeve and label. Margins count orders by their pickup or delivery day, use today's costs, and take discounts and refunds off the total. Delivery fees are shown on their own.</p>
+        <div class="mg-pick"><label>From <input type="date" id="mgFrom" /></label><label>To <input type="date" id="mgTo" /></label><button type="button" class="btn line sm" id="mgShow">Show</button></div>
+        <div class="a-table-wrap"><table class="a-table mini-t" id="mgTable"></table></div><p id="mgTotals"></p>
+        <details><summary><b>Cost of one, per product</b></summary><p class="muted">Saved as you leave each box.</p><div class="a-table-wrap"><table class="a-table mini-t" id="costTable"></table></div></details></div>
     </section>
 
     <!-- WORDS: recipes and product text -->
@@ -364,6 +380,7 @@ import '../../styles/global.css';
           <li>Shared team login with “Who's working?” confirmed by a code to each person's own email; owners and managers who also drive</li>
           <li>Change items in an order; “you're next” message to the next customer on a route; letters to the mailing list from the desk</li>
           <li>Printable English/French labels per lot; food-safety checklists signed in the team app; team messages; backup download; activity log</li>
+          <li>Business details and extra owners in Settings; costs and margins in Numbers; gift cards sold in person with a printable card</li>
           <li>Words editor for product text and recipes; settings checklist; private preview gate</li>
         </ul>
       </div>
@@ -374,9 +391,7 @@ import '../../styles/global.css';
           <li>Push notifications to drivers when they get new stops (works on iPhone and Android for the installed app).</li>
           <li>An App Store / Google Play version of the delivery app, only if the home-screen app isn't enough.</li>
           <li>Loyalty: a free coffee after a number of orders, if customers ask for it.</li>
-          <li>Costs and margins per product (ingredients + packaging) once prices are final.</li>
           <li>Wholesale price list for cafés, mosques and offices.</li>
-          <li>Selling gift cards in person through Square at pickup.</li>
         </ul>
       </div>
     </section>
@@ -585,6 +600,11 @@ import '../../styles/global.css';
   .fs-l { display: grid; gap: 6px; margin-bottom: 10px; }
   .edit-items { margin: 10px 0; } .edit-items summary { cursor: pointer; font-weight: 700; }
   .biz { display: grid; gap: 10px; }
+  .biz select { border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 10px; font: inherit; font-weight: 400; background: var(--paper); }
+  .gc-sell { margin: 6px 0 14px; } .gc-sell summary { cursor: pointer; margin-bottom: 10px; } .gc-sell .biz { max-width: 520px; }
+  :global(#gcSold) { margin-top: 12px; } .gc-code { font-size: 16px; } .gc-code b { letter-spacing: 2px; color: var(--tamr, #A93B28); }
+  .mg-pick { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 10px; } .mg-pick input { border: 1.5px solid var(--line); border-radius: 10px; padding: 6px 8px; font: inherit; margin-inline-start: 6px; }
+  :global(.cost-in) { width: 90px; border: 1.5px solid var(--line); border-radius: 8px; padding: 4px 6px; font: inherit; }
   .biz label { display: grid; gap: 4px; font-weight: 600; font-size: 14px; }
   .biz small { font-weight: 400; color: var(--ink-2); }
   .biz input, .biz textarea { border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 10px; font: inherit; font-weight: 400; background: var(--paper); }
@@ -679,7 +699,7 @@ import '../../styles/global.css';
     for (const v of ['orders', 'inbox', 'day', 'week', 'numbers', 'words', 'plan', 'drivers', 'customers', 'production', 'products', 'promos', 'assistant', 'chats', 'settings']) $(`v-${v}`).hidden = v !== name;
     if (name === 'products') loadProducts();
     if (name === 'week') loadWeek();
-    if (name === 'numbers') loadNumbers();
+    if (name === 'numbers') { loadNumbers(); if (ROLE === 'admin') { loadMargins(); loadCosts(); } }
     if (name === 'words') loadWords();
     if (name === 'drivers') loadDrivers();
     if (name === 'production') loadProduction();
@@ -1195,6 +1215,31 @@ import '../../styles/global.css';
     $('nTop').innerHTML = rows(d.top, x => [esc(x.name), String(x.qty)], ['Product', 'Sold'], 'No real orders yet.');
   }
 
+  // ---------- costs and margins ----------
+  function monthStart() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; }
+  function dayIso(d = new Date()) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+  async function loadMargins() {
+    const from = ($('mgFrom') as HTMLInputElement).value || monthStart(), to = ($('mgTo') as HTMLInputElement).value || dayIso();
+    ($('mgFrom') as HTMLInputElement).value = from; ($('mgTo') as HTMLInputElement).value = to;
+    const d = await api(`/api/admin/margins?from=${from}&to=${to}`); const t = d.totals;
+    const pct = (p: number | null) => p === null ? '–' : `${p}%`;
+    $('mgTable').innerHTML = '<tr><th>Product</th><th>Sold</th><th>Sales</th><th>Cost</th><th>Left</th><th>Margin</th></tr>' + (d.rows.map((r: any) => `<tr><td>${esc(r.name)}</td><td>${r.qty}</td><td>${money(r.sales)}</td><td>${r.cost === null ? '<i>no cost yet</i>' : money(r.cost)}</td><td>${r.margin === null ? '–' : money(r.margin)}</td><td>${pct(r.pct)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No orders on those days.</td></tr>');
+    $('mgTotals').innerHTML = `${t.orders} orders · products ${money(t.sales)} − discounts ${money(t.discounts)} − refunds ${money(t.refunds)} − cost ${money(t.cost)} = <b>${money(t.left)}</b> left (${pct(t.pct)}). Delivery fees ${money(t.delivery)}.`
+      + (d.missing.length ? `<br><small>No cost entered yet for ${d.missing.map(esc).join(', ')}, so the total is too high.</small>` : '');
+  }
+  async function loadCosts() {
+    const d = await api('/api/admin/costs');
+    $('costTable').innerHTML = '<tr><th>Product</th><th>Price</th><th>Cost of one ($)</th><th>Margin</th></tr>' + d.costs.map((c: any) => `<tr><td>${esc(c.name)}</td><td>${money(c.price_cents)}</td>
+      <td><input class="cost-in" data-cost="${esc(c.id)}" type="number" min="0" step="0.01" value="${c.cost_cents === null ? '' : (c.cost_cents / 100).toFixed(2)}" /></td>
+      <td>${c.cost_cents === null || !c.price_cents ? '–' : `${Math.round(((c.price_cents - c.cost_cents) / c.price_cents) * 100)}%`}</td></tr>`).join('');
+  }
+  $('costTable').addEventListener('change', async e => {
+    const i = (e.target as HTMLElement).closest<HTMLInputElement>('[data-cost]'); if (!i) return;
+    await api(`/api/admin/costs/${i.dataset.cost}`, { cost_cents: i.value === '' ? null : Math.round(Number(i.value) * 100) });
+    loadCosts(); loadMargins();
+  });
+  $('mgShow').addEventListener('click', loadMargins);
+
   // ---------- words: recipes and product text ----------
   const W_LABEL: Record<string, string> = { points: 'Points', name: 'Name', taste: 'Taste line', notes: 'Description', story: 'Story', bunn: 'What Bunn says', why: 'Why this date', contents: "What's inside", size: 'Size', title: 'Title', vessel: 'You need', yields: 'Makes', steps: 'Steps', serve: 'How to serve', secs: 'Timer (seconds)' };
   let words: { file: string; data: any; sha: string | null } | null = null;
@@ -1318,7 +1363,7 @@ import '../../styles/global.css';
     $('gcTable').innerHTML = '<tr><th>Ref</th><th>Amount</th><th>Left</th><th>From → to</th><th>Paid</th><th></th></tr>' + (d.giftcards.map((g: any) => `<tr>
       <td class="ref">${esc(g.ref)}${g.sent_at ? `<br><small>${esc(g.code)}</small>` : ''}</td><td>${money(g.amount_cents)}</td><td>${g.paid_at ? money(g.balance_cents) : '–'}</td>
       <td>${esc(g.buyer_name)} → ${esc(g.to_name)}<br><small>${esc(g.to_email || g.buyer_email)}</small></td>
-      <td>${g.paid_at ? `Yes, ${g.payment === 'card' ? 'card' : 'e-Transfer'}` : `<b>Not yet</b> (${g.payment === 'card' ? 'card' : 'e-Transfer'})`}</td>
+      <td>${g.paid_at ? `Yes, ${GC_PAY[g.payment] ?? g.payment}${g.sold_by ? `<br><small>in person, ${esc(g.sold_by)}</small>` : ''}` : `<b>Not yet</b> (${GC_PAY[g.payment] ?? g.payment})`}</td>
       <td>${g.paid_at ? '' : `<button type="button" data-gcpaid="${esc(g.ref)}">Money received</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">None sold yet.</td></tr>');
   }
   $('gcTable').addEventListener('click', async e => {
@@ -1326,6 +1371,33 @@ import '../../styles/global.css';
     if (!b || !confirm(`Mark ${b.dataset.gcpaid} as paid and email the gift card code?`)) return;
     const r = await api(`/api/admin/giftcards/${b.dataset.gcpaid}/paid`, {});
     alert(`Done. The code was emailed to ${r.sentTo}.`); loadGiftCards();
+  });
+
+  const GC_PAY: Record<string, string> = { card: 'card online', 'e-transfer': 'e-Transfer', cash: 'cash', 'card-here': 'card on the reader' };
+  function printGiftCard(g: { code: string; amount_cents: number; to_name: string; message: string | null }) {
+    const w = window.open('', '_blank'); if (!w) { alert('Allow pop-ups to print the card.'); return; }
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Gift card</title><style>
+      @page{size:letter;margin:0.6in} body{margin:0;font:11pt/1.4 Georgia,serif;color:#2B1D14}
+      .c{width:5in;border:1px dashed #999;padding:0.3in;display:grid;gap:8px;text-align:center}
+      .ar{direction:rtl;font-family:'Noto Naskh Arabic',serif}.code{font:700 20pt/1 Arial,sans-serif;letter-spacing:3px;color:#A93B28;direction:ltr}
+      .amt{font:700 16pt/1 Arial,sans-serif}.m{font-style:italic}@media print{.c{border-color:#ccc}}</style></head><body><div class="c">
+      <div class="ar">بطاقة هدية من حكاية</div><div>Hikaya gift card</div>
+      ${g.to_name ? `<div>${esc(g.to_name)}</div>` : ''}${g.message ? `<div class="m">“${esc(g.message)}”</div>` : ''}
+      <div class="amt">${money(g.amount_cents)}</div><div class="code">${esc(g.code)}</div>
+      <div class="ar">اكتب الرمز في خانة «بطاقة هدية» عند الطلب على hikayacoffee.ca. ما يتبقى من الرصيد يبقى للمرة القادمة.</div>
+      <div>Type the code in the "Gift card" box at checkout on hikayacoffee.ca. Whatever is left stays on the card for next time.</div>
+      </div><script>window.onload=()=>window.print()<\/script></body></html>`);
+    w.document.close();
+  }
+  $('gcSell').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target as HTMLFormElement; const v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement).value.trim();
+    const dollarsIn = Number(v('amount'));
+    if (!(dollarsIn >= 5 && dollarsIn <= 500)) { alert('Amount from $5 to $500.'); return; }
+    if (!confirm(`Sell a ${money(Math.round(dollarsIn * 100))} gift card, paid by ${GC_PAY[v('payment')]}?`)) return;
+    const g = await api('/api/admin/giftcards/sell', { amount_cents: Math.round(dollarsIn * 100), payment: v('payment'), to_name: v('to_name'), to_email: v('to_email'), buyer_name: v('buyer_name'), buyer_email: v('buyer_email'), message: v('message'), lang: v('lang') });
+    $('gcSold').innerHTML = `<p class="gc-code">Code <b>${esc(g.code)}</b> · ${money(g.amount_cents)}${g.sentTo ? ` · emailed to ${esc(g.sentTo)}` : ' · not emailed: write it on a card or print it'}</p><p><button type="button" class="btn line sm" id="gcPrint">Print a gift card</button></p>`;
+    $('gcPrint').addEventListener('click', () => printGiftCard(g));
+    f.reset(); loadGiftCards();
   });
 
   // ---------- promotions ----------

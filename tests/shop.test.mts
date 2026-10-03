@@ -775,6 +775,39 @@ assert.ok(seenCtx.system[1].text.includes('12 Test Ave SW')); ok('Ask Hikaya kno
 await call(admin, '/api/admin/business', { cookie: adm, body: { PICKUP_ADDRESS: '', PICKUP_HOURS: '', ETRANSFER_EMAIL: '', OWNER_EMAILS: '' } });
 assert.equal((await call(auth, '/api/me', { cookie: shadiOwner })).data.user.role, 'customer'); ok('removing an owner takes effect at once');
 
+// ---------- costs and margins ----------
+assert.equal((await call(admin, '/api/admin/costs/najdi', { cookie: helper, body: { cost_cents: 900 } })).status, 403);
+assert.equal((await call(admin, '/api/admin/margins?from=2027-03-01&to=2027-03-31', { cookie: helper })).status, 403);
+assert.equal((await call(admin, '/api/admin/costs/najdi', { cookie: adm, body: { cost_cents: -5 } })).status, 400);
+const catBefore = JSON.stringify((await call(orders, '/api/catalog')).data.products);
+await call(admin, '/api/admin/costs/najdi', { cookie: adm, body: { cost_cents: 900 } });
+const costs = (await call(admin, '/api/admin/costs', { cookie: adm })).data.costs;
+assert.equal(costs.find((c: any) => c.id === 'najdi').cost_cents, 900); assert.equal(costs.find((c: any) => c.id === 'khaleeji').cost_cents, null);
+await call(admin, '/api/admin/costs/radaey', { cookie: adm, body: { cost_cents: 500 } }); await call(admin, '/api/admin/costs/radaey', { cookie: adm, body: { cost_cents: null } });
+assert.equal(JSON.stringify((await call(orders, '/api/catalog')).data.products), catBefore); ok('owners enter what each product costs; the shop is not changed by it');
+const mgO = await order({ day: '2027-03-12', lines: [{ id: 'najdi', opt: 'dallah', qty: 2 }, { id: 'shamaliyya', opt: 'dallah', qty: 1 }] }); if (mgO.status !== 201) console.log('mgO', mgO.data);
+const mg = (await call(admin, '/api/admin/margins?from=2027-03-12&to=2027-03-12', { cookie: adm })).data;
+const mgN = mg.rows.find((r: any) => r.product_id === 'najdi');
+assert.equal(mgN.qty, 2); assert.equal(mgN.cost, 1800); assert.equal(mgN.margin, mgN.sales - 1800);
+assert.deepEqual(mg.missing, ['Shamaliyya']); assert.equal(mg.totals.cost, 1800);
+assert.equal(mg.totals.left, mg.totals.sales - mg.totals.discounts - mg.totals.refunds - 1800); ok('margins per product and in total for a range of days; products without a cost are flagged');
+assert.equal((await call(admin, '/api/admin/margins?from=2027-03-12&to=2027-03-01', { cookie: adm })).status, 400);
+
+// ---------- gift cards sold in person ----------
+assert.equal((await call(admin, '/api/admin/giftcards/sell', { cookie: helper, body: { amount_cents: 4000, payment: 'cash' } })).status, 403);
+assert.equal((await call(admin, '/api/admin/giftcards/sell', { cookie: adm, body: { amount_cents: 200, payment: 'cash' } })).status, 400);
+assert.equal((await call(admin, '/api/admin/giftcards/sell', { cookie: adm, body: { amount_cents: 4000, payment: 'bitcoin' } })).status, 400);
+assert.equal((await call(admin, '/api/admin/giftcards/sell', { cookie: adm, body: { amount_cents: 4000, payment: 'cash', to_email: 'friend@example.com' } })).status, 400);
+const gsM = sent.length;
+const gs1 = (await call(admin, '/api/admin/giftcards/sell', { cookie: adm, body: { amount_cents: 4000, payment: 'cash' } })).data;
+assert.ok(gs1.code && gs1.sentTo === null); assert.equal(sent.length, gsM);
+assert.equal((await call(orders, '/api/giftcard/check', { body: { code: gs1.code } })).data.balance, 4000); ok('a gift card sold for cash at a market works at once; no email needed, the code is shown to print');
+const gs2 = (await call(admin, '/api/admin/giftcards/sell', { cookie: adm, body: { amount_cents: 3500, payment: 'card-here', to_name: 'Noura', to_email: 'noura@example.com', buyer_name: 'Sami', message: 'Eid mubarak', lang: 'ar' } })).data;
+const gsMail = sent.slice(gsM).find(m => m.to.includes('noura@example.com'));
+assert.ok(gsMail && gsMail.html.includes(gs2.code) && gsMail.html.includes('Sami')); assert.equal(gs2.sentTo, 'noura@example.com');
+const gsRow = (await call(admin, '/api/admin/giftcards', { cookie: adm })).data.giftcards.find((g: any) => g.ref === gs2.ref);
+assert.equal(gsRow.payment, 'card-here'); assert.ok(gsRow.sold_by && gsRow.paid_at && gsRow.sent_at); ok('a gift card sold in person by card is emailed to the person it is for, and the desk shows who sold it');
+
 // ---------- confirming orders ----------
 const newO = await order({ day: '2027-01-31' });
 const cMails = sent.length;

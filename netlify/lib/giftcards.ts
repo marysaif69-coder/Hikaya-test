@@ -57,6 +57,40 @@ export async function giftCardPaid(ref: string, req?: Request, paymentId: string
   return g;
 }
 
+/** A gift card sold in person (market, pop-up, at the door): paid on the spot by cash, card on the
+ * Square reader or e-Transfer. Any amount from $5 to $500. The code is emailed when there is an
+ * address, and the desk shows it to print or write on a card either way. */
+export async function sellGiftCardHere(b: any, by: string, req?: Request) {
+  const amount = Math.round(Number(b?.amount_cents));
+  const lang = b?.lang === 'ar' ? 'ar' : 'en';
+  const payment = ({ cash: 'cash', card: 'card-here', 'card-here': 'card-here', 'e-transfer': 'e-transfer' } as Record<string, string>)[String(b?.payment)];
+  const to_name = str(b?.to_name, 120) || (lang === 'ar' ? 'صاحب البطاقة' : 'Card holder');
+  const buyer_name = str(b?.buyer_name, 120) || (lang === 'ar' ? 'شراء مباشر' : 'In person');
+  const buyer_email = str(b?.buyer_email, 254).toLowerCase(), to_email = str(b?.to_email, 254).toLowerCase() || null;
+  const message = str(b?.message, 300) || null;
+  const fields: Record<string, string> = {};
+  if (!Number.isInteger(amount) || amount < 500 || amount > 50000) fields.amount = 'amount';
+  if (!payment) fields.payment = 'payment';
+  if (buyer_email && !isEmail(buyer_email)) fields.buyer_email = 'email';
+  if (to_email && !isEmail(to_email)) fields.to_email = 'email';
+  if (to_email && !str(b?.buyer_name, 120)) fields.buyer_name = 'required';
+  if (Object.keys(fields).length) throw Object.assign(new HttpError(400, 'invalid', 'Amount from $5 to $500, how it was paid, and emails that look right. When it is emailed to someone else, add who it is from.'), { fields });
+  let g: Row | null = null;
+  for (let i = 0; i < 5 && !g; i++) {
+    try {
+      g = await one`INSERT INTO gift_cards (ref, code, amount_cents, balance_cents, buyer_name, buyer_email, to_name, to_email, message, lang, payment, paid_at, sold_by)
+        VALUES (${randomCode('GC')}, ${randomCode('GIFT')}, ${amount}, ${amount}, ${buyer_name}, ${buyer_email}, ${to_name}, ${to_email}, ${message}, ${lang}, ${payment}, NOW(), ${by}) RETURNING *`;
+    } catch (e: any) { if (!String(e?.message).includes('unique')) throw e; }
+  }
+  if (!g) throw new HttpError(500, 'ref');
+  const sentTo = g.to_email || g.buyer_email || null;
+  if (sentTo) {
+    await send(giftCardEmail(mail(g), siteUrl(req)));
+    await sql`UPDATE gift_cards SET sent_at = NOW() WHERE id = ${g.id}`;
+  }
+  return { ref: g.ref as string, code: g.code as string, amount_cents: amount, to_name, message, sentTo };
+}
+
 /** Balance check at checkout. Never says whether an unpaid card exists. */
 export async function giftCardBalance(raw: unknown) {
   const code = normGift(raw);
@@ -82,5 +116,5 @@ export async function giveBackToGiftCard(code: string | null, cents: number) {
   if (code && cents > 0) await sql`UPDATE gift_cards SET balance_cents = LEAST(amount_cents, balance_cents + ${cents}) WHERE code = ${code}`;
 }
 
-export const listGiftCards = () => sql`SELECT ref, code, amount_cents, balance_cents, buyer_name, buyer_email, to_name, to_email, payment, paid_at, sent_at, cancelled_at, created_at
+export const listGiftCards = () => sql`SELECT ref, code, amount_cents, balance_cents, buyer_name, buyer_email, to_name, to_email, payment, paid_at, sent_at, cancelled_at, sold_by, created_at
   FROM gift_cards ORDER BY created_at DESC LIMIT 200`;
