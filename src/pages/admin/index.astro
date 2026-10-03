@@ -34,7 +34,7 @@ import '../../styles/global.css';
       <a class="drv-link" href="/admin/driver/">Team app</a>
       <button type="button" data-tab="settings" aria-pressed="false" class="owner-only">Settings</button>
     </nav>
-    <div class="a-who" id="who" hidden><span id="whoEmail"></span><button type="button" id="logout">Log out</button></div>
+    <div class="a-who" id="who" hidden><span id="whoEmail"></span><button type="button" id="switchWho" hidden>Switch person</button><button type="button" id="logout">Log out</button></div>
   </header>
 
   <main class="a-main">
@@ -250,8 +250,8 @@ import '../../styles/global.css';
       </div>
       <div class="promo-form">
         <h2 class="h-s">The team</h2>
-        <p class="muted">Add people by email. Drivers and packers (paid or volunteer) get the team app: they log in with a code (Gmail or any email), fill in their details and papers, read the team guide (edit it in Words) and add the app to their phone. Helpers and managers get this order desk without money or settings; tick “Also drives” for anyone who also delivers (owners too: add yourself as Helper + Also drives to get deliveries and have your licence and insurance tracked; you stay an owner). Owners are set in Netlify (ADMIN_EMAILS).</p>
-        <form class="acts owner-only" id="invForm"><input name="email" type="email" placeholder="their@email.com" required /><input name="name" placeholder="Name (optional)" /><select name="role"><option value="driver">Driver</option><option value="packer">Packer</option><option value="helper">Helper / manager (order desk)</option></select><label><input type="checkbox" name="drives" /> Also drives</label><label><input type="checkbox" name="volunteer" /> Volunteer</label><button class="btn primary sm" type="submit">Add and email them</button></form>
+        <p class="muted">Add people by email, or tick “Uses our shared login” for people who log in with the shared email (hello@), pick their name and confirm with a code sent to their own email. Drivers and packers (paid or volunteer) get the team app: they log in with a code (Gmail or any email), fill in their details and papers, read the team guide (edit it in Words) and add the app to their phone. Helpers and managers get this order desk without money or settings; tick “Also drives” for anyone who also delivers (owners too: add yourself as Helper + Also drives to get deliveries and have your licence and insurance tracked; you stay an owner). Owners are set in Netlify (ADMIN_EMAILS).</p>
+        <form class="acts owner-only" id="invForm" novalidate><input name="email" type="email" placeholder="their@email.com" /><input name="name" placeholder="Name (optional)" /><select name="role"><option value="driver">Driver</option><option value="packer">Packer</option><option value="helper">Helper / manager (order desk)</option></select><label><input type="checkbox" name="drives" /> Also drives</label><label><input type="checkbox" name="shared" /> Uses our shared login (their own email gets the confirmation code)</label><label><input type="checkbox" name="volunteer" /> Volunteer</label><button class="btn primary sm" type="submit">Add and email them</button></form>
         <div class="a-table-wrap"><table class="a-table mini-t" id="teamTable"></table></div>
         <p class="muted">Deliveries counted per driver for paying them; set how you pay later.</p>
       </div>
@@ -568,6 +568,7 @@ import '../../styles/global.css';
 
 <script>
   import { mountLogin, logout } from '../../scripts/login';
+  import { askWho, whoLabel } from '../../scripts/whois';
   import { PRODUCTS, DATES } from '../../data/products';
   const PRODUCT_LIST = PRODUCTS.map(p => ({ id: p.id, kind: p.kind, name: p.name.en }));
   const DATE_LIST = Object.entries(DATES).map(([id, d]) => ({ id, name: d.name.en }));
@@ -605,6 +606,7 @@ import '../../styles/global.css';
       if (user.role === 'driver' || user.role === 'packer') { location.href = '/admin/driver/'; return; }
       if (user.role !== 'admin' && user.role !== 'staff') { $('notAdmin').hidden = false; return; }
       start(user.email, user.role);
+      fetch('/api/me').then(r => r.json()).then(me => { askWho(me); $('whoEmail').textContent = whoLabel(me); $('switchWho').hidden = !me.people?.length; $('switchWho').onclick = () => askWho(me, true); });
     });
   }
   let ROLE = 'admin';
@@ -868,9 +870,9 @@ import '../../styles/global.css';
     ($('asgAll') as HTMLSelectElement).innerHTML = t.drivers.map((x: any) => `<option value="${esc(x.email)}">${esc(x.name)}</option>`).join('');
     $('asgTable').innerHTML = '<tr><th>Time</th><th>Where</th><th>Customer</th><th>Status</th><th>Driver</th></tr>' + (d.deliveries.map((o: any) => `<tr><td>${esc(o.window)}</td><td>${esc(o.postal)}<br><small>${esc(o.street)}</small></td><td>${esc(o.gift ? o.gift.to + ' (gift)' : o.name)}<br><small>${esc(o.ref)}</small></td>
       <td>${STATUS_LABEL[o.status] ?? esc(o.status)}</td><td>${o.status === 'completed' ? esc(o.driver ?? '') : `<select data-asg="${esc(o.ref)}">${opts(o.driver)}</select>`}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No deliveries this day.</td></tr>');
-    $('teamTable').innerHTML = '<tr><th>Name</th><th>Role</th><th>Status</th><th>Delivered (7 days / this month)</th><th>Cash not handed in</th><th></th></tr>' + (t.team.map((m: any) => `<tr><td>${esc(m.name || '–')}<br><small>${esc(m.email)}${m.phone ? ' · ' + esc(m.phone) : ''}${m.vehicle ? ' · ' + esc(m.vehicle) : ''}</small></td>
+    $('teamTable').innerHTML = '<tr><th>Name</th><th>Role</th><th>Status</th><th>Delivered (7 days / this month)</th><th>Cash not handed in</th><th></th></tr>' + (t.team.map((m: any) => `<tr><td>${esc(m.name || '–')}<br><small>${esc(m.email)}${m.shared ? ` · on ${esc(m.login)}` : ''}${m.phone ? ' · ' + esc(m.phone) : ''}${m.vehicle ? ' · ' + esc(m.vehicle) : ''}</small></td>
       <td>${OWNERS.includes(m.email) ? 'Owner' : ({ driver: 'Driver', packer: 'Packer', helper: 'Helper' } as any)[m.role] ?? esc(m.role)}${m.drives ? '<br><small>Also drives</small>' : ''}${m.volunteer ? '<br><small>Volunteer</small>' : ''}</td><td>${m.status === 'off' ? 'Off' : m.agreedAt ? 'Ready' : 'Invited, not set up yet'}${paperNote(m)}</td><td>${m.week} / ${m.month}</td><td>${m.cash ? money(m.cash) : '–'}</td>
-      <td class="owner-only">${m.status !== 'off' ? `<button type="button" data-resend="${m.id}">Email the link again</button> <a class="btn line sm" target="_blank" rel="noopener" href="https://wa.me/${esc((m.phone ?? '').replace(/\D/g, '').replace(/^(\d{10})$/, '1$1'))}?text=${encodeURIComponent(shareText(m))}">WhatsApp</a> <button type="button" data-copy="${esc(shareText(m))}">Copy link</button> ` : ''}${m.status === 'off' ? `<button type="button" data-mem="${m.id}" data-st="active">Turn on</button>` : `<button type="button" data-mem="${m.id}" data-st="off">Turn off</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No drivers yet. Add one above.</td></tr>');
+      <td class="owner-only">${m.status !== 'off' && !m.shared ? `<button type="button" data-resend="${m.id}">Email the link again</button> <a class="btn line sm" target="_blank" rel="noopener" href="https://wa.me/${esc((m.phone ?? '').replace(/\D/g, '').replace(/^(\d{10})$/, '1$1'))}?text=${encodeURIComponent(shareText(m))}">WhatsApp</a> <button type="button" data-copy="${esc(shareText(m))}">Copy link</button> ` : ''}${m.status === 'off' ? `<button type="button" data-mem="${m.id}" data-st="active">Turn on</button>` : `<button type="button" data-mem="${m.id}" data-st="off">Turn off</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No drivers yet. Add one above.</td></tr>');
     loadDriverReports(); loadShiftsDesk(); loadHours();
     $('cashBox').innerHTML = `<h2 class="h-s">Cash to hand in</h2>` + (t.cash.length ? `<ul class="a-pack">${t.cash.map((c: any) => `<li><span>${esc(c.driver)} · ${c.orders} order${c.orders === 1 ? '' : 's'}</span><b>${money(c.cents)}</b> <button type="button" class="owner-only" data-cash="${esc(c.driver)}">Received</button></li>`).join('')}</ul>` : '<p class="muted">Nothing waiting.</p>');
   }
@@ -966,7 +968,9 @@ import '../../styles/global.css';
   });
   $('invForm').addEventListener('submit', async e => {
     e.preventDefault(); const f = e.target as HTMLFormElement, v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement).value;
-    await api('/api/admin/team', { email: v('email'), name: v('name'), role: v('role'), volunteer: (f.elements.namedItem('volunteer') as HTMLInputElement).checked, drives: (f.elements.namedItem('drives') as HTMLInputElement).checked }); f.reset(); alert('Added. They have an email with the link and the steps.'); loadDrivers();
+    const shared = (f.elements.namedItem('shared') as HTMLInputElement).checked;
+    await api('/api/admin/team', { email: v('email'), name: v('name'), role: v('role'), volunteer: (f.elements.namedItem('volunteer') as HTMLInputElement).checked, drives: (f.elements.namedItem('drives') as HTMLInputElement).checked, shared });
+    if (shared) { f.reset(); alert('Added. They log in with the shared email, pick their name, and confirm with the code sent to their own email.'); loadDrivers(); return; } f.reset(); alert('Added. They have an email with the link and the steps.'); loadDrivers();
   });
 
   // ---------- production ----------
@@ -1320,6 +1324,11 @@ import '../../styles/global.css';
     const me = await fetch('/api/me').then(r => r.json()).catch(() => ({ user: null }));
     if (me.error === 'preview') { location.replace(`/admin/?code=${Date.now()}`); return; }
     if (me.user?.role === 'driver' || me.user?.role === 'packer') { location.href = '/admin/driver/'; return; }
-    if (me.user?.role === 'admin' || me.user?.role === 'staff') start(me.user.email, me.user.role); else showLogin();
+    if (me.user?.role === 'admin' || me.user?.role === 'staff') {
+      start(me.user.email, me.user.role);
+      $('whoEmail').textContent = whoLabel(me); $('switchWho').hidden = !me.people?.length;
+      askWho(me);
+      $('switchWho').onclick = () => askWho(me, true);
+    } else showLogin();
   })();
 </script>

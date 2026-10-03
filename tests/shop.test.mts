@@ -641,6 +641,45 @@ await call(driverApi, '/api/driver/onboard', { cookie: ahmed, body: { name: 'Ahm
 assert.equal((await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [ao.data.ref], driver: 'ahmed@example.com' } })).data.assigned, 1);
 assert.equal((await call(driverApi, '/api/driver/stops?date=2027-02-18&mine=1', { cookie: ahmed })).data.stops[0].ref, ao.data.ref); ok('"also drives": they get deliveries once their licence and insurance are in');
 
+// ---------- shared team login: pick who is working ----------
+await call(admin, '/api/admin/team', { cookie: adm, body: { shared: true, name: 'Shadi', email: 'shadi@example.com', role: 'helper' } });
+await call(admin, '/api/admin/team', { cookie: adm, body: { shared: true, name: 'Maryam S', email: 'maryam.s@example.com', role: 'helper', drives: true } });
+assert.equal((await call(admin, '/api/admin/team', { cookie: adm, body: { shared: true, name: 'Nobody' } })).status, 400);
+const meShared = (await call(auth, '/api/me', { cookie: adm })).data;
+assert.deepEqual(meShared.people.map((p: any) => p.name).sort(), ['Maryam S', 'Shadi']); ok('people on the shared login are listed after logging in');
+const maryamS = meShared.people.find((p: any) => p.name === 'Maryam S');
+const asStart = await call(auth, '/api/auth/as', { cookie: adm, body: { id: maryamS.id } });
+assert.equal(asStart.data.sent, true); assert.match(asStart.data.to, /^ma…@example\.com$/);
+const asCode = sent.at(-1); assert.deepEqual(asCode.to, ['maryam.s@example.com']); const theCode = asCode.text.match(/\b\d{6}\b/)[0];
+const wrong: Response = await auth(new Request(`${H}/api/auth/as/verify`, { method: 'POST', headers: { 'content-type': 'application/json', origin: H, cookie: adm }, body: JSON.stringify({ id: maryamS.id, code: '000000' }) }));
+assert.equal(wrong.status, 400); assert.equal(wrong.headers.get('set-cookie'), null); ok('picking a name sends a code to that person\'s own email; a wrong code gets nothing');
+const asRes: Response = await auth(new Request(`${H}/api/auth/as/verify`, { method: 'POST', headers: { 'content-type': 'application/json', origin: H, cookie: adm }, body: JSON.stringify({ id: maryamS.id, code: theCode }) }));
+const asCk = asRes.headers.get('set-cookie')!.split(';')[0];
+const admAs = `${adm}; ${asCk}`;
+const meAs = (await call(auth, '/api/me', { cookie: admAs })).data.user;
+assert.equal(meAs.as.name, 'Maryam S'); assert.equal(meAs.role, 'admin'); assert.equal(meAs.login, 'maryam@hikayacoffee.ca'); ok('"Who\'s working?": confirmed with the code, the person acts with the login\'s rights');
+assert.equal((await call(auth, '/api/me', { cookie: `${adm}; hk_as=forged-token` })).data.user.as, undefined); ok('a made-up token does nothing');
+const bad = await call(auth, '/api/auth/as', { cookie: ahmed, body: { id: maryamS.id } });
+assert.equal(bad.status, 404); ok("nobody can pick a person from another login");
+const handle = meAs.email;
+assert.equal(handle, 'maryam.s@example.com');
+await call(driverApi, '/api/driver/onboard', { cookie: admAs, body: { name: 'Maryam S', phone: '403 555 0150', agree: true, licence_expires: '2029-01-01', insurance_expires: '2029-01-01' } });
+const so = await order({ method: 'delivery', street: '8 Shared St', postal: 'T2P1J9', day: '2027-02-19', email: 'so@example.com' });
+assert.equal((await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [so.data.ref], driver: handle } })).data.assigned, 1);
+assert.equal((await call(driverApi, '/api/driver/stops?date=2027-02-19&mine=1', { cookie: admAs })).data.stops[0].ref, so.data.ref);
+assert.equal((await call(driverApi, '/api/driver/stops?date=2027-02-19&mine=1', { cookie: adm })).data.stops.length, 0); ok('deliveries go to the picked person, not to everyone on the login');
+await call(admin, '/api/admin/shifts', { cookie: adm, body: { day: '2027-02-19', starts: '13:00', ends: '17:00', kind: 'driving', spots: 1 } });
+const shShared = (await call(admin, '/api/admin/shifts?from=2027-02-19', { cookie: adm })).data.shifts.find((x: any) => x.day === '2027-02-19');
+await call(driverApi, `/api/driver/shifts/${shShared.id}/signup`, { cookie: admAs, body: {} });
+const shM = sent.length; await daily('2027-02-18');
+const forMaryam = sent.slice(shM).find(m => /^Tomorrow: Driving/.test(m.subject) && m.to.includes('maryam.s@example.com'));
+assert.ok(forMaryam); ok('their reminders go to their own email');
+const actor = (await pg.query(`SELECT actor FROM order_events e JOIN orders o ON o.id = e.order_id WHERE o.ref = $1 AND kind = 'driver'`, [so.data.ref])).rows[0] as any;
+assert.equal(actor.actor, 'maryam@hikayacoffee.ca');
+await call(admin, `/api/admin/orders/${so.data.ref}`, { cookie: admAs, body: { note: 'Called ahead' } });
+const evs = (await call(admin, `/api/admin/orders/${so.data.ref}`, { cookie: adm })).data.events;
+assert.ok(evs.some((e: any) => e.actor === 'Maryam S' && e.detail === 'Called ahead')); ok('what they do in the desk is credited to their name');
+
 // ---------- confirming orders ----------
 const newO = await order({ day: '2027-01-31' });
 const cMails = sent.length;

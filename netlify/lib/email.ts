@@ -8,6 +8,13 @@ type Lang = 'en' | 'ar';
 export type Mail = { to: string; subject: string; html: string; text: string; kind: string; orderId?: number | null; replyTo?: string };
 
 export async function send(m: Mail) {
+  // People on a shared team login have an internal handle: their emails go to the shared inbox,
+  // with their name in the subject.
+  if (m.to.endsWith('.invalid')) {
+    const p = (await sql`SELECT name, login_email FROM team_members WHERE email = ${m.to}`)[0];
+    if (!p?.login_email) return 'skipped';
+    m = { ...m, to: p.login_email, subject: `[For ${p.name}] ${m.subject}` };
+  }
   const key = env('RESEND_API_KEY');
   const from = env('EMAIL_FROM') || 'Hikaya <orders@hikayacoffee.ca>';
   let status = 'skipped', error: string | null = null;

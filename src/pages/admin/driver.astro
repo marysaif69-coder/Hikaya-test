@@ -68,6 +68,7 @@ import '../../styles/global.css';
 
     <section id="meBox" hidden class="card">
       <h1 class="h-m" id="meName"></h1>
+      <p class="muted small" id="meWho" hidden>Working as <b id="meWhoName"></b> <button type="button" class="b ghost2" id="switchWho" style="min-height:40px;margin-top:6px">Switch person</button></p>
       <p class="muted small" id="meRole"></p>
       <div class="totals" id="meHours"></div>
       <form id="meForm" novalidate>
@@ -211,6 +212,7 @@ import '../../styles/global.css';
 
 <script>
   import { mountLogin } from '../../scripts/login';
+  import { askWho, whoLabel, skipped } from '../../scripts/whois';
   const $ = (id: string) => document.getElementById(id)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
   const money = (c: number) => `$${(c / 100).toFixed(c % 100 ? 2 : 0)}`;
@@ -399,6 +401,13 @@ import '../../styles/global.css';
     if (r.status === 401) return showLogin();
     if (r.status === 403) { showLogin(); $('notTeam').hidden = false; return; }
     me = d;
+    const who = await fetch('/api/me').then(x => x.json()).catch(() => null);
+    if (who?.people?.length) {
+      askWho(who);
+      $('meWho').hidden = false; $('meWhoName').textContent = whoLabel(who);
+      $('switchWho').onclick = () => askWho(who, true);
+      if (!who.user?.as && !skipped()) return;
+    }
     $('guideText').innerHTML = guideHtml(d.guide);
     installHint();
     if (d.needsOnboarding) {

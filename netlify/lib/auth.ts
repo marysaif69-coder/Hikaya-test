@@ -30,7 +30,8 @@ export async function issueCode(email: string) {
   return code;
 }
 
-export async function verifyCode(email: string, code: string) {
+/** Checks and uses up a login code (no session). */
+export async function checkCode(email: string, code: string) {
   const row = await one`SELECT id, code_hash, attempts FROM auth_codes WHERE email = ${email} AND used = FALSE AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1`;
   if (!row) throw new HttpError(400, 'expired', 'That code has expired. Ask for a new one.');
   if (row.attempts >= 5) throw new HttpError(429, 'too-many', 'Too many tries. Ask for a new code.');
@@ -40,6 +41,10 @@ export async function verifyCode(email: string, code: string) {
     throw new HttpError(400, 'wrong-code', 'That code is not right.');
   }
   await sql`UPDATE auth_codes SET used = TRUE WHERE id = ${row.id}`;
+}
+
+export async function verifyCode(email: string, code: string) {
+  await checkCode(email, code);
   const t = token();
   const role = await roleFor(email);
   await sql`INSERT INTO sessions (token_hash, email, role, expires_at) VALUES (${hash(t)}, ${email}, ${role}, NOW() + make_interval(days => ${DAYS}))`;
@@ -51,7 +56,13 @@ export const sessionCookie = (t: string) => `${COOKIE}=${t}; Path=/; HttpOnly; S
 export const clearCookie = () => `${COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 
 export type Role = 'customer' | 'driver' | 'packer' | 'staff' | 'admin';
-export type Session = { email: string; role: Role };
+/** `email` is who is acting: the login, or the person picked under a shared team login (their
+ * internal handle). `login` is the email actually logged in. */
+export type Session = { email: string; role: Role; login: string; as?: { id: number; name: string } };
+const AS_COOKIE = 'hk_as';
+export const asCookie = (t: string | null) => t ? `${AS_COOKIE}=${t}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${DAYS * 86400}` : `${AS_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+/** People who work under this login and pick their name after logging in. */
+export const sharedPeople = (login: string) => sql`SELECT id, name, role, drives FROM team_members WHERE shared AND login_email = ${login} AND status <> 'off' ORDER BY name`;
 
 export async function session(req: Request): Promise<Session | null> {
   const t = cookie(req, COOKIE);
@@ -59,7 +70,14 @@ export async function session(req: Request): Promise<Session | null> {
   const row = await one`SELECT email, role FROM sessions WHERE token_hash = ${hash(t)} AND expires_at > NOW()`;
   if (!row) return null;
   // Team rights follow ADMIN_EMAILS and STAFF_EMAILS at all times, so removing someone takes effect immediately.
-  return { email: row.email, role: await roleFor(row.email) };
+  const role = await roleFor(row.email);
+  const asT = cookie(req, AS_COOKIE);
+  if (asT && role !== 'customer') {
+    const m = await one`SELECT m.id, m.email, m.name FROM as_tokens a JOIN team_members m ON m.id = a.member_id
+      WHERE a.token_hash = ${hash(asT)} AND a.expires_at > NOW() AND a.login = ${row.email} AND m.shared AND m.login_email = ${row.email} AND m.status <> 'off'`;
+    if (m) return { email: m.email, role, login: row.email, as: { id: m.id, name: m.name ?? 'Team' } };
+  }
+  return { email: row.email, role, login: row.email };
 }
 
 export async function requireAdmin(req: Request) {
@@ -87,4 +105,23 @@ export async function requireCrew(req: Request) {
 export async function endSession(req: Request) {
   const t = cookie(req, COOKIE);
   if (t) await sql`DELETE FROM sessions WHERE token_hash = ${hash(t)}`;
+}
+
+/** After picking a name under a shared login: the code that proves it is them. */
+export async function startAs(login: string, id: number) {
+  const m = await one`SELECT id, email, name FROM team_members WHERE id = ${id} AND shared AND login_email = ${login} AND status <> 'off'`;
+  if (!m) throw new HttpError(404, 'not-found', 'That person is not on this login.');
+  return { member: m, code: await issueCode(m.email) };
+}
+export async function finishAs(login: string, id: number, code: string) {
+  const m = await one`SELECT id, email FROM team_members WHERE id = ${id} AND shared AND login_email = ${login} AND status <> 'off'`;
+  if (!m) throw new HttpError(404, 'not-found', 'That person is not on this login.');
+  await checkCode(m.email, code);
+  const t = token();
+  await sql`INSERT INTO as_tokens (token_hash, member_id, login, expires_at) VALUES (${hash(t)}, ${m.id}, ${login}, NOW() + make_interval(days => ${DAYS}))`;
+  return t;
+}
+export async function endAs(req: Request) {
+  const t = cookie(req, AS_COOKIE);
+  if (t) await sql`DELETE FROM as_tokens WHERE token_hash = ${hash(t)}`;
 }

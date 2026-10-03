@@ -229,11 +229,26 @@ export async function teamList() {
       (SELECT COALESCE(SUM(collected_cents), 0)::int FROM orders o WHERE o.collected_by = m.email AND o.collected_method = 'cash' AND o.cash_handed_in_at IS NULL) AS cash
     FROM team_members m ORDER BY m.status = 'off', m.created_at`;
   const d = (v: unknown) => (v ? (v instanceof Date ? v.toISOString() : String(v)).slice(0, 10) : null);
-  return people.map(p => ({ id: p.id, email: p.email, role: p.role, name: p.name, phone: p.phone, vehicle: p.vehicle, status: p.status, agreedAt: p.agreed_at, week: p.week, month: p.month, cash: p.cash,
+  return people.map(p => ({ id: p.id, email: p.email, shared: Boolean(p.shared), login: p.login_email ?? null, role: p.role, name: p.name, phone: p.phone, vehicle: p.vehicle, status: p.status, agreedAt: p.agreed_at, week: p.week, month: p.month, cash: p.cash,
     volunteer: Boolean(p.volunteer), drives: Boolean(p.drives), licence: d(p.licence_expires), insurance: d(p.insurance_expires), foodCert: d(p.food_cert_expires) }));
 }
 
-export async function invite(b: any, by: string, siteUrl: string) {
+export async function invite(b: any, by: string, siteUrl: string, byLogin = by) {
+  // Someone who works under the shared login: they log in with it and pick their name; a code to
+  // their own email confirms it is them (and their reminders go there).
+  if (b?.shared === true) {
+    const name = String(b?.name ?? '').trim().slice(0, 120);
+    const own = String(b?.email ?? '').trim().toLowerCase();
+    if (!name) throw new HttpError(400, 'invalid', 'Give their name.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(own)) throw new HttpError(400, 'invalid', 'Add their own email: the code to confirm it is them goes there.');
+    if (own === byLogin) throw new HttpError(400, 'invalid', 'Use their own email, not the shared one.');
+    const role = ['helper', 'packer', 'driver'].includes(b?.role) ? b.role : 'helper';
+    await sql`INSERT INTO team_members (email, role, name, invited_by, volunteer, drives, shared, login_email, status)
+      VALUES (${own}, ${role}, ${name}, ${by}, ${b?.volunteer === true}, ${role !== 'driver' && b?.drives === true}, TRUE, ${byLogin}, 'active')
+      ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, role = EXCLUDED.role, drives = EXCLUDED.drives, volunteer = EXCLUDED.volunteer, shared = TRUE, login_email = EXCLUDED.login_email, status = 'active'`;
+    await send({ to: own, subject: 'You’re on the Hikaya team', text: `Hi ${name}, you've been added to the Hikaya team. Log in at ${siteUrl}/admin/ with ${byLogin}, pick your name, and type the code we send to this email. That's how your work is credited to you.`, html: `<p style="font:15px Arial,sans-serif">Hi ${name.replace(/[<>&]/g, '')}, you've been added to the Hikaya team. Log in at <a href="${siteUrl}/admin/">${siteUrl}/admin/</a> with ${byLogin}, pick your name, and type the code we send to this email. That's how your work is credited to you.</p>`, kind: 'team-invite' });
+    return { ok: true, shared: true };
+  }
   const email = String(b?.email ?? '').trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new HttpError(400, 'invalid', 'Check the email.');
   const role = ['helper', 'packer', 'driver'].includes(b?.role) ? b.role : 'driver';

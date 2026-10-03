@@ -2,7 +2,7 @@
 import type { Config } from '@netlify/functions';
 import { json, fail, body, str, isEmail, siteUrl, HttpError } from '../lib/http';
 import { limit, ipKey } from '../lib/rate';
-import { issueCode, verifyCode, session, sessionCookie, clearCookie, endSession } from '../lib/auth';
+import { issueCode, verifyCode, session, sessionCookie, clearCookie, endSession, sharedPeople, asCookie, startAs, finishAs, endAs } from '../lib/auth';
 import { send, codeEmail } from '../lib/email';
 
 export default async (req: Request) => {
@@ -10,7 +10,29 @@ export default async (req: Request) => {
     const path = new URL(req.url).pathname;
     if (path === '/api/me' && req.method === 'GET') {
       const s = await session(req);
-      return json({ user: s });
+      const people = s && s.role !== 'customer' ? await sharedPeople(s.login) : [];
+      return json({ user: s, people: people.map(p => ({ id: p.id, name: p.name, drives: p.drives })) });
+    }
+    // A shared team login: pick who is working on this device. A code goes to that person's own
+    // email; entering it proves it is them. id 0 = nobody (clears it).
+    if (path === '/api/auth/as' && req.method === 'POST') {
+      const s = await session(req);
+      if (!s || s.role === 'customer') throw new HttpError(401, 'login');
+      const id = Number((await body(req)).id) || 0;
+      if (!id) { await endAs(req); return json({ ok: true }, 200, { 'set-cookie': asCookie(null) }); }
+      await limit(`as:${ipKey(req)}`, 20, 60);
+      const { member, code } = await startAs(s.login, id);
+      const mail = codeEmail(member.email, code, 'en', siteUrl(req));
+      await send({ ...mail, subject: `Your Hikaya team code: ${code}`, text: `${member.name ?? ''}, someone picked your name on ${s.login}. If it was you, type this code: ${code}\n\nIf not, tell the owners.`, kind: 'team-as-code' });
+      const [u, d] = member.email.split('@');
+      return json({ sent: true, to: `${u.slice(0, 2)}…@${d}` });
+    }
+    if (path === '/api/auth/as/verify' && req.method === 'POST') {
+      const s = await session(req);
+      if (!s || s.role === 'customer') throw new HttpError(401, 'login');
+      const b = await body(req);
+      const t = await finishAs(s.login, Number(b.id) || 0, str(b.code, 6));
+      return json({ ok: true }, 200, { 'set-cookie': asCookie(t) });
     }
     if (req.method !== 'POST') throw new HttpError(405, 'method');
     if (path === '/api/auth/request') {
@@ -29,8 +51,9 @@ export default async (req: Request) => {
       return json({ user: { email, role } }, 200, { 'set-cookie': sessionCookie(token) });
     }
     if (path === '/api/auth/logout') {
+      await endAs(req);
       await endSession(req);
-      return json({ ok: true }, 200, { 'set-cookie': clearCookie() });
+      return new Response(JSON.stringify({ ok: true }), { status: 200, headers: [['content-type', 'application/json'], ['set-cookie', clearCookie()], ['set-cookie', asCookie(null)]] });
     }
     throw new HttpError(404, 'not-found');
   } catch (e) { return fail(e); }

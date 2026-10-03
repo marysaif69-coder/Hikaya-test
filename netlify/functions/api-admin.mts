@@ -103,7 +103,8 @@ export default async (req: Request) => {
     if (parts[0] === 'orders' && parts[1] && req.method === 'GET') {
       const o = await one`SELECT * FROM orders WHERE ref = ${parts[1]}`;
       if (!o) throw new HttpError(404, 'not-found');
-      const events = await sql`SELECT kind, detail, actor, created_at FROM order_events WHERE order_id = ${o.id} ORDER BY created_at DESC`;
+      const events = await sql`SELECT e.kind, e.detail, COALESCE(m.name, e.actor) AS actor, e.created_at FROM order_events e LEFT JOIN team_members m ON m.email = e.actor AND m.shared
+        WHERE e.order_id = ${o.id} ORDER BY e.created_at DESC`;
       const emails = await sql`SELECT to_email, subject, status, created_at FROM email_log WHERE order_id = ${o.id} ORDER BY created_at DESC`;
       const cust = await one`SELECT id, team_note FROM customers WHERE email = ${o.email}`;
       return json({ customer: cust ? { id: cust.id, note: cust.team_note } : null, order: { ...summary(o), giftCard: o.gift_card_cents ?? 0, giftCardCode: o.gift_card_code ?? null, regular: Boolean(o.subscription_id), sms: Boolean(o.sms_ok), subtotal: o.subtotal_cents, delivery: o.delivery_cents, items: await items(o.id), refundable: o.total_cents - o.refunded_cents, paidByCard: Boolean(o.square_payment_id) }, events, emails, refunds: await refundsFor(o.id) });
@@ -205,9 +206,9 @@ export default async (req: Request) => {
       });
     }
     if (parts[0] === 'connections' && parts[1] === 'test-email' && req.method === 'POST') {
-      const status = await send({ to: admin.email, subject: 'Hikaya test email · رسالة تجريبية', text: 'If you can read this, order emails are working.\n\nإن وصلتك هذه الرسالة فرسائل الطلبات تعمل.', html: '<p>If you can read this, order emails are working.</p><p dir="rtl">إن وصلتك هذه الرسالة فرسائل الطلبات تعمل.</p>', kind: 'test' });
+      const status = await send({ to: admin.login, subject: 'Hikaya test email · رسالة تجريبية', text: 'If you can read this, order emails are working.\n\nإن وصلتك هذه الرسالة فرسائل الطلبات تعمل.', html: '<p>If you can read this, order emails are working.</p><p dir="rtl">إن وصلتك هذه الرسالة فرسائل الطلبات تعمل.</p>', kind: 'test' });
       const row = await one`SELECT error FROM email_log ORDER BY id DESC LIMIT 1`;
-      return json({ status, to: admin.email, error: row?.error ?? null });
+      return json({ status, to: admin.login, error: row?.error ?? null });
     }
     if (parts[0] === 'connections' && parts[1] === 'test-square' && req.method === 'POST') {
       return json(await squareCheck());
@@ -246,7 +247,7 @@ export default async (req: Request) => {
 
     // ---------- drivers: the team, assignments, cash ----------
     if (parts[0] === 'team' && !parts[1] && req.method === 'GET') return json({ team: await teamList(), drivers: await drivers(), cash: await cashToHandIn() });
-    if (parts[0] === 'team' && !parts[1] && req.method === 'POST') return json(await invite(await body(req), admin.email, siteUrl(req)));
+    if (parts[0] === 'team' && !parts[1] && req.method === 'POST') return json(await invite(await body(req), admin.email, siteUrl(req), admin.login));
     if (parts[0] === 'team' && parts[1] === 'cash' && req.method === 'POST') return json(await cashReceived(str((await body(req)).driver, 254), admin.email));
     if (parts[0] === 'team' && parts[1] && parts[2] === 'resend' && req.method === 'POST') {
       const m = await one`SELECT email, role, name FROM team_members WHERE id = ${Number(parts[1]) || 0}`;
