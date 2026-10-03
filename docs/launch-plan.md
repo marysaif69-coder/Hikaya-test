@@ -2,6 +2,28 @@
 
 The same list, the launch rehearsal and ideas for later are in the desk: **Admin → Numbers → Plan**.
 
+## Before launch: who does what (3 October 2026)
+
+The same list is at the top of Admin → Numbers → Plan.
+
+**Maryam and Shadi (owners)**
+1. Settings → Business details: pickup address and hours, phone, e-Transfer email, Google review link, GST number.
+2. Team: yourselves as shared people under hello@hikayacoffee.ca (own email each for the code); Ahmed with his Gmail as a driver or helper who also drives; add him under Business details → Owners if he should be an owner.
+3. Shop → Products: final prices. Numbers → Costs: cost of one of each product.
+4. Photos of the Guest Box and Coffee Duo; final product text in Shop → Words.
+5. GST: ask the accountant whether gift boxes are zero-rated.
+6. Settings → Limits; post the first shifts.
+7. Production: adjust the draft food-safety checklists; count packaging in Supplies.
+8. Keys in Netlify when ready: Square, GitHub token; later Twilio and Google Maps.
+9. Two-factor login on GitHub, Netlify, Square, Resend, Anthropic; GitHub secret scanning on.
+
+**Everyone who packs or drives:** install the team app from the invite link, finish setup, Me → Turn on notifications → Send a test.
+
+**Then:** the rehearsal in the Plan tab with a real order to yourselves, then the launch-day steps below.
+
+Rehearsed in a browser on 3 October with test data (two customers, one in Arabic; a new driver; packing,
+route, photo, cash, cash in): it worked end to end after three fixes.
+
 What small food businesses selling pre-orders online actually run on, checked against what the
 Hikaya site already does. ✅ built · 🟡 partly / needs you · ⬜ not built yet.
 Written 2 October 2026, updated 3 October.
@@ -134,7 +156,7 @@ inspectors; treat this as a checklist to confirm.
 
 ## 9. Launch day checklist
 
-1. Final prices in Admin → Shop → Products; pickup address in the site text (ask Claude).
+1. Final prices in Admin → Shop → Products; pickup address and hours in Admin → Settings → Business details.
 2. Square keys added, a $1 test order paid and refunded.
 3. Domain: in Netlify move hikayacoffee.ca to this project; set `SITE_URL=https://hikayacoffee.ca`.
 4. Resend domain verified; place one real order and check every email.

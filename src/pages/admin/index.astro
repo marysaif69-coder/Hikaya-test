@@ -349,17 +349,29 @@ import '../../styles/global.css';
     <!-- PLAN: what is built, what is left before launch, and ideas for later -->
     <section id="v-plan" hidden class="plan">
       <div class="promo-form">
-        <h2 class="h-s">Before launch</h2>
+        <h2 class="h-s">Before launch: who does what</h2>
+        <p class="muted">Everything here is done in the desk or on your phones; nothing needs Claude. Items in order.</p>
+        <h3 class="plan-h">Maryam and Shadi (owners)</h3>
         <ol class="plan-list">
-          <li><b>Final prices.</b> Products tab, any time. Everything else works with draft prices, so nothing waits for this.</li>
-          <li><b>Pickup address and hours.</b> Tell Claude in a session; it replaces “[address]” across the site and emails.</li>
-          <li><b>Photos</b> of the Guest Box and the Coffee Duo (they use the gift box photo for now). Names and prices are drafts too.</li>
+          <li><b>Settings → Business details</b>: pickup address and hours, phone, e-Transfer email, Google review link, GST number. This replaces “[address]” on the site, in emails, labels and Ask Hikaya.</li>
+          <li><b>Team</b>: add yourselves as shared people under hello@hikayacoffee.ca (each with your own email for the code), and Ahmed with his Gmail as a driver (or helper who also drives). To make Ahmed an owner, add his email under Business details → Owners.</li>
+          <li><b>Shop → Products</b>: final prices. <b>Numbers → Costs</b>: what one of each costs to make, so margins are right.</li>
+          <li><b>Photos</b> of the Guest Box and the Coffee Duo; final product text in <b>Shop → Words</b>.</li>
           <li><b>GST</b>: ask your accountant whether gift boxes are zero-rated; the site says “GST pending”.</li>
-          <li><b>Settings</b>: Square, e-Transfer email, Twilio, Google review link, GitHub token, shop address. The list with ticks is in Settings.</li>
-          <li><b>Reminder: Google Maps key.</b> Not needed to start: “Navigate to next stop” opens Google Maps for free. Add <code>GOOGLE_MAPS_API_KEY</code> when drivers have about 8 or more stops a day, for the shortest order and km counted by the app. Google's free monthly allowance (5,000 route calls) covers a shop this size; it needs a card on a Google billing account.</li>
-          <li><b>Team</b>: add your drivers and packers (Team tab), post the first shifts, and set limits in Settings (orders per day, gift boxes per day, deliveries per driver).</li>
-          <li><b>Production</b>: start a lot for each coffee and date batch, and count your packaging in Supplies.</li>
-          <li><b>Rehearsal</b> (below), then the launch-day steps.</li>
+          <li><b>Settings → Limits</b>: orders per day, gift boxes per day, stops per driver. <b>Team</b>: post the first shifts.</li>
+          <li><b>Production</b>: read the draft food-safety checklists and change them to how you work; count packaging in Supplies.</li>
+          <li><b>Keys in Netlify</b> when you are ready (the list with ticks is in Settings): Square (cards online and the reader), GitHub token (for Words), and later Twilio (texts) and Google Maps (shortest route, worth it from about 8 stops a day).</li>
+          <li><b>Two-factor login</b> on GitHub, Netlify, Square, Resend and Anthropic; GitHub secret scanning and push protection on.</li>
+        </ol>
+        <h3 class="plan-h">Everyone who packs or drives (Ahmed, Maryam)</h3>
+        <ol class="plan-list">
+          <li>Open the team app link from the invite email on your phone, add it to the Home Screen, and finish setting up (licence and insurance dates for drivers).</li>
+          <li>Me → <b>Turn on</b> notifications → <b>Send a test</b>.</li>
+        </ol>
+        <h3 class="plan-h">Then</h3>
+        <ol class="plan-list">
+          <li>The <b>rehearsal</b> below with a real order to yourselves, then the launch-day steps in the launch plan.</li>
+          <li>The held date changes stay off the site until you say “publish the dates”.</li>
         </ol>
       </div>
       <div class="promo-form">
@@ -369,7 +381,7 @@ import '../../styles/global.css';
           <li>On your phone, open the site, add a coffee and a date box, check out as a guest with <b>delivery</b>, tick the gift, the text reminder and “every 4 weeks”.</li>
           <li>Check the email: right name, items, day, total, gift message. Reply to it and see where the reply lands.</li>
           <li>Desk → Orders: find it, mark Confirmed (email), then Week sheet and Day sheet: is it there, are the quantities right?</li>
-          <li>Driver page on your phone: Map, Call, On my way (email), Delivered (email).</li>
+          <li>Team app on your phone: assign the delivery to yourself (Team tab), Pack it, Deliver → Start route (email), see “You're next” on the order page, Photo at the door, Delivered (email); cash in on the Team tab.</li>
           <li>My account: log in with the code, see the order and the regular order; press Skip, then Stop.</li>
           <li>Refund $1 to store credit from the order; use the credit code on a second order.</li>
           <li>Buy a $25 gift card by e-Transfer, press Money received in Promotions, check the code arrives, use part of it.</li>
@@ -652,6 +664,7 @@ import '../../styles/global.css';
   .biz small { font-weight: 400; color: var(--ink-2); }
   .biz input, .biz textarea { border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 10px; font: inherit; font-weight: 400; background: var(--paper); }
   .plan { display: grid; gap: 16px; max-width: 900px; }
+  .plan-h { font-size: 15px; margin: 14px 0 0; font-family: var(--body); }
   .plan-list { margin: 8px 0 0; padding-inline-start: 22px; display: grid; gap: 8px; line-height: 1.5; }
   .plan-list.done li::marker { content: '✓  '; color: #6E8B4A; }
   .w-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
