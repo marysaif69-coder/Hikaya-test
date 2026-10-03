@@ -189,7 +189,7 @@ export const BOXES: Box[] = [
 ];
 
 export const PRODUCTS: Product[] = [...COFFEES, ...BOXES];
-// Names, descriptions and the other words are edited in the desk (Admin → Words), which saves them
+// Names, descriptions and the other words are edited in the desk (Admin → Shop → Words), which saves them
 // to src/content/products.json. That file wins over the text written above.
 for (const p of PRODUCTS) Object.assign(p, (TEXT as Record<string, Partial<Record<string, L>>>)[p.id] ?? {});
 export const byId = (id: string) => PRODUCTS.find(p => p.id === id);

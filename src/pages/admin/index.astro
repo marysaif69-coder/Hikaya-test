@@ -16,25 +16,33 @@ import '../../styles/global.css';
 <body class="adm">
   <header class="a-top">
     <a class="lockup" href="/en/"><img src="/brand/logo.svg" alt="" width="40" height="34" /><span class="wm"><b>حكاية</b><small>ORDER DESK</small></span></a>
-    <nav class="a-tabs" id="tabs" hidden>
-      <button type="button" data-tab="orders" aria-pressed="true">Orders</button>
-      <button type="button" data-tab="inbox" aria-pressed="false">Inbox <span class="badge" id="inboxN" hidden></span></button>
-      <button type="button" data-tab="day" aria-pressed="false">Day sheet</button>
-      <button type="button" data-tab="week" aria-pressed="false">Week sheet</button>
-      <button type="button" data-tab="drivers" aria-pressed="false">Team</button>
-      <button type="button" data-tab="production" aria-pressed="false">Production</button>
-      <button type="button" data-tab="customers" aria-pressed="false">Customers</button>
-      <button type="button" data-tab="products" aria-pressed="false" class="owner-only">Products</button>
-      <button type="button" data-tab="promos" aria-pressed="false" class="owner-only">Promotions</button>
-      <button type="button" data-tab="assistant" aria-pressed="false" class="owner-only">Assistant <span class="badge warn-badge" id="askWarn" hidden>!</span></button>
-      <button type="button" data-tab="chats" aria-pressed="false">Conversations</button>
-      <button type="button" data-tab="numbers" aria-pressed="false" class="owner-only">Numbers</button>
-      <button type="button" data-tab="words" aria-pressed="false" class="owner-only">Words</button>
-      <button type="button" data-tab="plan" aria-pressed="false" class="owner-only">Plan</button>
-      <a class="drv-link" href="/admin/driver/">Team app</a>
-      <button type="button" data-tab="settings" aria-pressed="false" class="owner-only">Settings</button>
+    <nav class="a-tabs" id="tabs" hidden aria-label="Desk">
+      <button type="button" data-main="orders" aria-pressed="true">Orders</button>
+      <button type="button" data-main="customers" aria-pressed="false">Customers <span class="badge" id="inboxMain" hidden></span><span class="badge warn-badge owner-only" id="askWarnMain" hidden>!</span></button>
+      <button type="button" data-main="shop" aria-pressed="false" class="owner-only">Shop</button>
+      <button type="button" data-main="team" aria-pressed="false">Team</button>
+      <button type="button" data-main="numbers" aria-pressed="false" class="owner-only">Numbers</button>
+      <button type="button" data-main="settings" aria-pressed="false" class="owner-only">Settings</button>
     </nav>
     <div class="a-who" id="who" hidden><span id="whoEmail"></span><button type="button" id="switchWho" hidden>Switch person</button><button type="button" id="logout">Log out</button></div>
+    <nav class="a-sub" id="subtabs" hidden aria-label="Section">
+      <button type="button" data-tab="orders" data-group="orders" aria-pressed="true">Orders</button>
+      <button type="button" data-tab="day" data-group="orders" aria-pressed="false">Day sheet</button>
+      <button type="button" data-tab="week" data-group="orders" aria-pressed="false">Week sheet</button>
+      <button type="button" data-tab="customers" data-group="customers" aria-pressed="false">Customers</button>
+      <button type="button" data-tab="inbox" data-group="customers" aria-pressed="false">Inbox <span class="badge" id="inboxN" hidden></span></button>
+      <button type="button" data-tab="chats" data-group="customers" aria-pressed="false">Ask Hikaya chats</button>
+      <button type="button" data-tab="assistant" data-group="customers" aria-pressed="false" class="owner-only">Ask Hikaya answers <span class="badge warn-badge" id="askWarn" hidden>!</span></button>
+      <button type="button" data-tab="products" data-group="shop" aria-pressed="false" class="owner-only">Products</button>
+      <button type="button" data-tab="promos" data-group="shop" aria-pressed="false" class="owner-only">Promotions</button>
+      <button type="button" data-tab="words" data-group="shop" aria-pressed="false" class="owner-only">Words</button>
+      <button type="button" data-tab="drivers" data-group="team" aria-pressed="false">Team</button>
+      <button type="button" data-tab="production" data-group="team" aria-pressed="false">Production</button>
+      <a class="drv-link" data-group="team" href="/admin/driver/">Team app ↗</a>
+      <button type="button" data-tab="numbers" data-group="numbers" aria-pressed="false" class="owner-only">Numbers</button>
+      <button type="button" data-tab="plan" data-group="numbers" aria-pressed="false" class="owner-only">Plan</button>
+      <button type="button" data-tab="settings" data-group="settings" aria-pressed="false" class="owner-only">Settings</button>
+    </nav>
   </header>
 
   <main class="a-main">
@@ -187,7 +195,7 @@ import '../../styles/global.css';
       <div class="howto">
         <h2 class="h-s">How Ask Hikaya learns</h2>
         <ol>
-          <li><b>Every week</b>, open <b>Conversations</b>. Read the chats marked “not helpful” first.</li>
+          <li><b>Every week</b>, open <b>Customers → Ask Hikaya chats</b>. Read the chats marked “not helpful” first.</li>
           <li>If an answer was wrong or missing, click <b>Teach an answer</b> on that chat and write the right one. It works immediately.</li>
           <li>For bigger changes (a policy, new products), the handbook (<code>knowledge/handbook.md</code>) is updated in a Claude Code session, then the 40 test questions run on GitHub: Actions → Ask Hikaya eval → Run workflow.</li>
         </ol>
@@ -356,7 +364,7 @@ import '../../styles/global.css';
           <li>My account: log in with the code, see the order and the regular order; press Skip, then Stop.</li>
           <li>Refund $1 to store credit from the order; use the credit code on a second order.</li>
           <li>Buy a $25 gift card by e-Transfer, press Money received in Promotions, check the code arrives, use part of it.</li>
-          <li>Ask Hikaya three questions, one by voice and one in Arabizi; read them in Conversations.</li>
+          <li>Ask Hikaya three questions, one by voice and one in Arabizi; read them in Customers → Ask Hikaya chats.</li>
           <li>When Square is connected: one $1 card order, then refund it from the desk.</li>
           <li>Team: add yourself as a packer with a second email, sign up for a shift, check in and out, and pack an order from the team app.</li>
           <li>Write down anything odd and tell Claude.</li>
@@ -455,7 +463,12 @@ import '../../styles/global.css';
   .a-top .lockup img { width: 40px; }
   .a-top .wm b { font-size: 24px; }
   .a-tabs { display: flex; flex-wrap: wrap; gap: 2px 4px; flex: 1 1 600px; min-width: 0; }
-  .a-tabs button, .a-tabs .drv-link { white-space: nowrap; }
+  .a-tabs button { white-space: nowrap; font-size: 16px; }
+  .a-sub { order: 10; flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 4px 6px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .a-sub[hidden] { display: none; }
+  .a-sub button, .a-sub .drv-link { white-space: nowrap; border: 1.5px solid transparent; background: none; padding: 5px 12px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--ink-2); text-decoration: none; }
+  .a-sub button[aria-pressed='true'] { border-color: var(--bunn); color: var(--bunn); background: var(--sheet); }
+  .a-sub .drv-link { color: var(--tamr); box-shadow: none; }
   .a-tabs button { border: 0; background: none; padding: 9px 14px; border-radius: 999px; font-weight: 600; }
   .a-tabs button[aria-pressed='true'] { background: var(--bunn); color: var(--paper); }
   .a-who { margin-inline-start: auto; display: flex; gap: 12px; align-items: center; font-size: 14px; color: var(--ink-2); }
@@ -670,7 +683,7 @@ import '../../styles/global.css';
 
   // ---------- auth ----------
   function showLogin() {
-    for (const id of ['v-orders', 'v-inbox', 'v-day', 'v-week', 'v-numbers', 'v-words', 'v-plan', 'v-drivers', 'v-customers', 'v-production', 'v-products', 'v-promos', 'v-assistant', 'v-chats', 'v-settings', 'tabs', 'who']) $(id).hidden = true;
+    for (const id of ['v-orders', 'v-inbox', 'v-day', 'v-week', 'v-numbers', 'v-words', 'v-plan', 'v-drivers', 'v-customers', 'v-production', 'v-products', 'v-promos', 'v-assistant', 'v-chats', 'v-settings', 'tabs', 'subtabs', 'who']) $(id).hidden = true;
     $('login').hidden = false;
     mountLogin($('loginBox'), 'en', user => {
       if (user.role === 'driver' || user.role === 'packer') { location.href = '/admin/driver/'; return; }
@@ -694,8 +707,20 @@ import '../../styles/global.css';
   $('logout').addEventListener('click', async () => { await logout(); location.reload(); });
 
   // ---------- tabs ----------
+  // Main tabs (top row) hold smaller tabs (second row); the second row is hidden when a main tab
+  // has only one. Each main tab remembers the smaller tab last opened in it.
+  const lastIn: Record<string, string> = {};
   function tab(name: string) {
-    document.querySelectorAll<HTMLButtonElement>('#tabs [data-tab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === name)));
+    const btn = document.querySelector<HTMLElement>(`#subtabs [data-tab="${name}"]`);
+    const group = btn?.dataset.group ?? 'orders'; lastIn[group] = name;
+    document.querySelectorAll<HTMLButtonElement>('#tabs [data-main]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.main === group)));
+    let shown = 0;
+    document.querySelectorAll<HTMLElement>('#subtabs [data-group]').forEach(b => {
+      const on = b.dataset.group === group; b.hidden = !on;
+      if (b.dataset.tab) b.setAttribute('aria-pressed', String(b.dataset.tab === name));
+      if (on && !(ROLE !== 'admin' && b.classList.contains('owner-only'))) shown++;
+    });
+    $('subtabs').hidden = shown < 2;
     for (const v of ['orders', 'inbox', 'day', 'week', 'numbers', 'words', 'plan', 'drivers', 'customers', 'production', 'products', 'promos', 'assistant', 'chats', 'settings']) $(`v-${v}`).hidden = v !== name;
     if (name === 'products') loadProducts();
     if (name === 'week') loadWeek();
@@ -712,7 +737,13 @@ import '../../styles/global.css';
     if (name === 'day') loadDay();
     if (name === 'settings') loadSettings();
   }
-  $('tabs').addEventListener('click', e => { const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-tab]'); if (b) tab(b.dataset.tab!); });
+  $('tabs').addEventListener('click', e => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-main]'); if (!b) return;
+    const g = b.dataset.main!;
+    const first = [...document.querySelectorAll<HTMLElement>(`#subtabs [data-group="${g}"][data-tab]`)].find(x => !(ROLE !== 'admin' && x.classList.contains('owner-only')));
+    tab(lastIn[g] ?? first?.dataset.tab ?? 'orders');
+  });
+  $('subtabs').addEventListener('click', e => { const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-tab]'); if (b) tab(b.dataset.tab!); });
 
   // ---------- orders ----------
   let timer: number | undefined;
@@ -859,11 +890,11 @@ import '../../styles/global.css';
   });
   async function loadInboxCount() {
     const d = await api('/api/admin/tickets?status=open');
-    const n = d.counts?.open ?? 0; $('inboxN').textContent = String(n); $('inboxN').hidden = !n;
+    const n = d.counts?.open ?? 0; $('inboxN').textContent = String(n); $('inboxN').hidden = !n; $('inboxMain').textContent = String(n); $('inboxMain').hidden = !n;
   }
   async function loadTickets() {
     const d = await api(`/api/admin/tickets?status=${inboxStatus}`);
-    const n = d.counts?.open ?? 0; $('inboxN').textContent = String(n); $('inboxN').hidden = !n;
+    const n = d.counts?.open ?? 0; $('inboxN').textContent = String(n); $('inboxN').hidden = !n; $('inboxMain').textContent = String(n); $('inboxMain').hidden = !n;
     $('noTickets').hidden = d.tickets.length > 0;
     document.querySelector('#tickets tbody')!.innerHTML = d.tickets.map((t: any) => `<tr class="row" data-ticket="${esc(t.ref)}">
       <td class="ref">${esc(t.ref)}${t.photos ? `<br><small>${t.photos} photo${t.photos > 1 ? 's' : ''}</small>` : ''}</td><td>${when(t.created_at)}<br><small>${t.source === 'ask' ? 'Ask Hikaya' : 'Help form'} · ${t.lang === 'ar' ? 'Arabic' : 'English'}</small></td>
@@ -1431,10 +1462,10 @@ import '../../styles/global.css';
 
   // ---------- assistant ----------
   const WHY: Record<string, string> = { credits: 'The Anthropic account is out of credit. Add credit at console.anthropic.com → Plans & Billing.', key: 'The API key in Netlify is missing or wrong.', 'rate-limit': 'Too many messages at once; it clears by itself.', outage: 'Anthropic did not answer; it usually clears by itself.' };
-  async function loadAskWarn() { try { const d = await api('/api/admin/ask'); $('askWarn').hidden = d.status.ok !== false; } catch { /* not critical */ } }
+  async function loadAskWarn() { try { const d = await api('/api/admin/ask'); $('askWarn').hidden = $('askWarnMain').hidden = d.status.ok !== false; } catch { /* not critical */ } }
   async function loadAssistant() {
     const d = await api('/api/admin/ask');
-    $('askWarn').hidden = d.status.ok !== false;
+    $('askWarn').hidden = $('askWarnMain').hidden = d.status.ok !== false;
     $('askState').innerHTML = !d.enabled ? '<p class="state bad">Ask Hikaya is off: there is no ANTHROPIC_API_KEY in Netlify. Visitors are sent to the help form.</p>'
       : d.status.ok === false ? `<p class="state bad">Ask Hikaya is on backup answers since ${new Date(d.status.since).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })}. ${esc(WHY[d.status.reason] ?? '')} It recovers by itself once fixed.</p>`
       : '<p class="state ok">Ask Hikaya is working.</p>';
@@ -1483,7 +1514,7 @@ import '../../styles/global.css';
         : 'Off: checkout offers pay at pickup and e-Transfer. Add the Square keys in Netlify to turn card payment on.')}
       <div class="acts"><button type="button" id="testSquare">Test Square</button> <span id="testSquareRes" class="ev"></span></div>
       ${line(Boolean(c.etransfer), 'e-Transfer', c.etransfer ? `Customers are told to send e-Transfers to ${esc(c.etransfer)}.` : 'ETRANSFER_EMAIL is not set: the e-Transfer instructions have no address.')}
-      ${line(c.ask.enabled, 'Ask Hikaya', c.ask.enabled ? 'On. Status and training are in the Assistant tab.' : 'Off: ANTHROPIC_API_KEY is not set.')}
+      ${line(c.ask.enabled, 'Ask Hikaya', c.ask.enabled ? 'On. Status and training are in Customers → Ask Hikaya answers.' : 'Off: ANTHROPIC_API_KEY is not set.')}
       ${c.checklist.length ? `<h2 class="h-s" style="margin-top:14px">Settings to add in Netlify</h2>
       <p class="muted">Netlify → Project configuration → Environment variables → Add a variable. Tick “Contains secret values” for the ones marked secret, then Deploys → Trigger deploy. ${c.checklist.filter((x: any) => !x.set && x.group !== 'Launch day only').length} still to add.</p>
       <table class="a-table mini-t chk"><tr><th></th><th>Name</th><th>What it does</th><th>Where to get it</th></tr>

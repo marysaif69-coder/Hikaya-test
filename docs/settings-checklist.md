@@ -26,7 +26,7 @@ The same list, with a tick for each one already added, is in **Admin → Setting
 | `TWILIO_FROM` | The number texts come from | Twilio → Phone Numbers → buy a Canadian 403/587 number |
 | `GOOGLE_MAPS_API_KEY` 🔒 | Shortest route for each driver, planned km and time; the app counts km from it | console.cloud.google.com → new project → enable **Routes API** → Credentials → Create API key → restrict it to Routes API. Needs a billing account; the free monthly allowance covers a small shop |
 | `SHOP_ADDRESS` | Where routes start and end | The pickup address, e.g. `123 Example St SW, Calgary, AB T2P 1J9` |
-| `GITHUB_CONTENT_TOKEN` 🔒 | Turns on **Save** in Admin → Words (product text and recipes) | See "GitHub token" below |
+| `GITHUB_CONTENT_TOKEN` 🔒 | Turns on **Save** in Admin → Shop → Words (product text and recipes) | See "GitHub token" below |
 
 ## Square (card payments)
 
@@ -50,7 +50,7 @@ at checkout by itself. Press **Test Square** in Connections, then place a $1 ord
 Also at launch: a free uptime monitor at uptimerobot.com (HTTPS, `https://hikayacoffee.ca/api/config`,
 every 5 minutes, alerts to hello@hikayacoffee.ca).
 
-## GitHub token for Admin → Words
+## GitHub token for Admin → Shop → Words
 
 1. github.com → your picture → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
 2. Name: `Hikaya Words`. Expiration: 1 year (put a reminder in your calendar).

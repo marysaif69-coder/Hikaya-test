@@ -45,7 +45,7 @@ export const LOW_STOCK = 3;
 async function lowStockAlert(id: string, left: number) {
   const { send } = await import('./email');
   const name = PRODUCTS.find(p => p.id === id)?.name.en ?? id;
-  const text = left === 0 ? `${name} just sold out on the site. Customers can ask to be emailed when it's back.\n\nChange the stock in Admin → Products.` : `Only ${left} left of ${name} on the site.\n\nChange the stock in Admin → Products.`;
+  const text = left === 0 ? `${name} just sold out on the site. Customers can ask to be emailed when it's back.\n\nChange the stock in Admin → Shop → Products.` : `Only ${left} left of ${name} on the site.\n\nChange the stock in Admin → Shop → Products.`;
   for (const to of env('ADMIN_EMAILS').split(',').map((e: string) => e.trim()).filter(Boolean))
     await send({ to, subject: left === 0 ? `Sold out: ${name}` : `Running low: ${name} (${left} left)`, text, html: `<p style="font:15px Arial,sans-serif">${text.replace(/\n/g, '<br>')}</p>`, kind: 'team-low-stock' });
 }

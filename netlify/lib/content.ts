@@ -1,4 +1,4 @@
-// Words, recipes and product descriptions, edited in the desk (Admin → Words). The text lives in
+// Words, recipes and product descriptions, edited in the desk (Admin → Shop → Words). The text lives in
 // src/content/*.json in the GitHub repository; saving writes the file there, which makes Netlify
 // rebuild the site (about two minutes). Needs GITHUB_CONTENT_TOKEN: a fine-grained GitHub token
 // for this one repository with "Contents: read and write". The token never leaves the server.

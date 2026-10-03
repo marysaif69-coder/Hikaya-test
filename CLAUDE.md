@@ -20,7 +20,7 @@ Read `docs/backend.md` for how everything works, `docs/launch-plan.md` for what 
 
 ## Where text lives
 - Product names, descriptions, taste lines and the brew recipes are in `src/content/products.json`
-  and `src/content/recipes.json`; the owners edit them in Admin → Words, which commits to this
+  and `src/content/recipes.json`; the owners edit them in Admin → Shop → Words, which commits to this
   branch. Those files override the text in `src/data/products.ts`, so edit the JSON, and pull
   before editing (the owners may have saved changes).
 

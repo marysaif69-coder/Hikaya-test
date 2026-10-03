@@ -86,7 +86,7 @@ export async function markDown(reason: Down, detail: string, req?: Request) {
   const alert = !cur.alertedAt || now.getTime() - Date.parse(cur.alertedAt) > 6 * 3600_000 || cur.reason !== reason;
   await save({ ok: false, reason, detail: detail.slice(0, 300), since: cur.ok ? now.toISOString() : cur.since ?? now.toISOString(), alertedAt: alert ? now.toISOString() : cur.alertedAt, lastOk: cur.lastOk });
   if (!alert) return;
-  const text = `Ask Hikaya can't reach the AI right now, so customers are getting short built-in answers and the help form.\n\nWhy: ${WHY[reason]}\n\nDetail: ${detail.slice(0, 300)}\n\nThe chat recovers by itself once this is fixed. Status: ${siteUrl(req)}/admin/ → Assistant.`;
+  const text = `Ask Hikaya can't reach the AI right now, so customers are getting short built-in answers and the help form.\n\nWhy: ${WHY[reason]}\n\nDetail: ${detail.slice(0, 300)}\n\nThe chat recovers by itself once this is fixed. Status: ${siteUrl(req)}/admin/ → Customers → Ask Hikaya answers.`;
   for (const to of env('ADMIN_EMAILS').split(',').map((e: string) => e.trim()).filter(Boolean)) {
     await send({ to, subject: `⚠ Ask Hikaya is on backup answers (${reason})`, text, html: `<pre style="font:15px/1.5 Arial,sans-serif;white-space:pre-wrap">${text.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!))}</pre>`, kind: 'team-ask-down' });
   }

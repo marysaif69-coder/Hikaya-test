@@ -1,6 +1,6 @@
 # Hikaya: what a finished shop needs, and what is left
 
-The same list, the launch rehearsal and ideas for later are in the desk: **Admin → Plan**.
+The same list, the launch rehearsal and ideas for later are in the desk: **Admin → Numbers → Plan**.
 
 What small food businesses selling pre-orders online actually run on, checked against what the
 Hikaya site already does. ✅ built · 🟡 partly / needs you · ⬜ not built yet.
@@ -14,14 +14,14 @@ Written 2 October 2026, updated 3 October.
 | ✅ | Pickup and delivery days with limited places per time window | Built |
 | ✅ | Order-by deadline: the evening before, or weekly ("order by Tuesday 8 pm for Thursday–Sunday") | Admin → Settings |
 | ✅ | Closed days (Eid day, holidays) and the first day orders open | Admin → Settings |
-| ✅ | Change prices, hide products, mark sold out, limit stock | Admin → Products |
-| ✅ | Ramadan and Eid switch on/off: pages, menu, banner, boxes and every mention | Admin → Products (top) |
+| ✅ | Change prices, hide products, mark sold out, limit stock | Admin → Shop → Products |
+| ✅ | Ramadan and Eid switch on/off: pages, menu, banner, boxes and every mention | Admin → Shop → Products (top) |
 | ✅ | Gift orders: recipient, phone and message; year-round Guest Box and Coffee Duo (names and prices are drafts) | Checkout |
-| ✅ | Promo codes: % off, $ off, free delivery; dates, minimum, uses, once per customer | Admin → Promotions |
+| ✅ | Promo codes: % off, $ off, free delivery; dates, minimum, uses, once per customer | Admin → Shop → Promotions |
 | ✅ | Refunds: full or partial, card, e-Transfer, cash or store credit | Admin → order → Refund |
 | 🟡 | Card payment online | Built for Square; turns on when you add the Square keys (section 4) |
-| ✅ | Gift cards ($25–100), emailed once paid, balance carries over | Gift cards page; Admin → Promotions |
-| ✅ | "Email me when it's back" for sold-out products and out-of-season boxes | Product pages; Admin → Products shows who waits |
+| ✅ | Gift cards ($25–100), emailed once paid, balance carries over | Gift cards page; Admin → Shop → Promotions |
+| ✅ | "Email me when it's back" for sold-out products and out-of-season boxes | Product pages; Admin → Shop → Products shows who waits |
 | ✅ | Regular orders every 2 or 4 weeks, skip/pause/stop by the customer | Checkout; My account; Week sheet |
 | ✅ | Order again, text-message reminders (Twilio), voice input in Ask Hikaya | Built |
 | ✅ | Monthly report to the owners on the 1st | Admin → Numbers |
@@ -31,10 +31,10 @@ Written 2 October 2026, updated 3 October.
 | | What it is | Status |
 |---|---|---|
 | ✅ | Order desk: search, filter, status steps, paid/unpaid, notes, history, emails sent | Admin → Orders |
-| ✅ | Day sheet: what to pack, pickups by window, deliveries sorted by area with map links, printable | Admin → Day sheet |
+| ✅ | Day sheet: what to pack, pickups by window, deliveries sorted by area with map links, printable | Admin → Orders → Day sheet |
 | ✅ | Sample orders over five weeks to practise on; one click removes them | Admin → Orders |
 | ✅ | CSV export for the accountant | Admin → Orders |
-| ✅ | Weekly roast and pack sheet: kg of each coffee, dates to portion, boxes, sleeves, cups | Admin → Week sheet |
+| ✅ | Weekly roast and pack sheet: kg of each coffee, dates to portion, boxes, sleeves, cups | Admin → Orders → Week sheet |
 | ✅ | Driver view on a phone: deliveries by postal area, map, call, collect, delivered | Admin → Driver |
 | ✅ | Team roles: owners (ADMIN_EMAILS) and helpers (STAFF_EMAILS, no money or settings) | Netlify settings |
 
@@ -44,11 +44,11 @@ Written 2 October 2026, updated 3 October.
 |---|---|---|
 | ✅ | Emails at every step, in the customer's language; reminder the evening before | Built |
 | ✅ | Ask Hikaya: answers, order lookup, delivery check, add to cart, damage reports with photos | Built; 37/40 on the first test |
-| ✅ | Team answers you write in the desk, used straight away | Admin → Assistant |
+| ✅ | Team answers you write in the desk, used straight away | Admin → Customers → Ask Hikaya answers |
 | ✅ | Backup answers and an email to you if the AI runs out of credit | Built |
 | ✅ | Help form and Inbox with photos, replies by email, outcomes | Built |
 | 🟡 | Ask for a Google review 3–10 days after a completed order | Built; turns on when you add GOOGLE_REVIEW_URL |
-| ✅ | Mailing list with CASL consent, email confirmation and one-click unsubscribe | Footer and checkout; CSV in Admin → Promotions. Send letters with a mailing tool (section 6) |
+| ✅ | Mailing list with CASL consent, email confirmation and one-click unsubscribe | Footer and checkout; CSV in Admin → Shop → Promotions. Send letters with a mailing tool (section 6) |
 
 ## 4. Payments: Square or Shopify?
 
@@ -109,14 +109,14 @@ inspectors; treat this as a checklist to confirm.
   every 5 minutes, alert to hello@hikayacoffee.ca. (Add it at launch: while the site is private,
   that address answers "private preview", which the monitor would count as down.)
 - A mailing tool for the three yearly letters (Resend Broadcasts, Buttondown or Mailchimp): import
-  the CSV from Admin → Promotions; it already holds the consent record.
+  the CSV from Admin → Shop → Promotions; it already holds the consent record.
 - Monthly: CSV export to the accountant; read Ask Hikaya's conversations weekly.
 
 ## 7. Editing words, recipes and products
 
 - **Prices, what's shown, sold out, stock, seasons, promo codes, deadlines:** Admin desk, live in a minute.
-- **Assistant answers:** Admin → Assistant, live immediately.
-- **Product names and descriptions, brew recipes:** Admin → Words, live in about two minutes.
+- **Assistant answers:** Admin → Customers → Ask Hikaya answers, live immediately.
+- **Product names and descriptions, brew recipes:** Admin → Shop → Words, live in about two minutes.
   Needs `GITHUB_CONTENT_TOKEN` once (see docs/backend.md).
 - **Photos, new products, page layouts:** tell Claude in a session.
 
@@ -134,7 +134,7 @@ inspectors; treat this as a checklist to confirm.
 
 ## 9. Launch day checklist
 
-1. Final prices in Admin → Products; pickup address in the site text (ask Claude).
+1. Final prices in Admin → Shop → Products; pickup address in the site text (ask Claude).
 2. Square keys added, a $1 test order paid and refunded.
 3. Domain: in Netlify move hikayacoffee.ca to this project; set `SITE_URL=https://hikayacoffee.ca`.
 4. Resend domain verified; place one real order and check every email.

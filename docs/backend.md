@@ -24,24 +24,24 @@ Order received (with the gift details and any discount) · confirmed · ready fo
 All sent through Resend from the site itself; no n8n or Zapier needed. Admin → Settings → Connections shows the last email and has "Send me a test email".
 
 ## Gift cards, regular orders, texts, monthly report
-- **Gift cards** (`/en/gift-card/`): $25–100; card (Square) or e-Transfer. Once paid (Square webhook, or Admin → Promotions → "Money received") the code is emailed to the recipient. At checkout the "Gift card" box pays what it can; the balance stays; a cancelled order puts it back. Tables: `gift_cards`; orders carry `gift_card_code` / `gift_card_cents`.
+- **Gift cards** (`/en/gift-card/`): $25–100; card (Square) or e-Transfer. Once paid (Square webhook, or Admin → Shop → Promotions → "Money received") the code is emailed to the recipient. At checkout the "Gift card" box pays what it can; the balance stays; a cancelled order puts it back. Tables: `gift_cards`; orders carry `gift_card_code` / `gift_card_cents`.
 - **Regular orders** (checkout → "The same again every 2/4 weeks"): stored in `subscriptions`. The daily job (`netlify/functions/reminders.mts`) turns each into a normal order 7 days before its day, at that day's prices, with the usual emails; if something is sold out the customer is emailed and the next one stays. Customers skip / pause / resume / stop in My account; the desk lists them under the Week sheet.
 - **Text reminders**: checkout tick; sent by the same daily job through Twilio when its three settings exist.
 - **Order again**: My account puts a past order's items back in the cart.
 - **Ask Hikaya voice**: the browser's own speech-to-text fills the box (Chrome, Safari, Edge); no audio is sent to us.
 - **Phone notifications** (Web Push, `netlify/lib/push.ts`, service worker `public/admin/driver/sw.js`): each person turns them on per phone in the team app (Me). Drivers get one when stops are assigned to them; everyone gets team messages and their shift reminder; owners get each new order. iPhone needs the app on the Home Screen (iOS 16.4+). The key pair is made once and kept in `push_keys` (not in the backup) unless `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` are set. A failed push never stops the action; phones that are gone are removed.
 - **Costs and margins** (Admin → Numbers, owners): cost of one per product (`product_settings.cost_cents`); sales, cost and what is left for any range of days (by pickup/delivery day; discounts and refunds off the total). `netlify/lib/costs.ts`.
-- **Gift cards in person** (Admin → Promotions → Sell one here, owners): $5–$500, cash, card on the reader or e-Transfer; paid at once, emailed if there is an address, printable card. `sellGiftCardHere` in `netlify/lib/giftcards.ts`.
+- **Gift cards in person** (Admin → Shop → Promotions → Sell one here, owners): $5–$500, cash, card on the reader or e-Transfer; paid at once, emailed if there is an address, printable card. `sellGiftCardHere` in `netlify/lib/giftcards.ts`.
 - **Monthly report**: emailed to ADMIN_EMAILS on the 1st (Calgary); preview or send in Admin → Numbers.
 - **Plan tab**: what's built, what's left before launch, the rehearsal steps and ideas for later.
 
 ## Drivers and the delivery app
-- **Add a driver**: Admin → Drivers → email (+ name). They get an email with the link (`/admin/driver/`) and the steps; "Email the link again", WhatsApp and Copy link are on their row. Drivers are stored in `team_members` (helpers can be added the same way); owners stay in `ADMIN_EMAILS`.
+- **Add a driver**: Admin → Team → email (+ name). They get an email with the link (`/admin/driver/`) and the steps; "Email the link again", WhatsApp and Copy link are on their row. Drivers are stored in `team_members` (helpers can be added the same way); owners stay in `ADMIN_EMAILS`.
 - **Onboarding** (first login, email code): name, phone, car, and agreeing to the driver guide (`src/content/driver-guide.json`, editable in Words). Their details then show in the Drivers tab as "Ready" and the owners get an email.
 - **Delivery app**: installable from the browser (iPhone Safari → Share → Add to Home Screen; Android Chrome → Install app). Drivers see only their own stops; Start route sets them "out for delivery" (customers emailed) and opens Google Maps with the stops in order; a photo is required at every door; if money is due they record cash or card; Delivered completes the order (thank-you email). Couldn't deliver emails the owners.
 - **Routes**: Start route plans the shortest driving order for the driver's stops, time window by time window, from the shop (`SHOP_ADDRESS`) or the driver's location, using Google's Routes API (`GOOGLE_MAPS_API_KEY`). Without the key, stops go by time window and postal area. A "Next stop" card opens Google Maps navigation to the next stop; it moves on after each Delivered. "End route" closes it. Stored in `routes` (stops in order, legs, planned km and minutes).
 - **Mileage**: from the app by default (the planned legs to each stop delivered or attempted, plus the drive back once the route ends). If the driver types odometer readings at start and end, those win. The driver's **Report** (in the app) shows deliveries, km, time on the road, cash and card collected, cash still to hand in and estimated pay, with a mileage-log CSV (date, times, km, source, purpose).
-- **Pay rates** (optional, owners): per delivery, per km and per hour in Admin → Drivers; reports estimate pay from them. Driver reports for any dates, with each driver's mileage CSV, are in the same tab.
+- **Pay rates** (optional, owners): per delivery, per km and per hour in Admin → Team; reports estimate pay from them. Driver reports for any dates, with each driver's mileage CSV, are in the same tab.
 - **Owners**: assign deliveries per day (one by one or "give all unassigned"), see cash to hand in per driver and mark it received, see deliveries per driver (7 days / month) for pay, turn a driver off (logs them out).
 - **Confirming**: "Confirm all new orders" in Orders, or Settings → "Confirm new orders automatically".
 - **Customers** tab: every customer with orders, spending, regular orders, list membership and a team note (shown to the driver and on slips). Customers can change their order's day themselves in My orders until that day's deadline; the team can move any order.
@@ -58,7 +58,7 @@ All sent through Resend from the site itself; no n8n or Zapier needed. Admin →
 - Orders per day, gift boxes per day (packing time), and per-product daily limits are checked at checkout and when an order is moved.
 - "Delivery places follow the drivers on shift": each delivery window gets drivers on a driving shift overlapping it × stops per driver (never more than the window's own limit); no driver, no deliveries in that window.
 
-## Production and supplies (Admin → Production)
+## Production and supplies (Admin → Team → Production)
 - **Lots**: one per batch (coffee or date variety), code like `NAJDI-270201-1`, made and best-before dates, quantity, supplier. The lot in use is the newest made on or before the day and not used up; packing slips and the packing list show each order's lots (including coffee and dates inside gift boxes).
 - **Recall lookup**: a lot code → every order from the day it was made until it was marked used up, with contacts and a CSV.
 - **Supplies**: packaging on hand vs what the week's orders need, with a "warn at" level; add your own lines (spices, bags).
@@ -90,7 +90,7 @@ All sent through Resend from the site itself; no n8n or Zapier needed. Admin →
 | `STAFF_EMAILS` | Optional. Helpers: orders, Inbox, day and week sheets, the driver page. Not refunds, prices, promo codes, settings, words or exports. |
 | `GOOGLE_REVIEW_URL` | Optional. Your Google review link (Google Business Profile → Ask for reviews). When set, completed orders get one "How was it?" email 3–10 days later. |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | Optional. Text-message reminders the evening before, for customers who tick the box at checkout. About 1–2¢ a text. |
-| `GITHUB_CONTENT_TOKEN` | Optional. Turns on saving in Admin → Words. A fine-grained GitHub token for the Hikaya-test repository only, with "Contents: read and write". Secret. |
+| `GITHUB_CONTENT_TOKEN` | Optional. Turns on saving in Admin → Shop → Words. A fine-grained GitHub token for the Hikaya-test repository only, with "Contents: read and write". Secret. |
 | `RESEND_API_KEY` | From resend.com (free tier: 3,000 emails/month). Until set, emails are logged but not sent. |
 | `EMAIL_FROM` | e.g. `Hikaya <orders@hikayacoffee.ca>` (domain must be verified in Resend) |
 | `EMAIL_REPLY_TO` | Where customer replies go, e.g. `hello@hikayacoffee.ca` |
@@ -110,7 +110,7 @@ All sent through Resend from the site itself; no n8n or Zapier needed. Admin →
 - What it may say lives in `knowledge/handbook.md` (policies, delivery, Ramadan, storage, health rules, voice). The product list, prices, ingredients and brewing steps are added automatically from `src/data/products.ts` and `src/data/brew.ts`, so it never drifts from the shop.
 - It answers only from those. Anything else, and every damaged, wrong, missing or late item, order change, large order or request for a person, becomes an Inbox request; it never promises a refund or replacement itself.
 - `knowledge/test-questions.json` holds the questions customers will ask, each with what a good answer must and must not do. `npm run ask:eval` (needs `ANTHROPIC_API_KEY` in your shell, or in a Claude Code cloud environment an API credential for `api.anthropic.com` with header `x-api-key`) asks the real assistant every one, grades the answers, and writes `knowledge/eval-report.md`. About $1 per full run.
-- The loop: read the Conversations tab weekly → add real questions to the test file → fix the handbook where answers were wrong → run the test → publish.
+- The loop: read Customers → Ask Hikaya chats weekly → add real questions to the test file → fix the handbook where answers were wrong → run the test → publish.
 
 ## Testing locally
 - `npm test` runs 59 API checks against an in-memory Postgres (orders, accounts, admin, help requests, photos, Inbox, and the assistant's tools with a stand-in model).
