@@ -7,7 +7,7 @@
 // consent and an email to confirm); only the sign-up, confirm and unsubscribe links get through.
 // With PREVIEW_PASSWORD set, a "Team" box lets testers in; without it nobody gets in.
 import { CONSENT } from '../lib/consent.ts';
-import { BREWING_HTML } from './brewing-page.ts';
+import { BREWING_HTML } from '../lib/brewing-page.ts';
 
 const COOKIE = 'hk_preview';
 const DAYS = 30;
