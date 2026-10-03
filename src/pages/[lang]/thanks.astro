@@ -14,7 +14,7 @@ const ar = lang === 'ar';
       <Pair lang={lang} size="l" bunn={{ ar: 'وصل طلبك.', en: 'Your order arrived.' }} tamr={{ ar: 'والتمرة تنتظرك.', en: 'And the date is waiting.' }} />
       <h1 class="h-m">{ar ? 'شكراً. نؤكد طلبك بالبريد قريباً.' : 'Thank you. We’ll confirm your order by email soon.'}</h1>
       <p class="ref" id="ref"></p>
-      <p class="muted">{ar ? 'أرسلنا لك بريداً بالتفاصيل. يمكنك متابعة طلبك في أي وقت.' : 'We emailed you the details. You can follow your order any time.'}</p>
+      <p class="muted">{ar ? 'أرسلنا لك بريداً بالتفاصيل. طلباتك محفوظة على بريدك: ادخل إلى «طلباتي» برمز نرسله إليك، بلا كلمة مرور، لتتابعها أو تغيّر موعدها أو تطلبها مرة أخرى.' : 'We emailed you the details. Your orders are saved under your email: open My orders with a code we send you (no password) to follow them, change the day or order again.'}</p>
       <a class="btn tamr" id="follow" href={path(lang, 'account')}>{ar ? 'تابع طلبك' : 'Follow your order'}</a>
     </div>
     <div data-kind="giftcard" hidden>

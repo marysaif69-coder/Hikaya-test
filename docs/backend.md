@@ -31,6 +31,16 @@ All sent through Resend from the site itself; no n8n or Zapier needed. Admin →
 - **Monthly report**: emailed to ADMIN_EMAILS on the 1st (Calgary); preview or send in Admin → Numbers.
 - **Plan tab**: what's built, what's left before launch, the rehearsal steps and ideas for later.
 
+## Drivers and the delivery app
+- **Add a driver**: Admin → Drivers → email (+ name). They get an email with the link (`/admin/driver/`) and the steps; "Email the link again", WhatsApp and Copy link are on their row. Drivers are stored in `team_members` (helpers can be added the same way); owners stay in `ADMIN_EMAILS`.
+- **Onboarding** (first login, email code): name, phone, car, and agreeing to the driver guide (`src/content/driver-guide.json`, editable in Words). Their details then show in the Drivers tab as "Ready" and the owners get an email.
+- **Delivery app**: installable from the browser (iPhone Safari → Share → Add to Home Screen; Android Chrome → Install app). Drivers see only their own stops; Start route sets them "out for delivery" (customers emailed) and opens Google Maps with the stops in order; a photo is required at every door; if money is due they record cash or card; Delivered completes the order (thank-you email). Couldn't deliver emails the owners.
+- **Owners**: assign deliveries per day (one by one or "give all unassigned"), see cash to hand in per driver and mark it received, see deliveries per driver (7 days / month) for pay, turn a driver off (logs them out).
+- **Confirming**: "Confirm all new orders" in Orders, or Settings → "Confirm new orders automatically".
+- **Customers** tab: every customer with orders, spending, regular orders, list membership and a team note (shown to the driver and on slips). Customers can change their order's day themselves in My orders until that day's deadline; the team can move any order.
+- **Day sheet → Packing slips & gift cards**: one printable slip per order, plus a card page with the gift message.
+- **Evening email** to owners and helpers with tomorrow's run sheet; **low-stock** email to owners when a limited product reaches 3.
+
 ## The desk at a glance
 - **Orders, Inbox, Day sheet** as before. **Week sheet**: coffee to roast and grind (kg, pouches, how many go in gift boxes), dates to portion, boxes, sleeves and cups for Thursday–Wednesday; printable.
 - **Driver** (`/admin/driver/`, made for a phone): the day's deliveries in postal-code order, Map and Call buttons, gift recipient and card message, "Collect $X" when paying on delivery, On my way / Delivered (emails the customer) / Couldn't deliver (note for the team).

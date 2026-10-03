@@ -77,6 +77,8 @@ Edit this file to change what the assistant says, then run the test questions
 - Regular order (a subscription): at checkout, under the day and time, choose "The same again every 2 weeks" or "every 4 weeks". Same day of the week and time window each round. A week before each one we place it as a normal order at that day's prices and email a confirmation; it is paid the usual way each time (no charge in advance, no subscription discount). Skip the next one, pause, resume or stop from My account (/en/account/). If something in it is sold out, we email them and keep the next one.
 - Text reminder: at checkout tick "Text me a reminder the evening before" and we text the phone number on the order the evening before pickup or delivery. It can't be added to an order already placed; the email reminder still comes.
 - Order again: in My account, every past order has an "Order again" button that puts the same items back in the cart.
+- No account to create: the email used at checkout is the account. Orders are saved under it; customers open My account (/en/account/) with a 6-digit code emailed to them, no password.
+- Change the day or time: in My account, "Change day" on the order, until that day's order-by deadline and if the new time has room. After that, or once it is being prepared, open a request (kind: change-order).
 - Voice: on phones and in Chrome or Safari, the microphone button in this chat turns speech into text.
 
 ## Account, emails and privacy

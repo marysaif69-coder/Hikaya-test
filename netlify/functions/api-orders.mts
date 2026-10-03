@@ -4,7 +4,7 @@ import { json, fail, body, str, siteUrl, HttpError } from '../lib/http';
 import { session } from '../lib/auth';
 import { sql, one } from '../lib/db';
 import { availability } from '../lib/slots';
-import { createOrder, finishOrder, publicOrder, findForGuest, notify, event, releaseOrder } from '../lib/orders';
+import { createOrder, finishOrder, moveOrder, publicOrder, findForGuest, notify, event, releaseOrder } from '../lib/orders';
 import { startSubscription, mySubscriptions, changeSubscription } from '../lib/subscriptions';
 import { buyGiftCard, giftCardBalance } from '../lib/giftcards';
 import { liveCatalog, getSeasons } from '../lib/catalog';
@@ -116,6 +116,22 @@ export default async (req: Request) => {
       const rows = await sql`SELECT * FROM orders WHERE email = ${s.email} ORDER BY created_at DESC LIMIT 100`;
       return json({ orders: await Promise.all(rows.map(publicOrder)) });
     }
+    // Logged-in customers: the details from their last order, to fill in the checkout form.
+    if (path === '/api/my/details' && req.method === 'GET') {
+      const s = await session(req);
+      if (!s) throw new HttpError(401, 'login');
+      const o = await one`SELECT name, phone, method, street, postal FROM orders WHERE email = ${s.email} AND NOT is_sample ORDER BY created_at DESC LIMIT 1`;
+      const c = await one`SELECT name, phone FROM customers WHERE email = ${s.email}`;
+      return json({ name: o?.name ?? c?.name ?? '', phone: o?.phone ?? c?.phone ?? '', street: o?.street ?? '', postal: o?.postal ?? '' });
+    }
+    // Change the day or time of one's own order, while that day is still open for orders.
+    if (path === '/api/my/orders/move' && req.method === 'POST') {
+      const s = await session(req);
+      if (!s) throw new HttpError(401, 'login');
+      const b = await body(req);
+      const o = await moveOrder(str(b.ref, 12), str(b.day, 10), str(b.window, 20), s.email, req, { email: s.email });
+      return json({ order: await publicOrder(o) });
+    }
     if (path === '/api/my/orders/cancel' && req.method === 'POST') {
       const s = await session(req);
       if (!s) throw new HttpError(401, 'login');
@@ -132,4 +148,4 @@ export default async (req: Request) => {
   } catch (e) { return fail(e); }
 };
 
-export const config: Config = { path: ['/api/config', '/api/catalog', '/api/promo', '/api/notify-me', '/api/list', '/api/list/confirm', '/api/list/unsubscribe', '/api/hit', '/api/giftcard', '/api/giftcard/check', '/api/my/subscriptions', '/api/slots', '/api/orders', '/api/orders/view', '/api/my/orders', '/api/my/orders/cancel'] };
+export const config: Config = { path: ['/api/config', '/api/catalog', '/api/promo', '/api/notify-me', '/api/list', '/api/list/confirm', '/api/list/unsubscribe', '/api/hit', '/api/giftcard', '/api/giftcard/check', '/api/my/subscriptions', '/api/slots', '/api/orders', '/api/orders/view', '/api/my/orders', '/api/my/orders/cancel', '/api/my/orders/move', '/api/my/details'] };

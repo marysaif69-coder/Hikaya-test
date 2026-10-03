@@ -2,7 +2,7 @@ import { sql, one, type Row } from './db';
 import { HttpError, str, isEmail, siteUrl } from './http';
 import { hash, token, isAdminEmail, type Session } from './auth';
 import { priceCart, totals, type PricedLine } from './pricing';
-import { assertBookable } from './slots';
+import { assertBookable, bookable, getSettings } from './slots';
 import { liveCatalog, takeStock, giveStock, restock } from './catalog';
 import { checkPromo, redeem, unredeem, type Applied } from './promos';
 import { send, orderEmail, teamAlert, type OrderMailKind } from './email';
@@ -109,7 +109,13 @@ export async function finishOrder(n: NewOrder, req?: Request, extra: { every_wee
       await event(order.id, 'payment-link-failed', String(e).slice(0, 300), 'system');
     }
   }
-  await notify('received', { ...order, ...extra }, req, guestToken);
+  // With "confirm new orders automatically" on, the order is confirmed at once and the
+  // customer gets the confirmation email instead of "we have your order".
+  if (!order.is_sample && (await getSettings()).ordering.autoConfirm) {
+    const c = await one`UPDATE orders SET status = 'confirmed', updated_at = NOW() WHERE id = ${order.id} AND status = 'received' RETURNING *`;
+    if (c) { Object.assign(order, c); await event(order.id, 'status', 'confirmed (automatically)', 'system'); }
+    await notify('confirmed', { ...order, ...extra }, req, guestToken);
+  } else await notify('received', { ...order, ...extra }, req, guestToken);
   await notifyTeam(order, req);
   return payUrl;
 }
@@ -167,6 +173,25 @@ export async function setStatus(ref: string, status: string, actor: string, req?
   const kind = MAIL_ON[status as Status];
   if (kind && sendEmail) await notify(kind, o, req);
   return o;
+}
+
+/** Moves an order to another day or time. Customers can only do it while the current day is still
+ * open for orders and the new one has room; the team can override both (force). */
+export async function moveOrder(ref: string, day: string, window: string, actor: string, req?: Request, opts: { email?: string; force?: boolean } = {}) {
+  const o = await one`SELECT * FROM orders WHERE ref = ${ref}`;
+  if (!o || (opts.email && o.email !== opts.email)) throw new HttpError(404, 'not-found', 'We could not find that order.');
+  if (!['received', 'confirmed'].includes(o.status)) throw new HttpError(409, 'cannot-move', 'This order is already being prepared. Reply to your confirmation email and we will help.');
+  const cur = String(o.slot_date instanceof Date ? o.slot_date.toISOString() : o.slot_date).slice(0, 10);
+  if (cur === day && o.slot_window === window) throw new HttpError(400, 'same', 'That is the day and time it already has.');
+  if (!opts.force) {
+    const s = await getSettings();
+    if (!bookable(cur, s.ordering)) throw new HttpError(409, 'too-late', 'It is too late to change this order online. Reply to your confirmation email and we will help.');
+    await assertBookable(day, window, o.method);
+  } else if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !window) throw new HttpError(400, 'bad-slot', 'Choose a day and a time.');
+  const moved = await one`UPDATE orders SET slot_date = ${day}, slot_window = ${window}, reminded_at = NULL, sms_reminded_at = NULL, updated_at = NOW() WHERE id = ${o.id} RETURNING *`;
+  await event(o.id, 'moved', `${cur} ${o.slot_window} → ${day} ${window}`, actor);
+  await notify('moved', moved!, req);
+  return moved!;
 }
 
 /** A cancelled order gives its stock and promo code use back. */

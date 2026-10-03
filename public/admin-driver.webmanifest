@@ -1,0 +1,15 @@
+{
+  "name": "Hikaya Deliveries",
+  "short_name": "Hikaya Drive",
+  "description": "Hikaya's delivery app: today's stops, photos at the door and payments.",
+  "start_url": "/admin/driver/",
+  "scope": "/admin/driver/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5EFE3",
+  "theme_color": "#33211A",
+  "icons": [
+    { "src": "/brand/app-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/brand/app-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

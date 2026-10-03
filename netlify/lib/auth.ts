@@ -14,7 +14,13 @@ export const isAdminEmail = (email: string) => adminEmails().includes(email.toLo
 /** Helpers (STAFF_EMAILS) can run orders, the day and week sheets, deliveries and the Inbox, but not
  * refunds, prices, promo codes, settings or exports. */
 export const isStaffEmail = (email: string) => env('STAFF_EMAILS').split(',').map((e: string) => e.trim().toLowerCase()).filter(Boolean).includes(email.toLowerCase());
-const roleFor = (email: string): Role => (isAdminEmail(email) ? 'admin' : isStaffEmail(email) ? 'staff' : 'customer');
+/** Owners and helpers from Netlify settings; drivers and helpers the owners added in the desk. */
+export async function roleFor(email: string): Promise<Role> {
+  if (isAdminEmail(email)) return 'admin';
+  if (isStaffEmail(email)) return 'staff';
+  const m = await one`SELECT role FROM team_members WHERE email = ${email.toLowerCase()} AND status <> 'off'`;
+  return m ? (m.role === 'helper' ? 'staff' : 'driver') : 'customer';
+}
 
 export async function issueCode(email: string) {
   const recent = await one`SELECT COUNT(*)::int AS n FROM auth_codes WHERE email = ${email} AND created_at > NOW() - INTERVAL '1 hour'`;
@@ -35,7 +41,7 @@ export async function verifyCode(email: string, code: string) {
   }
   await sql`UPDATE auth_codes SET used = TRUE WHERE id = ${row.id}`;
   const t = token();
-  const role = roleFor(email);
+  const role = await roleFor(email);
   await sql`INSERT INTO sessions (token_hash, email, role, expires_at) VALUES (${hash(t)}, ${email}, ${role}, NOW() + make_interval(days => ${DAYS}))`;
   await sql`INSERT INTO customers (email) VALUES (${email}) ON CONFLICT (email) DO NOTHING`;
   return { token: t, role };
@@ -44,7 +50,7 @@ export async function verifyCode(email: string, code: string) {
 export const sessionCookie = (t: string) => `${COOKIE}=${t}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${DAYS * 86400}`;
 export const clearCookie = () => `${COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 
-export type Role = 'customer' | 'staff' | 'admin';
+export type Role = 'customer' | 'driver' | 'staff' | 'admin';
 export type Session = { email: string; role: Role };
 
 export async function session(req: Request): Promise<Session | null> {
@@ -53,7 +59,7 @@ export async function session(req: Request): Promise<Session | null> {
   const row = await one`SELECT email, role FROM sessions WHERE token_hash = ${hash(t)} AND expires_at > NOW()`;
   if (!row) return null;
   // Team rights follow ADMIN_EMAILS and STAFF_EMAILS at all times, so removing someone takes effect immediately.
-  return { email: row.email, role: roleFor(row.email) };
+  return { email: row.email, role: await roleFor(row.email) };
 }
 
 export async function requireAdmin(req: Request) {
@@ -62,8 +68,16 @@ export async function requireAdmin(req: Request) {
   return s;
 }
 
-/** Anyone on the team: owners (ADMIN_EMAILS) or helpers (STAFF_EMAILS). */
+/** Anyone running orders: owners (ADMIN_EMAILS) or helpers (STAFF_EMAILS or added in the desk). Not drivers. */
 export async function requireTeam(req: Request) {
+  const s = await session(req);
+  if (!s) throw new HttpError(401, 'login');
+  if (s.role === 'customer' || s.role === 'driver') throw new HttpError(403, 'admin-only');
+  return s;
+}
+
+/** Anyone who delivers or runs orders: the team plus drivers (drivers only reach the delivery app). */
+export async function requireCrew(req: Request) {
   const s = await session(req);
   if (!s) throw new HttpError(401, 'login');
   if (s.role === 'customer') throw new HttpError(403, 'admin-only');

@@ -15,7 +15,7 @@ const ar = lang === 'ar';
       <h1 class="h-l">{ar ? 'الطلب المسبق' : 'Pre-order'}</h1>
       <p class="lead">{ar ? 'نرسل لك تأكيداً بالبريد. ادفع عند الاستلام أو بتحويل Interac، أو بالبطاقة حين يتوفر.' : 'We email you a confirmation. Pay at pickup, by Interac e-Transfer, or by card when it is available.'}</p>
       <div class="acct" id="acct">
-        <p id="acctGuest">{ar ? 'لديك حساب؟' : 'Have an account?'} <a href={path(lang, 'account') + '?next=checkout'}>{ar ? 'سجّل الدخول' : 'Log in'}</a> {ar ? 'أو تابع كضيف.' : 'or continue as a guest.'}</p>
+        <p id="acctGuest">{ar ? 'لا حاجة لإنشاء حساب: بريدك هو حسابك. نحفظ طلباتك عليه، وتدخل متى شئت برمز نرسله إليك. ' : 'No account to create: your email is your account. Your orders are saved under it, and you can log in any time with a code we email you. '}<a href={path(lang, 'account') + '?next=checkout'}>{ar ? 'طلبت من قبل؟ ادخل ونملأ بياناتك.' : 'Ordered before? Log in and we fill in your details.'}</a></p>
         <p id="acctUser" hidden>{ar ? 'مسجّل باسم' : 'Logged in as'} <b id="acctEmail"></b></p>
       </div>
       <noscript><p class="err">{ar ? 'نحتاج JavaScript لإتمام الطلب.' : 'Checkout needs JavaScript turned on.'}</p></noscript>
@@ -263,6 +263,12 @@ const ar = lang === 'ar';
         const em = $('f-email') as HTMLInputElement;
         em.value = me.user.email; em.readOnly = true;
         $('acctEmail').textContent = me.user.email; $('acctUser').hidden = false; $('acctGuest').hidden = true;
+        // Fill in what they used last time (only empty fields).
+        fetch('/api/my/details').then(r => (r.ok ? r.json() : null)).then(d => {
+          if (!d) return;
+          const fill = (id: string, v: string) => { const el = document.getElementById(id) as HTMLInputElement | null; if (el && !el.value && v) el.value = v; };
+          fill('f-name', d.name); fill('f-phone', d.phone); fill('f-street', d.street); fill('f-postal', d.postal);
+        }).catch(() => {});
       }
     } catch {
       $('formErr').textContent = ar ? 'تعذّر تحميل المواعيد. أعد تحميل الصفحة.' : 'We could not load the days. Refresh the page.'; $('formErr').hidden = false;

@@ -1,5 +1,6 @@
 // Live prices, sold-out switches and stock. The product file holds the defaults; the team's
 // changes from the admin desk are stored in product_settings and win over the file.
+import { env } from './http';
 import { sql, one } from './db';
 import { HttpError } from './http';
 import { PRODUCTS } from '../../src/data/products';
@@ -39,13 +40,23 @@ export async function liveCatalog(): Promise<Record<string, Live>> {
 }
 
 /** Takes stock for an order; all or nothing. Returns what was taken so it can be given back. */
+/** When a limited product drops to this many or fewer, the owners get one email. */
+export const LOW_STOCK = 3;
+async function lowStockAlert(id: string, left: number) {
+  const { send } = await import('./email');
+  const name = PRODUCTS.find(p => p.id === id)?.name.en ?? id;
+  const text = left === 0 ? `${name} just sold out on the site. Customers can ask to be emailed when it's back.\n\nChange the stock in Admin → Products.` : `Only ${left} left of ${name} on the site.\n\nChange the stock in Admin → Products.`;
+  for (const to of env('ADMIN_EMAILS').split(',').map((e: string) => e.trim()).filter(Boolean))
+    await send({ to, subject: left === 0 ? `Sold out: ${name}` : `Running low: ${name} (${left} left)`, text, html: `<p style="font:15px Arial,sans-serif">${text.replace(/\n/g, '<br>')}</p>`, kind: 'team-low-stock' });
+}
+
 export async function takeStock(lines: { product_id: string; qty: number }[]) {
   const want = new Map<string, number>();
   for (const l of lines) want.set(l.product_id, (want.get(l.product_id) ?? 0) + l.qty);
   const taken: [string, number][] = [];
   for (const [id, qty] of want) {
     const r = await one`UPDATE product_settings SET stock = stock - ${qty} WHERE product_id = ${id} AND stock IS NOT NULL AND stock >= ${qty} RETURNING stock`;
-    if (r) { taken.push([id, qty]); continue; }
+    if (r) { taken.push([id, qty]); if (r.stock <= LOW_STOCK && r.stock + qty > LOW_STOCK) await lowStockAlert(id, r.stock); continue; }
     const cur = await one`SELECT stock FROM product_settings WHERE product_id = ${id} AND stock IS NOT NULL`;
     if (!cur) continue; // no limit on this product
     await giveStock(taken);

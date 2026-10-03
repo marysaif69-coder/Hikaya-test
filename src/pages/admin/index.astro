@@ -21,6 +21,8 @@ import '../../styles/global.css';
       <button type="button" data-tab="inbox" aria-pressed="false">Inbox <span class="badge" id="inboxN" hidden></span></button>
       <button type="button" data-tab="day" aria-pressed="false">Day sheet</button>
       <button type="button" data-tab="week" aria-pressed="false">Week sheet</button>
+      <button type="button" data-tab="drivers" aria-pressed="false">Drivers</button>
+      <button type="button" data-tab="customers" aria-pressed="false">Customers</button>
       <button type="button" data-tab="products" aria-pressed="false" class="owner-only">Products</button>
       <button type="button" data-tab="promos" aria-pressed="false" class="owner-only">Promotions</button>
       <button type="button" data-tab="assistant" aria-pressed="false" class="owner-only">Assistant <span class="badge warn-badge" id="askWarn" hidden>!</span></button>
@@ -28,7 +30,7 @@ import '../../styles/global.css';
       <button type="button" data-tab="numbers" aria-pressed="false" class="owner-only">Numbers</button>
       <button type="button" data-tab="words" aria-pressed="false" class="owner-only">Words</button>
       <button type="button" data-tab="plan" aria-pressed="false" class="owner-only">Plan</button>
-      <a class="drv-link" href="/admin/driver/">Driver</a>
+      <a class="drv-link" href="/admin/driver/">Delivery app</a>
       <button type="button" data-tab="settings" aria-pressed="false" class="owner-only">Settings</button>
     </nav>
     <div class="a-who" id="who" hidden><span id="whoEmail"></span><button type="button" id="logout">Log out</button></div>
@@ -39,7 +41,7 @@ import '../../styles/global.css';
       <h1 class="h-m">Team login</h1>
       <p class="muted">Use your Hikaya email. Only emails on the team list can open the desk.</p>
       <div id="loginBox"></div>
-      <p class="err" id="notAdmin" hidden>This email is not on the team list. An owner can add it in Netlify: ADMIN_EMAILS for owners, STAFF_EMAILS for helpers.</p>
+      <p class="err" id="notAdmin" hidden>This email is not on the team list. Owners are in Netlify (ADMIN_EMAILS); helpers and drivers are added in the Drivers tab.</p>
     </section>
 
     <!-- ORDERS -->
@@ -54,6 +56,10 @@ import '../../styles/global.css';
         <select name="sample"><option value="">Real & sample orders</option><option value="hide">Real orders only</option><option value="only">Sample orders only</option></select>
         <a class="btn line sm owner-only" id="csv" href="/api/admin/export.csv">Export CSV</a>
       </form>
+      <div class="samples">
+        <span class="muted">New orders wait as “Received” until you confirm them (or turn on automatic confirmation in Settings).</span>
+        <button type="button" class="btn primary sm" id="confirmNew">Confirm all new orders</button>
+      </div>
       <div class="samples owner-only">
         <span class="muted">Sample orders are made up, marked <span class="pill sample">SAMPLE</span>, never email anyone and are left out of the CSV.</span>
         <button type="button" class="btn line sm" id="mkSamples">Add sample orders (5 weeks)</button>
@@ -95,6 +101,7 @@ import '../../styles/global.css';
       <div class="a-dayhead">
         <label class="h-s">Day <input type="date" id="dayPick" /></label>
         <button type="button" class="btn line sm" onclick="window.print()">Print</button>
+        <button type="button" class="btn line sm" id="slips">Packing slips &amp; gift cards</button>
       </div>
       <div class="a-daygrid">
         <div><h2 class="h-s">To pack</h2><ul id="pack" class="a-pack"></ul></div>
@@ -199,12 +206,36 @@ import '../../styles/global.css';
     <!-- WORDS: recipes and product text -->
     <section id="v-words" hidden>
       <div class="w-top">
-        <select id="wFile"><option value="products">Product names and descriptions</option><option value="recipes">Recipes (brew guides)</option></select>
+        <select id="wFile"><option value="products">Product names and descriptions</option><option value="recipes">Recipes (brew guides)</option><option value="driver-guide">Driver guide</option></select>
         <button type="button" class="btn primary sm" id="wSave">Save and publish</button>
         <span class="muted" id="wNote"></span>
       </div>
       <p class="muted a-intro">Change the words in English and Arabic, then save. The site updates in about two minutes. Prices, sold out and seasons are in Products.</p>
       <div id="wForm" class="w-form"></div>
+    </section>
+
+    <!-- DRIVERS: who drives, today's assignments, cash to hand in -->
+    <section id="v-drivers" hidden class="plan">
+      <div class="promo-form">
+        <div class="a-dayhead"><label class="h-s">Deliveries on <input type="date" id="asgDay" /></label></div>
+        <p class="muted">Choose a driver for each delivery. Drivers see only their own stops in the delivery app. When they press <b>Start route</b>, their customers get the “on its way” email; <b>Delivered</b> (after a photo at the door) sends the thank-you email. You don't need to change those steps here.</p>
+        <div class="acts"><select id="asgAll"></select><button type="button" class="btn line sm" id="asgAllBtn">Give all unassigned to this driver</button></div>
+        <div class="a-table-wrap"><table class="a-table mini-t" id="asgTable"></table></div>
+      </div>
+      <div class="promo-form" id="cashBox"></div>
+      <div class="promo-form">
+        <h2 class="h-s">The team</h2>
+        <p class="muted">Add a driver by email: they get an email with the link to the delivery app, log in with a code (Gmail or any email), fill in their details, read the driver guide (edit it in Words) and add the app to their phone. Helpers get the order desk without money or settings. Owners stay in Netlify (ADMIN_EMAILS).</p>
+        <form class="acts owner-only" id="invForm"><input name="email" type="email" placeholder="their@email.com" required /><input name="name" placeholder="Name (optional)" /><select name="role"><option value="driver">Driver</option><option value="helper">Helper</option></select><button class="btn primary sm" type="submit">Add and email them</button></form>
+        <div class="a-table-wrap"><table class="a-table mini-t" id="teamTable"></table></div>
+        <p class="muted">Deliveries counted per driver for paying them; set how you pay later.</p>
+      </div>
+    </section>
+
+    <!-- CUSTOMERS -->
+    <section id="v-customers" hidden>
+      <form class="a-filters" id="custFilter"><input type="search" name="q" placeholder="Search name, email or phone" /></form>
+      <div class="a-table-wrap"><table class="a-table" id="custTable"></table></div>
     </section>
 
     <!-- PLAN: what is built, what is left before launch, and ideas for later -->
@@ -240,7 +271,9 @@ import '../../styles/global.css';
         <h2 class="h-s">Built</h2>
         <ul class="plan-list done">
           <li>Shop, checkout, accounts, emails at every step, reminders the evening before</li>
-          <li>Order desk, day and week sheets, driver page, helpers with fewer rights</li>
+          <li>Order desk, day and week sheets, packing slips and gift-message cards, Customers with team notes</li>
+          <li>Drivers: add by email, onboarding with the driver guide, delivery app on iPhone and Android, assignments, Start route, photo at every door, cash or card at the door, cash to hand in, deliveries counted per driver</li>
+          <li>Confirm all new orders, or confirm automatically; customers change the day themselves; tomorrow's run sheet by email; low-stock emails</li>
           <li>Prices, show/hide, sold out, stock, Ramadan and Eid switches, promo codes, refunds, sample orders</li>
           <li>Gift orders and year-round gift boxes, gift cards, “email me when it's back”</li>
           <li>Regular orders (every 2 or 4 weeks), order again, text-message reminders</li>
@@ -252,7 +285,10 @@ import '../../styles/global.css';
       <div class="promo-form">
         <h2 class="h-s">Ideas for later</h2>
         <ul class="plan-list">
-          <li>Route planning (RouteXL) when deliveries pass about 10 a day: a button to copy the day's addresses.</li>
+          <li>Driver pay: decide per delivery or per hour; the deliveries are already counted per driver.</li>
+          <li>Push notifications to drivers when they get new stops (works on iPhone and Android for the installed app).</li>
+          <li>An App Store / Google Play version of the delivery app, only if the home-screen app isn't enough.</li>
+          <li>Route planning (RouteXL) when deliveries pass about 10 a day; the app already opens the stops in Google Maps in order.</li>
           <li>Loyalty: a free coffee after a number of orders, if customers ask for it.</li>
           <li>Wholesale price list for cafés, mosques and offices.</li>
           <li>Selling gift cards in person through Square at pickup.</li>
@@ -266,6 +302,7 @@ import '../../styles/global.css';
       <form id="setForm">
         <h2 class="h-s">Taking orders</h2>
         <label class="a-switch"><input type="checkbox" name="open" /> <span>Open for new orders</span></label>
+        <label class="a-switch"><input type="checkbox" name="autoConfirm" /> <span>Confirm new orders automatically (customers get the confirmation email straight away)</span></label>
         <h2 class="h-s">Places per time window</h2>
         <div class="two">
           <div class="field"><label for="capP">Pickups per window</label><input id="capP" name="pickup" type="number" min="0" max="200" /></div>
@@ -433,6 +470,7 @@ import '../../styles/global.css';
   .mini-t { font-size: 14px; }
   .mini-t :global(th) { padding: 6px 8px !important; }
   .mini-t :global(td) { padding: 8px !important; }
+  .linkish { border: 0; background: none; padding: 0; color: var(--tamr); font-weight: 600; text-decoration: underline; cursor: pointer; font: inherit; }
   .plan { display: grid; gap: 16px; max-width: 900px; }
   .plan-list { margin: 8px 0 0; padding-inline-start: 22px; display: grid; gap: 8px; line-height: 1.5; }
   .plan-list.done li::marker { content: '✓  '; color: #6E8B4A; }
@@ -491,9 +529,10 @@ import '../../styles/global.css';
 
   // ---------- auth ----------
   function showLogin() {
-    for (const id of ['v-orders', 'v-inbox', 'v-day', 'v-week', 'v-numbers', 'v-words', 'v-plan', 'v-products', 'v-promos', 'v-assistant', 'v-chats', 'v-settings', 'tabs', 'who']) $(id).hidden = true;
+    for (const id of ['v-orders', 'v-inbox', 'v-day', 'v-week', 'v-numbers', 'v-words', 'v-plan', 'v-drivers', 'v-customers', 'v-products', 'v-promos', 'v-assistant', 'v-chats', 'v-settings', 'tabs', 'who']) $(id).hidden = true;
     $('login').hidden = false;
     mountLogin($('loginBox'), 'en', user => {
+      if (user.role === 'driver') { location.href = '/admin/driver/'; return; }
       if (user.role !== 'admin' && user.role !== 'staff') { $('notAdmin').hidden = false; return; }
       start(user.email, user.role);
     });
@@ -515,11 +554,13 @@ import '../../styles/global.css';
   // ---------- tabs ----------
   function tab(name: string) {
     document.querySelectorAll<HTMLButtonElement>('#tabs [data-tab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === name)));
-    for (const v of ['orders', 'inbox', 'day', 'week', 'numbers', 'words', 'plan', 'products', 'promos', 'assistant', 'chats', 'settings']) $(`v-${v}`).hidden = v !== name;
+    for (const v of ['orders', 'inbox', 'day', 'week', 'numbers', 'words', 'plan', 'drivers', 'customers', 'products', 'promos', 'assistant', 'chats', 'settings']) $(`v-${v}`).hidden = v !== name;
     if (name === 'products') loadProducts();
     if (name === 'week') loadWeek();
     if (name === 'numbers') loadNumbers();
     if (name === 'words') loadWords();
+    if (name === 'drivers') loadDrivers();
+    if (name === 'customers') loadCustomers();
     if (name === 'promos') loadPromos();
     if (name === 'assistant') loadAssistant();
     if (name === 'orders') loadOrders();
@@ -578,12 +619,20 @@ import '../../styles/global.css';
       <p><b>${fmtDay(o.day)} · ${esc(o.window)}</b><br>${o.method === 'delivery' ? `Delivery: ${esc(o.street)}, ${esc(o.postal)} · <a href="https://maps.google.com/?q=${encodeURIComponent(`${o.street}, ${o.postal}, Calgary`)}" target="_blank" rel="noopener">Map</a>` : 'Pickup'}</p>
       <p>${esc(o.name)} · <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a> · <a href="mailto:${esc(o.email)}">${esc(o.email)}</a> · ${o.lang === 'ar' ? 'Arabic' : 'English'}</p>
       ${o.notes ? `<p><b>Customer note:</b> ${esc(o.notes)}</p>` : ''}
+      ${d.customer?.note ? `<p class="gift-note"><b>About this customer:</b> ${esc(d.customer.note)}</p>` : ''}
+      ${d.customer ? `<p><button type="button" class="linkish" data-cust="${d.customer.id}">Customer page (all orders, team note)</button></p>` : ''}
+      ${o.giftCard ? `<p>Gift card used: ${money(o.giftCard)}${o.giftCardCode ? ` (${esc(o.giftCardCode)})` : ''}</p>` : ''}${o.regular ? '<p><span class="pill">Regular order</span></p>' : ''}
+      ${o.collected ? `<p>Collected at the door: <b>${money(o.collected.cents)}</b> by ${esc(o.collected.method)} (${esc(o.collected.by)})</p>` : ''}
       ${o.gift ? `<p class="gift-note">Gift for <b>${esc(o.gift.to)}</b>${o.gift.phone ? ` · <a href="tel:${esc(o.gift.phone)}">${esc(o.gift.phone)}</a>` : ''}${o.gift.message ? `<br>Card: <i>“${esc(o.gift.message)}”</i>` : ''}</p>` : ''}
       <h3>Items</h3><ul class="its">${o.items.map((i: any) => `<li><span>${i.qty} × ${esc(i.name_en)}${i.option_en ? ` <small>(${esc(i.option_en)})</small>` : ''}</span><span>${money(i.unit_cents * i.qty)}</span></li>`).join('')}
         ${o.delivery ? `<li><span>Delivery</span><span>${money(o.delivery)}</span></li>` : ''}${o.discount ? `<li><span>Discount ${esc(o.promo ?? '')}</span><span>−${money(o.discount)}</span></li>` : ''}<li><b>Total</b><b>${money(o.total)}</b></li>${o.refunded ? `<li><span>Refunded</span><span>−${money(o.refunded)}</span></li>` : ''}</ul>
       <h3>Move the order</h3>
       <div class="acts">${flow.map(s => `<button type="button" data-status="${s}" class="${s === o.status ? 'cur' : ''}">${STATUS_LABEL[s]}</button>`).join('')}<button type="button" class="danger" data-status="cancelled">Cancel order</button></div>
       <label class="notify"><input type="checkbox" id="pNotify" checked /> Email the customer about the change</label>
+      ${o.method === 'delivery' ? `<h3>Driver</h3><div class="acts"><select id="pDriver"><option value="">Not assigned</option></select></div>` : ''}
+      <h3>Change day or time</h3>
+      <div class="acts"><input type="date" id="mvDay" value="${o.day}" /><select id="mvWin">${['11:00–14:00', '14:00–17:00', '17:00–20:00'].map(w => `<option ${w === o.window ? 'selected' : ''}>${w}</option>`).join('')}</select><button type="button" id="mvGo">Move</button></div>
+      <label class="notify"><input type="checkbox" id="mvForce" /> Allow even if that time is full or past the deadline</label>
       <h3>Payment</h3>
       <div class="acts"><button type="button" data-pay="paid" class="${o.paymentStatus === 'paid' ? 'cur' : ''}">Money received</button><button type="button" data-pay="unpaid" class="${o.paymentStatus === 'unpaid' ? 'cur' : ''}">Not received yet</button></div>
       ${ROLE !== 'admin' ? '' : `<h3>Refund</h3>`}
@@ -615,6 +664,18 @@ import '../../styles/global.css';
       if (r.creditCode) alert(`Store credit code: ${r.creditCode} (emailed to the customer if ticked)`);
       refresh();
     });
+    $('mvGo').addEventListener('click', async () => {
+      const r = await api(`/api/admin/orders/${encodeURIComponent(ref)}/move`, { day: ($('mvDay') as HTMLInputElement).value, window: ($('mvWin') as HTMLSelectElement).value, force: ($('mvForce') as HTMLInputElement).checked });
+      alert(`Moved to ${fmtDay(r.day)} ${r.window}. The customer was emailed.`); refresh();
+    });
+    if (document.getElementById('pDriver')) {
+      api('/api/admin/team').then(t => {
+        const sel = $('pDriver') as HTMLSelectElement;
+        for (const x of t.drivers) sel.add(new Option(x.name, x.email, false, x.email === o.driver));
+        sel.addEventListener('change', async () => { await api('/api/admin/assign', { refs: [ref], driver: sel.value }); refresh(); });
+      });
+    }
+    $('pBody').querySelector<HTMLButtonElement>('[data-cust]')?.addEventListener('click', e => openCustomer(Number((e.target as HTMLElement).dataset.cust)));
     $('pAddNote').addEventListener('click', async () => { const v = ($('pNote') as HTMLTextAreaElement).value.trim(); if (v) { await api(`/api/admin/orders/${encodeURIComponent(ref)}`, { note: v }); refresh(); } });
   }
 
@@ -719,6 +780,100 @@ import '../../styles/global.css';
     $('wkItems').innerHTML = d.products.map((x: any) => `<li><span>${esc(x.name)}${x.option ? ` <small>(${esc(x.option)})</small>` : ''}</span><b>${x.qty}</b></li>`).join('');
   }
 
+  // ---------- confirm all new orders ----------
+  $('confirmNew').addEventListener('click', async () => {
+    if (!confirm('Confirm every new order (from today on)? Each customer gets the confirmation email.')) return;
+    const r = await api('/api/admin/confirm-new', {}); alert(`Confirmed ${r.confirmed} order${r.confirmed === 1 ? '' : 's'}.`); loadOrders();
+  });
+
+  // ---------- drivers ----------
+  const asgDay = $('asgDay') as HTMLInputElement;
+  async function loadDrivers() {
+    const [t, d] = await Promise.all([api('/api/admin/team'), api(`/api/admin/day${asgDay.value ? `?date=${asgDay.value}` : ''}`)]);
+    asgDay.value = d.date;
+    const opts = (cur: string | null) => `<option value="">Not assigned</option>${t.drivers.map((x: any) => `<option value="${esc(x.email)}" ${x.email === cur ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}`;
+    ($('asgAll') as HTMLSelectElement).innerHTML = t.drivers.map((x: any) => `<option value="${esc(x.email)}">${esc(x.name)}</option>`).join('');
+    $('asgTable').innerHTML = '<tr><th>Time</th><th>Where</th><th>Customer</th><th>Status</th><th>Driver</th></tr>' + (d.deliveries.map((o: any) => `<tr><td>${esc(o.window)}</td><td>${esc(o.postal)}<br><small>${esc(o.street)}</small></td><td>${esc(o.gift ? o.gift.to + ' (gift)' : o.name)}<br><small>${esc(o.ref)}</small></td>
+      <td>${STATUS_LABEL[o.status] ?? esc(o.status)}</td><td>${o.status === 'completed' ? esc(o.driver ?? '') : `<select data-asg="${esc(o.ref)}">${opts(o.driver)}</select>`}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No deliveries this day.</td></tr>');
+    $('teamTable').innerHTML = '<tr><th>Name</th><th>Role</th><th>Status</th><th>Delivered (7 days / this month)</th><th>Cash not handed in</th><th></th></tr>' + (t.team.map((m: any) => `<tr><td>${esc(m.name || '–')}<br><small>${esc(m.email)}${m.phone ? ' · ' + esc(m.phone) : ''}${m.vehicle ? ' · ' + esc(m.vehicle) : ''}</small></td>
+      <td>${m.role === 'driver' ? 'Driver' : 'Helper'}</td><td>${m.status === 'off' ? 'Off' : m.agreedAt ? 'Ready' : 'Invited, not set up yet'}</td><td>${m.week} / ${m.month}</td><td>${m.cash ? money(m.cash) : '–'}</td>
+      <td class="owner-only">${m.status !== 'off' ? `<button type="button" data-resend="${m.id}">Email the link again</button> <a class="btn line sm" target="_blank" rel="noopener" href="https://wa.me/${esc((m.phone ?? '').replace(/\D/g, '').replace(/^(\d{10})$/, '1$1'))}?text=${encodeURIComponent(shareText(m))}">WhatsApp</a> <button type="button" data-copy="${esc(shareText(m))}">Copy link</button> ` : ''}${m.status === 'off' ? `<button type="button" data-mem="${m.id}" data-st="active">Turn on</button>` : `<button type="button" data-mem="${m.id}" data-st="off">Turn off</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No drivers yet. Add one above.</td></tr>');
+    $('cashBox').innerHTML = `<h2 class="h-s">Cash to hand in</h2>` + (t.cash.length ? `<ul class="a-pack">${t.cash.map((c: any) => `<li><span>${esc(c.driver)} · ${c.orders} order${c.orders === 1 ? '' : 's'}</span><b>${money(c.cents)}</b> <button type="button" class="owner-only" data-cash="${esc(c.driver)}">Received</button></li>`).join('')}</ul>` : '<p class="muted">Nothing waiting.</p>');
+  }
+  asgDay.addEventListener('change', loadDrivers);
+  $('asgTable').addEventListener('change', async e => { const s = (e.target as HTMLSelectElement); if (s.dataset.asg) { await api('/api/admin/assign', { refs: [s.dataset.asg], driver: s.value }); loadDrivers(); } });
+  $('asgAllBtn').addEventListener('click', async () => {
+    const refs = [...document.querySelectorAll<HTMLSelectElement>('#asgTable select[data-asg]')].filter(s => !s.value).map(s => s.dataset.asg!);
+    if (!refs.length) { alert('Every delivery already has a driver.'); return; }
+    const r = await api('/api/admin/assign', { refs, driver: ($('asgAll') as HTMLSelectElement).value }); alert(`Assigned ${r.assigned}.`); loadDrivers();
+  });
+  const appLink = (m: any) => `${location.origin}/admin/${m.role === 'driver' ? 'driver/' : ''}`;
+  const shareText = (m: any) => m.role === 'driver'
+    ? `Hikaya delivery app: ${appLink(m)}\nLog in with ${m.email} (we email you a code), fill in your details and read the guide. Then add it to your home screen: iPhone Safari → Share → Add to Home Screen; Android Chrome → Install app.`
+    : `Hikaya order desk: ${appLink(m)}\nLog in with ${m.email}; we email you a code.`;
+  $('teamTable').addEventListener('click', async e => {
+    const rs = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-resend]');
+    if (rs) { await api(`/api/admin/team/${rs.dataset.resend}/resend`, {}); alert('Sent again.'); return; }
+    const cp = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-copy]');
+    if (cp) { try { await navigator.clipboard.writeText(cp.dataset.copy!); alert('Copied. Paste it in a text or WhatsApp message.'); } catch { prompt('Copy this:', cp.dataset.copy!); } return; }
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-mem]'); if (!b) return;
+    if (b.dataset.st === 'off' && !confirm('Turn this person off? They are logged out and can no longer open the app.')) return;
+    await api(`/api/admin/team/${b.dataset.mem}`, { status: b.dataset.st }); loadDrivers();
+  });
+  $('cashBox').addEventListener('click', async e => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-cash]'); if (!b || !confirm(`Mark all cash from ${b.dataset.cash} as handed in?`)) return;
+    const r = await api('/api/admin/team/cash', { driver: b.dataset.cash }); alert(`${money(r.cents)} from ${r.orders} order${r.orders === 1 ? '' : 's'} marked received.`); loadDrivers();
+  });
+  $('invForm').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target as HTMLFormElement, v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement).value;
+    await api('/api/admin/team', { email: v('email'), name: v('name'), role: v('role') }); f.reset(); alert('Added. They have an email with the link and the steps.'); loadDrivers();
+  });
+
+  // ---------- customers ----------
+  async function loadCustomers() {
+    const q = ((($('custFilter') as HTMLFormElement).elements.namedItem('q')) as HTMLInputElement).value;
+    const d = await api(`/api/admin/customers?q=${encodeURIComponent(q)}`);
+    $('custTable').innerHTML = '<thead><tr><th>Customer</th><th>Orders</th><th>Spent</th><th>Last day</th><th></th></tr></thead><tbody>' + (d.customers.map((c: any) => `<tr data-cid="${c.id}"><td><b>${esc(c.name || '–')}</b><br><small>${esc(c.email)}${c.phone ? ' · ' + esc(c.phone) : ''}</small>${c.team_note ? `<br><small>📝 ${esc(c.team_note)}</small>` : ''}</td>
+      <td>${c.orders}</td><td>${money(c.spent)}</td><td>${c.last_day ? fmtDay(c.last_day) : '–'}</td><td>${c.regular ? '<span class="pill">Regular</span> ' : ''}${c.on_list ? '<span class="pill">List</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No customers yet.</td></tr>') + '</tbody>';
+  }
+  let custT: any = 0;
+  $('custFilter').addEventListener('input', () => { clearTimeout(custT); custT = setTimeout(loadCustomers, 250); });
+  $('custFilter').addEventListener('submit', e => { e.preventDefault(); loadCustomers(); });
+  $('custTable').addEventListener('click', e => { const tr = (e.target as HTMLElement).closest<HTMLElement>('tr[data-cid]'); if (tr) openCustomer(Number(tr.dataset.cid)); });
+  async function openCustomer(id: number) {
+    const d = await api(`/api/admin/customers/${id}`), c = d.customer;
+    showPanel(c.name || c.email, `<p>${esc(c.email)}${c.phone ? ` · <a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>` : ''} · ${c.lang === 'ar' ? 'Arabic' : 'English'}</p>
+      <h3>Team note</h3><textarea id="cNote" rows="3" placeholder="Allergies, door instructions, preferences. The driver sees this.">${esc(c.team_note ?? '')}</textarea>
+      <div class="acts"><button type="button" id="cSave">Save note</button></div>${c.team_note_by ? `<p class="ev">Last changed by ${esc(c.team_note_by)}</p>` : ''}
+      ${d.subscriptions.length ? `<h3>Regular orders</h3><ul>${d.subscriptions.map((x: any) => `<li class="ev">Every ${x.every_weeks} weeks · next ${fmtDay(x.next)} · ${esc(x.status)}</li>`).join('')}</ul>` : ''}
+      <h3>Orders</h3><ul>${d.orders.map((o: any) => `<li class="ev"><button type="button" class="linkish" data-oref="${esc(o.ref)}">${esc(o.ref)}</button> · ${fmtDay(o.day)} · ${esc(o.method)} · ${STATUS_LABEL[o.status] ?? esc(o.status)} · ${money(o.total)}${o.sample ? ' · sample' : ''}</li>`).join('') || '<li class="ev">None.</li>'}</ul>
+      ${d.tickets.length ? `<h3>Help requests</h3><ul>${d.tickets.map((t: any) => `<li class="ev">${esc(t.kind)} · ${esc(t.status)} · ${new Date(t.created_at).toLocaleDateString('en-CA')}</li>`).join('')}</ul>` : ''}`);
+    $('cSave').addEventListener('click', async () => { await api(`/api/admin/customers/${id}`, { note: ($('cNote') as HTMLTextAreaElement).value }); alert('Saved.'); if (!$('v-customers').hidden) loadCustomers(); });
+    $('pBody').querySelectorAll<HTMLButtonElement>('[data-oref]').forEach(b => b.addEventListener('click', () => openOrder(b.dataset.oref!)));
+  }
+
+  // ---------- packing slips and gift cards (print) ----------
+  $('slips').addEventListener('click', async () => {
+    const d = await api(`/api/admin/day${dayPick.value ? `?date=${dayPick.value}` : ''}`);
+    const all = [...d.pickups.flatMap((w: any) => w.orders), ...d.deliveries];
+    if (!all.length) { alert('No orders this day.'); return; }
+    const slip = (o: any) => `<section class="slip"><header><b>${esc(o.ref)}</b><span>${fmtDay(o.day)} · ${esc(o.window)}</span></header>
+      <h2>${esc(o.gift ? o.gift.to : o.name)}</h2><p>${o.method === 'delivery' ? `Delivery · ${esc(o.street)}, ${esc(o.postal)}` : 'Pickup'}${o.gift ? ` · gift from ${esc(o.name)}` : ''}</p>
+      <table>${o.items.map((i: any) => `<tr><td class="q">${i.qty} ×</td><td>${esc(i.name_en)}${i.option_en ? ` <small>(${esc(i.option_en)})</small>` : ''}</td><td class="box">☐</td></tr>`).join('')}</table>
+      ${o.notes ? `<p class="note">Customer note: ${esc(o.notes)}</p>` : ''}${o.customerNote ? `<p class="note">Team note: ${esc(o.customerNote)}</p>` : ''}
+      <p>${o.paymentStatus === 'paid' ? 'Paid' : o.payment === 'at-pickup' ? `Collect ${money(o.total)}` : 'Not paid yet'}${o.gift ? ' · GIFT: no prices in the bag' : ''}</p></section>
+      ${o.gift && o.gift.message ? `<section class="card"><p class="msg">${esc(o.gift.message)}</p><p class="from">— ${esc(o.name)}</p><p class="brand">حكاية · Hikaya</p></section>` : ''}`;
+    const w = window.open('', '_blank'); if (!w) { alert('Allow pop-ups to print the slips.'); return; }
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Packing slips ${esc(d.date)}</title><style>
+      body{font:15px/1.45 Arial,sans-serif;color:#33211A;margin:0} .slip,.card{page-break-after:always;padding:28px;max-width:640px;margin:0 auto}
+      header{display:flex;justify-content:space-between;border-bottom:2px solid #33211A;padding-bottom:8px} h2{margin:16px 0 4px;font-size:26px}
+      table{width:100%;border-collapse:collapse;margin:14px 0} td{padding:8px 4px;border-bottom:1px solid #DFD1BA} .q{width:50px;font-weight:700} .box{width:30px;font-size:22px}
+      .note{background:#F4E6BF;padding:8px 10px;border-radius:8px} .card{display:flex;flex-direction:column;justify-content:center;min-height:60vh;text-align:center}
+      .msg{font:italic 26px/1.4 Georgia,serif} .from{font-size:18px} .brand{margin-top:40px;color:#A93B28;letter-spacing:2px}</style></head>
+      <body>${all.map(slip).join('')}<script>window.onload=()=>window.print()<\/script></body></html>`);
+    w.document.close();
+  });
+
   // ---------- regular orders (shown under the week sheet) ----------
   async function loadSubs() {
     const d = await api('/api/admin/subscriptions');
@@ -738,7 +893,7 @@ import '../../styles/global.css';
   }
 
   // ---------- words: recipes and product text ----------
-  const W_LABEL: Record<string, string> = { name: 'Name', taste: 'Taste line', notes: 'Description', story: 'Story', bunn: 'What Bunn says', why: 'Why this date', contents: "What's inside", size: 'Size', title: 'Title', vessel: 'You need', yields: 'Makes', steps: 'Steps', serve: 'How to serve', secs: 'Timer (seconds)' };
+  const W_LABEL: Record<string, string> = { points: 'Points', name: 'Name', taste: 'Taste line', notes: 'Description', story: 'Story', bunn: 'What Bunn says', why: 'Why this date', contents: "What's inside", size: 'Size', title: 'Title', vessel: 'You need', yields: 'Makes', steps: 'Steps', serve: 'How to serve', secs: 'Timer (seconds)' };
   let words: { file: string; data: any; sha: string | null } | null = null;
   const isPair = (v: any) => v && typeof v === 'object' && !Array.isArray(v) && typeof v.en === 'string' && typeof v.ar === 'string' && Object.keys(v).length === 2;
   function wField(v: any, path: (string | number)[], label: string): string {
@@ -944,6 +1099,7 @@ import '../../styles/global.css';
     const s = await api('/api/admin/settings');
     const f = $('setForm') as HTMLFormElement;
     (f.elements.namedItem('open') as HTMLInputElement).checked = s.ordering.open;
+    (f.elements.namedItem('autoConfirm') as HTMLInputElement).checked = Boolean(s.ordering.autoConfirm);
     (f.elements.namedItem('pickup') as HTMLInputElement).value = s.capacity.pickup;
     (f.elements.namedItem('delivery') as HTMLInputElement).value = s.capacity.delivery;
     f.querySelectorAll<HTMLInputElement>('[name=cutoffMode]').forEach(i => { i.checked = i.value === s.ordering.cutoffMode; });
@@ -969,6 +1125,7 @@ import '../../styles/global.css';
     const f = e.target as HTMLFormElement;
     await api('/api/admin/settings', {
       open: (f.elements.namedItem('open') as HTMLInputElement).checked,
+      autoConfirm: (f.elements.namedItem('autoConfirm') as HTMLInputElement).checked,
       capacity: { pickup: Number((f.elements.namedItem('pickup') as HTMLInputElement).value), delivery: Number((f.elements.namedItem('delivery') as HTMLInputElement).value) },
       cutoffMode: (f.querySelector('[name=cutoffMode]:checked') as HTMLInputElement | null)?.value,
       cutoffWeekday: Number((f.elements.namedItem('cutoffWeekday') as HTMLSelectElement).value),
@@ -982,6 +1139,7 @@ import '../../styles/global.css';
   (async () => {
     const me = await fetch('/api/me').then(r => r.json()).catch(() => ({ user: null }));
     if (me.error === 'preview') { location.replace(`/admin/?code=${Date.now()}`); return; }
+    if (me.user?.role === 'driver') { location.href = '/admin/driver/'; return; }
     if (me.user?.role === 'admin' || me.user?.role === 'staff') start(me.user.email, me.user.role); else showLogin();
   })();
 </script>

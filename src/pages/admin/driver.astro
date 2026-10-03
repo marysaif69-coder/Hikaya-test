@@ -1,6 +1,8 @@
 ---
-// The driver's phone page: today's deliveries in route order (sorted by postal area), tap to
-// call or open the map, and mark each one on its way or delivered. Owners and helpers can use it.
+// Hikaya Deliveries: the drivers' app (installable on iPhone and Android from this page).
+// Drivers log in with the email code, set themselves up once (details + driver guide), then see
+// their stops: start the route (customers get "on its way"), photo at every door, collect cash
+// or card when due, Delivered (customer gets the thank-you email). Owners and helpers can use it too.
 import '../../styles/fonts.css';
 import '../../styles/global.css';
 ---
@@ -8,33 +10,81 @@ import '../../styles/global.css';
 <html lang="en" dir="ltr">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex, nofollow" />
   <meta name="theme-color" content="#33211A" />
-  <title>Deliveries · Hikaya</title>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Hikaya Drive" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="/admin-driver.webmanifest" />
+  <link rel="apple-touch-icon" href="/brand/app-180.png" />
+  <title>Hikaya Deliveries</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 </head>
 <body class="drv">
   <header class="d-top">
-    <a href="/admin/" class="back">← Desk</a>
-    <input type="date" id="day" aria-label="Day" />
-    <button type="button" id="reload" aria-label="Refresh">↻</button>
+    <b class="brand">Hikaya Drive</b>
+    <input type="date" id="day" aria-label="Day" hidden />
+    <button type="button" id="reload" aria-label="Refresh" hidden>↻</button>
+    <button type="button" id="guideBtn" class="ghost" hidden>Guide</button>
   </header>
   <main>
-    <section id="login" hidden><h1 class="h-m">Team login</h1><div id="loginBox"></div><p class="err" id="notTeam" hidden>This email is not on the team list.</p></section>
-    <p id="summary" class="muted"></p>
-    <ol id="stops" class="stops"></ol>
+    <section id="login" hidden class="card"><h1 class="h-m">Log in</h1><p class="muted">Use the email the owners added. We email you a 6-digit code.</p><div id="loginBox"></div><p class="err" id="notTeam" hidden>This email is not on the drivers list yet. Ask the owners to add you.</p></section>
+
+    <section id="install" class="card install" hidden>
+      <b>Put the app on your home screen</b>
+      <p id="installHow"></p>
+      <div class="row1"><button type="button" class="b go" id="installBtn" hidden>Install</button><button type="button" class="b ghost2" id="installClose">Got it</button></div>
+    </section>
+
+    <section id="onboard" hidden class="card">
+      <h1 class="h-m">Welcome to the team</h1>
+      <p class="muted">Two minutes to set up. The owners see these details.</p>
+      <form id="obForm" novalidate>
+        <label>Your name<input name="name" autocomplete="name" required /></label>
+        <label>Your phone<input name="phone" type="tel" inputmode="tel" autocomplete="tel" required /></label>
+        <label>Car (optional, e.g. "Grey Corolla, ABC 123")<input name="vehicle" /></label>
+        <div class="guide" id="obGuide"></div>
+        <label class="tick"><input type="checkbox" name="agree" /> <span>I have read the driver guide and will follow it.</span></label>
+        <p class="err" id="obErr" hidden></p>
+        <button type="submit" class="b done">Start</button>
+      </form>
+    </section>
+
+    <section id="guideBox" hidden class="card"><div class="guide" id="guideText"></div><button type="button" class="b ghost2" id="guideClose">Close</button></section>
+
+    <section id="app" hidden>
+      <div class="filter" id="filter" hidden><label><input type="radio" name="who" value="1" checked /> My stops</label><label><input type="radio" name="who" value="0" /> Everyone</label></div>
+      <p id="summary" class="muted"></p>
+      <div class="row1" id="routeRow" hidden><button type="button" class="b go" id="startBtn">Start route</button><a class="b map" id="routeLink" target="_blank" rel="noopener">Open route in Maps</a></div>
+      <ol id="stops" class="stops"></ol>
+    </section>
   </main>
+  <input type="file" accept="image/*" capture="environment" id="cam" hidden />
 </body>
 </html>
 
 <style>
-  .drv { background: var(--paper); }
-  .d-top { position: sticky; top: 0; z-index: 5; display: flex; gap: 10px; align-items: center; padding: 10px 14px; background: var(--bunn); color: var(--paper); }
-  .d-top .back { color: var(--paper); font-weight: 600; text-decoration: none; margin-inline-end: auto; }
-  .d-top input { color: var(--ink); background: var(--sheet); border: 0; border-radius: 10px; padding: 8px 10px; font: inherit; }
-  .d-top button { border: 0; background: var(--khalal); color: var(--bunn); border-radius: 10px; width: 42px; height: 40px; font-size: 20px; }
+  .drv { background: var(--paper); padding-bottom: env(safe-area-inset-bottom); }
+  .d-top { position: sticky; top: 0; z-index: 5; display: flex; gap: 8px; align-items: center; padding: calc(10px + env(safe-area-inset-top)) 14px 10px; background: var(--bunn); color: var(--paper); }
+  .d-top .brand { margin-inline-end: auto; font-family: var(--display); font-size: 18px; }
+  .d-top input { border: 0; border-radius: 10px; padding: 8px 10px; font: inherit; color: var(--ink); background: var(--sheet); }
+  .d-top button { border: 0; background: var(--khalal); color: var(--bunn); border-radius: 10px; min-width: 42px; height: 40px; font-size: 16px; font-weight: 700; padding: 0 10px; }
+  .d-top .ghost { background: transparent; color: var(--paper); box-shadow: inset 0 0 0 1.5px var(--paper); }
   main { padding: 14px; display: grid; gap: 12px; max-width: 640px; margin: 0 auto; }
+  .card { background: var(--sheet); border-radius: 20px; padding: 18px; display: grid; gap: 12px; box-shadow: inset 0 0 0 1px var(--line); }
+  .card[hidden], #app[hidden] { display: none; }
+  form { display: grid; gap: 12px; }
+  form label { display: grid; gap: 4px; font-weight: 600; font-size: 14px; }
+  form input:not([type=checkbox]) { border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; font: inherit; font-weight: 400; background: var(--paper); }
+  .tick { display: flex !important; gap: 10px; align-items: flex-start; }
+  .tick input { width: 22px; height: 22px; accent-color: var(--bunn); }
+  .guide { background: var(--paper); border-radius: 14px; padding: 12px 14px; font-size: 15px; line-height: 1.5; }
+  .guide :global(ol) { margin: 6px 0 0; padding-inline-start: 20px; display: grid; gap: 8px; }
+  .filter { display: flex; gap: 16px; font-weight: 600; }
+  .row1 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .install { background: #F4E6BF; }
   .stops { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; counter-reset: stop; }
   .stops :global(li) { background: var(--sheet); border-radius: 20px; padding: 16px; display: grid; gap: 8px; box-shadow: inset 0 0 0 1px var(--line); counter-increment: stop; }
   .stops :global(li.done) { opacity: .55; }
@@ -42,15 +92,24 @@ import '../../styles/global.css';
   .stops :global(.h b::before) { content: counter(stop) '. '; color: var(--tamr); }
   .stops :global(.addr) { font-size: 19px; font-weight: 600; }
   .stops :global(.gift) { background: #F1DCD3; border-radius: 12px; padding: 8px 10px; }
-  .stops :global(.collect) { background: #F4E6BF; border-radius: 12px; padding: 8px 10px; font-weight: 600; }
+  .stops :global(.collect) { background: #F4E6BF; border-radius: 12px; padding: 10px; font-weight: 600; display: grid; gap: 8px; }
+  .stops :global(.collect label) { display: inline-flex; gap: 6px; align-items: center; margin-inline-end: 16px; font-weight: 600; }
+  .stops :global(.collect input) { width: 20px; height: 20px; accent-color: var(--bunn); }
+  .stops :global(.warn) { background: #F1DCD3; border-radius: 12px; padding: 8px 10px; font-weight: 600; }
+  .stops :global(.note) { background: var(--paper-2); border-radius: 12px; padding: 8px 10px; font-size: 14.5px; }
   .stops :global(.row) { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .stops :global(a.b), .stops :global(button.b) { display: grid; place-items: center; min-height: 52px; border-radius: 14px; font-weight: 700; font-size: 16px; text-decoration: none; border: 0; }
-  .stops :global(.b.map) { background: var(--paper-2); color: var(--bunn); }
-  .stops :global(.b.call) { background: var(--paper-2); color: var(--bunn); }
-  .stops :global(.b.go) { background: var(--khalal); color: var(--bunn); }
-  .stops :global(.b.done) { background: var(--bunn); color: var(--paper); }
+  .stops :global(.thumbs) { display: flex; gap: 6px; flex-wrap: wrap; }
+  .stops :global(.thumbs img) { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; }
+  a.b, button.b, .stops :global(a.b), .stops :global(button.b) { display: grid; place-items: center; min-height: 52px; border-radius: 14px; font-weight: 700; font-size: 16px; text-decoration: none; border: 0; padding: 0 10px; }
+  .b.map, .stops :global(.b.map), .stops :global(.b.call) { background: var(--paper-2); color: var(--bunn); }
+  .b.go, .stops :global(.b.go) { background: var(--khalal); color: var(--bunn); }
+  .b.done, .stops :global(.b.done) { background: var(--bunn); color: var(--paper); }
+  .stops :global(.b.done:disabled) { opacity: .4; }
+  .stops :global(.b.photo) { background: var(--paper-2); color: var(--bunn); box-shadow: inset 0 0 0 2px var(--bunn); }
   .stops :global(.b.miss) { background: none; color: var(--tamr-2); box-shadow: inset 0 0 0 1.5px var(--tamr); }
+  .b.ghost2 { background: none; color: var(--bunn); box-shadow: inset 0 0 0 1.5px var(--bunn); }
   .stops :global(small) { color: var(--ink-2); }
+  .err { color: var(--tamr-2); font-weight: 600; }
 </style>
 
 <script>
@@ -58,67 +117,157 @@ import '../../styles/global.css';
   const $ = (id: string) => document.getElementById(id)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
   const money = (c: number) => `$${(c / 100).toFixed(c % 100 ? 2 : 0)}`;
+  const show = (id: string) => { for (const s of ['login', 'onboard', 'app', 'guideBox']) $(s).hidden = s !== id; };
   const api = async (url: string, data?: object) => {
     const r = await fetch(url, data ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) } : undefined);
-    const body = await r.json().catch(() => ({}));
-    if (r.status === 401 && body.error === 'preview') { location.replace(`/admin/driver/?code=${Date.now()}`); throw new Error('preview'); }
+    const b = await r.json().catch(() => ({}));
+    if (r.status === 401 && b.error === 'preview') { location.replace(`/admin/driver/?code=${Date.now()}`); throw new Error('preview'); }
     if (r.status === 401) { showLogin(); throw new Error('login'); }
-    if (!r.ok) { alert(body.message ?? 'Something went wrong.'); throw new Error(body.error); }
-    return body;
+    if (r.status === 403 && b.error === 'onboarding') { boot(); throw new Error('onboarding'); }
+    if (!r.ok) { alert(b.message ?? 'Something went wrong. Try again.'); throw new Error(b.error); }
+    return b;
   };
   const dayIn = $('day') as HTMLInputElement;
+  let me: any = null, list: any[] = [];
 
+  // ---------- install hint (iPhone: Safari share menu; Android: Chrome install prompt) ----------
+  const standalone = matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
+  let deferred: any = null;
+  addEventListener('beforeinstallprompt', (e: any) => { e.preventDefault(); deferred = e; $('installBtn').hidden = false; });
+  function installHint() {
+    try { if (standalone || localStorage.getItem('hk-drive-installed')) return; } catch { if (standalone) return; }
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    $('installHow').textContent = ios ? 'In Safari, tap the Share button (the square with an arrow), then "Add to Home Screen".' : 'In Chrome, tap Install below, or the ⋮ menu → "Install app" / "Add to Home screen".';
+    $('install').hidden = false;
+  }
+  $('installBtn').addEventListener('click', async () => { if (deferred) { deferred.prompt(); await deferred.userChoice; } $('install').hidden = true; });
+  $('installClose').addEventListener('click', () => { $('install').hidden = true; try { localStorage.setItem('hk-drive-installed', '1'); } catch { /* private mode */ } });
+
+  const guideHtml = (g: any) => `<b>${esc(g.title.en)}</b><ol>${g.points.map((p: any) => `<li>${esc(p.t.en)}</li>`).join('')}</ol>`;
+
+  // ---------- stops ----------
+  const addrOf = (o: any) => `${o.street}, ${o.postal}, Calgary, AB`;
+  function routeUrl(rest: any[]) {
+    if (!rest.length) return '';
+    const dest = rest[rest.length - 1], way = rest.slice(0, -1).slice(0, 9);
+    return `https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${encodeURIComponent(addrOf(dest))}${way.length ? `&waypoints=${encodeURIComponent(way.map(addrOf).join('|'))}` : ''}`;
+  }
   async function load() {
-    const d = await api(`/api/admin/day${dayIn.value ? `?date=${dayIn.value}` : ''}`);
-    dayIn.value = d.date;
-    const left = d.deliveries.filter((o: any) => o.status !== 'completed').length;
-    $('summary').textContent = d.deliveries.length ? `${d.deliveries.length} ${d.deliveries.length === 1 ? 'delivery' : 'deliveries'}, ${left} to go. In order of postal area.` : 'No deliveries this day.';
-    $('stops').innerHTML = d.deliveries.map((o: any) => {
-      const addr = `${o.street}, ${o.postal}, Calgary`;
-      const collect = o.paymentStatus === 'unpaid' && o.payment === 'at-pickup';
+    const mine = me.role === 'driver' || (document.querySelector<HTMLInputElement>('input[name=who]:checked')?.value ?? '1') === '1';
+    const d = await api(`/api/driver/stops?mine=${mine ? 1 : 0}${dayIn.value ? `&date=${dayIn.value}` : ''}`);
+    dayIn.value = d.date; list = d.stops;
+    const left = list.filter(o => o.status !== 'completed');
+    const notOut = left.filter(o => o.status !== 'out-for-delivery' && o.driver === me.email);
+    $('summary').textContent = list.length ? `${list.length} ${list.length === 1 ? 'stop' : 'stops'}, ${left.length} to go. In order of postal area.` : (mine ? 'No stops for you this day. The owners assign them in the desk.' : 'No deliveries this day.');
+    $('routeRow').hidden = !left.length;
+    $('startBtn').hidden = !notOut.length;
+    (($('routeLink') as HTMLAnchorElement)).href = routeUrl(left);
+    $('stops').innerHTML = list.map(o => {
+      const done = o.status === 'completed';
       const phone = o.gift?.phone || o.phone;
-      return `<li class="${o.status === 'completed' ? 'done' : ''}" data-ref="${esc(o.ref)}" data-collect="${collect ? o.total : ''}">
-        <div class="h"><b>${esc(o.window)}</b><small>${esc(o.ref)} · ${o.status === 'completed' ? 'Delivered' : o.status === 'out-for-delivery' ? 'On the way' : 'Not left yet'}</small></div>
+      return `<li class="${done ? 'done' : ''}" data-ref="${esc(o.ref)}">
+        <div class="h"><b>${esc(o.window)}</b><small>${esc(o.ref)} · ${done ? 'Delivered' : o.status === 'out-for-delivery' ? 'On the way' : 'Not left yet'}${o.driver && o.driver !== me.email ? ` · ${esc(o.driver)}` : ''}</small></div>
         <div class="addr">${esc(o.street)}<br><small>${esc(o.postal)}</small></div>
         <div>${esc(o.gift ? o.gift.to : o.name)}${o.gift ? ` <small>(gift from ${esc(o.name)})</small>` : ''}</div>
         ${o.gift ? `<div class="gift">Gift${o.gift.message ? `: card says “${esc(o.gift.message)}”` : ''}</div>` : ''}
-        ${collect ? `<div class="collect">Collect ${money(o.total)} (card or cash)</div>` : ''}
-        ${o.notes ? `<div><small>Note: ${esc(o.notes)}</small></div>` : ''}
-        <div><small>${(o.items ?? []).map((i: any) => `${i.qty}× ${esc(i.name_en)}`).join(', ')}</small></div>
-        <div class="row"><a class="b map" href="https://maps.google.com/?q=${encodeURIComponent(addr)}" target="_blank" rel="noopener">Map</a><a class="b call" href="tel:${esc(phone)}">Call</a></div>
-        ${o.status === 'completed' ? '' : `<div class="row">${o.status !== 'out-for-delivery' ? '<button type="button" class="b go" data-act="go">On my way</button>' : ''}<button type="button" class="b done" data-act="done">Delivered</button></div>
-        <button type="button" class="b miss" data-act="miss">Couldn't deliver</button>`}
+        ${o.notes ? `<div class="note">Customer's note: ${esc(o.notes)}</div>` : ''}
+        ${o.customerNote ? `<div class="note">Team note: ${esc(o.customerNote)}</div>` : ''}
+        ${o.unpaid ? `<div class="warn">Not paid yet (e-Transfer or card). Hand it over, and tell the owners.</div>` : ''}
+        <div><small>${o.items.map((i: any) => `${i.qty}× ${esc(i.name)}${i.option ? ` (${esc(i.option)})` : ''}`).join(', ')}</small></div>
+        <div class="row"><a class="b map" href="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${encodeURIComponent(addrOf(o))}" target="_blank" rel="noopener">Map</a><a class="b call" href="tel:${esc(phone)}">Call</a></div>
+        ${o.photos.length ? `<div class="thumbs">${o.photos.map((id: number) => `<img src="/api/driver/photo/${id}" alt="Delivery photo" loading="lazy" />`).join('')}</div>` : ''}
+        ${done ? (o.collected ? `<small>Collected ${money(o.collected.cents)} by ${esc(o.collected.method)}</small>` : '') : `
+          <button type="button" class="b photo" data-act="photo">${o.photos.length ? 'Add another photo' : 'Photo at the door'}</button>
+          ${o.collect ? `<div class="collect">Collect ${money(o.collect)}<div><label><input type="radio" name="c-${esc(o.ref)}" value="cash" /> Cash</label><label><input type="radio" name="c-${esc(o.ref)}" value="card" /> Card</label></div></div>` : ''}
+          <button type="button" class="b done" data-act="done" ${o.photos.length ? '' : 'disabled'}>${o.photos.length ? 'Delivered' : 'Delivered (photo first)'}</button>
+          <button type="button" class="b miss" data-act="miss">Couldn't deliver</button>`}
       </li>`;
     }).join('');
   }
 
+  // Photos: shrink on the phone (longest side 1600 px) before sending.
+  let photoFor = '';
+  $('cam').addEventListener('change', async () => {
+    const f = ($('cam') as HTMLInputElement).files?.[0]; ($('cam') as HTMLInputElement).value = '';
+    if (!f || !photoFor) return;
+    let blob: Blob = f;
+    try {
+      const bmp = await createImageBitmap(f, { imageOrientation: 'from-image' } as ImageBitmapOptions);
+      const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+      c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height);
+      blob = await new Promise<Blob>((res, rej) => c.toBlob(b => (b ? res(b) : rej()), 'image/jpeg', 0.8));
+    } catch { /* send as is */ }
+    const r = await fetch(`/api/driver/photo?ref=${encodeURIComponent(photoFor)}`, { method: 'POST', headers: { 'content-type': blob.type || 'image/jpeg' }, body: blob });
+    if (!r.ok) alert((await r.json().catch(() => ({}))).message ?? 'The photo did not upload. Try again.');
+    load();
+  });
+
   $('stops').addEventListener('click', async e => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-act]');
     if (!b) return;
-    const li = b.closest<HTMLElement>('li')!, ref = li.dataset.ref!;
-    if (b.dataset.act === 'go') await api(`/api/admin/orders/${ref}`, { status: 'out-for-delivery', notify: true });
+    const li = b.closest<HTMLElement>('li')!, ref = li.dataset.ref!, o = list.find(x => x.ref === ref);
+    if (b.dataset.act === 'photo') { photoFor = ref; $('cam').click(); return; }
     if (b.dataset.act === 'done') {
-      if (li.dataset.collect && !confirm(`Did you collect ${money(Number(li.dataset.collect))}?`)) return;
-      await api(`/api/admin/orders/${ref}`, { status: 'completed', notify: true, ...(li.dataset.collect ? { paymentStatus: 'paid' } : {}) });
+      const collected = li.querySelector<HTMLInputElement>(`input[name="c-${ref}"]:checked`)?.value;
+      if (o?.collect && !collected) { alert(`Choose cash or card for the ${money(o.collect)} you collected.`); return; }
+      if (o?.collect && !confirm(`Collected ${money(o.collect)} by ${collected}?`)) return;
+      b.disabled = true;
+      await api('/api/driver/delivered', { ref, collected: collected ?? null }).finally(() => { b.disabled = false; });
     }
     if (b.dataset.act === 'miss') {
-      const why = prompt('What happened? (the team sees this)', 'Nobody home, called, no answer');
+      const why = prompt('What happened? The owners get this right away.', 'Nobody home. Called, no answer.');
       if (!why) return;
-      await api(`/api/admin/orders/${ref}`, { note: `Couldn't deliver: ${why}` });
-      alert('Noted. The order stays open; the team will contact the customer.');
+      await api('/api/driver/missed', { ref, why });
+      alert('Sent to the owners. Keep the order with you and follow what they say.');
     }
     load();
   });
+  $('startBtn').addEventListener('click', async () => {
+    if (!confirm('Start your route? Each of your customers gets an email that their order is on its way.')) return;
+    await api(`/api/driver/start${dayIn.value ? `?date=${dayIn.value}` : ''}`, {});
+    await load();
+    const url = ($('routeLink') as HTMLAnchorElement).href; if (url) window.open(url, '_blank');
+  });
   dayIn.addEventListener('change', load);
   $('reload').addEventListener('click', load);
+  document.querySelectorAll('input[name=who]').forEach(r => r.addEventListener('change', load));
+  $('guideBtn').addEventListener('click', () => { $('guideBox').hidden = false; $('app').hidden = true; });
+  $('guideClose').addEventListener('click', () => { $('guideBox').hidden = true; $('app').hidden = false; });
+
+  // ---------- onboarding ----------
+  $('obForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target as HTMLFormElement, v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement);
+    $('obErr').hidden = true;
+    const r = await fetch('/api/driver/onboard', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: v('name').value, phone: v('phone').value, vehicle: v('vehicle').value, agree: v('agree').checked }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $('obErr').textContent = d.message ?? 'Check the form.'; $('obErr').hidden = false; return; }
+    boot();
+  });
 
   function showLogin() {
-    $('login').hidden = false; $('stops').innerHTML = ''; $('summary').textContent = '';
-    mountLogin($('loginBox'), 'en', user => { if (user.role !== 'admin' && user.role !== 'staff') { $('notTeam').hidden = false; return; } $('login').hidden = true; load(); });
+    show('login');
+    mountLogin($('loginBox'), 'en', user => { if (user.role === 'customer') { $('notTeam').hidden = false; return; } boot(); });
   }
-  (async () => {
-    const me = await fetch('/api/me').then(r => r.json()).catch(() => ({ user: null }));
-    if (me.error === 'preview') { location.replace(`/admin/driver/?code=${Date.now()}`); return; }
-    if (me.user?.role === 'admin' || me.user?.role === 'staff') load(); else showLogin();
-  })();
+  async function boot() {
+    const r = await fetch('/api/driver/me');
+    const d = await r.json().catch(() => ({}));
+    if (d.error === 'preview') { location.replace(`/admin/driver/?code=${Date.now()}`); return; }
+    if (r.status === 401) return showLogin();
+    if (r.status === 403) { showLogin(); $('notTeam').hidden = false; return; }
+    me = d;
+    $('guideText').innerHTML = guideHtml(d.guide);
+    installHint();
+    if (d.needsOnboarding) {
+      show('onboard'); $('obGuide').innerHTML = guideHtml(d.guide);
+      const f = $('obForm') as HTMLFormElement; if (d.member?.name) (f.elements.namedItem('name') as HTMLInputElement).value = d.member.name;
+      return;
+    }
+    show('app');
+    for (const id of ['day', 'reload', 'guideBtn']) $(id).hidden = false;
+    $('filter').hidden = d.role === 'driver';
+    load();
+  }
+  boot();
 </script>

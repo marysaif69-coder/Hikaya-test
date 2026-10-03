@@ -5,10 +5,12 @@
 import { HttpError, env } from './http';
 import PRODUCTS_TEXT from '../../src/content/products.json';
 import RECIPES from '../../src/content/recipes.json';
+import DRIVER_GUIDE from '../../src/content/driver-guide.json';
 
 export const FILES = {
   recipes: { path: 'src/content/recipes.json', label: 'Recipes (brew guides)', built: RECIPES as unknown },
   products: { path: 'src/content/products.json', label: 'Product names and descriptions', built: PRODUCTS_TEXT as unknown },
+  'driver-guide': { path: 'src/content/driver-guide.json', label: 'Driver guide', built: DRIVER_GUIDE as unknown },
 } as const;
 export type FileId = keyof typeof FILES;
 

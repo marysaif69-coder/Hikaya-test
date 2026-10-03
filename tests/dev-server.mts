@@ -48,7 +48,7 @@ for (const f of fs.readdirSync('netlify/functions')) {
   fns.push({ paths: Array.isArray(path) ? path : [path], handler: mod.default });
 }
 const match = (pattern: string, path: string) => pattern.endsWith('/*') ? path.startsWith(pattern.slice(0, -1)) : pattern === path;
-const types: Record<string, string> = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.png': 'image/png', '.woff2': 'font/woff2', '.mp4': 'video/mp4', '.json': 'application/json', '.xml': 'application/xml', '.txt': 'text/plain' };
+const types: Record<string, string> = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.png': 'image/png', '.woff2': 'font/woff2', '.mp4': 'video/mp4', '.json': 'application/json', '.xml': 'application/xml', '.txt': 'text/plain', '.webmanifest': 'application/manifest+json' };
 
 http.createServer(async (req, res) => {
   const url = new URL(req.url!, `http://localhost:${PORT}`);

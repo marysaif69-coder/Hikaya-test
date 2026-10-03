@@ -1,6 +1,6 @@
 // Every evening (00:00 UTC, which is late afternoon or early evening in Calgary): reminders for
 // tomorrow's orders (email, and a text for those who asked), review requests, regular orders
-// coming up, and on the 1st the monthly report to the owners.
+// coming up, tomorrow's run sheet to the team, and on the 1st the monthly report to the owners.
 import type { Config } from '@netlify/functions';
 import { sql } from '../lib/db';
 import { calgaryNow, addDays } from '../lib/slots';
@@ -10,6 +10,7 @@ import { env, siteUrl } from '../lib/http';
 import { sendSms, smsEnabled, reminderText } from '../lib/sms';
 import { runSubscriptions } from '../lib/subscriptions';
 import { sendMonthlyReport } from '../lib/report';
+import { tomorrowEmail } from '../lib/tomorrow';
 
 export async function daily(today = calgaryNow().date) {
   const tomorrow = addDays(today, 1);
@@ -42,8 +43,9 @@ export async function daily(today = calgaryNow().date) {
     reviews = done.length;
   }
   const regular = await runSubscriptions(undefined, today);
+  const team = await tomorrowEmail(tomorrow);
   const report = await sendMonthlyReport(today);
-  const out = { reminders: rows.length, texts, reviews, regular, report };
+  const out = { reminders: rows.length, texts, reviews, regular, team, report };
   console.log('daily', tomorrow, out);
   return out;
 }

@@ -68,6 +68,9 @@ const ar = lang === 'ar';
   .orders :global(.btn) { min-height: 44px; padding: 10px 18px; font-size: 15px; }
   .empty { display: grid; gap: 14px; justify-items: start; }
   .subs { display: grid; gap: 14px; }
+  .orders :global(.mvbox) { display: grid; gap: 10px; background: var(--paper); border-radius: 18px; padding: 14px; }
+  .orders :global(.mvbox select) { margin-inline-start: 8px; border: 1.5px solid var(--line); border-radius: 10px; padding: 8px; font: inherit; background: var(--sheet); }
+  .orders :global(.mvwins) { display: flex; flex-wrap: wrap; gap: 12px; }
   .orders :global(.again) { margin-inline-start: auto; }
   .orders :global(.sub-paused) { color: var(--tamr-2); font-weight: 700; }
 </style>
@@ -94,6 +97,7 @@ const ar = lang === 'ar';
     const where = o.method === 'pickup' ? (ar ? 'استلام · [العنوان]، كالغاري' : 'Pickup · [address], Calgary') : `${ar ? 'توصيل إلى' : 'Delivery to'} ${esc(o.street)}, ${esc(o.postal)}`;
     const its = o.items.map((i: any) => `<li><span>${i.qty} × ${esc(ar ? i.name_ar : i.name_en)}${i.option_en ? `<br><small>${esc(ar ? i.option_ar : i.option_en)}</small>` : ''}</span><span class="tnum">${money(i.unit_cents * i.qty)}</span></li>`).join('');
     const canCancel = o.status === 'received' && o.paymentStatus === 'unpaid' && !q.has('t');
+    const canMove = !q.has('t') && ['received', 'confirmed'].includes(o.status);
     const canAgain = !q.has('t') && o.items.some((i: any) => catalog().items[i.product_id]);
     return `<article class="ord${q.get('order') === o.ref ? ' hl' : ''}" id="o-${esc(o.ref)}">
       <div class="ord-top"><span class="ref">${esc(o.ref)}</span><span class="when">${fmtDay(o.day)} · <span dir="ltr">${esc(o.window)}</span></span></div>
@@ -104,7 +108,7 @@ const ar = lang === 'ar';
       ${o.giftCard ? `<p class="its"><span>${ar ? 'بطاقة هدية' : 'Gift card'}: −${money(o.giftCard)}</span></p>` : ''}
       <p class="tot"><span>${ar ? 'الإجمالي' : 'Total'}</span><span class="tnum">${money(o.total)}</span></p>
       <p class="pay">${o.total === 0 && o.giftCard ? (ar ? 'دُفع ببطاقة هدية' : 'Paid with a gift card') : PAY[o.payment] ?? ''} · ${o.paymentStatus === 'paid' ? `<b>${ar ? 'مدفوع' : 'Paid'}</b>` : (ar ? 'لم يُدفع بعد' : 'Not paid yet')}</p>
-      <div class="acts">${o.payUrl ? `<a class="btn tamr" href="${esc(o.payUrl)}">${ar ? 'ادفع الآن' : 'Pay now'}</a>` : ''}${canCancel ? `<button class="btn line" type="button" data-cancel="${esc(o.ref)}">${ar ? 'إلغاء الطلب' : 'Cancel order'}</button>` : ''}${canAgain ? `<button class="btn primary again" type="button" data-again="${esc(o.ref)}">${ar ? 'اطلبه مرة أخرى' : 'Order again'}</button>` : ''}</div>
+      <div class="acts">${o.payUrl ? `<a class="btn tamr" href="${esc(o.payUrl)}">${ar ? 'ادفع الآن' : 'Pay now'}</a>` : ''}${canCancel ? `<button class="btn line" type="button" data-cancel="${esc(o.ref)}">${ar ? 'إلغاء الطلب' : 'Cancel order'}</button>` : ''}${canMove ? `<button class="btn line" type="button" data-move="${esc(o.ref)}">${ar ? 'غيّر الموعد' : 'Change day'}</button>` : ''}${canAgain ? `<button class="btn primary again" type="button" data-again="${esc(o.ref)}">${ar ? 'اطلبه مرة أخرى' : 'Order again'}</button>` : ''}</div>
     </article>`;
   }
 
@@ -129,6 +133,18 @@ const ar = lang === 'ar';
     });
   }
   let mine: any[] = [];
+  // Change day: pick from the days and times that still have room for this order's method.
+  async function openMove(ref: string) {
+    const o = mine.find(x => x.ref === ref); if (!o) return;
+    const art = document.getElementById(`o-${ref}`)!; art.querySelector('.mvbox')?.remove();
+    const slots = await fetch('/api/slots').then(r => r.json());
+    const days = (slots.days ?? []).filter((d: any) => d.windows.some((w: any) => (o.method === 'delivery' ? w.delivery : w.pickup) > 0));
+    const box = document.createElement('div'); box.className = 'mvbox';
+    box.innerHTML = `<label>${ar ? 'اليوم الجديد' : 'New day'} <select>${days.map((d: any) => `<option value="${d.date}" ${d.date === o.day ? 'selected' : ''}>${fmtDay(d.date)}</option>`).join('')}</select></label>
+      <div class="mvwins">${['11:00–14:00', '14:00–17:00', '17:00–20:00'].map(w => `<label><input type="radio" name="mv-${esc(ref)}" value="${w}" ${w === o.window ? 'checked' : ''} /> <span dir="ltr">${w}</span></label>`).join('')}</div>
+      <button class="btn primary" type="button" data-move-go="${esc(ref)}">${ar ? 'غيّر الموعد' : 'Move my order'}</button>`;
+    art.querySelector('.acts')!.after(box);
+  }
   // "Order again": puts everything from that order that is still on sale back in the cart.
   function orderAgain(ref: string) {
     const o = mine.find(x => x.ref === ref);
@@ -168,6 +184,17 @@ const ar = lang === 'ar';
 
   $('logout').addEventListener('click', async () => { await logout(); location.href = `/${lang}/account/`; });
   $('orders').addEventListener('click', async e => {
+    const mv = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-move]');
+    if (mv) { openMove(mv.dataset.move!); return; }
+    const mvGo = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-move-go]');
+    if (mvGo) {
+      const box = mvGo.closest<HTMLElement>('.mvbox')!;
+      const day = (box.querySelector('select') as HTMLSelectElement).value, win = box.querySelector<HTMLInputElement>('input[type=radio]:checked')?.value;
+      if (!day || !win) { alert(ar ? 'اختر يوماً ووقتاً.' : 'Choose a day and a time.'); return; }
+      const r = await fetch('/api/my/orders/move', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ref: mvGo.dataset.moveGo, day, window: win }) });
+      const d = await r.json(); if (!r.ok) { alert(d.message); return; }
+      alert(ar ? 'تغيّر الموعد. أرسلنا لك بريداً.' : 'Done. We emailed you the new day.'); showMine(); return;
+    }
     const again = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-again]');
     if (again) { orderAgain(again.dataset.again!); return; }
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-cancel]');

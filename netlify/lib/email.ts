@@ -89,6 +89,10 @@ const COPY = {
     en: (o: OrderForMail) => ({ s: `Order ${o.ref} was cancelled`, h: 'Your order was cancelled.', p: 'If this is a surprise, reply to this email and we will sort it out.' }),
     ar: (o: OrderForMail) => ({ s: `أُلغي طلبك ${o.ref}`, h: 'أُلغي طلبك.', p: 'إن كان هذا مفاجئاً فردّ على هذه الرسالة وسنحلّ الأمر.' }),
   },
+  moved: {
+    en: (o: OrderForMail) => ({ s: `New day for order ${o.ref}`, h: 'Your order has a new day.', p: 'We have moved your order. Here are the new details.' }),
+    ar: (o: OrderForMail) => ({ s: `موعد جديد لطلبك ${o.ref}`, h: 'لطلبك موعد جديد.', p: 'غيّرنا موعد طلبك، وهذه التفاصيل الجديدة.' }),
+  },
   reminder: {
     en: (o: OrderForMail) => ({ s: `Tomorrow: your Hikaya order ${o.ref}`, h: 'See you tomorrow.', p: o.method === 'pickup' ? 'A reminder of your pickup time tomorrow.' : 'A reminder that we deliver your order tomorrow.' }),
     ar: (o: OrderForMail) => ({ s: `غداً: طلبك من حكاية ${o.ref}`, h: 'نراك غداً.', p: o.method === 'pickup' ? 'تذكير بموعد الاستلام غداً.' : 'تذكير بأننا نوصل طلبك غداً.' }),

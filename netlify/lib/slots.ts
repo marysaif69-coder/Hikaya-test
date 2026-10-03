@@ -12,7 +12,7 @@ export const WINDOWS = ['11:00–14:00', '14:00–17:00', '17:00–20:00'] as co
 export const SERVICE_DAYS = [4, 5, 6, 0]; // Thu, Fri, Sat, Sun
 const TZ = 'America/Edmonton';
 
-export type Ordering = { open: boolean; firstDay: string; cutoffHour: number; cutoffMode: 'day-before' | 'weekly'; cutoffWeekday: number; closedDates: string[] };
+export type Ordering = { open: boolean; autoConfirm?: boolean; firstDay: string; cutoffHour: number; cutoffMode: 'day-before' | 'weekly'; cutoffWeekday: number; closedDates: string[] };
 export type Settings = { capacity: { pickup: number; delivery: number }; ordering: Ordering };
 
 export async function getSettings(): Promise<Settings> {

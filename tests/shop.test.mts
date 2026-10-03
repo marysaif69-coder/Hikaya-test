@@ -24,6 +24,7 @@ const auth = (await import('../netlify/functions/api-auth.mts')).default;
 const orders = (await import('../netlify/functions/api-orders.mts')).default;
 const admin = (await import('../netlify/functions/api-admin.mts')).default;
 const help = (await import('../netlify/functions/api-help.mts')).default;
+const driverApi = (await import('../netlify/functions/api-driver.mts')).default;
 const H = 'https://hikaya.test';
 let ipN = 0; // each request from a different address, so the rate limits don't trip
 const call = async (fn: any, path: string, opts: { body?: any; cookie?: string } = {}) => {
@@ -367,6 +368,117 @@ const before2 = sent.length;
 await daily('2027-03-01'); assert.ok(sent.slice(before2).some(m => /month in numbers \(February 2027\)/.test(m.subject))); 
 const before3 = sent.length; await daily('2027-03-01'); assert.ok(!sent.slice(before3).some(m => /month in numbers/.test(m.subject))); ok('on the 1st the owners get last month in numbers, once');
 assert.equal((await call(admin, '/api/admin/report', { cookie: helper })).status, 403); ok('helpers do not see the money report');
+
+// ---------- wave 2: details, moving orders, customers, low stock, tomorrow email ----------
+const mover = await login('mover@example.com');
+assert.equal((await call(orders, '/api/my/details', { cookie: mover })).data.name, ''); 
+const mv = await order({ email: 'mover@example.com', name: 'Mona Mover', phone: '403-555-0111', method: 'delivery', street: '9 Elm St', postal: 'T3A0A1', day: '2027-01-22' });
+const det = (await call(orders, '/api/my/details', { cookie: mover })).data;
+assert.equal(det.name, 'Mona Mover'); assert.equal(det.street, '9 Elm St'); assert.equal(det.postal, 'T3A 0A1'); ok('logged-in customers get their last details filled in at checkout');
+assert.equal((await call(orders, '/api/my/details')).status, 401);
+const mvMails = sent.length;
+const moved = await call(orders, '/api/my/orders/move', { cookie: mover, body: { ref: mv.data.ref, day: '2027-01-23', window: '14:00–17:00' } });
+assert.equal(moved.status, 200); assert.equal(moved.data.order.day, '2027-01-23');
+assert.ok(sent.slice(mvMails).some(m => /New day for order/.test(m.subject) && m.to.includes('mover@example.com'))); ok('a customer moves their own order to another day; they get an email');
+assert.equal((await call(orders, '/api/my/orders/move', { cookie: regCookie, body: { ref: mv.data.ref, day: '2027-01-24', window: '11:00–14:00' } })).status, 404); ok('nobody else can move it');
+assert.equal((await call(orders, '/api/my/orders/move', { cookie: mover, body: { ref: mv.data.ref, day: '2027-01-26', window: '11:00–14:00' } })).data.error, 'bad-day'); ok('only Thursday to Sunday');
+await call(admin, `/api/admin/orders/${mv.data.ref}`, { cookie: adm, body: { status: 'ready', notify: false } });
+assert.equal((await call(orders, '/api/my/orders/move', { cookie: mover, body: { ref: mv.data.ref, day: '2027-01-24', window: '11:00–14:00' } })).data.error, 'cannot-move'); ok('not once it is being prepared');
+await call(admin, `/api/admin/orders/${mv.data.ref}`, { cookie: adm, body: { status: 'confirmed', notify: false } });
+const forced = await call(admin, `/api/admin/orders/${mv.data.ref}/move`, { cookie: helper, body: { day: '2027-01-28', window: '17:00–20:00', force: true } });
+assert.equal(forced.data.day, '2027-01-28'); ok('the team can move any order (even past the deadline)');
+
+const cl = (await call(admin, '/api/admin/customers?q=mover', { cookie: helper })).data.customers;
+assert.equal(cl.length, 1); assert.equal(cl[0].orders, 1); assert.ok(cl[0].spent > 0);
+assert.ok(!(await call(admin, '/api/admin/customers', { cookie: adm })).data.customers.some((c: any) => c.email.endsWith('.sample@example.com'))); ok('customer list with orders and spending, searchable');
+await call(admin, `/api/admin/customers/${cl[0].id}`, { cookie: helper, body: { note: 'Side door, ring twice' } });
+const cd = (await call(admin, `/api/admin/customers/${cl[0].id}`, { cookie: adm })).data;
+assert.equal(cd.customer.team_note, 'Side door, ring twice'); assert.equal(cd.orders[0].ref, mv.data.ref);
+assert.equal((await call(admin, `/api/admin/orders/${mv.data.ref}`, { cookie: adm })).data.customer.note, 'Side door, ring twice');
+assert.equal((await call(admin, '/api/admin/day?date=2027-01-28', { cookie: adm })).data.deliveries.find((o: any) => o.ref === mv.data.ref).customerNote, 'Side door, ring twice'); ok('team note on a customer shows on their orders and the driver page');
+
+await call(admin, '/api/admin/products/radaey', { cookie: adm, body: { stock: 5, available: true } });
+const lowBefore = sent.length;
+await order({ lines: [{ id: 'radaey', opt: 'dallah', qty: 1 }] });
+assert.ok(!sent.slice(lowBefore).some(m => /Running low/.test(m.subject)));
+await order({ lines: [{ id: 'radaey', opt: 'dallah', qty: 1 }] });
+const lowMail = sent.slice(lowBefore).filter(m => /Running low/.test(m.subject));
+assert.equal(lowMail.length, 1); assert.match(lowMail[0].subject, /3 left/);
+await order({ lines: [{ id: 'radaey', opt: 'dallah', qty: 1 }] });
+assert.equal(sent.slice(lowBefore).filter(m => /Running low/.test(m.subject)).length, 1); ok('owners get one "running low" email when stock reaches 3');
+
+const tBefore = sent.length;
+await daily('2027-01-27');
+const tm = sent.slice(tBefore).filter(m => /^Tomorrow: \d+ pickup/.test(m.subject));
+assert.ok(tm.length >= 2); assert.ok(tm.some(m => m.to.includes('helper@hikayacoffee.ca')));
+assert.ok(tm[0].html.includes('Side door, ring twice') && tm[0].html.includes('To pack')); ok("the team gets tomorrow's run sheet the evening before");
+const tEmpty = sent.length; await daily('2027-02-02'); assert.ok(!sent.slice(tEmpty).some(m => /^Tomorrow: \d+ pickup/.test(m.subject))); ok('no email on a day without orders');
+
+// ---------- drivers and the delivery app ----------
+const invMails = sent.length;
+assert.equal((await call(admin, '/api/admin/team', { cookie: helper, body: { email: 'dan@example.com', role: 'driver' } })).status, 403);
+await call(admin, '/api/admin/team', { cookie: adm, body: { email: 'Dan@Example.com', name: 'Dan', role: 'driver' } });
+const inv = sent.slice(invMails).find(m => m.to.includes('dan@example.com'));
+assert.ok(inv && /\/admin\/driver\//.test(inv.text) && /Add to Home Screen/.test(inv.text)); ok('owners add a driver by email; the driver gets the link and the steps');
+const dan = await login('dan@example.com');
+assert.equal((await call(auth, '/api/me', { cookie: dan })).data.user.role, 'driver');
+assert.equal((await call(admin, '/api/admin/orders', { cookie: dan })).status, 403); ok('a driver logs in with the email code and cannot open the order desk');
+const dme = (await call(driverApi, '/api/driver/me', { cookie: dan })).data;
+assert.equal(dme.needsOnboarding, true); assert.ok(dme.guide.points.length >= 5);
+assert.equal((await call(driverApi, '/api/driver/stops', { cookie: dan })).data.error, 'onboarding');
+assert.equal((await call(driverApi, '/api/driver/onboard', { cookie: dan, body: { name: 'Dan', phone: '403 555 0123' } })).status, 400);
+const obMails = sent.length;
+assert.equal((await call(driverApi, '/api/driver/onboard', { cookie: dan, body: { name: 'Dan Driver', phone: '403 555 0123', vehicle: 'Grey Corolla', agree: true } })).status, 200);
+assert.ok(sent.slice(obMails).some(m => /has joined as a driver/.test(m.subject))); ok('onboarding: details and agreeing to the guide; the owners are told');
+
+const dl1 = await order({ method: 'delivery', street: '1 Main St', postal: 'T2P1J9', day: '2027-01-30', payment: 'at-pickup', email: 'door1@example.com' });
+const dl2 = await order({ method: 'delivery', street: '2 Main St', postal: 'T2P1J8', day: '2027-01-30', payment: 'e-transfer', email: 'door2@example.com' });
+const dl3 = await order({ method: 'delivery', street: '3 Main St', postal: 'T3A0A1', day: '2027-01-30', email: 'door3@example.com' });
+const t = (await call(admin, '/api/admin/team', { cookie: adm })).data;
+assert.ok(t.drivers.some((d: any) => d.email === 'dan@example.com'));
+assert.equal((await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [dl1.data.ref], driver: 'stranger@example.com' } })).status, 400);
+assert.equal((await call(admin, '/api/admin/assign', { cookie: helper, body: { refs: [dl1.data.ref, dl2.data.ref], driver: 'dan@example.com' } })).data.assigned, 2); ok('owners or helpers assign deliveries to a driver');
+const ds = (await call(driverApi, '/api/driver/stops?date=2027-01-30', { cookie: dan })).data.stops;
+assert.deepEqual(ds.map((x: any) => x.ref).sort(), [dl1.data.ref, dl2.data.ref].sort()); ok('the driver sees only their own stops');
+assert.equal((await call(driverApi, '/api/driver/delivered', { cookie: dan, body: { ref: dl3.data.ref } })).status, 404); ok("and can't touch anyone else's");
+const stMails = sent.length;
+assert.equal((await call(driverApi, '/api/driver/start?date=2027-01-30', { cookie: dan, body: {} })).data.started, 2);
+assert.equal(sent.slice(stMails).filter(m => /is on its way/.test(m.subject)).length, 2); ok('Start route: both customers get "on its way" without the owners touching anything');
+assert.equal((await call(driverApi, '/api/driver/delivered', { cookie: dan, body: { ref: dl1.data.ref, collected: 'cash' } })).data.error, 'photo'); ok('Delivered needs a photo first');
+const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4]);
+const up: Response = await driverApi(new Request(`${H}/api/driver/photo?ref=${dl1.data.ref}`, { method: 'POST', headers: { 'content-type': 'image/jpeg', origin: H, cookie: dan }, body: jpeg }));
+assert.equal(up.status, 201); const photoId = (await up.json()).id;
+const pic: Response = await driverApi(new Request(`${H}/api/driver/photo/${photoId}`, { headers: { cookie: adm } }));
+assert.equal(pic.headers.get('content-type'), 'image/jpeg');
+assert.equal((await call(driverApi, '/api/driver/delivered', { cookie: dan, body: { ref: dl1.data.ref } })).data.error, 'collect'); ok('money due at the door: the driver must record cash or card');
+const dvMails = sent.length;
+assert.equal((await call(driverApi, '/api/driver/delivered', { cookie: dan, body: { ref: dl1.data.ref, collected: 'cash' } })).status, 200);
+const r1d = (await pg.query(`SELECT status, payment_status, collected_method, delivered_by FROM orders WHERE ref = $1`, [dl1.data.ref])).rows[0] as any;
+assert.equal(r1d.status, 'completed'); assert.equal(r1d.payment_status, 'paid'); assert.equal(r1d.collected_method, 'cash'); assert.equal(r1d.delivered_by, 'dan@example.com');
+assert.ok(sent.slice(dvMails).some(m => /Thank you for order/.test(m.subject))); ok('Delivered: paid, completed, thank-you email sent');
+const missMails = sent.length;
+await call(driverApi, '/api/driver/missed', { cookie: dan, body: { ref: dl2.data.ref, why: 'Nobody home' } });
+assert.ok(sent.slice(missMails).some(m => /Couldn't deliver/.test(m.subject))); ok("Couldn't deliver: the owners get an email right away");
+const t2 = (await call(admin, '/api/admin/team', { cookie: adm })).data;
+assert.equal(t2.cash[0].driver, 'dan@example.com'); assert.equal(t2.team.find((m: any) => m.email === 'dan@example.com').week, 1);
+const handed = (await call(admin, '/api/admin/team/cash', { cookie: adm, body: { driver: 'dan@example.com' } })).data;
+assert.equal(handed.orders, 1); assert.equal((await call(admin, '/api/admin/team', { cookie: adm })).data.cash.length, 0); ok('cash per driver to hand in, and deliveries counted per driver');
+await call(admin, `/api/admin/team/${t2.team.find((m: any) => m.email === 'dan@example.com').id}`, { cookie: adm, body: { status: 'off' } });
+assert.equal((await call(driverApi, '/api/driver/me', { cookie: dan })).status, 401); ok('turning a driver off logs them out');
+
+// ---------- confirming orders ----------
+const newO = await order({ day: '2027-01-31' });
+const cMails = sent.length;
+const cn = (await call(admin, '/api/admin/confirm-new', { cookie: helper, body: {} })).data;
+assert.ok(cn.confirmed >= 1); assert.equal((await pg.query(`SELECT status FROM orders WHERE ref = $1`, [newO.data.ref])).rows[0].status, 'confirmed');
+assert.ok(sent.slice(cMails).some(m => m.subject === `Order ${newO.data.ref} is confirmed`)); ok('"Confirm all new orders" confirms and emails each customer');
+await call(admin, '/api/admin/settings', { cookie: adm, body: { autoConfirm: true } });
+const autoMails = sent.length;
+const auto = await order({ day: '2027-01-31' });
+assert.equal((await pg.query(`SELECT status FROM orders WHERE ref = $1`, [auto.data.ref])).rows[0].status, 'confirmed');
+const autoSubj = sent.slice(autoMails).map(m => m.subject);
+assert.ok(autoSubj.includes(`Order ${auto.data.ref} is confirmed`) && !autoSubj.includes(`We have your order ${auto.data.ref}`)); ok('automatic confirmation: confirmed at once, one confirmation email');
+await call(admin, '/api/admin/settings', { cookie: adm, body: { autoConfirm: false } });
 
 // ---------- rate limits ----------
 const rl = await import('../netlify/lib/rate');

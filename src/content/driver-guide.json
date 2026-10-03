@@ -1,0 +1,58 @@
+{
+  "guide": {
+    "title": {
+      "en": "Driver guide",
+      "ar": "دليل السائق"
+    },
+    "points": [
+      {
+        "t": {
+          "en": "Before you leave: check every bag against your stop list in the app. Keep boxes flat, out of the sun and away from the heater.",
+          "ar": "قبل أن تنطلق: طابق كل كيس مع قائمة توقفاتك في التطبيق. أبقِ الصناديق مستوية، بعيدة عن الشمس والمدفأة."
+        }
+      },
+      {
+        "t": {
+          "en": "When you set off, press Start route. Each customer gets an email that their order is on its way, and the map opens with your stops in order.",
+          "ar": "حين تنطلق اضغط «ابدأ الجولة». يصل كل عميل بريد بأن طلبه في الطريق، وتُفتح الخريطة بتوقفاتك بالترتيب."
+        }
+      },
+      {
+        "t": {
+          "en": "At the door: hand the order to the customer, or to the person named on a gift. Take a photo of the order at the door for every delivery (the bag, not people's faces). Delivered only works after the photo.",
+          "ar": "عند الباب: سلّم الطلب للعميل، أو للشخص المذكور في الهدية. التقط صورة للطلب عند الباب في كل توصيل (الكيس، لا وجوه الناس). زر «تم التوصيل» لا يعمل إلا بعد الصورة."
+        }
+      },
+      {
+        "t": {
+          "en": "If the app says Collect: take cash or card, then record which one before pressing Delivered. Card payments use the team's Square app or reader. Count cash in front of the customer.",
+          "ar": "إن ظهر «حصّل»: خذ المبلغ نقداً أو بالبطاقة، ثم سجّل الطريقة قبل «تم التوصيل». البطاقة عبر تطبيق Square أو قارئ الفريق. عُدّ النقد أمام العميل."
+        }
+      },
+      {
+        "t": {
+          "en": "Nobody home: call from the app. If there is no answer, press Couldn't deliver, write what happened, and follow what the owners tell you. Never leave an unpaid order.",
+          "ar": "لا أحد في البيت: اتصل من التطبيق. إن لم يرد أحد اضغط «تعذّر التوصيل» واكتب ما حدث، واتبع تعليمات أصحاب المحل. لا تترك طلباً غير مدفوع."
+        }
+      },
+      {
+        "t": {
+          "en": "Customer addresses and phone numbers are only for today's deliveries. Don't save them, share them or contact customers for anything else.",
+          "ar": "عناوين العملاء وأرقامهم لتوصيلات اليوم فقط. لا تحفظها ولا تشاركها ولا تتواصل مع العملاء لأي أمر آخر."
+        }
+      },
+      {
+        "t": {
+          "en": "Hand in all cash the same day. The owners mark it received in the desk.",
+          "ar": "سلّم كل النقد في اليوم نفسه، ويسجّل أصحاب المحل استلامه."
+        }
+      },
+      {
+        "t": {
+          "en": "Drive safely. Don't use the phone while driving: check your next stop before you set off.",
+          "ar": "قُد بأمان. لا تستعمل الهاتف أثناء القيادة: راجع توقفك التالي قبل أن تنطلق."
+        }
+      }
+    ]
+  }
+}

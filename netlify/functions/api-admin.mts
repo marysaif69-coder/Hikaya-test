@@ -6,11 +6,12 @@ import { listGiftCards, giftCardPaid } from '../lib/giftcards';
 import { listSubscriptions } from '../lib/subscriptions';
 import { monthlyReport, sendMonthlyReport } from '../lib/report';
 import { smsEnabled } from '../lib/sms';
+import { teamList, drivers, cashToHandIn, invite, cashReceived, setMember, assign, confirmNew } from '../lib/delivery';
 import { readContent, saveContent, type FileId } from '../lib/content';
 import { requireTeam } from '../lib/auth';
 import { sql, one } from '../lib/db';
 import { getSettings, WINDOWS, calgaryNow } from '../lib/slots';
-import { items, setStatus, setPayment, event, STATUSES } from '../lib/orders';
+import { items, setStatus, setPayment, event, STATUSES, moveOrder } from '../lib/orders';
 import { readable } from '../lib/ask';
 import { liveCatalog, saveProduct, getSeasons, saveSeasons } from '../lib/catalog';
 import { savePromo, normCode } from '../lib/promos';
@@ -55,6 +56,7 @@ const summary = (o: any) => ({
   total: o.total_cents, lang: o.lang, notes: o.notes, created: o.created_at, items: o.items ?? null,
   discount: o.discount_cents ?? 0, promo: o.promo_code ?? null, refunded: o.refunded_cents ?? 0, sample: Boolean(o.is_sample),
   gift: o.gift ? { to: o.gift_to, phone: o.gift_phone, message: o.gift_message } : null,
+  driver: o.driver_email ?? null, collected: o.collected_method ? { method: o.collected_method, cents: o.collected_cents, by: o.collected_by } : null,
 });
 
 export default async (req: Request) => {
@@ -65,7 +67,7 @@ export default async (req: Request) => {
     // Helpers can read everything and run orders; money, catalog, settings and exports are owners only.
     if (admin.role !== 'admin') {
       const write = req.method !== 'GET';
-      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report'
+      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write)
         || (write && ['products', 'settings', 'ask', 'connections', 'content', 'giftcards', 'report'].includes(parts[0])) || (parts[0] === 'orders' && parts[2] === 'refund');
       if (ownersOnly) throw new HttpError(403, 'owners-only', 'Only the owners can do this.');
     }
@@ -99,7 +101,15 @@ export default async (req: Request) => {
       if (!o) throw new HttpError(404, 'not-found');
       const events = await sql`SELECT kind, detail, actor, created_at FROM order_events WHERE order_id = ${o.id} ORDER BY created_at DESC`;
       const emails = await sql`SELECT to_email, subject, status, created_at FROM email_log WHERE order_id = ${o.id} ORDER BY created_at DESC`;
-      return json({ order: { ...summary(o), subtotal: o.subtotal_cents, delivery: o.delivery_cents, items: await items(o.id), refundable: o.total_cents - o.refunded_cents, paidByCard: Boolean(o.square_payment_id) }, events, emails, refunds: await refundsFor(o.id) });
+      const cust = await one`SELECT id, team_note FROM customers WHERE email = ${o.email}`;
+      return json({ customer: cust ? { id: cust.id, note: cust.team_note } : null, order: { ...summary(o), giftCard: o.gift_card_cents ?? 0, giftCardCode: o.gift_card_code ?? null, regular: Boolean(o.subscription_id), sms: Boolean(o.sms_ok), subtotal: o.subtotal_cents, delivery: o.delivery_cents, items: await items(o.id), refundable: o.total_cents - o.refunded_cents, paidByCard: Boolean(o.square_payment_id) }, events, emails, refunds: await refundsFor(o.id) });
+    }
+
+    // POST /api/admin/orders/:ref/move — another day or time; force skips the deadline and capacity checks
+    if (parts[0] === 'orders' && parts[1] && parts[2] === 'move' && req.method === 'POST') {
+      const b = await body(req);
+      const o = await moveOrder(parts[1], str(b.day, 10), str(b.window, 20), admin.email, req, { force: b.force === true });
+      return json({ ok: true, day: day(o.slot_date), window: o.slot_window });
     }
 
     // POST /api/admin/orders/:ref/refund
@@ -132,7 +142,8 @@ export default async (req: Request) => {
       const rows = await sql`SELECT * FROM orders WHERE slot_date = ${date} AND status <> 'cancelled' ORDER BY slot_window, postal, created_at`;
       const pack = await sql`SELECT i.name_en, COALESCE(i.option_en, '') AS option, SUM(i.qty)::int AS qty FROM order_items i JOIN orders o ON o.id = i.order_id
         WHERE o.slot_date = ${date} AND o.status <> 'cancelled' GROUP BY 1, 2 ORDER BY 1, 2`;
-      const withItems = await Promise.all(rows.map(async r => summary({ ...r, items: await items(r.id) })));
+      const notes = new Map((await sql`SELECT email, team_note FROM customers WHERE team_note IS NOT NULL AND email IN (SELECT email FROM orders WHERE slot_date = ${date})`).map(c => [c.email, c.team_note]));
+      const withItems = await Promise.all(rows.map(async r => ({ ...summary({ ...r, items: await items(r.id) }), customerNote: notes.get(r.email) ?? null, giftCard: r.gift_card_cents ?? 0, subtotal: r.subtotal_cents, delivery: r.delivery_cents })));
       return json({
         date,
         pickups: WINDOWS.map(w => ({ window: w, orders: withItems.filter(o => o.method === 'pickup' && o.window === w) })),
@@ -150,6 +161,7 @@ export default async (req: Request) => {
         const ordering = {
           ...cur.ordering,
           open: typeof b.open === 'boolean' ? b.open : cur.ordering.open,
+          autoConfirm: typeof b.autoConfirm === 'boolean' ? b.autoConfirm : Boolean(cur.ordering.autoConfirm),
           cutoffMode: b.cutoffMode === 'weekly' || b.cutoffMode === 'day-before' ? b.cutoffMode : cur.ordering.cutoffMode,
           cutoffWeekday: Number.isInteger(b.cutoffWeekday) && b.cutoffWeekday >= 0 && b.cutoffWeekday <= 6 ? b.cutoffWeekday : cur.ordering.cutoffWeekday,
           cutoffHour: Number.isInteger(b.cutoffHour) && b.cutoffHour >= 0 && b.cutoffHour <= 23 ? b.cutoffHour : cur.ordering.cutoffHour,
@@ -219,6 +231,51 @@ export default async (req: Request) => {
     if (parts[0] === 'content' && parts[1] && req.method === 'POST') {
       const b = await body(req, 200_000);
       return json(await saveContent(parts[1] as FileId, b.data, str(b.sha, 64), admin.email));
+    }
+
+    // ---------- drivers: the team, assignments, cash ----------
+    if (parts[0] === 'team' && !parts[1] && req.method === 'GET') return json({ team: await teamList(), drivers: await drivers(), cash: await cashToHandIn() });
+    if (parts[0] === 'team' && !parts[1] && req.method === 'POST') return json(await invite(await body(req), admin.email, siteUrl(req)));
+    if (parts[0] === 'team' && parts[1] === 'cash' && req.method === 'POST') return json(await cashReceived(str((await body(req)).driver, 254), admin.email));
+    if (parts[0] === 'team' && parts[1] && parts[2] === 'resend' && req.method === 'POST') {
+      const m = await one`SELECT email, role, name FROM team_members WHERE id = ${Number(parts[1]) || 0}`;
+      if (!m) throw new HttpError(404, 'not-found');
+      return json(await invite(m, admin.email, siteUrl(req)));
+    }
+    if (parts[0] === 'team' && parts[1] && req.method === 'POST') return json(await setMember(Number(parts[1]) || 0, await body(req)));
+    if (parts[0] === 'assign' && req.method === 'POST') {
+      const b = await body(req);
+      return json(await assign(Array.isArray(b.refs) ? b.refs.map((r: unknown) => str(r, 12)) : [], str(b.driver, 254).toLowerCase(), admin.email));
+    }
+    if (parts[0] === 'confirm-new' && req.method === 'POST') return json(await confirmNew(admin.email, req));
+
+    // ---------- customers ----------
+    if (parts[0] === 'customers' && !parts[1] && req.method === 'GET') {
+      const term = `%${q('q', 80).toLowerCase()}%`;
+      const rows = await sql`SELECT c.id, c.email, c.name, c.phone, c.team_note, c.created_at,
+          COUNT(o.id) FILTER (WHERE o.status <> 'cancelled')::int AS orders,
+          COALESCE(SUM(o.total_cents + o.gift_card_cents - o.refunded_cents) FILTER (WHERE o.status <> 'cancelled'), 0)::int AS spent,
+          MAX(o.slot_date)::text AS last_day,
+          (SELECT COUNT(*)::int FROM subscriptions s WHERE s.email = c.email AND s.status = 'active') AS regular,
+          EXISTS (SELECT 1 FROM subscribers l WHERE l.email = c.email AND l.confirmed_at IS NOT NULL AND l.unsubscribed_at IS NULL) AS on_list
+        FROM customers c LEFT JOIN orders o ON o.email = c.email AND NOT o.is_sample
+        WHERE c.email NOT LIKE '%.sample@example.com' AND (${term} = '%%' OR lower(c.email) LIKE ${term} OR lower(c.name) LIKE ${term} OR c.phone LIKE ${term})
+        GROUP BY c.id ORDER BY MAX(o.created_at) DESC NULLS LAST, c.id DESC LIMIT 300`;
+      return json({ customers: rows });
+    }
+    if (parts[0] === 'customers' && parts[1] && req.method === 'GET') {
+      const c = await one`SELECT id, email, name, phone, lang, team_note, team_note_by, team_note_at, created_at FROM customers WHERE id = ${Number(parts[1]) || 0}`;
+      if (!c) throw new HttpError(404, 'not-found');
+      const ords = await sql`SELECT ref, slot_date, slot_window, method, status, payment_status, total_cents, gift_card_cents, is_sample FROM orders WHERE email = ${c.email} ORDER BY created_at DESC LIMIT 100`;
+      const subs = await sql`SELECT every_weeks, next_date::text AS next, status FROM subscriptions WHERE email = ${c.email} AND status <> 'stopped'`;
+      const tickets = await sql`SELECT id, kind, status, created_at FROM tickets WHERE email = ${c.email} ORDER BY created_at DESC LIMIT 20`;
+      return json({ customer: c, orders: ords.map(o => ({ ref: o.ref, day: day(o.slot_date), window: o.slot_window, method: o.method, status: o.status, paymentStatus: o.payment_status, total: o.total_cents + o.gift_card_cents, sample: o.is_sample })), subscriptions: subs, tickets });
+    }
+    if (parts[0] === 'customers' && parts[1] && req.method === 'POST') {
+      const b = await body(req);
+      const c = await one`UPDATE customers SET team_note = ${str(b.note, 2000) || null}, team_note_by = ${admin.email}, team_note_at = NOW() WHERE id = ${Number(parts[1]) || 0} RETURNING id`;
+      if (!c) throw new HttpError(404, 'not-found');
+      return json({ ok: true });
     }
 
     // ---------- gift cards ----------
