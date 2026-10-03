@@ -808,6 +808,39 @@ assert.ok(gsMail && gsMail.html.includes(gs2.code) && gsMail.html.includes('Sami
 const gsRow = (await call(admin, '/api/admin/giftcards', { cookie: adm })).data.giftcards.find((g: any) => g.ref === gs2.ref);
 assert.equal(gsRow.payment, 'card-here'); assert.ok(gsRow.sold_by && gsRow.paid_at && gsRow.sent_at); ok('a gift card sold in person by card is emailed to the person it is for, and the desk shows who sold it');
 
+// ---------- phone notifications ----------
+const push = await import('../netlify/lib/push');
+const pushed: { endpoint: string; msg: any }[] = []; const gone = new Set<string>();
+push.setPushSender(async (sub, payload) => { if (gone.has(sub.endpoint)) throw Object.assign(new Error('gone'), { statusCode: 410 }); pushed.push({ endpoint: sub.endpoint, msg: JSON.parse(payload) }); return {}; });
+const vk1 = (await call(driverApi, '/api/driver/push', { cookie: dan2 })).data;
+assert.ok(vk1.publicKey.length > 60); assert.equal(vk1.devices, 0);
+assert.equal((await call(driverApi, '/api/driver/push', { cookie: adm })).data.publicKey, vk1.publicKey); ok('the site makes its notification key once and keeps it');
+assert.equal((await call(driverApi, '/api/driver/push/subscribe', { cookie: dan2, body: { endpoint: 'http://bad', keys: {} } })).status, 400);
+const psub = (ep: string) => ({ endpoint: `https://push.example.com/${ep}`, keys: { p256dh: 'BPx' + ep, auth: 'au' + ep } });
+await call(driverApi, '/api/driver/push/subscribe', { cookie: dan2, body: psub('dan-phone') });
+await call(driverApi, '/api/driver/push/subscribe', { cookie: adm, body: psub('maryam-phone') });
+assert.equal((await call(driverApi, '/api/driver/push', { cookie: dan2 })).data.devices, 1);
+assert.equal((await call(driverApi, '/api/driver/push/test', { cookie: dan2, body: {} })).data.sent, 1);
+assert.equal(pushed.at(-1)!.endpoint, 'https://push.example.com/dan-phone'); ok('a driver turns notifications on and gets a test');
+pushed.length = 0;
+const pu1 = await order({ method: 'delivery', street: '9 Push St', postal: 'T2P1J9', day: '2027-03-19', email: 'push1@example.com' });
+const pu2 = await order({ method: 'delivery', street: '8 Push St', postal: 'T2P1J8', day: '2027-03-19', email: 'push2@example.com' });
+const ownerPush = pushed.filter(x => x.endpoint.endsWith('maryam-phone'));
+assert.equal(ownerPush.length, 2); assert.match(ownerPush[0].msg.title, new RegExp(`New order ${pu1.data.ref}`)); assert.equal(ownerPush[0].msg.url, `/admin/?order=${pu1.data.ref}`);
+assert.ok(!pushed.some(x => x.endpoint.endsWith('dan-phone'))); ok('owners get a notification for each new order; drivers do not');
+pushed.length = 0;
+await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [pu1.data.ref, pu2.data.ref], driver: 'dan@example.com' } });
+assert.equal(pushed.length, 1); assert.equal(pushed[0].msg.title, '2 new delivery stops'); assert.match(pushed[0].msg.body, /2027-03-19/); ok('a driver gets one notification when stops are assigned to them');
+pushed.length = 0;
+const an = (await call(admin, '/api/admin/announce', { cookie: adm, body: { body: 'Roastery closed Monday.' } })).data;
+assert.equal(an.pushed, 2); assert.ok(pushed.every(x => x.msg.body === 'Roastery closed Monday.')); ok('team messages go to every phone with notifications on');
+gone.add('https://push.example.com/dan-phone');
+await call(driverApi, '/api/driver/push/test', { cookie: dan2, body: {} });
+assert.equal((await call(driverApi, '/api/driver/push', { cookie: dan2 })).data.devices, 0); ok('a phone that is gone is forgotten');
+const bk2 = await (await admin(new Request(`${H}/api/admin/backup.json`, { headers: { cookie: adm } }))).json();
+assert.ok(bk2.tables.push_subs && !bk2.tables.push_keys); ok('the notification key is not in the backup');
+await call(driverApi, '/api/driver/push/unsubscribe', { cookie: adm, body: { endpoint: 'https://push.example.com/maryam-phone' } });
+
 // ---------- confirming orders ----------
 const newO = await order({ day: '2027-01-31' });
 const cMails = sent.length;

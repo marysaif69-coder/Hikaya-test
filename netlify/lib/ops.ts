@@ -3,6 +3,7 @@
 import { sql, one } from './db';
 import { HttpError, env, siteUrl } from './http';
 import { send } from './email';
+import { pushTeam } from './push';
 import { calgaryNow } from './slots';
 
 // ---------- checklists ----------
@@ -65,13 +66,14 @@ export async function announce(body: string, emailAll: boolean, by: string, req?
     const esc = (s: string) => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!));
     for (const t of to) { await send({ to: t, subject: 'Hikaya team: a message from the owners', text: `${text}\n\nTeam app: ${siteUrl(req)}/admin/driver/`, html: `<div style="font:15px/1.5 Arial,sans-serif">${esc(text).replace(/\n/g, '<br>')}<br><br><a href="${siteUrl(req)}/admin/driver/">Open the team app</a></div>`, kind: 'team-announcement' }); emailed++; }
   }
-  return { id: r!.id, emailed };
+  const pushed = await pushTeam({ title: 'Hikaya team', body: text.slice(0, 180), tag: 'announcement' });
+  return { id: r!.id, emailed, pushed };
 }
 export const announcements = (limit = 10) => sql`SELECT a.id, a.body, a.created_at, COALESCE(m.name, a.created_by) AS who FROM announcements a LEFT JOIN team_members m ON m.email = a.created_by ORDER BY a.created_at DESC LIMIT ${limit}`;
 export const deleteAnnouncement = (id: number) => sql`DELETE FROM announcements WHERE id = ${id}`.then(() => ({ ok: true }));
 
 // ---------- backup ----------
-const SKIP = new Set(['sessions', 'auth_codes', 'as_tokens', 'rate_hits']);
+const SKIP = new Set(['sessions', 'auth_codes', 'as_tokens', 'rate_hits', 'push_keys']);
 const BINARY: Record<string, string> = { ticket_photos: 'id, ticket_id, mime, created_at', delivery_photos: 'id, order_id, mime, taken_by, created_at' };
 const raw = (q: string) => sql(Object.assign([q], { raw: [q] }) as unknown as TemplateStringsArray);
 /** Every table as JSON (no login codes or sessions; photos listed without the image bytes). */

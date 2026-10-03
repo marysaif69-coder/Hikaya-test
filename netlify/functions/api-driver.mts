@@ -10,6 +10,7 @@ import { checklists, todayLogs, signChecklist, announcements } from '../lib/ops'
 import { shiftsFrom, signUp, leave, clock, hours, saveProfile, canTake } from '../lib/team';
 import { member, onboard, packList, markPacked, stops, startRoute, endRoute, currentRoute, addDeliveryPhoto, delivered, missed, driverReport, mileageCsv, routing } from '../lib/delivery';
 import { addDays } from '../lib/slots';
+import { pushKeys, subscribe, unsubscribe, pushStatus, pushTo } from '../lib/push';
 import GUIDE from '../../src/content/driver-guide.json';
 
 export default async (req: Request) => {
@@ -28,6 +29,12 @@ export default async (req: Request) => {
     // Until onboarding is done a driver sees nothing else.
     if ((s.role === 'driver' || s.role === 'packer') && !(await member(s.email))?.agreed_at) throw new HttpError(403, 'onboarding', 'Finish setting up first.');
     if (path === 'profile' && req.method === 'POST') return json(await saveProfile(s, await body(req)));
+
+    // ---------- phone notifications ----------
+    if (path === 'push' && req.method === 'GET') return json({ publicKey: (await pushKeys()).publicKey, ...(await pushStatus(s.email)) });
+    if (path === 'push/subscribe' && req.method === 'POST') return json(await subscribe(s.email, await body(req)));
+    if (path === 'push/unsubscribe' && req.method === 'POST') return json(await unsubscribe(s.email, (await body(req)).endpoint));
+    if (path === 'push/test' && req.method === 'POST') return json({ sent: await pushTo([s.email], { title: 'Hikaya team', body: 'Notifications are on for this phone.', tag: 'test' }) });
 
     // ---------- shifts ----------
     if (path === 'shifts' && req.method === 'GET') {

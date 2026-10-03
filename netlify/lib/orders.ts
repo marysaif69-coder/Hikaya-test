@@ -6,6 +6,7 @@ import { assertBookable, bookable, getSettings } from './slots';
 import { liveCatalog, takeStock, giveStock, restock, assertDayLimits } from './catalog';
 import { checkPromo, redeem, unredeem, shape, type Applied } from './promos';
 import { send, orderEmail, teamAlert, type OrderMailKind } from './email';
+import { pushOwners } from './push';
 import { randomInt } from 'node:crypto';
 import { paymentLink } from './square';
 import { takeFromGiftCard, giveBackToGiftCard, normGift } from './giftcards';
@@ -141,6 +142,8 @@ export async function notifyTeam(o: Row, req?: Request) {
   if (o.is_sample) return;
   const its = await items(o.id);
   for (const m of teamAlert(mailShape(o), its as any, `${siteUrl(req)}/admin/?order=${o.ref}`)) await send(m);
+  const d = mailShape(o).slot_date as string;
+  await pushOwners({ title: `New order ${o.ref} · ${dollars(o.total_cents)}`, body: `${o.name} · ${o.method === 'delivery' ? 'delivery' : 'pickup'} ${d} ${o.slot_window} · ${its.reduce((n: number, i: any) => n + i.qty, 0)} items`, url: `/admin/?order=${o.ref}`, tag: `order-${o.ref}` });
 }
 const mailShape = (o: Row) => ({ ...o, slot_date: String(o.slot_date instanceof Date ? o.slot_date.toISOString() : o.slot_date).slice(0, 10) }) as any;
 

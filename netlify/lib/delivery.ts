@@ -11,6 +11,7 @@ import { dollars } from './pricing';
 import GUIDE from '../../src/content/driver-guide.json';
 import type { Session } from './auth';
 import { assertPapers } from './team';
+import { pushTo } from './push';
 import { planRoute, navLinks, mapsEnabled, shopAddress, type Origin } from './routing';
 
 export const guideText = () => [GUIDE.guide.title.en, ...GUIDE.guide.points.map((p, i) => `${i + 1}. ${p.t.en}`)].join('\n');
@@ -287,12 +288,13 @@ export async function drivers() {
 export async function assign(refs: string[], driver: string, by: string) {
   const ok = !driver || (await drivers()).some(d => d.email === driver);
   if (!ok) throw new HttpError(400, 'driver', 'That person is not a driver.');
-  let n = 0;
+  let n = 0; const days = new Set<string>();
   for (const ref of refs.slice(0, 200)) {
     if (driver) { const od = await one`SELECT slot_date FROM orders WHERE ref = ${ref}`; if (od) await assertPapers(driver, (od.slot_date instanceof Date ? od.slot_date.toISOString() : String(od.slot_date)).slice(0, 10)); }
-    const o = await one`UPDATE orders SET driver_email = ${driver || null} WHERE ref = ${ref} AND method = 'delivery' AND status <> 'completed' RETURNING id`;
-    if (o) { n++; await event(o.id, 'driver', driver ? `Assigned to ${driver}` : 'Driver removed', by); }
+    const o = await one`UPDATE orders SET driver_email = ${driver || null} WHERE ref = ${ref} AND method = 'delivery' AND status <> 'completed' RETURNING id, slot_date::text AS day`;
+    if (o) { n++; days.add(o.day); await event(o.id, 'driver', driver ? `Assigned to ${driver}` : 'Driver removed', by); }
   }
+  if (driver && n) await pushTo([driver], { title: n === 1 ? 'A new delivery stop' : `${n} new delivery stops`, body: `For ${[...days].sort().join(', ')}. Open Deliver to see them.`, tag: 'stops' });
   return { assigned: n };
 }
 

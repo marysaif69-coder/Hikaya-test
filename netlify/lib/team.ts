@@ -3,6 +3,7 @@
 import { sql, one, type Row } from './db';
 import { HttpError, env, siteUrl } from './http';
 import { send } from './email';
+import { pushTo } from './push';
 import { addDays, calgaryNow } from './slots';
 import type { Session } from './auth';
 
@@ -179,6 +180,7 @@ export async function shiftReminders(today = calgaryNow().date) {
   const people = await sql`SELECT p.shift_id, p.email, s.* FROM shift_people p JOIN shifts s ON s.id = p.shift_id WHERE s.day = ${tomorrow} AND p.reminded_at IS NULL`;
   for (const p of people) {
     await send({ to: p.email, subject: `Tomorrow: ${KIND_LABEL[p.kind]} ${p.starts}–${p.ends}`, text: `A reminder of your ${KIND_LABEL[p.kind].toLowerCase()} shift tomorrow, ${p.starts}–${p.ends}.${p.note ? `\n${p.note}` : ''}\nCheck in from the team app when you arrive: ${siteUrl()}/admin/driver/`, html: `<p style="font:15px Arial,sans-serif">A reminder of your ${esc(KIND_LABEL[p.kind].toLowerCase())} shift tomorrow, <b>${p.starts}–${p.ends}</b>.${p.note ? `<br>${esc(p.note)}` : ''}<br>Check in from the <a href="${siteUrl()}/admin/driver/">team app</a> when you arrive.</p>`, kind: 'team-shift-reminder' });
+    await pushTo([p.email], { title: `Tomorrow: ${KIND_LABEL[p.kind]} ${p.starts}–${p.ends}`, body: p.note || 'Check in from the team app when you arrive.', tag: `shift-${p.shift_id}` });
     await sql`UPDATE shift_people SET reminded_at = NOW() WHERE shift_id = ${p.shift_id} AND email = ${p.email}`;
   }
   const gaps = await sql`SELECT s.kind, s.starts, s.ends, s.spots, COUNT(p.email)::int AS n FROM shifts s LEFT JOIN shift_people p ON p.shift_id = s.id WHERE s.day = ${tomorrow} GROUP BY s.id HAVING COUNT(p.email) < s.spots`;

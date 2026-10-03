@@ -72,6 +72,8 @@ import '../../styles/global.css';
       <h1 class="h-m" id="meName"></h1>
       <p class="muted small" id="meWho" hidden>Working as <b id="meWhoName"></b> <button type="button" class="b ghost2" id="switchWho" style="min-height:40px;margin-top:6px">Switch person</button></p>
       <p class="muted small" id="meRole"></p>
+      <div class="push-box" id="pushBox"><b>Phone notifications</b><p class="muted small" id="pushNote">New stops, team messages and shift reminders on this phone.</p>
+        <div class="row1"><button type="button" class="b go" id="pushOn">Turn on</button><button type="button" class="b ghost2" id="pushTest" hidden>Send a test</button><button type="button" class="b ghost2" id="pushOff" hidden>Turn off</button></div></div>
       <div class="totals" id="meHours"></div>
       <form id="meForm" novalidate>
         <label>Phone<input name="phone" type="tel" inputmode="tel" /></label>
@@ -147,6 +149,8 @@ import '../../styles/global.css';
   .filter { display: flex; gap: 16px; font-weight: 600; }
   .row1 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .install { background: #F4E6BF; }
+  .push-box { border: 1.5px solid var(--line, #E2D6C2); border-radius: 16px; padding: 12px 14px; margin: 10px 0 14px; display: grid; gap: 6px; }
+  .push-box .row1 { flex-wrap: wrap; }
   .stops { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; counter-reset: stop; }
   .stops :global(li) { background: var(--sheet); border-radius: 20px; padding: 16px; display: grid; gap: 8px; box-shadow: inset 0 0 0 1px var(--line); counter-increment: stop; }
   .stops :global(li.done) { opacity: .55; }
@@ -508,9 +512,45 @@ import '../../styles/global.css';
     b.disabled = true; await api('/api/driver/packed', { ref: b.dataset.pack }).finally(() => { b.disabled = false; }); loadPack();
   });
 
+  // ---------- phone notifications ----------
+  const canPush = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  const swReady = canPush ? navigator.serviceWorker.register('/admin/driver/sw.js', { scope: '/admin/driver/' }).then(() => navigator.serviceWorker.ready).catch(() => null) : Promise.resolve(null);
+  const keyBytes = (b64: string) => { const s = atob((b64 + '='.repeat((4 - b64.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(s, c => c.charCodeAt(0)); };
+  async function loadPush() {
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const showBtns = (on: boolean) => { $('pushOn').hidden = on; $('pushOff').hidden = !on; $('pushTest').hidden = !on; };
+    if (!canPush) { showBtns(false); $('pushOn').hidden = true; $('pushNote').textContent = ios && !standalone ? 'On iPhone, add this app to the Home Screen first (Share → Add to Home Screen), open it from there, then turn notifications on here.' : 'This browser cannot show notifications. Try Chrome on Android, or the home-screen app on iPhone.'; return; }
+    const reg = await swReady; const sub = reg ? await reg.pushManager.getSubscription() : null;
+    if (sub && Notification.permission === 'granted') {
+      // Keeps the phone tied to whoever is working now (shared logins switch people).
+      await api('/api/driver/push/subscribe', { ...sub.toJSON(), device: navigator.userAgent.slice(0, 120) }).catch(() => {});
+      $('pushNote').textContent = 'On for this phone: new stops, team messages and shift reminders' + (me?.role === 'admin' ? ', and new orders.' : '.'); showBtns(true);
+    } else {
+      $('pushNote').textContent = Notification.permission === 'denied' ? 'Notifications are blocked for this app. Allow them in the phone settings, then come back here.' : 'New stops, team messages and shift reminders on this phone.'; showBtns(false);
+    }
+  }
+  $('pushOn').addEventListener('click', async () => {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { loadPush(); return; }
+    const reg = await swReady; if (!reg) { alert('This phone could not turn on notifications.'); return; }
+    const { publicKey } = await api('/api/driver/push');
+    let sub: PushSubscription;
+    try { sub = (await reg.pushManager.getSubscription()) ?? await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(publicKey) }); }
+    catch { alert('This phone could not turn on notifications. Check that notifications are allowed for this app, then try again.'); loadPush(); return; }
+    await api('/api/driver/push/subscribe', { ...sub.toJSON(), device: navigator.userAgent.slice(0, 120) });
+    loadPush();
+  });
+  $('pushOff').addEventListener('click', async () => {
+    const reg = await swReady; const sub = reg ? await reg.pushManager.getSubscription() : null;
+    if (sub) { await api('/api/driver/push/unsubscribe', { endpoint: sub.endpoint }); await sub.unsubscribe(); }
+    loadPush();
+  });
+  $('pushTest').addEventListener('click', async () => { const r = await api('/api/driver/push/test', {}); if (!r.sent) alert('Nothing was sent. Turn notifications off and on again.'); });
+
   // ---------- me ----------
   async function loadMe() {
     const d = await api('/api/driver/me'), m = d.member ?? {};
+    loadPush().catch(() => {});
     $('meName').textContent = m.name || d.email;
     $('meRole').textContent = `${d.email} · ${({ driver: 'Driver', packer: 'Packer', staff: 'Team', admin: 'Owner' } as any)[d.role] ?? d.role}${m.volunteer ? ' · Volunteer' : ''}`;
     const f = $('meForm') as HTMLFormElement;
