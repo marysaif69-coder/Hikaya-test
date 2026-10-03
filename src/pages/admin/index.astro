@@ -224,6 +224,16 @@ import '../../styles/global.css';
       </div>
       <div class="promo-form" id="cashBox"></div>
       <div class="promo-form">
+        <div class="a-dayhead"><h2 class="h-s">Driver reports</h2><label>From <input type="date" id="drFrom" /></label><label>To <input type="date" id="drTo" /></label></div>
+        <p class="muted">Km come from the driver's odometer when they type it, otherwise from the planned route (needs the Google Maps key in Settings). Each driver sees the same report for themselves in the app.</p>
+        <div class="a-table-wrap"><table class="a-table mini-t" id="drTable"></table></div>
+        <form class="acts owner-only" id="payForm"><b>Pay rates (optional)</b>
+          <label>Per delivery $ <input name="perDelivery" type="number" min="0" step="0.01" style="width:90px" /></label>
+          <label>Per km $ <input name="perKm" type="number" min="0" step="0.01" style="width:90px" /></label>
+          <label>Per hour $ <input name="perHour" type="number" min="0" step="0.01" style="width:90px" /></label>
+          <button class="btn line sm" type="submit">Save rates</button></form>
+      </div>
+      <div class="promo-form">
         <h2 class="h-s">The team</h2>
         <p class="muted">Add a driver by email: they get an email with the link to the delivery app, log in with a code (Gmail or any email), fill in their details, read the driver guide (edit it in Words) and add the app to their phone. Helpers get the order desk without money or settings. Owners stay in Netlify (ADMIN_EMAILS).</p>
         <form class="acts owner-only" id="invForm"><input name="email" type="email" placeholder="their@email.com" required /><input name="name" placeholder="Name (optional)" /><select name="role"><option value="driver">Driver</option><option value="helper">Helper</option></select><button class="btn primary sm" type="submit">Add and email them</button></form>
@@ -272,7 +282,7 @@ import '../../styles/global.css';
         <ul class="plan-list done">
           <li>Shop, checkout, accounts, emails at every step, reminders the evening before</li>
           <li>Order desk, day and week sheets, packing slips and gift-message cards, Customers with team notes</li>
-          <li>Drivers: add by email, onboarding with the driver guide, delivery app on iPhone and Android, assignments, Start route, photo at every door, cash or card at the door, cash to hand in, deliveries counted per driver</li>
+          <li>Drivers: add by email, onboarding with the driver guide, delivery app on iPhone and Android, assignments, Start route with the shortest order (Google Maps key), next-stop navigation, km from the app or odometer, drivers' own reports and mileage log, photo at every door, cash or card at the door, cash to hand in, deliveries counted per driver</li>
           <li>Confirm all new orders, or confirm automatically; customers change the day themselves; tomorrow's run sheet by email; low-stock emails</li>
           <li>Prices, show/hide, sold out, stock, Ramadan and Eid switches, promo codes, refunds, sample orders</li>
           <li>Gift orders and year-round gift boxes, gift cards, “email me when it's back”</li>
@@ -288,7 +298,6 @@ import '../../styles/global.css';
           <li>Driver pay: decide per delivery or per hour; the deliveries are already counted per driver.</li>
           <li>Push notifications to drivers when they get new stops (works on iPhone and Android for the installed app).</li>
           <li>An App Store / Google Play version of the delivery app, only if the home-screen app isn't enough.</li>
-          <li>Route planning (RouteXL) when deliveries pass about 10 a day; the app already opens the stops in Google Maps in order.</li>
           <li>Loyalty: a free coffee after a number of orders, if customers ask for it.</li>
           <li>Wholesale price list for cafés, mosques and offices.</li>
           <li>Selling gift cards in person through Square at pickup.</li>
@@ -798,9 +807,29 @@ import '../../styles/global.css';
     $('teamTable').innerHTML = '<tr><th>Name</th><th>Role</th><th>Status</th><th>Delivered (7 days / this month)</th><th>Cash not handed in</th><th></th></tr>' + (t.team.map((m: any) => `<tr><td>${esc(m.name || '–')}<br><small>${esc(m.email)}${m.phone ? ' · ' + esc(m.phone) : ''}${m.vehicle ? ' · ' + esc(m.vehicle) : ''}</small></td>
       <td>${m.role === 'driver' ? 'Driver' : 'Helper'}</td><td>${m.status === 'off' ? 'Off' : m.agreedAt ? 'Ready' : 'Invited, not set up yet'}</td><td>${m.week} / ${m.month}</td><td>${m.cash ? money(m.cash) : '–'}</td>
       <td class="owner-only">${m.status !== 'off' ? `<button type="button" data-resend="${m.id}">Email the link again</button> <a class="btn line sm" target="_blank" rel="noopener" href="https://wa.me/${esc((m.phone ?? '').replace(/\D/g, '').replace(/^(\d{10})$/, '1$1'))}?text=${encodeURIComponent(shareText(m))}">WhatsApp</a> <button type="button" data-copy="${esc(shareText(m))}">Copy link</button> ` : ''}${m.status === 'off' ? `<button type="button" data-mem="${m.id}" data-st="active">Turn on</button>` : `<button type="button" data-mem="${m.id}" data-st="off">Turn off</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No drivers yet. Add one above.</td></tr>');
+    loadDriverReports();
     $('cashBox').innerHTML = `<h2 class="h-s">Cash to hand in</h2>` + (t.cash.length ? `<ul class="a-pack">${t.cash.map((c: any) => `<li><span>${esc(c.driver)} · ${c.orders} order${c.orders === 1 ? '' : 's'}</span><b>${money(c.cents)}</b> <button type="button" class="owner-only" data-cash="${esc(c.driver)}">Received</button></li>`).join('')}</ul>` : '<p class="muted">Nothing waiting.</p>');
   }
   asgDay.addEventListener('change', loadDrivers);
+  const drFrom = $('drFrom') as HTMLInputElement, drTo = $('drTo') as HTMLInputElement;
+  async function loadDriverReports() {
+    const t = await api('/api/admin/team');
+    if (!drFrom.value) { const now = new Date(); drFrom.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`; drTo.value = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0)).toISOString().slice(0, 10); }
+    const qs = `from=${drFrom.value}&to=${drTo.value}`;
+    const reps = await Promise.all(t.drivers.map((d: any) => api(`/api/driver/report?driver=${encodeURIComponent(d.email)}&${qs}`).then(r => ({ d, r }))));
+    const rows = reps.filter(x => x.r.days.length);
+    const hm = (m: number) => `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}`;
+    $('drTable').innerHTML = '<tr><th>Driver</th><th>Deliveries</th><th>Km</th><th>On the road</th><th>Cash / card collected</th><th>Cash to hand in</th><th>Pay (estimate)</th><th></th></tr>' + (rows.map(({ d, r }) => `<tr><td>${esc(d.name)}</td><td>${r.total.deliveries}</td><td>${r.total.km}</td><td>${hm(r.total.minutes)}</td><td>${money(r.total.cash)} / ${money(r.total.card)}</td><td>${r.total.cashOpen ? money(r.total.cashOpen) : '–'}</td>
+      <td>${r.rates.perDelivery || r.rates.perKm || r.rates.perHour ? money(r.total.pay) : 'set rates below'}</td><td><a href="/api/driver/report.csv?driver=${encodeURIComponent(d.email)}&${qs}">Mileage log (CSV)</a></td></tr>`).join('') || '<tr><td colspan="8" class="muted">No deliveries in these dates.</td></tr>');
+    const pay = reps[0]?.r.rates ?? await api('/api/admin/pay');
+    const f = $('payForm') as HTMLFormElement;
+    for (const k of ['perDelivery', 'perKm', 'perHour']) (f.elements.namedItem(k) as HTMLInputElement).value = pay[k] ? (pay[k] / 100).toFixed(2) : '';
+  }
+  drFrom.addEventListener('change', loadDriverReports); drTo.addEventListener('change', loadDriverReports);
+  $('payForm').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target as HTMLFormElement, c = (k: string) => Math.round(Number((f.elements.namedItem(k) as HTMLInputElement).value || 0) * 100);
+    await api('/api/admin/pay', { perDelivery: c('perDelivery'), perKm: c('perKm'), perHour: c('perHour') }); alert('Saved.'); loadDriverReports();
+  });
   $('asgTable').addEventListener('change', async e => { const s = (e.target as HTMLSelectElement); if (s.dataset.asg) { await api('/api/admin/assign', { refs: [s.dataset.asg], driver: s.value }); loadDrivers(); } });
   $('asgAllBtn').addEventListener('click', async () => {
     const refs = [...document.querySelectorAll<HTMLSelectElement>('#asgTable select[data-asg]')].filter(s => !s.value).map(s => s.dataset.asg!);

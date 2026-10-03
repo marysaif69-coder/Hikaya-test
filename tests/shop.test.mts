@@ -466,6 +466,67 @@ assert.equal(handed.orders, 1); assert.equal((await call(admin, '/api/admin/team
 await call(admin, `/api/admin/team/${t2.team.find((m: any) => m.email === 'dan@example.com').id}`, { cookie: adm, body: { status: 'off' } });
 assert.equal((await call(driverApi, '/api/driver/me', { cookie: dan })).status, 401); ok('turning a driver off logs them out');
 
+// ---------- routes, mileage and reports ----------
+await call(admin, '/api/admin/team', { cookie: adm, body: { email: 'eve@example.com', name: 'Eve', role: 'driver' } });
+const eve = await login('eve@example.com');
+await call(driverApi, '/api/driver/onboard', { cookie: eve, body: { name: 'Eve Driver', phone: '403 555 0124', agree: true } });
+const ev1 = await order({ method: 'delivery', street: '10 A St', postal: 'T2P1J9', day: '2027-02-04', window: '11:00–14:00', email: 'e1@example.com' });
+const ev2 = await order({ method: 'delivery', street: '20 B St', postal: 'T3A0A1', day: '2027-02-04', window: '11:00–14:00', email: 'e2@example.com', payment: 'at-pickup' });
+const ev3 = await order({ method: 'delivery', street: '30 C St', postal: 'T2N0A1', day: '2027-02-04', window: '17:00–20:00', email: 'e3@example.com' });
+await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [ev1.data.ref, ev2.data.ref, ev3.data.ref], driver: 'eve@example.com' } });
+process.env.GOOGLE_MAPS_API_KEY = 'maps-test'; process.env.SHOP_ADDRESS = '1 Shop Rd, Calgary, AB';
+const planCalls: any[] = []; const f1 = globalThis.fetch;
+globalThis.fetch = (async (url: string, init: any) => {
+  if (String(url).startsWith('https://routes.googleapis.com/')) {
+    const b = JSON.parse(init.body); planCalls.push(b);
+    const n = b.intermediates.length, idx = [...Array(n).keys()].reverse(); // the planner says: reverse order is shortest
+    return new Response(JSON.stringify({ routes: [{ optimizedIntermediateWaypointIndex: idx, legs: Array.from({ length: n + 1 }, () => ({ distanceMeters: 4000, duration: '600s' })) }] }), { status: 200 });
+  }
+  return f1(url, init);
+}) as any;
+assert.equal((await call(driverApi, '/api/driver/start?date=2027-02-04', { cookie: eve, body: { startOdometer: 'abc' } })).data.error, 'odometer');
+const stEve = (await call(driverApi, '/api/driver/start?date=2027-02-04', { cookie: eve, body: { from: 'shop' } })).data;
+assert.equal(stEve.started, 3); assert.equal(stEve.optimized, true);
+assert.equal(planCalls.length, 2); assert.equal(planCalls[0].origin.address, '1 Shop Rd, Calgary, AB'); assert.equal(planCalls[0].optimizeWaypointOrder, true);
+assert.equal(planCalls[1].origin.address, '10 A St, T2P 1J9, Calgary, AB'); ok('auto route: shortest order per time window, each window starting where the last ended');
+assert.equal(stEve.km, 16); assert.equal(stEve.minutes, 40);
+const evStops = (await call(driverApi, '/api/driver/stops?date=2027-02-04', { cookie: eve })).data.stops;
+assert.deepEqual(evStops.map((x: any) => x.ref), [ev2.data.ref, ev1.data.ref, ev3.data.ref]); assert.equal(evStops[0].seq, 1); ok('stops shown in driving order, numbered');
+let rt = (await call(driverApi, '/api/driver/route?date=2027-02-04', { cookie: eve })).data.route;
+assert.equal(rt.next.ref, ev2.data.ref); assert.match(rt.next.url, /google\.com\/maps\/dir\/.*destination=20%20B%20St/); assert.equal(rt.kmSoFar, 0); ok('"Navigate to next stop" opens Google Maps to the next stop');
+assert.equal((await call(driverApi, '/api/driver/start?date=2027-02-04', { cookie: eve, body: {} })).data.error, 'route-open');
+const photo = async (ref: string) => driverApi(new Request(`${H}/api/driver/photo?ref=${ref}`, { method: 'POST', headers: { 'content-type': 'image/jpeg', origin: H, cookie: eve }, body: jpeg }));
+await photo(ev2.data.ref); await call(driverApi, '/api/driver/delivered', { cookie: eve, body: { ref: ev2.data.ref, collected: 'card' } });
+rt = (await call(driverApi, '/api/driver/route?date=2027-02-04', { cookie: eve })).data.route;
+assert.equal(rt.next.ref, ev1.data.ref); assert.equal(rt.kmSoFar, 4); ok('after Delivered, the next stop moves on and the km count goes up');
+await photo(ev1.data.ref); await call(driverApi, '/api/driver/delivered', { cookie: eve, body: { ref: ev1.data.ref } });
+await call(driverApi, '/api/driver/missed', { cookie: eve, body: { ref: ev3.data.ref, why: 'Gate locked' } });
+const endEve = (await call(driverApi, '/api/driver/end?date=2027-02-04', { cookie: eve, body: {} })).data;
+assert.equal(endEve.km, 16); ok('mileage from the app: the legs driven plus the way back, no odometer needed');
+const repEve = (await call(driverApi, '/api/driver/report?from=2027-02-01&to=2027-02-28', { cookie: eve })).data;
+assert.equal(repEve.total.deliveries, 2); assert.equal(repEve.total.km, 16); assert.equal(repEve.total.card, (await pg.query(`SELECT total_cents FROM orders WHERE ref = $1`, [ev2.data.ref])).rows[0].total_cents); assert.ok(repEve.total.minutes >= 0);
+assert.equal((await call(driverApi, `/api/driver/report?driver=dan@example.com&from=2027-01-01&to=2027-02-28`, { cookie: eve })).data.driver, 'eve@example.com'); ok("a driver's own report: deliveries, km, time, cash and card; they can't see anyone else's");
+await call(admin, '/api/admin/pay', { cookie: adm, body: { perDelivery: 500, perKm: 50, perHour: 0 } });
+assert.equal((await call(admin, '/api/admin/pay', { cookie: helper, body: { perDelivery: 9999 } })).status, 403);
+const repPay = (await call(driverApi, '/api/driver/report?driver=eve@example.com&from=2027-02-01&to=2027-02-28', { cookie: adm })).data;
+assert.equal(repPay.total.pay, 2 * 500 + 16 * 50); ok('owners set pay rates; the report estimates pay');
+const csvRes: Response = await driverApi(new Request(`${H}/api/driver/report.csv?from=2027-02-01&to=2027-02-28`, { headers: { cookie: eve } }));
+const csvMiles = await csvRes.text();
+assert.match(csvMiles.split('\n')[0], /date,driver,start,end,start_odometer_km,end_odometer_km,km_driven,km_source/); assert.match(csvMiles, /2027-02-04,eve@example.com,.*,16,app \(planned route\)/); ok('mileage log CSV for taxes');
+// odometer wins when given
+const ev4 = await order({ method: 'delivery', street: '40 D St', postal: 'T2P1J9', day: '2027-02-05', email: 'e4@example.com' });
+await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [ev4.data.ref], driver: 'eve@example.com' } });
+await call(driverApi, '/api/driver/start?date=2027-02-05', { cookie: eve, body: { startOdometer: 84200 } });
+assert.equal((await call(driverApi, '/api/driver/end?date=2027-02-05', { cookie: eve, body: { endOdometer: 84100 } })).data.error, 'odometer');
+assert.equal((await call(driverApi, '/api/driver/end?date=2027-02-05', { cookie: eve, body: { endOdometer: 84231 } })).data.km, 31); ok('with odometer readings, the odometer km are used');
+delete process.env.GOOGLE_MAPS_API_KEY; delete process.env.SHOP_ADDRESS; globalThis.fetch = f1;
+const ev5 = await order({ method: 'delivery', street: '50 E St', postal: 'T3A0A1', day: '2027-02-06', email: 'e5@example.com' });
+const ev6 = await order({ method: 'delivery', street: '60 F St', postal: 'T2P1J9', day: '2027-02-06', email: 'e6@example.com' });
+await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [ev5.data.ref, ev6.data.ref], driver: 'eve@example.com' } });
+const noMaps = (await call(driverApi, '/api/driver/start?date=2027-02-06', { cookie: eve, body: {} })).data;
+assert.equal(noMaps.optimized, false); assert.equal(noMaps.km, null);
+assert.deepEqual((await call(driverApi, '/api/driver/stops?date=2027-02-06', { cookie: eve })).data.stops.map((x: any) => x.ref), [ev6.data.ref, ev5.data.ref]); ok('without the Maps key: stops by time window and area, still works');
+
 // ---------- confirming orders ----------
 const newO = await order({ day: '2027-01-31' });
 const cMails = sent.length;

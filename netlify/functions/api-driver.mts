@@ -5,7 +5,8 @@ import { json, fail, body, str, HttpError, sameOrigin } from '../lib/http';
 import { requireCrew } from '../lib/auth';
 import { one } from '../lib/db';
 import { calgaryNow } from '../lib/slots';
-import { member, onboard, stops, startRoute, addDeliveryPhoto, delivered, missed } from '../lib/delivery';
+import { member, onboard, stops, startRoute, endRoute, currentRoute, addDeliveryPhoto, delivered, missed, driverReport, mileageCsv, routing } from '../lib/delivery';
+import { addDays } from '../lib/slots';
 import GUIDE from '../../src/content/driver-guide.json';
 
 export default async (req: Request) => {
@@ -17,14 +18,25 @@ export default async (req: Request) => {
 
     if (path === 'me' && req.method === 'GET') {
       const m = await member(s.email);
-      return json({ email: s.email, role: s.role, member: m, needsOnboarding: s.role === 'driver' && !m?.agreed_at, guide: GUIDE.guide });
+      return json({ email: s.email, role: s.role, member: m, needsOnboarding: s.role === 'driver' && !m?.agreed_at, guide: GUIDE.guide, routing: routing() });
     }
     if (path === 'onboard' && req.method === 'POST') return json({ member: await onboard(s, await body(req)) });
     // Until onboarding is done a driver sees nothing else.
     if (s.role === 'driver' && !(await member(s.email))?.agreed_at) throw new HttpError(403, 'onboarding', 'Finish setting up first.');
 
     if (path === 'stops' && req.method === 'GET') return json({ date, stops: await stops(s, date, url.searchParams.get('mine') === '1') });
-    if (path === 'start' && req.method === 'POST') return json({ started: await startRoute(s, date, req) });
+    if (path === 'start' && req.method === 'POST') return json(await startRoute(s, date, req, await body(req)));
+    if (path === 'end' && req.method === 'POST') return json(await endRoute(s, date, await body(req)));
+    if (path === 'route' && req.method === 'GET') return json({ route: await currentRoute(s, date) });
+    // Reports: a driver sees their own; owners and helpers can pass ?driver=
+    if ((path === 'report' || path === 'report.csv') && req.method === 'GET') {
+      const who = s.role === 'driver' ? s.email : str(url.searchParams.get('driver'), 254).toLowerCase() || s.email;
+      const iso = (k: string, d: string) => (/^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get(k) ?? '') ? url.searchParams.get(k)! : d);
+      const today = calgaryNow().date;
+      const r = await driverReport(who, iso('from', today.slice(0, 8) + '01'), iso('to', addDays(today, 0)));
+      if (path === 'report') return json({ driver: who, ...r });
+      return new Response(mileageCsv(who, r), { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="hikaya-mileage-${r.from}-to-${r.to}.csv"`, 'cache-control': 'no-store' } });
+    }
     if (path === 'photo' && req.method === 'POST') {
       sameOrigin(req);
       if (Number(req.headers.get('content-length') ?? 0) > 1_500_000) throw new HttpError(413, 'too-large', 'That photo is too large.');

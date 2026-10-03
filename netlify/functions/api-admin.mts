@@ -6,7 +6,7 @@ import { listGiftCards, giftCardPaid } from '../lib/giftcards';
 import { listSubscriptions } from '../lib/subscriptions';
 import { monthlyReport, sendMonthlyReport } from '../lib/report';
 import { smsEnabled } from '../lib/sms';
-import { teamList, drivers, cashToHandIn, invite, cashReceived, setMember, assign, confirmNew } from '../lib/delivery';
+import { teamList, drivers, cashToHandIn, invite, cashReceived, setMember, assign, confirmNew, payRates, savePayRates } from '../lib/delivery';
 import { readContent, saveContent, type FileId } from '../lib/content';
 import { requireTeam } from '../lib/auth';
 import { sql, one } from '../lib/db';
@@ -43,6 +43,8 @@ const SETTINGS = [
   { group: 'Text messages', name: 'TWILIO_AUTH_TOKEN', secret: true, what: 'Lets the site send texts.', where: 'Same page → Auth Token.' },
   { group: 'Text messages', name: 'TWILIO_FROM', secret: false, what: 'The number texts come from.', where: 'Twilio → Phone Numbers → buy a Canadian (403/587) number, e.g. +15875550100.' },
   { group: 'Assistant', name: 'ANTHROPIC_API_KEY', secret: true, what: 'Turns on Ask Hikaya.', where: 'console.anthropic.com → API Keys.' },
+  { group: 'Deliveries', name: 'GOOGLE_MAPS_API_KEY', secret: true, what: 'Shortest route for each driver, planned km and driving time; km counted by the app.', where: 'console.cloud.google.com → new project → enable "Routes API" → Credentials → API key (restrict it to Routes API). Free monthly allowance covers a small shop.' },
+  { group: 'Deliveries', name: 'SHOP_ADDRESS', secret: false, what: 'Where routes start and end (the pickup address).', where: 'e.g. 123 Example St SW, Calgary, AB T2P 1J9' },
   { group: 'Extras', name: 'STAFF_EMAILS', secret: false, what: 'Helpers: orders, Inbox, sheets, Driver. No money or settings.', where: 'Helper emails, separated by commas.' },
   { group: 'Extras', name: 'GOOGLE_REVIEW_URL', secret: false, what: 'One "How was it?" email after a completed order.', where: 'Google Business Profile → Ask for reviews → copy link.' },
   { group: 'Extras', name: 'GITHUB_CONTENT_TOKEN', secret: true, what: 'Turns on saving in the Words tab.', where: 'GitHub → Settings → Developer settings → Fine-grained token, only Hikaya-test, Contents: read and write.' },
@@ -68,7 +70,7 @@ export default async (req: Request) => {
     if (admin.role !== 'admin') {
       const write = req.method !== 'GET';
       const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write)
-        || (write && ['products', 'settings', 'ask', 'connections', 'content', 'giftcards', 'report'].includes(parts[0])) || (parts[0] === 'orders' && parts[2] === 'refund');
+        || (write && ['products', 'settings', 'ask', 'connections', 'content', 'giftcards', 'report', 'pay'].includes(parts[0])) || (parts[0] === 'orders' && parts[2] === 'refund');
       if (ownersOnly) throw new HttpError(403, 'owners-only', 'Only the owners can do this.');
     }
     const q = (k: string, max = 40) => str(url.searchParams.get(k), max);
@@ -243,6 +245,8 @@ export default async (req: Request) => {
       return json(await invite(m, admin.email, siteUrl(req)));
     }
     if (parts[0] === 'team' && parts[1] && req.method === 'POST') return json(await setMember(Number(parts[1]) || 0, await body(req)));
+    if (parts[0] === 'pay' && req.method === 'GET') return json(await payRates());
+    if (parts[0] === 'pay' && req.method === 'POST') return json(await savePayRates(await body(req)));
     if (parts[0] === 'assign' && req.method === 'POST') {
       const b = await body(req);
       return json(await assign(Array.isArray(b.refs) ? b.refs.map((r: unknown) => str(r, 12)) : [], str(b.driver, 254).toLowerCase(), admin.email));

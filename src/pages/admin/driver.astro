@@ -27,6 +27,7 @@ import '../../styles/global.css';
     <b class="brand">Hikaya Drive</b>
     <input type="date" id="day" aria-label="Day" hidden />
     <button type="button" id="reload" aria-label="Refresh" hidden>↻</button>
+    <button type="button" id="reportBtn" class="ghost" hidden>Report</button>
     <button type="button" id="guideBtn" class="ghost" hidden>Guide</button>
   </header>
   <main>
@@ -52,12 +53,34 @@ import '../../styles/global.css';
       </form>
     </section>
 
+    <section id="reportBox" hidden class="card">
+      <h1 class="h-m">My report</h1>
+      <div class="from"><label>From <input type="date" id="rFrom" /></label><label>To <input type="date" id="rTo" /></label></div>
+      <div id="rTotals" class="totals"></div>
+      <div class="rtable"><table id="rDays"></table></div>
+      <a class="b map" id="rCsv">Download mileage log (CSV)</a>
+      <p class="muted small">Km come from your odometer readings when you type them, otherwise from the planned route to each stop you delivered. Keep the CSV for taxes; the CRA asks for the date, km and purpose of each trip.</p>
+      <button type="button" class="b ghost2" id="reportClose">Close</button>
+    </section>
+
     <section id="guideBox" hidden class="card"><div class="guide" id="guideText"></div><button type="button" class="b ghost2" id="guideClose">Close</button></section>
 
     <section id="app" hidden>
       <div class="filter" id="filter" hidden><label><input type="radio" name="who" value="1" checked /> My stops</label><label><input type="radio" name="who" value="0" /> Everyone</label></div>
       <p id="summary" class="muted"></p>
-      <div class="row1" id="routeRow" hidden><button type="button" class="b go" id="startBtn">Start route</button><a class="b map" id="routeLink" target="_blank" rel="noopener">Open route in Maps</a></div>
+      <div class="card" id="startBox" hidden>
+        <b>Start your route</b>
+        <p class="muted small" id="planNote"></p>
+        <div class="from" id="fromRow"><label><input type="radio" name="from" value="shop" checked /> From the shop</label><label><input type="radio" name="from" value="here" /> From where I am</label></div>
+        <label class="lbl">Odometer, km (optional)<input id="odoStart" type="number" inputmode="numeric" min="0" placeholder="e.g. 84213" /></label>
+        <button type="button" class="b go" id="startBtn">Start route</button>
+      </div>
+      <div class="card next" id="routeBox" hidden>
+        <div class="nx" id="nextBox"></div>
+        <p class="muted small" id="routeInfo"></p>
+        <div class="links" id="routeLinks"></div>
+        <button type="button" class="b ghost2" id="endBtn">End route</button>
+      </div>
       <ol id="stops" class="stops"></ol>
     </section>
   </main>
@@ -67,9 +90,11 @@ import '../../styles/global.css';
 
 <style>
   .drv { background: var(--paper); padding-bottom: env(safe-area-inset-bottom); }
-  .d-top { position: sticky; top: 0; z-index: 5; display: flex; gap: 8px; align-items: center; padding: calc(10px + env(safe-area-inset-top)) 14px 10px; background: var(--bunn); color: var(--paper); }
+  .d-top { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: calc(10px + env(safe-area-inset-top)) 14px 10px; background: var(--bunn); color: var(--paper); }
   .d-top .brand { margin-inline-end: auto; font-family: var(--display); font-size: 18px; }
-  .d-top input { border: 0; border-radius: 10px; padding: 8px 10px; font: inherit; color: var(--ink); background: var(--sheet); }
+  .d-top #day { order: 5; flex: 1; }
+  .d-top #reload { order: 6; }
+  .d-top input { border: 0; border-radius: 10px; padding: 8px 10px; font: inherit; color: #33211A; -webkit-text-fill-color: #33211A; background: var(--sheet); }
   .d-top button { border: 0; background: var(--khalal); color: var(--bunn); border-radius: 10px; min-width: 42px; height: 40px; font-size: 16px; font-weight: 700; padding: 0 10px; }
   .d-top .ghost { background: transparent; color: var(--paper); box-shadow: inset 0 0 0 1.5px var(--paper); }
   main { padding: 14px; display: grid; gap: 12px; max-width: 640px; margin: 0 auto; }
@@ -90,6 +115,7 @@ import '../../styles/global.css';
   .stops :global(li.done) { opacity: .55; }
   .stops :global(.h) { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
   .stops :global(.h b::before) { content: counter(stop) '. '; color: var(--tamr); }
+  .stops :global(.h b[data-seq]::before) { content: attr(data-seq) '. '; }
   .stops :global(.addr) { font-size: 19px; font-weight: 600; }
   .stops :global(.gift) { background: #F1DCD3; border-radius: 12px; padding: 8px 10px; }
   .stops :global(.collect) { background: #F4E6BF; border-radius: 12px; padding: 10px; font-weight: 600; display: grid; gap: 8px; }
@@ -110,6 +136,26 @@ import '../../styles/global.css';
   .b.ghost2 { background: none; color: var(--bunn); box-shadow: inset 0 0 0 1.5px var(--bunn); }
   .stops :global(small) { color: var(--ink-2); }
   .err { color: var(--tamr-2); font-weight: 600; }
+  .small { font-size: 14px; }
+  .from { display: flex; flex-wrap: wrap; gap: 14px; font-weight: 600; }
+  .from input[type=date] { border: 1.5px solid var(--line); border-radius: 10px; padding: 6px 8px; font: inherit; }
+  .lbl { display: grid; gap: 4px; font-weight: 600; font-size: 14px; }
+  .lbl input { border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; font: inherit; background: var(--paper); }
+  .next { background: var(--bunn); color: var(--paper); }
+  .next .muted { color: #E7DCCB; }
+  .nx :global(b) { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--khalal); }
+  .nx :global(.where) { font-size: 21px; font-weight: 700; margin: 2px 0 10px; }
+  .nx :global(a.b) { display: grid; place-items: center; min-height: 56px; border-radius: 14px; font-weight: 700; font-size: 17px; text-decoration: none; background: var(--khalal); color: var(--bunn); }
+  .links { display: flex; flex-wrap: wrap; gap: 8px; }
+  .links :global(a) { color: var(--paper); font-weight: 600; font-size: 14px; }
+  .next .b.ghost2 { color: var(--paper); box-shadow: inset 0 0 0 1.5px var(--paper); }
+  .totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .totals :global(div) { background: var(--paper); border-radius: 12px; padding: 10px; text-align: center; }
+  .totals :global(b) { display: block; font-size: 20px; }
+  .totals :global(small) { color: var(--ink-2); font-size: 12px; }
+  .rtable { overflow-x: auto; }
+  .rtable table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .rtable :global(th), .rtable :global(td) { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: start; white-space: nowrap; }
 </style>
 
 <script>
@@ -117,7 +163,7 @@ import '../../styles/global.css';
   const $ = (id: string) => document.getElementById(id)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
   const money = (c: number) => `$${(c / 100).toFixed(c % 100 ? 2 : 0)}`;
-  const show = (id: string) => { for (const s of ['login', 'onboard', 'app', 'guideBox']) $(s).hidden = s !== id; };
+  const show = (id: string) => { for (const s of ['login', 'onboard', 'app', 'guideBox', 'reportBox']) $(s).hidden = s !== id; };
   const api = async (url: string, data?: object) => {
     const r = await fetch(url, data ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) } : undefined);
     const b = await r.json().catch(() => ({}));
@@ -147,11 +193,6 @@ import '../../styles/global.css';
 
   // ---------- stops ----------
   const addrOf = (o: any) => `${o.street}, ${o.postal}, Calgary, AB`;
-  function routeUrl(rest: any[]) {
-    if (!rest.length) return '';
-    const dest = rest[rest.length - 1], way = rest.slice(0, -1).slice(0, 9);
-    return `https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${encodeURIComponent(addrOf(dest))}${way.length ? `&waypoints=${encodeURIComponent(way.map(addrOf).join('|'))}` : ''}`;
-  }
   async function load() {
     const mine = me.role === 'driver' || (document.querySelector<HTMLInputElement>('input[name=who]:checked')?.value ?? '1') === '1';
     const d = await api(`/api/driver/stops?mine=${mine ? 1 : 0}${dayIn.value ? `&date=${dayIn.value}` : ''}`);
@@ -159,14 +200,22 @@ import '../../styles/global.css';
     const left = list.filter(o => o.status !== 'completed');
     const notOut = left.filter(o => o.status !== 'out-for-delivery' && o.driver === me.email);
     $('summary').textContent = list.length ? `${list.length} ${list.length === 1 ? 'stop' : 'stops'}, ${left.length} to go. In order of postal area.` : (mine ? 'No stops for you this day. The owners assign them in the desk.' : 'No deliveries this day.');
-    $('routeRow').hidden = !left.length;
-    $('startBtn').hidden = !notOut.length;
-    (($('routeLink') as HTMLAnchorElement)).href = routeUrl(left);
+    const rt = (await api(`/api/driver/route${dayIn.value ? `?date=${dayIn.value}` : ''}`)).route;
+    const myLeft = left.filter(o => o.driver === me.email);
+    $('startBox').hidden = !(notOut.length && !rt?.open);
+    $('fromRow').hidden = !me.routing?.shop;
+    $('planNote').textContent = me.routing?.planner ? 'We put your stops in the shortest driving order, time window by time window. Your customers get the "on its way" email.' : 'Your stops go in order of time window and area. Your customers get the "on its way" email.';
+    $('routeBox').hidden = !(rt?.open && myLeft.length) && !(rt?.open);
+    if (rt?.open) {
+      $('nextBox').innerHTML = rt.next ? `<b>Next stop</b><div class="where">${esc(rt.next.address.replace(', Calgary, AB', ''))}</div><a class="b" href="${esc(rt.next.url)}" target="_blank" rel="noopener">Navigate to next stop</a>` : '<b>All stops done</b><div class="where">Head back and end your route.</div>';
+      $('routeInfo').textContent = [rt.km !== null ? `Planned ${rt.km} km, about ${rt.minutes} min of driving` : '', rt.kmSoFar !== null ? `${rt.kmSoFar} km so far` : '', rt.startOdometer !== null ? `started at ${rt.startOdometer} km` : ''].filter(Boolean).join(' · ');
+      $('routeLinks').innerHTML = rt.links.length > 1 || (rt.links.length === 1 && myLeft.length > 1) ? rt.links.map((l: any) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} in Google Maps</a>`).join('') : '';
+    }
     $('stops').innerHTML = list.map(o => {
       const done = o.status === 'completed';
       const phone = o.gift?.phone || o.phone;
       return `<li class="${done ? 'done' : ''}" data-ref="${esc(o.ref)}">
-        <div class="h"><b>${esc(o.window)}</b><small>${esc(o.ref)} · ${done ? 'Delivered' : o.status === 'out-for-delivery' ? 'On the way' : 'Not left yet'}${o.driver && o.driver !== me.email ? ` · ${esc(o.driver)}` : ''}</small></div>
+        <div class="h"><b${o.seq ? ` data-seq="${o.seq}"` : ''}>${esc(o.window)}</b><small>${esc(o.ref)} · ${done ? 'Delivered' : o.status === 'out-for-delivery' ? 'On the way' : 'Not left yet'}${o.driver && o.driver !== me.email ? ` · ${esc(o.driver)}` : ''}</small></div>
         <div class="addr">${esc(o.street)}<br><small>${esc(o.postal)}</small></div>
         <div>${esc(o.gift ? o.gift.to : o.name)}${o.gift ? ` <small>(gift from ${esc(o.name)})</small>` : ''}</div>
         ${o.gift ? `<div class="gift">Gift${o.gift.message ? `: card says “${esc(o.gift.message)}”` : ''}</div>` : ''}
@@ -223,17 +272,52 @@ import '../../styles/global.css';
     }
     load();
   });
+  const here = () => new Promise<{ lat: number; lng: number } | null>(res => {
+    if (!navigator.geolocation) return res(null);
+    navigator.geolocation.getCurrentPosition(p => res({ lat: p.coords.latitude, lng: p.coords.longitude }), () => res(null), { enableHighAccuracy: true, timeout: 8000 });
+  });
   $('startBtn').addEventListener('click', async () => {
     if (!confirm('Start your route? Each of your customers gets an email that their order is on its way.')) return;
-    await api(`/api/driver/start${dayIn.value ? `?date=${dayIn.value}` : ''}`, {});
-    await load();
-    const url = ($('routeLink') as HTMLAnchorElement).href; if (url) window.open(url, '_blank');
+    const from = (document.querySelector<HTMLInputElement>('input[name=from]:checked')?.value) ?? 'shop';
+    const pos = from === 'here' || !me.routing?.shop ? await here() : null;
+    const odo = ($('odoStart') as HTMLInputElement).value;
+    const b = $('startBtn') as HTMLButtonElement; b.disabled = true; b.textContent = 'Planning your route…';
+    try {
+      const r = await api(`/api/driver/start${dayIn.value ? `?date=${dayIn.value}` : ''}`, { from, lat: pos?.lat ?? null, lng: pos?.lng ?? null, startOdometer: odo === '' ? null : Number(odo) });
+      if (r.km !== null) alert(`Route planned: ${r.km} km, about ${r.minutes} min of driving. Tap "Navigate to next stop" for each stop.`);
+    } finally { b.disabled = false; b.textContent = 'Start route'; }
+    load();
   });
+  $('endBtn').addEventListener('click', async () => {
+    const odo = prompt("End of route. Odometer now, in km (optional; leave empty to use the app's km):", '');
+    if (odo === null) return;
+    const r = await api(`/api/driver/end${dayIn.value ? `?date=${dayIn.value}` : ''}`, { endOdometer: odo.trim() === '' ? null : Number(odo) });
+    alert(r.km !== null ? `Route ended: ${r.km} km. Thank you.` : 'Route ended. Thank you.');
+    load();
+  });
+
+  // ---------- my report ----------
+  const rFrom = $('rFrom') as HTMLInputElement, rTo = $('rTo') as HTMLInputElement;
+  const hm = (m: number) => `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}`;
+  async function loadReport() {
+    if (!rFrom.value) { const t = new Date(); const y = t.getFullYear(), m = t.getMonth(); rFrom.value = `${y}-${String(m + 1).padStart(2, '0')}-01`; rTo.value = new Date(Date.UTC(y, m + 1, 0)).toISOString().slice(0, 10); }
+    const qs = `from=${rFrom.value}&to=${rTo.value}`;
+    const r = await api(`/api/driver/report?${qs}`);
+    rFrom.value = r.from; rTo.value = r.to;
+    const t = r.total, hasPay = r.rates.perDelivery || r.rates.perKm || r.rates.perHour;
+    $('rTotals').innerHTML = `<div><b>${t.deliveries}</b><small>deliveries</small></div><div><b>${t.km}</b><small>km</small></div><div><b>${hm(t.minutes)}</b><small>on the road</small></div>
+      <div><b>${money(t.cash)}</b><small>cash collected</small></div><div><b>${money(t.cashOpen)}</b><small>cash to hand in</small></div><div><b>${hasPay ? money(t.pay) : '–'}</b><small>${hasPay ? 'estimated pay' : 'pay not set yet'}</small></div>`;
+    $('rDays').innerHTML = '<tr><th>Day</th><th>Stops</th><th>Km</th><th>Time</th><th>Cash</th><th>Card</th></tr>' + (r.days.map((d: any) => `<tr><td>${new Date(d.day + 'T12:00:00Z').toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' })}</td><td>${d.deliveries}</td><td>${d.km}${d.open ? '*' : ''}</td><td>${d.minutes ? hm(d.minutes) : '–'}</td><td>${d.cash ? money(d.cash) : '–'}</td><td>${d.card ? money(d.card) : '–'}</td></tr>`).join('') || '<tr><td colspan="6">No deliveries in these dates.</td></tr>');
+    ($('rCsv') as HTMLAnchorElement).href = `/api/driver/report.csv?${qs}`;
+  }
+  $('reportBtn').addEventListener('click', () => { show('reportBox'); $('install').hidden = true; loadReport(); });
+  $('reportClose').addEventListener('click', () => show('app'));
+  rFrom.addEventListener('change', loadReport); rTo.addEventListener('change', loadReport);
   dayIn.addEventListener('change', load);
   $('reload').addEventListener('click', load);
   document.querySelectorAll('input[name=who]').forEach(r => r.addEventListener('change', load));
-  $('guideBtn').addEventListener('click', () => { $('guideBox').hidden = false; $('app').hidden = true; });
-  $('guideClose').addEventListener('click', () => { $('guideBox').hidden = true; $('app').hidden = false; });
+  $('guideBtn').addEventListener('click', () => show('guideBox'));
+  $('guideClose').addEventListener('click', () => show('app'));
 
   // ---------- onboarding ----------
   $('obForm').addEventListener('submit', async e => {
@@ -265,7 +349,7 @@ import '../../styles/global.css';
       return;
     }
     show('app');
-    for (const id of ['day', 'reload', 'guideBtn']) $(id).hidden = false;
+    for (const id of ['day', 'reload', 'guideBtn', 'reportBtn']) $(id).hidden = false;
     $('filter').hidden = d.role === 'driver';
     load();
   }
