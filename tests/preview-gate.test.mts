@@ -86,6 +86,19 @@ assert.equal(await (await runAt(LIVE, '/en/')).text(), '<h1>shop</h1>'); ok('SIT
 delete process.env.SITE_PUBLIC;
 assert.ok(gateMod.config.excludedPath.includes('/api/site-state')); ok('the gate can read the switch without going through itself');
 
+// ---------- team phase views ----------
+setState({ live: 'brewing', preview: 'code' });
+const tc = (await post('dates-2027')).headers.get('set-cookie')!.split(';')[0];
+const v0 = await (await run('/?phase=brewing', { headers: { cookie: tc } })).text();
+assert.ok(v0.includes('Something is brewing') && v0.includes('TEAM VIEW'));
+const v1 = await (await run('/?phase=soon', { headers: { cookie: tc } })).text();
+assert.ok(v1.includes('id="wl"') && v1.includes('TEAM VIEW')); ok('the team can see Phase 0 and Phase 1 as customers would, marked TEAM VIEW');
+assert.equal(await (await run('/en/', { headers: { cookie: tc } })).text(), '<h1>shop</h1>'); ok('without ?phase the team sees the full site');
+const anon = await (await runAt(LIVE, '/?phase=soon')).text();
+assert.ok(anon.includes('Something is brewing') && !anon.includes('TEAM VIEW')); ok('customers on the real website cannot use ?phase: they see Phase 0');
+const anonPrev = await (await run('/?phase=brewing')).text();
+assert.ok(!anonPrev.includes('TEAM VIEW') && anonPrev.includes('id="wl"')); ok('on the preview without the code, ?phase does nothing');
+
 process.env.PREVIEW_PASSWORD = 'new-code';
 assert.notEqual(await (await run('/en/', { headers: { cookie } })).text(), '<h1>shop</h1>'); ok('changing the passcode signs everyone out');
 console.log(`\n${pass} checks passed`);

@@ -71,6 +71,7 @@ export default async (req: Request, context: { next: () => Promise<Response> }) 
   if (!live && (state.preview === 'open' || env('SITE_PUBLIC').toLowerCase() === 'true')) {
     // Open preview: anyone with the link, never in search engines.
     if (url.pathname === '/robots.txt') return new Response('User-agent: *\nDisallow: /\n', { headers: { 'content-type': 'text/plain; charset=utf-8', 'x-robots-tag': NOINDEX } });
+    const view = phaseView(url); if (view) return view;
     const res = await context.next();
     const out = new Response(res.body, res);
     out.headers.set('x-robots-tag', NOINDEX);
@@ -101,6 +102,7 @@ export default async (req: Request, context: { next: () => Promise<Response> }) 
   }
 
   if (password && sameText(readCookie(req), token)) {
+    const view = phaseView(url); if (view) return view;
     const res = await context.next();
     const out = new Response(res.body, res);
     out.headers.set('x-robots-tag', NOINDEX);
@@ -135,13 +137,23 @@ export default async (req: Request, context: { next: () => Promise<Response> }) 
   return gate(note ? '/' : url.pathname + url.search, 'ask', note);
 };
 
+// Team only: see a phase exactly as customers would (?phase=brewing or ?phase=soon), with a thin
+// strip on top saying so. Nothing about the real website changes.
+const TEAM_STRIP = (what: string) => `<style>body{padding-top:44px!important}</style><div style="position:fixed;top:0;left:0;right:0;z-index:99;background:#CF9C0C;color:#160E0A;font:600 13px/1.4 'IBM Plex Sans',system-ui,sans-serif;text-align:center;padding:6px 12px;direction:ltr">TEAM VIEW · ${what} as customers see it · nothing has changed on the real website · <a href="/en/" style="color:#160E0A">back to the site</a> · <a href="/admin/" style="color:#160E0A">Desk</a></div>`;
+function phaseView(url: URL): Response | null {
+  const p = url.searchParams.get('phase');
+  if (p === 'brewing') return new Response(BREWING_HTML.replace('<body>', '<body>' + TEAM_STRIP('Phase 0, Something is brewing,')), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': NOINDEX } });
+  if (p === 'soon') return gate('/', 'ask', '', false, TEAM_STRIP('Phase 1, Coming soon + waitlist,'));
+  return null;
+}
+
 const NOTES: Record<string, [string, string]> = {
   list: ['تمّ، أنت في القائمة. نكتب لك حين يفتح الطلب المسبق.', 'Done, you are on the list. We will write when pre-orders open.'],
   expired: ['انتهت صلاحية هذا الرابط أو استُخدم من قبل. سجّل مرة أخرى بالأسفل.', 'That link has expired or was already used. Sign up again below.'],
   unsub: ['ألغينا اشتراكك، ولن نراسلك بعد الآن.', 'You are off the list. We will not email you again.'],
 };
 
-function gate(next: string, state: 'ask' | 'wrong' | 'unset', note = '', team = false) {
+function gate(next: string, state: 'ask' | 'wrong' | 'unset', note = '', team = false, strip = '') {
   const wrong = state !== 'ask' || team;
   const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
   const html = `<!doctype html>
@@ -196,7 +208,7 @@ function gate(next: string, state: 'ask' | 'wrong' | 'unset', note = '', team = 
   .foot a { color: #A93B28; font-weight: 600; }
 </style>
 </head>
-<body>
+<body>${strip}
 <main>
   <div class="lockup"><img src="/brand/lockup.svg" alt="حكاية · Hikaya" width="300" height="55"></div>
   <p class="say">قريباً في كالغاري.<span>Coming soon to Calgary.</span></p>

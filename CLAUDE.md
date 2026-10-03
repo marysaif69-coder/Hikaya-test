@@ -13,6 +13,8 @@ Read `docs/backend.md` for how everything works, `docs/launch-plan.md` for what 
   Settings → "Who can see the website" (locked: they type the domain to confirm) or set
   `SITE_PUBLIC=true` in Netlify. Never open it, or suggest opening it, unless the owners say they
   are launching. The preview address has its own switch (team code or anyone with the link).
+- team.hikayacoffee.ca is the owners' separate setup site (Netlify project hikaya-team). Never
+  touch it. Where everything is: `docs/where-is-what.md`.
 
 ## Before every push
 - `npm test` (API, shop management and preview-gate checks) and `npm run build` must pass.

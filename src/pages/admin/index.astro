@@ -25,6 +25,7 @@ import '../../styles/global.css';
       <button type="button" data-main="settings" aria-pressed="false" class="owner-only">Settings</button>
     </nav>
     <div class="qs" id="qsBox" hidden><input type="search" id="qs" placeholder="Search orders, customers…  ( / )" aria-label="Search orders, customers and messages" autocomplete="off" /><div class="qs-list" id="qsList" hidden role="listbox"></div></div>
+    <a class="a-where" id="whereBadge" hidden href="#"></a>
     <div class="a-who" id="who" hidden><span id="whoEmail"></span><button type="button" id="switchWho" hidden>Switch person</button><button type="button" id="logout">Log out</button></div>
     <nav class="a-sub" id="subtabs" hidden aria-label="Section">
       <button type="button" data-tab="today" data-group="orders" aria-pressed="false">Today</button>
@@ -349,6 +350,17 @@ import '../../styles/global.css';
     <!-- PLAN: what is built, what is left before launch, and ideas for later -->
     <section id="v-plan" hidden class="plan">
       <div class="promo-form">
+        <h2 class="h-s">Where is what</h2>
+        <ul class="plan-list">
+          <li><b>hikayacoffee.ca</b>: the real website. Customers see what the header badge says (now Phase 0, Something is brewing). Locked: Settings → Who can see the website → Unlock → type hikayacoffee.ca.</li>
+          <li><b>hikayacoffee.ca/team</b> or <b>hikaya-v4-preview.netlify.app</b>: the team view of the whole site (preview code). A bar on top always says you are in the team view.</li>
+          <li><b>See a phase without changing anything</b>: Settings → Who can see the website → See Phase 0 / See Phase 1 / See the open shop.</li>
+          <li>The preview and the real address are one site with one desk and one database: changes to products, orders and settings count for both.</li>
+          <li><b>team.hikayacoffee.ca</b> is the separate setup site (its own Netlify project), not part of this website.</li>
+        </ul>
+        <p class="muted">The full guide: <code>docs/where-is-what.md</code>.</p>
+      </div>
+      <div class="promo-form">
         <h2 class="h-s">Phases until after Eid</h2>
         <ol class="plan-list">
           <li><b>Now: Coming soon + waitlist.</b> The Coming soon page collects emails (Today shows the count). Instagram builds the list: “link in bio, join the list”.</li>
@@ -458,6 +470,8 @@ import '../../styles/global.css';
           <div><h3>Preview · <span dir="ltr" id="visPrevHost">hikaya-v4-preview.netlify.app</span></h3><p class="vis-state" id="visPrev"></p></div>
           <div class="vis-btns"><button type="button" class="btn line sm" data-preview="code">Team code needed</button><button type="button" class="btn line sm" data-preview="open">Anyone with the link</button></div>
         </div>
+        <div class="vis-row"><div><h3>Try a phase without changing anything</h3><p class="muted small">Opens that phase exactly as customers would see it, only for you (team view). The real website stays as it is.</p></div>
+          <div class="vis-btns"><a class="btn line sm" href="/?phase=brewing" target="_blank">See Phase 0</a><a class="btn line sm" href="/?phase=soon" target="_blank">See Phase 1</a><a class="btn line sm" href="/en/" target="_blank">See the open shop</a></div></div>
         <p class="muted" id="visNote"></p></div>
       <div class="conn owner-only"><h2 class="h-s">Business details</h2>
         <p class="muted">Set these here instead of in Netlify; they're used on the site, in emails, labels, delivery routes and by Ask Hikaya. Empty = use the Netlify value (shown in grey). Keys and passwords stay in Netlify.</p>
@@ -541,6 +555,9 @@ import '../../styles/global.css';
   .qs-list :global(small) { color: var(--ink-2); font-size: 13px; }
   .qs-list :global(p) { margin: 6px 10px; }
   .td-h { margin-top: 10px; }
+  .a-where { font-size: 13px; border-radius: 999px; padding: 5px 12px; background: #F4E6BF; color: var(--ink); text-decoration: none; border: 1.5px solid var(--khalal, #CF9C0C); white-space: nowrap; }
+  .a-where.open { background: #F6D9D2; border-color: var(--tamr); }
+  .a-where[hidden] { display: none; }
   .vis-row { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--line); }
   .vis-row h3 { font-size: 15px; margin: 0 0 6px; font-family: var(--body); }
   .vis-state { margin: 0; }
@@ -782,7 +799,17 @@ import '../../styles/global.css';
     const qs = new URLSearchParams(location.search);
     if (qs.get('order')) openOrder(qs.get('order')!);
     if (qs.get('ticket')) { tab('inbox'); openTicket(qs.get('ticket')!); }
-    loadInboxCount(); loadAskWarn();
+    loadInboxCount(); loadAskWarn(); loadWhere();
+  }
+  // Which address this is, and what customers see on hikayacoffee.ca right now.
+  async function loadWhere() {
+    const s = await fetch('/api/site-state').then(r => r.json()).catch(() => null); if (!s) return;
+    const real = location.hostname.endsWith('hikayacoffee.ca');
+    const LABEL: Record<string, string> = { brewing: 'Phase 0 · Something is brewing', hidden: 'Phase 1 · Coming soon', open: 'OPEN to everyone' };
+    const b = $('whereBadge') as HTMLAnchorElement;
+    b.innerHTML = `<b>${real ? 'hikayacoffee.ca' : 'PREVIEW address'}</b> · customers see: ${esc(LABEL[s.live] ?? s.live)}`;
+    b.classList.toggle('open', s.live === 'open'); b.hidden = false;
+    b.onclick = e => { e.preventDefault(); if (ROLE === 'admin') { tab('settings'); setTimeout(() => document.querySelector('.vis')?.scrollIntoView({ block: 'start' }), 300); } };
   }
   $('logout').addEventListener('click', async () => { await logout(); location.reload(); });
 

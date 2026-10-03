@@ -1,0 +1,35 @@
+---
+// "Where you are" bar for the team. Shown on the full site only when the viewer can't be a customer:
+// on the preview address (*.netlify.app), or on hikayacoffee.ca while the real website is not yet
+// open (only the team gets past Something is brewing / Coming soon). Customers never see it.
+---
+<div class="tbar" id="teamBar" hidden dir="ltr">
+  <span class="tbar-where" id="tbWhere"></span>
+  <span class="tbar-now" id="tbNow"></span>
+  <span class="tbar-links">View as a customer: <a href="/?phase=brewing">Phase 0</a> · <a href="/?phase=soon">Phase 1</a> · <a href="/en/">Open site</a></span>
+  <a class="tbar-desk" href="/admin/">Desk</a>
+  <button type="button" id="tbHide" aria-label="Hide this bar">×</button>
+</div>
+<script>
+  (async () => {
+    try { if (sessionStorage.getItem('hk-tbar-hidden')) return; } catch { /* private mode */ }
+    const host = location.hostname;
+    const preview = host.endsWith('.netlify.app') || host === 'localhost';
+    const s = await fetch('/api/site-state').then(r => r.json()).catch(() => null);
+    if (!s || (!preview && s.live === 'open')) return;
+    const LABEL: Record<string, string> = { brewing: 'Phase 0 · Something is brewing', hidden: 'Phase 1 · Coming soon + waitlist', open: 'the open shop' };
+    const bar = document.getElementById('teamBar')!;
+    document.getElementById('tbWhere')!.textContent = preview ? 'PREVIEW · team only, not the real website' : 'TEAM VIEW of hikayacoffee.ca · customers cannot see this';
+    document.getElementById('tbNow')!.textContent = `Customers on hikayacoffee.ca see: ${LABEL[s.live] ?? s.live}`;
+    bar.hidden = false;
+    document.getElementById('tbHide')!.addEventListener('click', () => { bar.hidden = true; try { sessionStorage.setItem('hk-tbar-hidden', '1'); } catch { /* private mode */ } });
+  })();
+</script>
+<style>
+  .tbar { position: relative; z-index: 60; display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; justify-content: center; padding: 7px 44px 7px 16px; background: #1F1611; color: #F5EFE3; font: 500 13px/1.4 'IBM Plex Sans', system-ui, sans-serif; text-align: center; }
+  .tbar[hidden] { display: none; }
+  .tbar-where { font-weight: 700; letter-spacing: .04em; color: #CF9C0C; }
+  .tbar a { color: #F5EFE3; text-decoration: underline; }
+  .tbar-desk { font-weight: 700; }
+  .tbar button { position: absolute; inset-inline-end: 10px; top: 50%; transform: translateY(-50%); border: 0; background: none; color: #F5EFE3; font-size: 20px; line-height: 1; cursor: pointer; }
+</style>
