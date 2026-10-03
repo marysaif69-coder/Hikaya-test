@@ -139,6 +139,17 @@ import '../../styles/global.css';
         <button class="btn primary" type="submit">Save code</button>
       </form>
       <div class="promo-form" id="listBox"></div>
+      <div class="promo-form owner-only" id="letterBox">
+        <h2 class="h-s">Letters to the mailing list</h2>
+        <p class="muted">Write it in English and Arabic; each subscriber gets their language, with an unsubscribe link. Send yourself a test first. A blank line starts a new paragraph; **like this** makes bold; links work as they are.</p>
+        <form id="letterForm" class="letter-form" novalidate>
+          <input name="id" type="hidden" />
+          <div class="two-col"><label>Subject (English)<input name="subject_en" maxlength="150" /></label><label dir="rtl">الموضوع (عربي)<input name="subject_ar" maxlength="150" dir="rtl" /></label></div>
+          <div class="two-col"><label>Letter (English)<textarea name="body_en" rows="8"></textarea></label><label dir="rtl">الرسالة (عربي)<textarea name="body_ar" rows="8" dir="rtl"></textarea></label></div>
+          <div class="acts"><button type="submit" class="btn line sm">Save draft</button><button type="button" class="btn line sm" id="letterTest">Send me a test</button><button type="button" class="btn primary sm" id="letterSend">Send to everyone</button><button type="button" class="btn line sm" id="letterNew">New letter</button></div>
+        </form>
+        <div class="a-table-wrap"><table class="a-table mini-t" id="letterTable"></table></div>
+      </div>
       <div class="promo-form" id="gcBox"><h2 class="h-s">Gift cards</h2><p class="muted">Sold on the Gift cards page (footer link). Card payments send the code by themselves. For e-Transfer, press “Money received” when it arrives and the code is emailed.</p>
         <div class="a-table-wrap"><table class="a-table mini-t" id="gcTable"></table></div></div>
       <div class="a-table-wrap"><table class="a-table" id="promos">
@@ -218,6 +229,11 @@ import '../../styles/global.css';
     <!-- DRIVERS: who drives, today's assignments, cash to hand in -->
     <section id="v-drivers" hidden class="plan">
       <div class="promo-form">
+        <h2 class="h-s">Message to the team</h2>
+        <form class="acts" id="annForm"><textarea name="body" rows="2" placeholder="e.g. Eid week: everyone in at 8. Parking at the back." style="flex:1 1 360px"></textarea><label><input type="checkbox" name="email" checked /> Also email everyone</label><button class="btn primary sm" type="submit">Post</button></form>
+        <ul class="ann" id="annList"></ul>
+      </div>
+      <div class="promo-form">
         <div class="a-dayhead"><h2 class="h-s">Shifts</h2><label>From <input type="date" id="shFrom" /></label></div>
         <p class="muted">Post the shifts you need; the team signs up in the team app (or you put someone on). Everyone gets a reminder the evening before, and you get an email if a shift tomorrow isn't full.</p>
         <form class="acts" id="shForm"><input type="date" name="day" required /><input type="time" name="starts" value="09:00" required /><input type="time" name="ends" value="12:00" required />
@@ -266,6 +282,17 @@ import '../../styles/global.css';
           <select name="item"></select><label>Made <input type="date" name="made_on" /></label><label>Best before <input type="date" name="best_before" /></label>
           <input name="quantity" placeholder="Quantity, e.g. 10 kg" /><input name="supplier" placeholder="Supplier / origin (optional)" /><button class="btn primary sm" type="submit">Add lot</button></form>
         <div class="a-table-wrap"><table class="a-table mini-t" id="lotTable"></table></div>
+      </div>
+      <div class="promo-form">
+        <h2 class="h-s">Labels</h2>
+        <p class="muted">Print labels for a lot: English and French, ingredients and allergens, net quantity, best before and lot code. <b>Check the wording with the CFIA before selling</b>; the address shows as [address] until it's set. 10 labels per letter-size sheet (2 × 4 in).</p>
+        <form class="acts" id="labelForm"><select name="lot"></select><label>Net quantity <input name="net" placeholder="250 g" style="width:90px" /></label><label>How many <input name="n" type="number" min="1" max="200" value="10" style="width:70px" /></label><button class="btn line sm" type="submit">Print labels</button></form>
+      </div>
+      <div class="promo-form">
+        <div class="a-dayhead"><h2 class="h-s">Food safety log</h2><a class="btn line sm owner-only" id="fsEdit">Edit the checklists</a></div>
+        <p class="muted">The checklists the team signs in the team app (Shifts tab), with temperatures. A draft to adjust with your food-safety training or AHS inspector.</p>
+        <div id="fsEditor" hidden></div>
+        <div class="a-table-wrap"><table class="a-table mini-t" id="fsTable"></table></div>
       </div>
       <div class="promo-form">
         <h2 class="h-s">Recall lookup</h2>
@@ -334,6 +361,9 @@ import '../../styles/global.css';
           <li>Team app for drivers and packers (paid or volunteer): shifts with sign-up, reminders and check-in, hours, papers with expiry reminders, packing list</li>
           <li>Limits: orders per day, gift boxes per day, per-product daily limits, deliveries tied to drivers on shift</li>
           <li>Production lots on every packing slip, recall lookup, supplies against the week's needs</li>
+          <li>Shared team login with “Who's working?” confirmed by a code to each person's own email; owners and managers who also drive</li>
+          <li>Change items in an order; “you're next” message to the next customer on a route; letters to the mailing list from the desk</li>
+          <li>Printable English/French labels per lot; food-safety checklists signed in the team app; team messages; backup download; activity log</li>
           <li>Words editor for product text and recipes; settings checklist; private preview gate</li>
         </ul>
       </div>
@@ -344,7 +374,6 @@ import '../../styles/global.css';
           <li>Push notifications to drivers when they get new stops (works on iPhone and Android for the installed app).</li>
           <li>An App Store / Google Play version of the delivery app, only if the home-screen app isn't enough.</li>
           <li>Loyalty: a free coffee after a number of orders, if customers ask for it.</li>
-          <li>Labels printed from the desk with lot code and best-before.</li>
           <li>Costs and margins per product (ingredients + packaging) once prices are final.</li>
           <li>Wholesale price list for cafés, mosques and offices.</li>
           <li>Selling gift cards in person through Square at pickup.</li>
@@ -355,6 +384,10 @@ import '../../styles/global.css';
     <!-- SETTINGS -->
     <section id="v-settings" hidden class="a-settings">
       <div class="conn" id="conn"></div>
+      <div class="conn owner-only"><h2 class="h-s">Backup and activity</h2>
+        <p class="muted">Download everything (orders, customers, team, settings…) as one file, e.g. once a month, and keep it somewhere safe. Login codes and sessions are left out.</p>
+        <p><a class="btn line sm" href="/api/admin/backup.json">Download a backup</a> <button type="button" class="btn line sm" id="actShow">Show the activity log</button></p>
+        <div class="a-table-wrap" id="actBox" hidden><table class="a-table mini-t" id="actTable"></table></div></div>
       <form id="setForm">
         <h2 class="h-s">Taking orders</h2>
         <label class="a-switch"><input type="checkbox" name="open" /> <span>Open for new orders</span></label>
@@ -538,6 +571,16 @@ import '../../styles/global.css';
   .caps { border: 0; padding: 0; margin: 12px 0; display: grid; gap: 8px; }
   .caps label input[type=number] { width: 90px; margin-inline-start: 8px; }
   :global(#supTable tr.warn) { background: #F8E9E3; }
+  .letter-form { display: grid; gap: 10px; }
+  .letter-form label { display: grid; gap: 4px; font-weight: 600; font-size: 14px; }
+  .letter-form input, .letter-form textarea, .fs-l input, .fs-l textarea { border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 10px; font: inherit; background: var(--paper); width: 100%; box-sizing: border-box; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } }
+  .ann { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+  .ann :global(li) { display: grid; gap: 2px; background: var(--paper); border-radius: 12px; padding: 10px 12px; }
+  .ann :global(small) { color: var(--ink-2); }
+  .fs-l { display: grid; gap: 6px; margin-bottom: 10px; }
+  .edit-items { margin: 10px 0; } .edit-items summary { cursor: pointer; font-weight: 700; }
   .plan { display: grid; gap: 16px; max-width: 900px; }
   .plan-list { margin: 8px 0 0; padding-inline-start: 22px; display: grid; gap: 8px; line-height: 1.5; }
   .plan-list.done li::marker { content: '✓  '; color: #6E8B4A; }
@@ -569,7 +612,7 @@ import '../../styles/global.css';
 <script>
   import { mountLogin, logout } from '../../scripts/login';
   import { askWho, whoLabel } from '../../scripts/whois';
-  import { PRODUCTS, DATES } from '../../data/products';
+  import { PRODUCTS, DATES, GRINDS } from '../../data/products';
   const PRODUCT_LIST = PRODUCTS.map(p => ({ id: p.id, kind: p.kind, name: p.name.en }));
   const DATE_LIST = Object.entries(DATES).map(([id, d]) => ({ id, name: d.name.en }));
   const $ = (id: string) => document.getElementById(id)!;
@@ -699,6 +742,12 @@ import '../../styles/global.css';
       ${o.gift ? `<p class="gift-note">Gift for <b>${esc(o.gift.to)}</b>${o.gift.phone ? ` · <a href="tel:${esc(o.gift.phone)}">${esc(o.gift.phone)}</a>` : ''}${o.gift.message ? `<br>Card: <i>“${esc(o.gift.message)}”</i>` : ''}</p>` : ''}
       <h3>Items</h3><ul class="its">${o.items.map((i: any) => `<li><span>${i.qty} × ${esc(i.name_en)}${i.option_en ? ` <small>(${esc(i.option_en)})</small>` : ''}</span><span>${money(i.unit_cents * i.qty)}</span></li>`).join('')}
         ${o.delivery ? `<li><span>Delivery</span><span>${money(o.delivery)}</span></li>` : ''}${o.discount ? `<li><span>Discount ${esc(o.promo ?? '')}</span><span>−${money(o.discount)}</span></li>` : ''}<li><b>Total</b><b>${money(o.total)}</b></li>${o.refunded ? `<li><span>Refunded</span><span>−${money(o.refunded)}</span></li>` : ''}</ul>
+      ${['received', 'confirmed'].includes(o.status) ? `<details class="edit-items"><summary>Change items</summary>
+        <div id="eiList">${o.items.map((i: any) => itemRow(i.product_id, i.option, i.qty)).join('')}</div>
+        <div class="acts"><select id="eiAdd"><option value="">Add a product…</option>${PRODUCTS.map(p => `<option value="${p.id}">${esc(p.name.en)}</option>`).join('')}</select></div>
+        <label class="notify"><input type="checkbox" id="eiNotify" checked /> Email the customer the new order</label>
+        <div class="acts"><button type="button" id="eiSave">Save changes</button></div>
+        <p class="ev">Prices are today's. Quantity 0 removes a line. If it was paid and the total goes up, it shows what is still to pay; if it goes down, use Refund.</p></details>` : ''}
       <h3>Move the order</h3>
       <div class="acts">${flow.map(s => `<button type="button" data-status="${s}" class="${s === o.status ? 'cur' : ''}">${STATUS_LABEL[s]}</button>`).join('')}<button type="button" class="danger" data-status="cancelled">Cancel order</button></div>
       <label class="notify"><input type="checkbox" id="pNotify" checked /> Email the customer about the change</label>
@@ -737,6 +786,13 @@ import '../../styles/global.css';
       if (r.creditCode) alert(`Store credit code: ${r.creditCode} (emailed to the customer if ticked)`);
       refresh();
     });
+    $('eiAdd')?.addEventListener('change', e => { const sel = e.target as HTMLSelectElement; if (!sel.value) return; $('eiList').insertAdjacentHTML('beforeend', itemRow(sel.value, null, 1)); sel.value = ''; });
+    $('eiSave')?.addEventListener('click', async () => {
+      const lines = [...document.querySelectorAll<HTMLElement>('#eiList .ei')].map(r => ({ id: r.dataset.pid!, opt: (r.querySelector('select') as HTMLSelectElement | null)?.value ?? '', qty: Number((r.querySelector('input') as HTMLInputElement).value) })).filter(l => l.qty > 0);
+      if (!lines.length) { alert('An order needs at least one item. To cancel it, use Cancel order.'); return; }
+      const r = await api(`/api/admin/orders/${encodeURIComponent(ref)}/items`, { lines, notify: ($('eiNotify') as HTMLInputElement).checked });
+      alert(`Saved. New total ${money(r.total)}.${r.balance > 0 ? ` ${money(r.balance)} still to pay.` : r.balance < 0 ? ` ${money(-r.balance)} to refund.` : ''}`); refresh();
+    });
     $('mvGo').addEventListener('click', async () => {
       const r = await api(`/api/admin/orders/${encodeURIComponent(ref)}/move`, { day: ($('mvDay') as HTMLInputElement).value, window: ($('mvWin') as HTMLSelectElement).value, force: ($('mvForce') as HTMLInputElement).checked });
       alert(`Moved to ${fmtDay(r.day)} ${r.window}. The customer was emailed.`); refresh();
@@ -752,6 +808,12 @@ import '../../styles/global.css';
     $('pAddNote').addEventListener('click', async () => { const v = ($('pNote') as HTMLTextAreaElement).value.trim(); if (v) { await api(`/api/admin/orders/${encodeURIComponent(ref)}`, { note: v }); refresh(); } });
   }
 
+  // One line in the "Change items" editor: product, its option (grind or date), quantity.
+  function itemRow(pid: string, opt: string | null, qty: number) {
+    const p = PRODUCTS.find(x => x.id === pid); if (!p) return '';
+    const opts = p.kind === 'coffee' ? p.grinds.map(g => [g, GRINDS[g].en]) : p.kind === 'box' && p.chooseDate ? Object.entries(DATES).map(([id, d]) => [id, d.name.en]) : [];
+    return `<div class="ei acts" data-pid="${p.id}"><span>${esc(p.name.en)}</span>${opts.length ? `<select>${opts.map(([v, l]) => `<option value="${v}" ${v === opt ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>` : ''}<input type="number" min="0" max="20" value="${qty}" style="width:70px" aria-label="Quantity" /></div>`;
+  }
   const showPanel = (title: string, html: string) => {
     $('pRef').textContent = title; $('pBody').innerHTML = html;
     scrim.hidden = false; panel.removeAttribute('inert'); panel.setAttribute('aria-hidden', 'false');
@@ -873,12 +935,22 @@ import '../../styles/global.css';
     $('teamTable').innerHTML = '<tr><th>Name</th><th>Role</th><th>Status</th><th>Delivered (7 days / this month)</th><th>Cash not handed in</th><th></th></tr>' + (t.team.map((m: any) => `<tr><td>${esc(m.name || '–')}<br><small>${esc(m.email)}${m.shared ? ` · on ${esc(m.login)}` : ''}${m.phone ? ' · ' + esc(m.phone) : ''}${m.vehicle ? ' · ' + esc(m.vehicle) : ''}</small></td>
       <td>${OWNERS.includes(m.email) ? 'Owner' : ({ driver: 'Driver', packer: 'Packer', helper: 'Helper' } as any)[m.role] ?? esc(m.role)}${m.drives ? '<br><small>Also drives</small>' : ''}${m.volunteer ? '<br><small>Volunteer</small>' : ''}</td><td>${m.status === 'off' ? 'Off' : m.agreedAt ? 'Ready' : 'Invited, not set up yet'}${paperNote(m)}</td><td>${m.week} / ${m.month}</td><td>${m.cash ? money(m.cash) : '–'}</td>
       <td class="owner-only">${m.status !== 'off' && !m.shared ? `<button type="button" data-resend="${m.id}">Email the link again</button> <a class="btn line sm" target="_blank" rel="noopener" href="https://wa.me/${esc((m.phone ?? '').replace(/\D/g, '').replace(/^(\d{10})$/, '1$1'))}?text=${encodeURIComponent(shareText(m))}">WhatsApp</a> <button type="button" data-copy="${esc(shareText(m))}">Copy link</button> ` : ''}${m.status === 'off' ? `<button type="button" data-mem="${m.id}" data-st="active">Turn on</button>` : `<button type="button" data-mem="${m.id}" data-st="off">Turn off</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No drivers yet. Add one above.</td></tr>');
-    loadDriverReports(); loadShiftsDesk(); loadHours();
+    loadDriverReports(); loadShiftsDesk(); loadHours(); loadAnnouncements();
     $('cashBox').innerHTML = `<h2 class="h-s">Cash to hand in</h2>` + (t.cash.length ? `<ul class="a-pack">${t.cash.map((c: any) => `<li><span>${esc(c.driver)} · ${c.orders} order${c.orders === 1 ? '' : 's'}</span><b>${money(c.cents)}</b> <button type="button" class="owner-only" data-cash="${esc(c.driver)}">Received</button></li>`).join('')}</ul>` : '<p class="muted">Nothing waiting.</p>');
   }
   asgDay.addEventListener('change', loadDrivers);
   const shFrom = $('shFrom') as HTMLInputElement, hrFrom = $('hrFrom') as HTMLInputElement, hrTo = $('hrTo') as HTMLInputElement;
   let teamPeople: any[] = [];
+  async function loadAnnouncements() {
+    const d = await api('/api/admin/announce');
+    $('annList').innerHTML = d.announcements.map((a: any) => `<li><span>${esc(a.body)}</span><small>${esc(a.who)} · ${new Date(a.created_at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })} <button type="button" class="linkish" data-ann="${a.id}">Remove</button></small></li>`).join('') || '<li class="muted">No messages yet.</li>';
+  }
+  $('annForm').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target as HTMLFormElement;
+    const r = await api('/api/admin/announce', { body: (f.elements.namedItem('body') as HTMLTextAreaElement).value, email: (f.elements.namedItem('email') as HTMLInputElement).checked });
+    f.reset(); alert(r.emailed ? `Posted and emailed to ${r.emailed}.` : 'Posted in the team app.'); loadAnnouncements();
+  });
+  $('annList').addEventListener('click', async e => { const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-ann]'); if (b && confirm('Remove this message?')) { await api(`/api/admin/announce/${b.dataset.ann}/delete`, {}); loadAnnouncements(); } });
   async function loadShiftsDesk() {
     const t = await api('/api/admin/team'); teamPeople = t.team.filter((m: any) => m.status !== 'off');
     const d = await api(`/api/admin/shifts${shFrom.value ? `?from=${shFrom.value}` : ''}`);
@@ -976,6 +1048,9 @@ import '../../styles/global.css';
   // ---------- production ----------
   async function loadProduction() {
     const [l, sp] = await Promise.all([api('/api/admin/lots'), api(`/api/admin/supplies${($('supFrom') as HTMLInputElement).value ? `?from=${($('supFrom') as HTMLInputElement).value}` : ''}`)]);
+    LOTS = l.lots;
+    (($('labelForm') as HTMLFormElement).elements.namedItem('lot') as HTMLSelectElement).innerHTML = l.lots.filter((x: any) => !x.usedUpOn).map((x: any) => `<option value="${esc(x.code)}">${esc(x.code)} · ${esc(x.name)}</option>`).join('') || '<option value="">No lots yet</option>';
+    loadFoodSafety();
     const sel = ($('lotForm') as HTMLFormElement).elements.namedItem('item') as HTMLSelectElement;
     if (!sel.options.length) sel.innerHTML = `<optgroup label="Coffee">${PRODUCT_LIST.filter(p => p.kind === 'coffee').map(p => `<option value="coffee|${p.id}">${esc(p.name)}</option>`).join('')}</optgroup><optgroup label="Dates">${DATE_LIST.map(d => `<option value="dates|${d.id}">${esc(d.name)}</option>`).join('')}</optgroup>`;
     $('lotTable').innerHTML = '<tr><th>Lot</th><th>What</th><th>Made</th><th>Best before</th><th>Quantity</th><th></th></tr>' + (l.lots.map((x: any) => `<tr class="${x.usedUpOn ? 'off' : ''}"><td class="ref">${esc(x.code)}</td><td>${esc(x.name)}${x.supplier ? `<br><small>${esc(x.supplier)}</small>` : ''}</td><td>${fmtDay(x.madeOn)}</td><td>${x.bestBefore ? fmtDay(x.bestBefore) : '–'}</td><td>${esc(x.quantity ?? '')}</td>
@@ -984,6 +1059,49 @@ import '../../styles/global.css';
       <td><input class="sup-have" type="number" min="0" step="any" value="${x.onHand ?? ''}" style="width:90px" /> ${esc(x.unit)}</td><td>${x.needThisWeek ?? '–'}${x.short ? ` <b style="color:var(--tamr-2)">short ${x.short}</b>` : ''}</td>
       <td><input class="sup-low" type="number" min="0" step="any" value="${x.lowAt ?? ''}" style="width:80px" /></td><td><button type="button" data-supsave="1">Save</button>${x.low ? ' <b style="color:var(--tamr-2)">Low</b>' : ''}</td></tr>`).join('');
   }
+  // labels
+  const MON = ['JA', 'FE', 'MR', 'AL', 'MA', 'JN', 'JL', 'AU', 'SE', 'OC', 'NO', 'DE']; // bilingual month symbols
+  const bb = (iso: string) => `${iso.slice(2, 4)} ${MON[Number(iso.slice(5, 7)) - 1]} ${iso.slice(8, 10)}`;
+  let LOTS: any[] = [];
+  $('labelForm').addEventListener('submit', e => {
+    e.preventDefault(); const f = e.target as HTMLFormElement, v = (k: string) => (f.elements.namedItem(k) as HTMLInputElement).value;
+    const lot = LOTS.find(x => x.code === v('lot')); if (!lot) { alert('Add a lot first (above).'); return; }
+    const p = lot.kind === 'coffee' ? PRODUCTS.find(x => x.id === lot.item) as any : null;
+    const date = lot.kind === 'dates' ? (DATES as any)[lot.item] : null;
+    const name = p ? p.name : date.name;
+    const ing: [string, string] = p ? p.ingredients : ['Dates.', 'Dattes.'];
+    const common = p ? (p.id === 'qishr' ? ['Dried coffee cherry husk', 'Cascara séchée'] : ing[0] === 'Coffee.' ? ['Ground coffee', 'Café moulu'] : ['Spiced ground coffee', 'Café moulu épicé']) : [`${date.name.en} dates`, `Dattes ${date.name.en}`];
+    const net = v('net') || (p ? p.size : '');
+    const label = `<div class="lb"><div class="t"><b>${esc(name.en)}</b> <span dir="rtl">${esc(name.ar)}</span></div><div>${esc(common[0])} / ${esc(common[1])}</div>
+      <div class="i"><b>Ingredients:</b> ${esc(ing[0])} <b>Ingrédients :</b> ${esc(ing[1])}</div>
+      <div class="r"><span><b>${esc(net)}</b></span><span>${lot.bestBefore ? `BEST BEFORE / MEILLEUR AVANT <b>${bb(lot.bestBefore)}</b>` : ''}</span></div>
+      <div class="r"><span style="white-space:nowrap">Lot ${esc(lot.code)}</span><span>Store in a cool, dry place. / Conserver dans un endroit frais et sec.</span></div>
+      <div class="a">Hikaya Coffee Ltd., [address], Calgary, AB</div></div>`;
+    const w = window.open('', '_blank'); if (!w) { alert('Allow pop-ups to print the labels.'); return; }
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Labels ${esc(lot.code)}</title><style>
+      @page{size:letter;margin:0.5in 0.19in} body{margin:0;font:8.5pt/1.25 Arial,sans-serif;color:#000}
+      .sheet{display:grid;grid-template-columns:4in 4in;column-gap:0.14in;grid-auto-rows:2in}
+      .lb{box-sizing:border-box;padding:0.12in 0.16in;display:grid;gap:2px;align-content:start;overflow:hidden;border:1px dashed #ccc}
+      .t{font-size:12pt}.r{display:flex;justify-content:space-between;gap:6px}.a{font-size:7.5pt}
+      @media print{.lb{border:0}}</style></head><body><div class="sheet">${label.repeat(Math.max(1, Math.min(200, Number(v('n')) || 10)))}</div><script>window.onload=()=>window.print()<\/script></body></html>`);
+    w.document.close();
+  });
+  // food safety
+  async function loadFoodSafety() {
+    const d = await api('/api/admin/checklists');
+    ($('fsEditor') as any)._lists = d.checklists;
+    $('fsTable').innerHTML = '<tr><th>Day</th><th>Checklist</th><th>By</th><th>Result</th></tr>' + (d.log.map((l: any) => { const name = d.checklists.find((c: any) => c.key === l.checklist)?.name ?? l.checklist; const miss = l.answers.filter((a: any) => !a.done); const temps = l.answers.filter((a: any) => a.value !== null).map((a: any) => `${a.value}°C`);
+      return `<tr><td>${fmtDay(l.day)}<br><small>${new Date(l.at).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false })}</small></td><td>${esc(name)}</td><td>${esc(l.by)}</td><td>${miss.length ? `<b style="color:var(--tamr-2)">Not done: ${miss.map((a: any) => esc(a.item)).join('; ')}</b>` : 'All done'}${temps.length ? ` · ${temps.join(', ')}` : ''}${l.note ? `<br><small>${esc(l.note)}</small>` : ''}</td></tr>`; }).join('') || '<tr><td colspan="4" class="muted">Nothing signed in the last 30 days.</td></tr>');
+  }
+  $('fsEdit').addEventListener('click', () => {
+    const box = $('fsEditor'), lists = (box as any)._lists ?? [];
+    box.hidden = !box.hidden; if (box.hidden) return;
+    box.innerHTML = lists.map((c: any) => `<div class="fs-l"><input value="${esc(c.name)}" data-k="${esc(c.key)}" aria-label="Checklist name" /><textarea rows="5" aria-label="Lines">${esc(c.items.join('\n'))}</textarea></div>`).join('') + `<div class="fs-l"><input placeholder="New checklist name (optional)" data-k="" /><textarea rows="3" placeholder="One line per check. End a line with (°C) to ask for a temperature."></textarea></div><div class="acts"><button type="button" class="btn primary sm" id="fsSave">Save checklists</button></div>`;
+    $('fsSave').addEventListener('click', async () => {
+      const out = [...box.querySelectorAll<HTMLElement>('.fs-l')].map(d => ({ key: (d.querySelector('input') as HTMLInputElement).dataset.k, name: (d.querySelector('input') as HTMLInputElement).value.trim(), items: (d.querySelector('textarea') as HTMLTextAreaElement).value.split('\n').map(x => x.trim()).filter(Boolean) })).filter(c => c.name && c.items.length);
+      await api('/api/admin/checklists', { checklists: out }); box.hidden = true; alert('Saved.'); loadFoodSafety();
+    });
+  });
   $('lotForm').addEventListener('submit', async e => {
     e.preventDefault(); const f = e.target as HTMLFormElement, v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement).value;
     const [kind, id] = v('item').split('|');
@@ -1156,6 +1274,35 @@ import '../../styles/global.css';
     const r = await api('/api/admin/report', {}); $('repMsg').textContent = r.sent ? `Sent (${r.sent}).` : 'Not sent.';
   });
 
+  // ---------- letters ----------
+  const lf = () => $('letterForm') as HTMLFormElement;
+  const lv = (n: string) => lf().elements.namedItem(n) as HTMLInputElement;
+  async function loadLetters() {
+    const d = await api('/api/admin/letters');
+    $('letterTable').innerHTML = '<tr><th>Subject</th><th>Status</th><th></th></tr>' + (d.letters.map((l: any) => `<tr><td>${esc(l.subject_en)}<br><small dir="rtl">${esc(l.subject_ar)}</small></td>
+      <td>${l.status === 'sent' ? `Sent ${new Date(l.sent_at).toLocaleDateString('en-CA')} to ${l.sent_count}` : 'Draft'}</td><td>${l.status === 'draft' ? `<button type="button" data-letter="${l.id}">Open</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">No letters yet.</td></tr>');
+    ($('letterTable') as any)._letters = d.letters;
+  }
+  $('letterTable').addEventListener('click', e => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-letter]'); if (!b) return;
+    const l = ($('letterTable') as any)._letters.find((x: any) => String(x.id) === b.dataset.letter);
+    for (const k of ['subject_en', 'subject_ar', 'body_en', 'body_ar']) lv(k).value = l[k];
+    lv('id').value = String(l.id); lf().scrollIntoView({ block: 'start' });
+  });
+  const saveLetterForm = async () => {
+    const id = lv('id').value, data = Object.fromEntries(['subject_en', 'subject_ar', 'body_en', 'body_ar'].map(k => [k, lv(k).value]));
+    const r = await api(`/api/admin/letters${id ? `/${id}` : ''}`, data); lv('id').value = String(r.id); loadLetters(); return r.id as number;
+  };
+  lf().addEventListener('submit', async e => { e.preventDefault(); await saveLetterForm(); alert('Saved as a draft.'); });
+  $('letterTest').addEventListener('click', async () => { const id = await saveLetterForm(); const r = await api(`/api/admin/letters/${id}/test`, {}); alert(`Test sent to ${r.to} (both languages).`); });
+  $('letterSend').addEventListener('click', async () => {
+    const id = await saveLetterForm();
+    const l = await api('/api/admin/list');
+    if (!confirm(`Send this letter to ${l.confirmed} confirmed subscriber${l.confirmed === 1 ? '' : 's'}? This can't be undone.`)) return;
+    const r = await api(`/api/admin/letters/${id}/send`, {}); alert(`Sent to ${r.sent} of ${r.of}.`); lf().reset(); lv('id').value = ''; loadLetters();
+  });
+  $('letterNew').addEventListener('click', () => { lf().reset(); lv('id').value = ''; });
+
   // ---------- gift cards ----------
   async function loadGiftCards() {
     const d = await api('/api/admin/giftcards');
@@ -1174,7 +1321,7 @@ import '../../styles/global.css';
 
   // ---------- promotions ----------
   async function loadPromos() {
-    loadGiftCards();
+    loadGiftCards(); if (ROLE === 'admin') loadLetters();
     api('/api/admin/list').then(l => {
       $('listBox').innerHTML = `<h2 class="h-s">Mailing list</h2><p><b>${l.confirmed}</b> confirmed · ${l.waiting} waiting to confirm · ${l.left} unsubscribed</p>
         <p class="muted">People sign up at the bottom of every page or at checkout, tick the consent box, and confirm by email (Canada's anti-spam law). Download the confirmed list to send your letters from Mailchimp, Buttondown or Resend; every letter must include an unsubscribe link.</p>
@@ -1272,6 +1419,10 @@ import '../../styles/global.css';
     });
   }
 
+  $('actShow').addEventListener('click', async () => {
+    const d = await api('/api/admin/activity'); $('actBox').hidden = false;
+    $('actTable').innerHTML = '<tr><th>When</th><th>Who</th><th>What</th><th>Details</th></tr>' + d.activity.map((a: any) => `<tr><td>${new Date(a.created_at).toLocaleString('en-CA', { dateStyle: 'short', timeStyle: 'short' })}</td><td>${esc(a.actor)}</td><td>${esc(a.action.replace(/^POST /, ''))}</td><td><small>${esc(a.detail ?? '')}</small></td></tr>`).join('');
+  });
   async function loadSettings() {
     loadConnections();
     const s = await api('/api/admin/settings');

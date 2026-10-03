@@ -32,7 +32,7 @@ export async function checkPromo(raw: unknown, subtotal_cents: number, email = '
   return shape(p!, subtotal_cents);
 }
 
-function shape(p: Row, subtotal: number): Applied {
+export function shape(p: Row, subtotal: number): Applied {
   if (p.kind === 'free-delivery') return { code: p.code, discount_cents: 0, free_delivery: true, label: { en: 'Free delivery', ar: 'توصيل مجاني' } };
   const off = p.kind === 'percent' ? Math.round(subtotal * Math.min(100, p.value) / 100) : Math.min(p.value, subtotal);
   return { code: p.code, discount_cents: off, free_delivery: false, label: p.kind === 'percent' ? { en: `${p.value}% off`, ar: `خصم ${p.value}٪` } : { en: `$${(p.value / 100).toFixed(p.value % 100 ? 2 : 0)} off`, ar: `خصم ${(p.value / 100).toFixed(p.value % 100 ? 2 : 0)} $` } };

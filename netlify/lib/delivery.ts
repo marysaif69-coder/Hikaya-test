@@ -3,7 +3,8 @@
 // each stop delivered (customer gets the thank-you email). Owners see cash to hand in.
 import { sql, one, type Row } from './db';
 import { HttpError, env } from './http';
-import { setStatus, setPayment, event, items } from './orders';
+import { setStatus, setPayment, event, items, notify } from './orders';
+import { sendSms, smsEnabled } from './sms';
 import { send } from './email';
 import { calgaryNow } from './slots';
 import { dollars } from './pricing';
@@ -90,6 +91,7 @@ export async function startRoute(s: Session, date: string, req?: Request, b: any
     await sql`UPDATE orders SET out_at = NOW() WHERE ref = ${o.ref}`;
     started++;
   }
+  await notifyNext(s.email, date, req);
   const byRef = new Map(rows.map(o => [o.ref, o]));
   return { started, routeId: route!.id, optimized: plan.optimized, km: plan.meters === null ? null : Math.round(plan.meters / 100) / 10, minutes: plan.seconds === null ? null : Math.round(plan.seconds / 60),
     links: navLinks(plan.order.map(r => addressOf(byRef.get(r)!))) };
@@ -210,6 +212,7 @@ export async function delivered(s: Session, ref: string, collected: unknown, req
   }
   await setStatus(ref, 'completed', s.email, req, true);
   await sql`UPDATE orders SET delivered_at = NOW(), delivered_by = ${s.email} WHERE id = ${o.id}`;
+  if (o.driver_email) await notifyNext(o.driver_email, String(o.slot_date instanceof Date ? o.slot_date.toISOString() : o.slot_date).slice(0, 10), req);
   return { ok: true };
 }
 
@@ -217,6 +220,7 @@ export async function missed(s: Session, ref: string, why: string) {
   const o = await myStop(s, ref);
   const text = why.trim().slice(0, 500) || 'No reason given';
   await event(o.id, 'note', `Couldn't deliver: ${text}`, s.email);
+  if (o.driver_email) await notifyNext(o.driver_email, String(o.slot_date instanceof Date ? o.slot_date.toISOString() : o.slot_date).slice(0, 10));
   for (const to of env('ADMIN_EMAILS').split(',').map((e: string) => e.trim()).filter(Boolean))
     await send({ to, subject: `Couldn't deliver ${o.ref} (${o.name})`, text: `${s.email}: ${text}\n\n${o.street}, ${o.postal} · ${o.phone}`, html: `<p style="font:15px Arial,sans-serif">${s.email}: ${text.replace(/[<>&]/g, '')}<br>${String(o.street).replace(/[<>&]/g, '')}, ${o.postal}</p>`, kind: 'team-missed-delivery', orderId: o.id });
   return { ok: true };
@@ -329,4 +333,18 @@ export async function markPacked(s: Session, ref: string, req?: Request) {
   await event(o.id, 'packed', null, s.email);
   if (o.method === 'pickup' && o.status !== 'ready') await setStatus(ref, 'ready', s.email, req, true);
   return { ok: true };
+}
+
+/** "You're next": the next stop on this driver's route (in driving order) that hasn't been told yet. */
+export async function notifyNext(driver: string, date: string, req?: Request) {
+  const o = await one`SELECT * FROM orders WHERE driver_email = ${driver} AND slot_date = ${date} AND method = 'delivery' AND status = 'out-for-delivery' AND next_notified_at IS NULL
+    ORDER BY route_seq NULLS LAST, slot_window, postal, id LIMIT 1`;
+  if (!o) return null;
+  await sql`UPDATE orders SET next_notified_at = NOW() WHERE id = ${o.id}`;
+  await notify('next', o, req);
+  if (o.sms_ok && smsEnabled()) {
+    const status = await sendSms(o.phone, o.lang === 'ar' ? `حكاية: أنت التالي. السائق في الطريق إليك بطلبك ${o.ref}.` : `Hikaya: you're next. Our driver is on the way with order ${o.ref}.`);
+    await event(o.id, 'sms', `you're next: ${status}`, 'system');
+  }
+  return o.ref as string;
 }

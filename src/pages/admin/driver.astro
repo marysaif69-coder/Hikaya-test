@@ -56,6 +56,8 @@ import '../../styles/global.css';
     </section>
 
     <section id="shiftsBox" hidden>
+      <div id="annBox" class="ann"></div>
+      <div id="ckBox" class="ck"></div>
       <p class="muted small">Sign up for shifts that fit you. Leave a shift up to 24 hours before; after that, message the owners. Check in when you arrive and out when you leave.</p>
       <div id="shiftList" class="shifts"></div>
     </section>
@@ -179,6 +181,17 @@ import '../../styles/global.css';
   :global(body.no-drive) .drv-only, :global(body.no-pack) .pack-only { display: none !important; }
   #shiftsBox[hidden], #packBox[hidden], #meBox[hidden] { display: none; }
   .shifts { display: grid; gap: 10px; }
+  .ann { display: grid; gap: 8px; margin-bottom: 10px; }
+  .ann :global(.msg) { background: #F4E6BF; border-radius: 16px; padding: 12px 14px; }
+  .ann :global(.msg p) { margin: 4px 0; }
+  .ck { display: grid; gap: 8px; margin-bottom: 14px; }
+  .ck :global(h3) { margin: 0; font-size: 15px; color: var(--ink-2); }
+  .ck :global(.ckl) { background: var(--sheet); border-radius: 16px; padding: 12px 14px; box-shadow: inset 0 0 0 1px var(--line); }
+  .ck :global(summary) { cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
+  .ck :global(summary small) { color: var(--ink-2); }
+  .ck :global(form) { display: grid; gap: 10px; margin-top: 10px; }
+  .ck :global(.num) { display: flex !important; justify-content: space-between; align-items: center; gap: 8px; font-weight: 600; }
+  .ck :global(.num input) { width: 90px; border: 1.5px solid var(--line); border-radius: 10px; padding: 8px; font: inherit; }
   .shifts :global(h3) { margin: 10px 0 0; font-size: 15px; color: var(--ink-2); }
   .shifts :global(.sh) { background: var(--sheet); border-radius: 16px; padding: 14px; display: grid; gap: 8px; box-shadow: inset 0 0 0 1px var(--line); }
   .shifts :global(.sh.mine) { box-shadow: inset 0 0 0 2px var(--bunn); }
@@ -433,7 +446,26 @@ import '../../styles/global.css';
   // ---------- shifts ----------
   const dayName = (iso: string) => new Date(iso + 'T12:00:00Z').toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' });
   const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' });
+  async function loadBoard() {
+    const [a, c] = await Promise.all([api('/api/driver/announcements'), api('/api/driver/checklists')]);
+    $('annBox').innerHTML = a.announcements.slice(0, 3).map((x: any) => `<div class="msg"><b>From ${esc(x.who)}</b><p>${esc(x.body).replace(/\n/g, '<br>')}</p><small>${new Date(x.created_at).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}</small></div>`).join('');
+    $('ckBox').innerHTML = `<h3>Today's checklists</h3>` + c.checklists.map((k: any) => {
+      const done = c.today.filter((l: any) => l.checklist === k.key);
+      return `<details class="ckl" data-key="${esc(k.key)}"><summary><b>${esc(k.name)}</b> <small>${done.length ? `✓ ${done.map((l: any) => `${esc(l.by)} ${new Date(l.at).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false })}`).join(', ')}` : 'not done yet'}</small></summary>
+        <form>${k.items.map((it: string, i: number) => /\(°C\)\s*$/.test(it) ? `<label class="num">${esc(it)} <input type="number" step="0.1" inputmode="decimal" data-i="${i}" required /></label>` : `<label class="tick"><input type="checkbox" data-i="${i}" /> <span>${esc(it)}</span></label>`).join('')}
+        <label class="lbl">Note (optional)<input name="note" /></label><button type="submit" class="b done">Sign</button></form></details>`;
+    }).join('');
+  }
+  $('ckBox').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target as HTMLFormElement, key = f.closest<HTMLElement>('[data-key]')!.dataset.key!;
+    const n = f.querySelectorAll('[data-i]').length, answers = Array.from({ length: n }, () => ({ done: false, value: null as number | null }));
+    f.querySelectorAll<HTMLInputElement>('[data-i]').forEach(inp => { const i = Number(inp.dataset.i); if (inp.type === 'checkbox') answers[i].done = inp.checked; else { answers[i].value = inp.value === '' ? null : Number(inp.value); answers[i].done = inp.value !== ''; } });
+    const r = await api('/api/driver/checklists', { key, answers, note: (f.elements.namedItem('note') as HTMLInputElement).value });
+    if (!r.allDone) alert('Signed. Some lines are not ticked: the owners will see that.');
+    loadBoard();
+  });
   async function loadShifts() {
+    loadBoard();
     const d = await api('/api/driver/shifts');
     let last = '';
     $('shiftList').innerHTML = d.shifts.map((x: any) => {

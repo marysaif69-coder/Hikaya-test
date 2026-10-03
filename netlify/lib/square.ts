@@ -8,7 +8,7 @@ import type { PricedLine } from './pricing';
 export const cardEnabled = () => Boolean(env('SQUARE_ACCESS_TOKEN') && env('SQUARE_LOCATION_ID'));
 const base = () => (env('SQUARE_ENV') === 'production' ? 'https://connect.squareup.com' : 'https://connect.squareupsandbox.com');
 
-export async function paymentLink(o: Row, lines: PricedLine[], redirectUrl: string) {
+export async function paymentLink(o: Row, lines: PricedLine[], redirectUrl: string, key: string = o.ref) {
   const lineItems = lines.map(l => ({
     name: `${l.name_en}${l.option_en ? ` (${l.option_en})` : ''}`, quantity: String(l.qty),
     base_price_money: { amount: l.unit_cents, currency: 'CAD' },
@@ -18,7 +18,7 @@ export async function paymentLink(o: Row, lines: PricedLine[], redirectUrl: stri
     method: 'POST',
     headers: { authorization: `Bearer ${env('SQUARE_ACCESS_TOKEN')}`, 'content-type': 'application/json', 'square-version': '2025-01-23' },
     body: JSON.stringify({
-      idempotency_key: o.ref,
+      idempotency_key: key,
       order: {
         location_id: env('SQUARE_LOCATION_ID'), reference_id: o.ref, line_items: lineItems,
         ...(o.discount_cents || o.gift_card_cents ? { discounts: [

@@ -9,11 +9,13 @@ import { smsEnabled } from '../lib/sms';
 import { teamList, drivers, cashToHandIn, invite, cashReceived, setMember, assign, confirmNew, payRates, savePayRates } from '../lib/delivery';
 import { shiftsFrom, saveShift, deleteShift, assignShift, unassign, fixTimes, hours, hoursCsv } from '../lib/team';
 import { listLots, addLot, usedUp, recall, supplies, saveSupply, lotsOn, lotsForLines } from '../lib/production';
+import { saveLetter, listLetters, testLetter, sendLetter } from '../lib/letters';
+import { checklists, saveChecklists, checklistLog, announce, announcements, deleteAnnouncement, backup, activity, logActivity } from '../lib/ops';
 import { readContent, saveContent, type FileId } from '../lib/content';
 import { requireTeam } from '../lib/auth';
 import { sql, one } from '../lib/db';
-import { getSettings, WINDOWS, calgaryNow } from '../lib/slots';
-import { items, setStatus, setPayment, event, STATUSES, moveOrder } from '../lib/orders';
+import { getSettings, WINDOWS, calgaryNow, addDays } from '../lib/slots';
+import { items, setStatus, setPayment, event, STATUSES, moveOrder, editOrder } from '../lib/orders';
 import { readable } from '../lib/ask';
 import { liveCatalog, saveProduct, getSeasons, saveSeasons } from '../lib/catalog';
 import { savePromo, normCode } from '../lib/promos';
@@ -63,7 +65,18 @@ const summary = (o: any) => ({
   driver: o.driver_email ?? null, collected: o.collected_method ? { method: o.collected_method, cents: o.collected_cents, by: o.collected_by } : null,
 });
 
+// Every change made from the desk is written to the activity log (who, what, when).
 export default async (req: Request) => {
+  const bodyText = req.method === 'POST' ? await req.clone().text().catch(() => '') : '';
+  const res = await handle(req);
+  if (req.method === 'POST' && res.status < 400) {
+    const s = await requireTeam(req).catch(() => null);
+    if (s) await logActivity(s.email, req.method, new URL(req.url).pathname.replace('/api/admin/', ''), bodyText).catch(e => console.error('activity', e));
+  }
+  return res;
+};
+
+async function handle(req: Request) {
   try {
     const admin = await requireTeam(req);
     const url = new URL(req.url);
@@ -71,7 +84,7 @@ export default async (req: Request) => {
     // Helpers can read everything and run orders; money, catalog, settings and exports are owners only.
     if (admin.role !== 'admin') {
       const write = req.method !== 'GET';
-      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write) || parts[0] === 'recall.csv' || parts[0] === 'hours.csv'
+      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write) || parts[0] === 'recall.csv' || parts[0] === 'hours.csv' || parts[0] === 'letters' || parts[0] === 'backup.json' || parts[0] === 'activity' || (parts[0] === 'checklists' && write)
         || (write && ['products', 'settings', 'ask', 'connections', 'content', 'giftcards', 'report', 'pay'].includes(parts[0])) || (parts[0] === 'orders' && parts[2] === 'refund');
       if (ownersOnly) throw new HttpError(403, 'owners-only', 'Only the owners can do this.');
     }
@@ -115,6 +128,13 @@ export default async (req: Request) => {
       const b = await body(req);
       const o = await moveOrder(parts[1], str(b.day, 10), str(b.window, 20), admin.email, req, { force: b.force === true });
       return json({ ok: true, day: day(o.slot_date), window: o.slot_window });
+    }
+
+    // POST /api/admin/orders/:ref/items — change what is in the order
+    if (parts[0] === 'orders' && parts[1] && parts[2] === 'items' && req.method === 'POST') {
+      const b = await body(req);
+      const r = await editOrder(parts[1], b.lines, admin.email, req, b.notify !== false);
+      return json({ ok: true, total: r.order.total_cents, balance: r.balance });
     }
 
     // POST /api/admin/orders/:ref/refund
@@ -339,6 +359,31 @@ export default async (req: Request) => {
       return json({ month: r.month, name: r.name, html: r.html });
     }
     if (parts[0] === 'report' && req.method === 'POST') return json({ sent: await sendMonthlyReport(calgaryNow().date, true) });
+
+    // ---------- food safety, announcements, backup, activity ----------
+    if (parts[0] === 'checklists' && req.method === 'GET') {
+      const today = calgaryNow().date;
+      return json({ checklists: await checklists(), log: await checklistLog(/^\d{4}-\d{2}-\d{2}$/.test(q('from', 10)) ? q('from', 10) : addDays(today, -30), /^\d{4}-\d{2}-\d{2}$/.test(q('to', 10)) ? q('to', 10) : today) });
+    }
+    if (parts[0] === 'checklists' && req.method === 'POST') return json(await saveChecklists((await body(req)).checklists));
+    if (parts[0] === 'announce' && req.method === 'GET') return json({ announcements: await announcements(30) });
+    if (parts[0] === 'announce' && !parts[1] && req.method === 'POST') { const b = await body(req); return json(await announce(b.body, b.email === true, admin.email, req)); }
+    if (parts[0] === 'announce' && parts[1] && parts[2] === 'delete' && req.method === 'POST') return json(await deleteAnnouncement(Number(parts[1]) || 0));
+    if (parts[0] === 'backup.json' && req.method === 'GET') {
+      return new Response(JSON.stringify(await backup()), { headers: { 'content-type': 'application/json', 'content-disposition': `attachment; filename="hikaya-backup-${calgaryNow().date}.json"`, 'cache-control': 'no-store' } });
+    }
+    if (parts[0] === 'activity' && req.method === 'GET') return json({ activity: await activity(300) });
+
+    // ---------- letters to the mailing list ----------
+    if (parts[0] === 'letters' && !parts[1] && req.method === 'GET') return json({ letters: await listLetters() });
+    if (parts[0] === 'letters' && req.method === 'POST') {
+      const b = await body(req, 60_000);
+      if (!parts[1]) return json(await saveLetter(null, b, admin.email));
+      const id = Number(parts[1]) || 0;
+      if (parts[2] === 'test') return json(await testLetter(id, admin.login, req));
+      if (parts[2] === 'send') return json(await sendLetter(id, req));
+      return json(await saveLetter(id, b, admin.email));
+    }
 
     // ---------- mailing list ----------
     if (parts[0] === 'list' && req.method === 'GET') return json(await listStats());

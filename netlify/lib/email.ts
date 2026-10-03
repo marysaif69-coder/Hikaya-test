@@ -100,6 +100,14 @@ const COPY = {
     en: (o: OrderForMail) => ({ s: `New day for order ${o.ref}`, h: 'Your order has a new day.', p: 'We have moved your order. Here are the new details.' }),
     ar: (o: OrderForMail) => ({ s: `موعد جديد لطلبك ${o.ref}`, h: 'لطلبك موعد جديد.', p: 'غيّرنا موعد طلبك، وهذه التفاصيل الجديدة.' }),
   },
+  updated: {
+    en: (o: OrderForMail) => ({ s: `Order ${o.ref} was updated`, h: 'Your order was updated.', p: 'We changed your order as agreed. Here is what it is now.' }),
+    ar: (o: OrderForMail) => ({ s: `عُدّل طلبك ${o.ref}`, h: 'عُدّل طلبك.', p: 'عدّلنا طلبك كما اتفقنا، وهذا ما أصبح عليه.' }),
+  },
+  next: {
+    en: (o: OrderForMail) => ({ s: `You're next: order ${o.ref}`, h: "You're next.", p: o.gift ? 'Our driver is on the way to the gift now. It should arrive in the next few minutes.' : 'Our driver is on the way to you now. Your order should arrive in the next few minutes.' }),
+    ar: (o: OrderForMail) => ({ s: `أنت التالي: طلبك ${o.ref}`, h: 'أنت التالي.', p: o.gift ? 'السائق في الطريق إلى الهدية الآن، وتصل خلال دقائق.' : 'السائق في الطريق إليك الآن، ويصل طلبك خلال دقائق.' }),
+  },
   reminder: {
     en: (o: OrderForMail) => ({ s: `Tomorrow: your Hikaya order ${o.ref}`, h: 'See you tomorrow.', p: o.method === 'pickup' ? 'A reminder of your pickup time tomorrow.' : 'A reminder that we deliver your order tomorrow.' }),
     ar: (o: OrderForMail) => ({ s: `غداً: طلبك من حكاية ${o.ref}`, h: 'نراك غداً.', p: o.method === 'pickup' ? 'تذكير بموعد الاستلام غداً.' : 'تذكير بأننا نوصل طلبك غداً.' }),
@@ -267,4 +275,36 @@ export function subscriptionEmail(kind: 'started' | 'skipped' | 'not-placed' | '
 export function monthlyReportEmails(month: string, html: string, text: string): Mail[] {
   return env('ADMIN_EMAILS').split(',').map((e: string) => e.trim()).filter(Boolean)
     .map((to: string) => ({ to, subject: `Hikaya: your month in numbers (${month})`, html: `<div style="font:15px/1.55 Arial,sans-serif;color:#33211A;max-width:620px">${html}</div>`, text, kind: 'monthly-report' }));
+}
+
+// ---------- letters to the mailing list ----------
+/** Plain text with blank-line paragraphs, **bold** and bare links, made into safe HTML. */
+export const letterHtml = (text: string) => text.trim().split(/\n{2,}/).map(par => `<p>${esc(par).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(https:\/\/[^\s<]+)/g, '<a href="$1" style="color:#A93B28">$1</a>').replace(/\n/g, '<br>')}</p>`).join('');
+
+export function letterEmail(to: string, lang: Lang, subject: string, body: string, unsubUrl: string, siteUrl: string): Mail & { headers: Record<string, string> } {
+  const ar = lang === 'ar';
+  const foot = `<p style="font-size:13px;color:#66503F;margin-top:24px">${ar ? 'تصلك هذه الرسالة لأنك اشتركت في رسائل حكاية.' : 'You get this because you signed up for Hikaya letters.'} <a href="${unsubUrl}" style="color:#66503F">${ar ? 'إلغاء الاشتراك' : 'Unsubscribe'}</a></p>`;
+  return { to, subject, html: layout(lang, subject, letterHtml(body) + foot, siteUrl), text: `${body}\n\n${ar ? 'إلغاء الاشتراك' : 'Unsubscribe'}: ${unsubUrl}`, kind: 'letter',
+    headers: { 'List-Unsubscribe': `<${unsubUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } };
+}
+
+/** Sends up to 100 emails per request through Resend's batch endpoint; logs each one. */
+export async function sendBatch(mails: (Mail & { headers?: Record<string, string> })[]) {
+  const key = env('RESEND_API_KEY');
+  const from = env('EMAIL_FROM') || 'Hikaya <orders@hikayacoffee.ca>';
+  let sentN = 0;
+  for (let i = 0; i < mails.length; i += 100) {
+    const chunk = mails.slice(i, i + 100);
+    let status = 'skipped', error: string | null = null;
+    if (key) {
+      try {
+        const r = await fetch('https://api.resend.com/emails/batch', { method: 'POST', headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+          body: JSON.stringify(chunk.map(m => ({ from, to: [m.to], subject: m.subject, html: m.html, text: m.text, reply_to: env('EMAIL_REPLY_TO') || undefined, headers: m.headers }))) });
+        status = r.ok ? 'sent' : 'failed'; if (!r.ok) error = (await r.text()).slice(0, 500);
+      } catch (e) { status = 'failed'; error = String(e).slice(0, 500); }
+    }
+    for (const m of chunk) await sql`INSERT INTO email_log (to_email, subject, kind, status, error) VALUES (${m.to}, ${m.subject}, ${m.kind}, ${status}, ${error})`;
+    if (status === 'sent') sentN += chunk.length;
+  }
+  return sentN;
 }

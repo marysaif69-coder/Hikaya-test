@@ -59,6 +59,17 @@ All sent through Resend from the site itself; no n8n or Zapier needed. Admin →
 - **Recall lookup**: a lot code → every order from the day it was made until it was marked used up, with contacts and a CSV.
 - **Supplies**: packaging on hand vs what the week's orders need, with a "warn at" level; add your own lines (spices, bags).
 
+## Shared login, editing orders, letters, labels, food safety
+- **Shared team login**: people added with "Uses our shared login" log in with that email (e.g. hello@), pick their name, and confirm with a code sent to their own email (`as_tokens`). The device then acts as them: work is credited to them and their reminders go to their own email. Drivers keep their own logins. "Switch person" in the desk and the team app.
+- **Change items** (order panel, before packing): repriced at today's prices, stock and daily limits checked, promo and gift card kept; a paid order that grows shows the balance due; card orders get a new payment page; the customer gets "Your order was updated".
+- **"You're next"**: when a route starts and after each delivered or missed stop, the next customer in driving order gets an email (and a text if they asked).
+- **Letters** (Promotions, owners): English and Arabic; test copy to yourself; sent once through Resend's batch endpoint to confirmed subscribers in their language with a one-click unsubscribe header.
+- **Labels** (Production): per lot, English/French common name and ingredients (from the product data), net quantity, best before in the bilingual year-month-day format, lot code, storage line and the company line. Check the wording with the CFIA.
+- **Food safety log**: checklists (editable; lines ending in "(°C)" ask for a temperature) signed in the team app's Shifts tab; the log is in Production.
+- **Team messages** (Team tab): shown at the top of the team app, optionally emailed to everyone.
+- **Backup** (Settings): every table as one JSON file, without sessions and login codes; photos listed without their image bytes.
+- **Activity log** (Settings): every change made through the desk (who, what, when, the details sent).
+
 ## The desk at a glance
 - **Orders, Inbox, Day sheet** as before. **Week sheet**: coffee to roast and grind (kg, pouches, how many go in gift boxes), dates to portion, boxes, sleeves and cups for Thursday–Wednesday; printable.
 - **Driver** (`/admin/driver/`, made for a phone): the day's deliveries in postal-code order, Map and Call buttons, gift recipient and card message, "Collect $X" when paying on delivery, On my way / Delivered (emails the customer) / Couldn't deliver (note for the team).

@@ -680,6 +680,83 @@ await call(admin, `/api/admin/orders/${so.data.ref}`, { cookie: admAs, body: { n
 const evs = (await call(admin, `/api/admin/orders/${so.data.ref}`, { cookie: adm })).data.events;
 assert.ok(evs.some((e: any) => e.actor === 'Maryam S' && e.detail === 'Called ahead')); ok('what they do in the desk is credited to their name');
 
+// ---------- editing an order ----------
+const ed = await order({ email: 'edit@example.com', day: '2027-02-25', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] });
+const edMails = sent.length;
+const edR = await call(admin, `/api/admin/orders/${ed.data.ref}/items`, { cookie: helper, body: { lines: [{ id: 'najdi', opt: 'dallah', qty: 2 }, { id: 'radaey', opt: 'dallah', qty: 1 }] } });
+assert.equal(edR.status, 200);
+const edRow = (await pg.query(`SELECT subtotal_cents, total_cents FROM orders WHERE ref = $1`, [ed.data.ref])).rows[0] as any;
+const edItems = (await pg.query(`SELECT product_id, qty FROM order_items i JOIN orders o ON o.id = i.order_id WHERE o.ref = $1 ORDER BY product_id`, [ed.data.ref])).rows as any[];
+assert.equal(edItems.length, 2); assert.equal(edRow.subtotal_cents, 2 * 2600 + 2600);
+assert.ok(sent.slice(edMails).some(m => m.subject === `Order ${ed.data.ref} was updated`)); ok('the team changes what is in an order; new total, and the customer is emailed');
+assert.equal((await call(admin, `/api/admin/orders/${ed.data.ref}/items`, { cookie: adm, body: { lines: [] } })).status, 400);
+await call(admin, `/api/admin/orders/${ed.data.ref}`, { cookie: adm, body: { paymentStatus: 'paid' } });
+const edUp = (await call(admin, `/api/admin/orders/${ed.data.ref}/items`, { cookie: adm, body: { lines: [{ id: 'najdi', opt: 'dallah', qty: 3 }, { id: 'radaey', opt: 'dallah', qty: 1 }] } })).data;
+assert.equal(edUp.balance, 2600); assert.equal((await pg.query(`SELECT payment_status FROM orders WHERE ref = $1`, [ed.data.ref])).rows[0].payment_status, 'unpaid'); ok('a paid order made bigger shows what is still to pay');
+await call(admin, `/api/admin/orders/${ed.data.ref}`, { cookie: adm, body: { status: 'ready', notify: false } });
+assert.equal((await call(admin, `/api/admin/orders/${ed.data.ref}/items`, { cookie: adm, body: { lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] } })).data.error, 'cannot-edit'); ok('not once it is packed');
+
+// ---------- "you're next" ----------
+await pg.query(`UPDATE team_members SET status = 'active' WHERE email = 'dan@example.com'`);
+const dan2 = await login('dan@example.com');
+const nx1 = await order({ method: 'delivery', street: '1 Next St', postal: 'T2P1J9', day: '2027-02-26', email: 'next1@example.com' });
+const nx2 = await order({ method: 'delivery', street: '2 Next St', postal: 'T2P1J8', day: '2027-02-26', email: 'next2@example.com', sms: true });
+await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [nx1.data.ref, nx2.data.ref], driver: 'dan@example.com' } });
+process.env.TWILIO_ACCOUNT_SID = 'AC1'; process.env.TWILIO_AUTH_TOKEN = 'tok'; process.env.TWILIO_FROM = '+15875550000';
+const nxTexts: any[] = []; const fN = globalThis.fetch;
+globalThis.fetch = (async (url: string, init: any) => { if (String(url).includes('api.twilio.com')) { nxTexts.push(Object.fromEntries(new URLSearchParams(init.body))); return new Response('{}', { status: 201 }); } return fN(url, init); }) as any;
+const nxM = sent.length;
+await call(driverApi, '/api/driver/start?date=2027-02-26', { cookie: dan2, body: {} });
+const firstNext = sent.slice(nxM).filter(m => /^You're next/.test(m.subject));
+assert.equal(firstNext.length, 1); assert.ok(firstNext[0].to.includes('next2@example.com') || firstNext[0].to.includes('next1@example.com'));
+const firstRef = firstNext[0].subject.match(/HK-\w+/)[0], secondRef = firstRef === nx1.data.ref ? nx2.data.ref : nx1.data.ref;
+await driverApi(new Request(`${H}/api/driver/photo?ref=${firstRef}`, { method: 'POST', headers: { 'content-type': 'image/jpeg', origin: H, cookie: dan2 }, body: jpeg }));
+await call(driverApi, '/api/driver/delivered', { cookie: dan2, body: { ref: firstRef } });
+const secondNext = sent.slice(nxM).filter(m => /^You're next/.test(m.subject));
+assert.equal(secondNext.length, 2); assert.ok(secondNext[1].subject.includes(secondRef));
+assert.equal(nxTexts.filter(t => /you're next/i.test(t.Body)).length, 1); ok('"you\'re next": each customer is told when the driver is on the way to them (and texted if they asked)');
+globalThis.fetch = fN; delete process.env.TWILIO_ACCOUNT_SID;
+
+// ---------- letters to the mailing list ----------
+await call(orders, '/api/list', { body: { email: 'reader@example.com', lang: 'ar', consent: true } });
+const rdLink = new URL(sent.at(-1).html.match(/https:\/\/hikaya\.test\/api\/list\/confirm\?t=[\w-]+/)[0]); await orders(new Request(rdLink.href));
+assert.equal((await call(admin, '/api/admin/letters', { cookie: adm, body: { subject_en: 'Ramadan', body_en: 'Hi' } })).status, 400);
+const lt = (await call(admin, '/api/admin/letters', { cookie: adm, body: { subject_en: 'Ramadan pre-orders are open', subject_ar: 'الطلب المسبق لرمضان مفتوح', body_en: 'Order by **Tuesday**.\n\nhttps://hikayacoffee.ca/en/ramadan/', body_ar: 'اطلبوا قبل **الثلاثاء**.' } })).data;
+assert.equal((await call(admin, `/api/admin/letters/${lt.id}/send`, { cookie: helper, body: {} })).status, 403);
+const ltM = sent.length;
+await call(admin, `/api/admin/letters/${lt.id}/test`, { cookie: adm, body: {} });
+assert.equal(sent.slice(ltM).filter(m => /^\[Test\]/.test(m.subject)).length, 2); ok('letters: written in English and Arabic, with a test copy first');
+const batches: any[] = []; const fL = globalThis.fetch;
+globalThis.fetch = (async (url: string, init: any) => { if (String(url).includes('/emails/batch')) { batches.push(JSON.parse(init.body)); return new Response('[]', { status: 200 }); } return fL(url, init); }) as any;
+const ltSend = (await call(admin, `/api/admin/letters/${lt.id}/send`, { cookie: adm, body: {} })).data;
+globalThis.fetch = fL;
+const toReader = batches.flat().find((m: any) => m.to[0] === 'reader@example.com');
+assert.ok(ltSend.sent >= 1); assert.equal(toReader.subject, 'الطلب المسبق لرمضان مفتوح'); assert.match(toReader.html, /<b>الثلاثاء<\/b>/); assert.match(toReader.headers['List-Unsubscribe'], /unsubscribe\?t=/);
+assert.ok(!batches.flat().some((m: any) => m.to[0] === 'news@example.com')); ok('sent only to confirmed subscribers, each in their language, with one-click unsubscribe');
+assert.equal((await call(admin, `/api/admin/letters/${lt.id}/send`, { cookie: adm, body: {} })).data.error, 'sent'); ok('a letter can only be sent once');
+
+// ---------- food safety checklists, announcements, backup, activity ----------
+const ckl = (await call(driverApi, '/api/driver/checklists', { cookie: pat })).data;
+const beforeList = ckl.checklists.find((c: any) => c.key === 'before-packing');
+assert.ok(beforeList.items.some((i: string) => /\(°C\)$/.test(i)));
+assert.equal((await call(driverApi, '/api/driver/checklists', { cookie: pat, body: { key: 'before-packing', answers: beforeList.items.map(() => ({ done: true })) } })).data.error, 'number');
+await call(driverApi, '/api/driver/checklists', { cookie: pat, body: { key: 'before-packing', answers: beforeList.items.map((i: string) => ({ done: true, value: /°C/.test(i) ? 3.5 : undefined })) } });
+const clog = (await call(admin, '/api/admin/checklists', { cookie: adm })).data.log;
+assert.equal(clog[0].by, 'Pat Packer'); assert.equal(clog[0].answers.find((a: any) => a.value !== null).value, 3.5); ok('food-safety checklists signed in the team app, with temperatures, kept as a log');
+await call(admin, '/api/admin/checklists', { cookie: adm, body: { checklists: [{ key: 'open', name: 'Opening', items: ['Hands washed'] }] } });
+assert.equal((await call(driverApi, '/api/driver/checklists', { cookie: pat })).data.checklists[0].name, 'Opening'); ok('owners edit the checklists');
+const anM = sent.length;
+await call(admin, '/api/admin/announce', { cookie: adm, body: { body: 'Eid week: everyone in at 8.', email: true } });
+assert.ok(sent.slice(anM).some(m => m.to.includes('pat@example.com') && /message from the owners/.test(m.subject)));
+assert.equal((await call(driverApi, '/api/driver/announcements', { cookie: pat })).data.announcements[0].body, 'Eid week: everyone in at 8.'); ok('announcements: in the team app and by email');
+assert.equal((await call(admin, '/api/admin/backup.json', { cookie: helper })).status, 403);
+const bk: Response = await admin(new Request(`${H}/api/admin/backup.json`, { headers: { cookie: adm } }));
+const bkj = await bk.json();
+assert.ok(bkj.tables.orders.length > 10 && bkj.tables.customers.length > 5); assert.equal(bkj.tables.sessions, undefined); assert.equal(bkj.tables.auth_codes, undefined);
+assert.ok(bkj.tables.delivery_photos.every((r: any) => !('data' in r))); ok('backup: every table as one download, without login codes or sessions');
+const act = (await call(admin, '/api/admin/activity', { cookie: adm })).data.activity;
+assert.ok(act.some((a: any) => a.action === 'POST announce' && /Eid week/.test(a.detail))); assert.ok(act.some((a: any) => a.action.startsWith('POST products/'))); assert.equal((await call(admin, '/api/admin/activity', { cookie: helper })).status, 403); ok('activity log: who changed what in the desk');
+
 // ---------- confirming orders ----------
 const newO = await order({ day: '2027-01-31' });
 const cMails = sent.length;

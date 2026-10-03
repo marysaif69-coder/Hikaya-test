@@ -5,6 +5,7 @@ import { json, fail, body, str, HttpError, sameOrigin } from '../lib/http';
 import { requireCrew } from '../lib/auth';
 import { one } from '../lib/db';
 import { calgaryNow } from '../lib/slots';
+import { checklists, todayLogs, signChecklist, announcements } from '../lib/ops';
 import { shiftsFrom, signUp, leave, clock, hours, saveProfile, canTake } from '../lib/team';
 import { member, onboard, packList, markPacked, stops, startRoute, endRoute, currentRoute, addDeliveryPhoto, delivered, missed, driverReport, mileageCsv, routing } from '../lib/delivery';
 import { addDays } from '../lib/slots';
@@ -42,6 +43,11 @@ export default async (req: Request) => {
       const today = calgaryNow().date;
       return json(await hours(/^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get('from') ?? '') ? url.searchParams.get('from')! : today.slice(0, 8) + '01', /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get('to') ?? '') ? url.searchParams.get('to')! : today, s.email));
     }
+
+    // ---------- checklists and announcements ----------
+    if (path === 'checklists' && req.method === 'GET') return json({ checklists: await checklists(), today: await todayLogs() });
+    if (path === 'checklists' && req.method === 'POST') return json(await signChecklist(s.email, await body(req)));
+    if (path === 'announcements' && req.method === 'GET') return json({ announcements: await announcements(5) });
 
     // ---------- packing ----------
     if (path === 'pack' || path === 'packed') {

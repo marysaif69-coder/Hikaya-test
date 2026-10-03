@@ -1,10 +1,10 @@
 import { sql, one, type Row } from './db';
 import { HttpError, str, isEmail, siteUrl } from './http';
 import { hash, token, isAdminEmail, type Session } from './auth';
-import { priceCart, totals, type PricedLine } from './pricing';
+import { priceCart, totals, dollars, type PricedLine } from './pricing';
 import { assertBookable, bookable, getSettings } from './slots';
 import { liveCatalog, takeStock, giveStock, restock, assertDayLimits } from './catalog';
-import { checkPromo, redeem, unredeem, type Applied } from './promos';
+import { checkPromo, redeem, unredeem, shape, type Applied } from './promos';
 import { send, orderEmail, teamAlert, type OrderMailKind } from './email';
 import { randomInt } from 'node:crypto';
 import { paymentLink } from './square';
@@ -194,6 +194,54 @@ export async function moveOrder(ref: string, day: string, window: string, actor:
   await event(o.id, 'moved', `${cur} ${o.slot_window} → ${day} ${window}`, actor);
   await notify('moved', moved!, req);
   return moved!;
+}
+
+/** Changes what is in an order (the team, e.g. after a phone call): priced again at today's prices,
+ * stock and daily limits checked, the promo code and gift card kept, and the customer emailed. */
+export async function editOrder(ref: string, rawLines: unknown, actor: string, req?: Request, sendEmail = true) {
+  const o = await one`SELECT * FROM orders WHERE ref = ${ref}`;
+  if (!o) throw new HttpError(404, 'not-found');
+  if (!['received', 'confirmed'].includes(o.status)) throw new HttpError(409, 'cannot-edit', 'This order is already being prepared or is finished. Change it only before packing.');
+  const live = await liveCatalog();
+  // Products already in the order can stay even if they've since been hidden or sold out.
+  const before = await items(o.id);
+  const keep = new Set(before.map(i => i.product_id));
+  const relaxed = Object.fromEntries(Object.entries(live).map(([id, l]) => [id, keep.has(id) ? { ...l, shown: true, available: true } : l]));
+  const lines = priceCart(rawLines, relaxed as any);
+  const day = String(o.slot_date instanceof Date ? o.slot_date.toISOString() : o.slot_date).slice(0, 10);
+  await assertDayLimits(day, lines, (await getSettings()).caps.giftBoxesPerDay, o.id);
+  // Stock: give back what the order had, then take the new lines; on failure put it all back.
+  if (!o.is_sample) await restock(o.id);
+  let taken: [string, number][] = [];
+  try { if (!o.is_sample) taken = await takeStock(lines); }
+  catch (e) { if (!o.is_sample) await takeStock(before.map(i => ({ product_id: i.product_id, qty: i.qty }))).catch(() => null); throw e; }
+  const sub = lines.reduce((n, l) => n + l.unit_cents * l.qty, 0);
+  const p = o.promo_code ? await one`SELECT * FROM promo_codes WHERE code = ${o.promo_code}` : null;
+  const t = totals(lines, o.method, p ? shape(p, sub) : null);
+  // The gift card can only cover up to the new total; anything above goes back on the card.
+  const gc = Math.min(o.gift_card_cents ?? 0, t.total_cents);
+  if ((o.gift_card_cents ?? 0) > gc) await giveBackToGiftCard(o.gift_card_code, o.gift_card_cents - gc);
+  const total = t.total_cents - gc;
+  const wasPaid = o.payment_status === 'paid';
+  await sql`DELETE FROM order_items WHERE order_id = ${o.id}`;
+  for (const l of lines) await sql`INSERT INTO order_items (order_id, product_id, name_en, name_ar, option, option_en, option_ar, qty, unit_cents)
+    VALUES (${o.id}, ${l.product_id}, ${l.name_en}, ${l.name_ar}, ${l.option}, ${l.option_en}, ${l.option_ar}, ${l.qty}, ${l.unit_cents})`;
+  const balance = wasPaid ? total - o.total_cents : 0;
+  const upd = await one`UPDATE orders SET subtotal_cents = ${t.subtotal_cents}, delivery_cents = ${t.delivery_cents}, discount_cents = ${t.discount_cents}, gift_card_cents = ${gc},
+      total_cents = ${total}, payment_status = ${wasPaid && balance > 0 ? 'unpaid' : total === 0 ? 'paid' : o.payment_status}, square_link_url = ${o.payment === 'card' && !wasPaid ? null : o.square_link_url}, updated_at = NOW()
+    WHERE id = ${o.id} RETURNING *`;
+  // Card orders not paid yet get a new payment page for the new amount.
+  if (upd && upd.payment === 'card' && upd.payment_status === 'unpaid' && upd.total_cents > 0) {
+    try {
+      const link = await paymentLink(upd, lines, `${siteUrl(req)}/${upd.lang}/account/?order=${upd.ref}`, `${upd.ref}-${Date.now()}`);
+      await sql`UPDATE orders SET square_order_id = ${link.orderId}, square_link_url = ${link.url} WHERE id = ${o.id}`;
+      upd.square_link_url = link.url;
+    } catch (e) { console.error(e); }
+  }
+  await event(o.id, 'edited', `${before.map(i => `${i.qty}× ${i.name_en}`).join(', ')} → ${lines.map(l => `${l.qty}× ${l.name_en}`).join(', ')} · total ${dollars(o.total_cents)} → ${dollars(total)}${balance > 0 ? ` · ${dollars(balance)} still to pay` : balance < 0 ? ` · ${dollars(-balance)} to refund (use Refund)` : ''}`, actor);
+  if (sendEmail) await notify('updated', upd!, req);
+  void taken;
+  return { order: upd!, balance };
 }
 
 /** A cancelled order gives its stock and promo code use back. */
