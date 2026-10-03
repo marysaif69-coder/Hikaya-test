@@ -5,7 +5,8 @@ import { json, fail, body, str, HttpError, sameOrigin } from '../lib/http';
 import { requireCrew } from '../lib/auth';
 import { one } from '../lib/db';
 import { calgaryNow } from '../lib/slots';
-import { member, onboard, stops, startRoute, endRoute, currentRoute, addDeliveryPhoto, delivered, missed, driverReport, mileageCsv, routing } from '../lib/delivery';
+import { shiftsFrom, signUp, leave, clock, hours, saveProfile, canTake } from '../lib/team';
+import { member, onboard, packList, markPacked, stops, startRoute, endRoute, currentRoute, addDeliveryPhoto, delivered, missed, driverReport, mileageCsv, routing } from '../lib/delivery';
 import { addDays } from '../lib/slots';
 import GUIDE from '../../src/content/driver-guide.json';
 
@@ -18,11 +19,37 @@ export default async (req: Request) => {
 
     if (path === 'me' && req.method === 'GET') {
       const m = await member(s.email);
-      return json({ email: s.email, role: s.role, member: m, needsOnboarding: s.role === 'driver' && !m?.agreed_at, guide: GUIDE.guide, routing: routing() });
+      return json({ email: s.email, role: s.role, member: m, needsOnboarding: (s.role === 'driver' || s.role === 'packer') && !m?.agreed_at, guide: GUIDE.guide, routing: routing() });
     }
     if (path === 'onboard' && req.method === 'POST') return json({ member: await onboard(s, await body(req)) });
     // Until onboarding is done a driver sees nothing else.
-    if (s.role === 'driver' && !(await member(s.email))?.agreed_at) throw new HttpError(403, 'onboarding', 'Finish setting up first.');
+    if ((s.role === 'driver' || s.role === 'packer') && !(await member(s.email))?.agreed_at) throw new HttpError(403, 'onboarding', 'Finish setting up first.');
+    if (path === 'profile' && req.method === 'POST') return json(await saveProfile(s, await body(req)));
+
+    // ---------- shifts ----------
+    if (path === 'shifts' && req.method === 'GET') {
+      const f = url.searchParams.get('from') ?? '';
+      const list = await shiftsFrom(/^\d{4}-\d{2}-\d{2}$/.test(f) && f >= calgaryNow().date ? f : calgaryNow().date, 120);
+      return json({ shifts: list.map(x => ({ ...x, mine: x.people.some(p => p.email === s.email), me: x.people.find(p => p.email === s.email) ?? null, canTake: canTake(s.role, x.kind),
+        people: x.people.map(p => ({ name: p.name || p.email.split('@')[0] })) })) });
+    }
+    const sm = /^shifts\/(\d+)\/(signup|leave|in|out)$/.exec(path);
+    if (sm && req.method === 'POST') {
+      const id = Number(sm[1]);
+      return json(sm[2] === 'signup' ? await signUp(s, id) : sm[2] === 'leave' ? await leave(s, id) : await clock(s, id, sm[2] as 'in' | 'out'));
+    }
+    if (path === 'hours' && req.method === 'GET') {
+      const today = calgaryNow().date;
+      return json(await hours(/^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get('from') ?? '') ? url.searchParams.get('from')! : today.slice(0, 8) + '01', /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get('to') ?? '') ? url.searchParams.get('to')! : today, s.email));
+    }
+
+    // ---------- packing ----------
+    if (path === 'pack' || path === 'packed') {
+      if (s.role === 'driver') throw new HttpError(403, 'role', 'Packing is for packers and the team.');
+      if (path === 'pack' && req.method === 'GET') return json({ date, orders: await packList(date) });
+      if (path === 'packed' && req.method === 'POST') return json(await markPacked(s, str((await body(req)).ref, 12), req));
+    }
+    if (s.role === 'packer' && ['stops', 'start', 'end', 'route', 'photo', 'delivered', 'missed'].some(x => path === x || path.startsWith('photo/'))) throw new HttpError(403, 'role', 'Deliveries are for drivers.');
 
     if (path === 'stops' && req.method === 'GET') return json({ date, stops: await stops(s, date, url.searchParams.get('mine') === '1') });
     if (path === 'start' && req.method === 'POST') return json(await startRoute(s, date, req, await body(req)));

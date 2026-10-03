@@ -9,13 +9,14 @@ import { calgaryNow } from './slots';
 import { dollars } from './pricing';
 import GUIDE from '../../src/content/driver-guide.json';
 import type { Session } from './auth';
+import { assertPapers } from './team';
 import { planRoute, navLinks, mapsEnabled, shopAddress, type Origin } from './routing';
 
 export const guideText = () => [GUIDE.guide.title.en, ...GUIDE.guide.points.map((p, i) => `${i + 1}. ${p.t.en}`)].join('\n');
 const day = (v: unknown) => (v instanceof Date ? v.toISOString() : String(v ?? '')).slice(0, 10);
 
 export async function member(email: string) {
-  return one`SELECT id, email, role, name, phone, vehicle, status, agreed_at FROM team_members WHERE email = ${email}`;
+  return one`SELECT id, email, role, name, phone, vehicle, status, agreed_at, volunteer, licence_expires::text, insurance_expires::text, food_cert_expires::text FROM team_members WHERE email = ${email}`;
 }
 
 /** First login of an invited driver: their details and agreeing to the guide. */
@@ -26,7 +27,11 @@ export async function onboard(s: Session, b: any) {
   if (phone.replace(/\D/g, '').length < 10) fields.phone = 'phone';
   if (b?.agree !== true) fields.agree = 'required';
   if (Object.keys(fields).length) throw Object.assign(new HttpError(400, 'invalid', 'Fill in your name and phone, and tick that you have read the guide.'), { fields });
-  const m = await one`UPDATE team_members SET name = ${name}, phone = ${phone}, vehicle = ${vehicle || null}, status = 'active', agreed_text = ${guideText()}, agreed_at = NOW()
+  const d = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+  const cur = await one`SELECT role FROM team_members WHERE email = ${s.email}`;
+  if (cur?.role === 'driver' && (!d(b?.licence_expires) || !d(b?.insurance_expires))) throw Object.assign(new HttpError(400, 'invalid', "Add when your driver's licence and car insurance expire."), { fields: { licence_expires: 'required' } });
+  const m = await one`UPDATE team_members SET name = ${name}, phone = ${phone}, vehicle = ${vehicle || null}, status = 'active', agreed_text = ${guideText()}, agreed_at = NOW(),
+      licence_expires = ${d(b?.licence_expires)}, insurance_expires = ${d(b?.insurance_expires)}, food_cert_expires = ${d(b?.food_cert_expires)}
     WHERE email = ${s.email} AND status <> 'off' RETURNING *`;
   if (!m) throw new HttpError(404, 'not-found', 'You are not on the team list.');
   for (const to of env('ADMIN_EMAILS').split(',').map((e: string) => e.trim()).filter(Boolean))
@@ -64,6 +69,7 @@ const openRoute = (email: string, date: string) => one`SELECT * FROM routes WHER
 /** Start route: plans the shortest order for my stops still to do, records the start odometer,
  * and marks them "out for delivery" (each customer gets the "on its way" email). */
 export async function startRoute(s: Session, date: string, req?: Request, b: any = {}) {
+  if (s.role === 'driver') await assertPapers(s.email, date);
   if (await openRoute(s.email, date)) throw new HttpError(409, 'route-open', 'Your route is already going. End it first, or keep going.');
   // The odometer is optional: without it the app counts the km from the planned route.
   const odoRaw = b?.startOdometer === null || b?.startOdometer === undefined || b?.startOdometer === '' ? null : Math.round(Number(b.startOdometer));
@@ -222,27 +228,31 @@ export async function teamList() {
       (SELECT COUNT(*)::int FROM orders o WHERE o.delivered_by = m.email AND o.delivered_at > date_trunc('month', NOW())) AS month,
       (SELECT COALESCE(SUM(collected_cents), 0)::int FROM orders o WHERE o.collected_by = m.email AND o.collected_method = 'cash' AND o.cash_handed_in_at IS NULL) AS cash
     FROM team_members m ORDER BY m.status = 'off', m.created_at`;
-  return people.map(p => ({ id: p.id, email: p.email, role: p.role, name: p.name, phone: p.phone, vehicle: p.vehicle, status: p.status, agreedAt: p.agreed_at, week: p.week, month: p.month, cash: p.cash }));
+  const d = (v: unknown) => (v ? (v instanceof Date ? v.toISOString() : String(v)).slice(0, 10) : null);
+  return people.map(p => ({ id: p.id, email: p.email, role: p.role, name: p.name, phone: p.phone, vehicle: p.vehicle, status: p.status, agreedAt: p.agreed_at, week: p.week, month: p.month, cash: p.cash,
+    volunteer: Boolean(p.volunteer), licence: d(p.licence_expires), insurance: d(p.insurance_expires), foodCert: d(p.food_cert_expires) }));
 }
 
 export async function invite(b: any, by: string, siteUrl: string) {
   const email = String(b?.email ?? '').trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new HttpError(400, 'invalid', 'Check the email.');
-  const role = b?.role === 'helper' ? 'helper' : 'driver';
-  await sql`INSERT INTO team_members (email, role, name, invited_by) VALUES (${email}, ${role}, ${String(b?.name ?? '').trim().slice(0, 120) || null}, ${by})
-    ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, status = CASE WHEN team_members.status = 'off' THEN 'invited' ELSE team_members.status END`;
-  const link = role === 'driver' ? `${siteUrl}/admin/driver/` : `${siteUrl}/admin/`;
-  const text = role === 'driver'
-    ? `You've been added as a driver for Hikaya.\n\n1. Open ${link} on your phone.\n2. Log in with this email (${email}); we email you a 6-digit code. No password.\n3. Fill in your details and read the driver guide.\n4. Add it to your home screen: iPhone (Safari) Share → Add to Home Screen; Android (Chrome) menu → Install app.\n\nYour stops appear there on delivery days.`
+  const role = ['helper', 'packer', 'driver'].includes(b?.role) ? b.role : 'driver';
+  const volunteer = b?.volunteer === true;
+  await sql`INSERT INTO team_members (email, role, name, invited_by, volunteer) VALUES (${email}, ${role}, ${String(b?.name ?? '').trim().slice(0, 120) || null}, ${by}, ${volunteer})
+    ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, volunteer = EXCLUDED.volunteer, status = CASE WHEN team_members.status = 'off' THEN 'invited' ELSE team_members.status END`;
+  const link = role === 'helper' ? `${siteUrl}/admin/` : `${siteUrl}/admin/driver/`;
+  const text = role !== 'helper'
+    ? `You've been added to the Hikaya team as a ${role}${volunteer ? ' (volunteer)' : ''}.\n\n1. Open ${link} on your phone.\n2. Log in with this email (${email}); we email you a 6-digit code. No password.\n3. Fill in your details and read the team guide.\n4. Add it to your home screen: iPhone (Safari) Share → Add to Home Screen; Android (Chrome) menu → Install app.\n\nYour shifts${role === 'driver' ? ' and delivery stops' : ' and the packing list'} appear there.`
     : `You've been added to the Hikaya team.\n\nOpen ${link} and log in with this email (${email}); we email you a 6-digit code. No password.`;
-  await send({ to: email, subject: role === 'driver' ? 'You’re a Hikaya driver: set up the delivery app' : 'You’re on the Hikaya team', text, html: `<div style="font:15px/1.55 Arial,sans-serif">${text.replace(/[<>&]/g, '').replace(/\n/g, '<br>').replace(link, `<a href="${link}">${link}</a>`)}</div>`, kind: 'team-invite' });
+  await send({ to: email, subject: role === 'driver' ? 'You’re a Hikaya driver: set up the team app' : role === 'packer' ? 'You’re on the Hikaya team: set up the team app' : 'You’re on the Hikaya team', text, html: `<div style="font:15px/1.55 Arial,sans-serif">${text.replace(/[<>&]/g, '').replace(/\n/g, '<br>').replace(link, `<a href="${link}">${link}</a>`)}</div>`, kind: 'team-invite' });
   return { ok: true };
 }
 
 export async function setMember(id: number, b: any) {
   const status = ['active', 'off', 'invited'].includes(b?.status) ? b.status : null;
-  const role = ['driver', 'helper'].includes(b?.role) ? b.role : null;
-  const m = await one`UPDATE team_members SET status = COALESCE(${status}, status), role = COALESCE(${role}, role) WHERE id = ${id} RETURNING id`;
+  const role = ['driver', 'helper', 'packer'].includes(b?.role) ? b.role : null;
+  const vol = typeof b?.volunteer === 'boolean' ? b.volunteer : null;
+  const m = await one`UPDATE team_members SET status = COALESCE(${status}, status), role = COALESCE(${role}, role), volunteer = COALESCE(${vol}, volunteer) WHERE id = ${id} RETURNING id`;
   if (!m) throw new HttpError(404, 'not-found');
   if (status === 'off') { const e = await one`SELECT email FROM team_members WHERE id = ${id}`; await sql`DELETE FROM sessions WHERE email = ${e!.email}`; }
   return { ok: true };
@@ -260,6 +270,7 @@ export async function assign(refs: string[], driver: string, by: string) {
   if (!ok) throw new HttpError(400, 'driver', 'That person is not a driver.');
   let n = 0;
   for (const ref of refs.slice(0, 200)) {
+    if (driver) { const od = await one`SELECT slot_date FROM orders WHERE ref = ${ref}`; if (od) await assertPapers(driver, (od.slot_date instanceof Date ? od.slot_date.toISOString() : String(od.slot_date)).slice(0, 10)); }
     const o = await one`UPDATE orders SET driver_email = ${driver || null} WHERE ref = ${ref} AND method = 'delivery' AND status <> 'completed' RETURNING id`;
     if (o) { n++; await event(o.id, 'driver', driver ? `Assigned to ${driver}` : 'Driver removed', by); }
   }
@@ -283,3 +294,24 @@ export async function confirmNew(by: string, req?: Request) {
   return { confirmed: rows.length };
 }
 
+
+// ---------- packing (packers, helpers, owners) ----------
+export async function packList(date: string) {
+  const { lotsOn, lotsForLines } = await import('./production');
+  const lots = await lotsOn(date);
+  const rows = await sql`SELECT o.*, c.team_note FROM orders o LEFT JOIN customers c ON c.email = o.email WHERE o.slot_date = ${date} AND o.status <> 'cancelled' ORDER BY o.method DESC, o.slot_window, o.postal, o.id`;
+  return Promise.all(rows.map(async o => {
+    const its = await items(o.id);
+    return { ref: o.ref, method: o.method, window: o.slot_window, name: o.gift ? o.gift_to : o.name, gift: o.gift ? { from: o.name, message: o.gift_message } : null, status: o.status,
+      packed: o.packed_at ? { at: o.packed_at, by: o.packed_by } : null, notes: o.notes, customerNote: o.team_note ?? null, sample: Boolean(o.is_sample),
+      items: its.map(i => ({ qty: i.qty, name: i.name_en, option: i.option_en })), lots: lotsForLines(lots, its.map(i => ({ product_id: i.product_id, option: i.option }))) };
+  }));
+}
+/** Packed: pickup orders become "ready" (the customer gets the ready email); deliveries wait for the driver. */
+export async function markPacked(s: Session, ref: string, req?: Request) {
+  const o = await one`UPDATE orders SET packed_at = NOW(), packed_by = ${s.email} WHERE ref = ${ref} AND status IN ('received', 'confirmed', 'ready') RETURNING *`;
+  if (!o) throw new HttpError(409, 'cannot-pack', 'This order is not waiting to be packed.');
+  await event(o.id, 'packed', null, s.email);
+  if (o.method === 'pickup' && o.status !== 'ready') await setStatus(ref, 'ready', s.email, req, true);
+  return { ok: true };
+}

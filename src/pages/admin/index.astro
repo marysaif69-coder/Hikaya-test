@@ -21,7 +21,8 @@ import '../../styles/global.css';
       <button type="button" data-tab="inbox" aria-pressed="false">Inbox <span class="badge" id="inboxN" hidden></span></button>
       <button type="button" data-tab="day" aria-pressed="false">Day sheet</button>
       <button type="button" data-tab="week" aria-pressed="false">Week sheet</button>
-      <button type="button" data-tab="drivers" aria-pressed="false">Drivers</button>
+      <button type="button" data-tab="drivers" aria-pressed="false">Team</button>
+      <button type="button" data-tab="production" aria-pressed="false">Production</button>
       <button type="button" data-tab="customers" aria-pressed="false">Customers</button>
       <button type="button" data-tab="products" aria-pressed="false" class="owner-only">Products</button>
       <button type="button" data-tab="promos" aria-pressed="false" class="owner-only">Promotions</button>
@@ -30,7 +31,7 @@ import '../../styles/global.css';
       <button type="button" data-tab="numbers" aria-pressed="false" class="owner-only">Numbers</button>
       <button type="button" data-tab="words" aria-pressed="false" class="owner-only">Words</button>
       <button type="button" data-tab="plan" aria-pressed="false" class="owner-only">Plan</button>
-      <a class="drv-link" href="/admin/driver/">Delivery app</a>
+      <a class="drv-link" href="/admin/driver/">Team app</a>
       <button type="button" data-tab="settings" aria-pressed="false" class="owner-only">Settings</button>
     </nav>
     <div class="a-who" id="who" hidden><span id="whoEmail"></span><button type="button" id="logout">Log out</button></div>
@@ -115,7 +116,7 @@ import '../../styles/global.css';
       <div class="seasons" id="seasons"></div>
       <p class="muted a-intro">Changes show on the site within a minute. <b>Shown</b> off hides a product everywhere (not launched, out of season). <b>Sold out</b> keeps it visible but stops orders. <b>Stock</b> left empty means no limit; a number counts down with each order and comes back when an order is cancelled. Leave the price empty to use the price from the product file. <b>Waiting</b> is how many people asked to be emailed when a product is back; they are emailed automatically when you turn it on again.</p>
       <div class="a-table-wrap"><table class="a-table" id="products">
-        <thead><tr><th>Product</th><th>Family</th><th>Price</th><th>Shown</th><th>Sold out</th><th>Stock left</th><th>Waiting</th><th></th></tr></thead>
+        <thead><tr><th>Product</th><th>Family</th><th>Price</th><th>Shown</th><th>Sold out</th><th>Stock left</th><th>Per day</th><th>Waiting</th><th></th></tr></thead>
         <tbody></tbody>
       </table></div>
     </section>
@@ -217,8 +218,22 @@ import '../../styles/global.css';
     <!-- DRIVERS: who drives, today's assignments, cash to hand in -->
     <section id="v-drivers" hidden class="plan">
       <div class="promo-form">
+        <div class="a-dayhead"><h2 class="h-s">Shifts</h2><label>From <input type="date" id="shFrom" /></label></div>
+        <p class="muted">Post the shifts you need; the team signs up in the team app (or you put someone on). Everyone gets a reminder the evening before, and you get an email if a shift tomorrow isn't full.</p>
+        <form class="acts" id="shForm"><input type="date" name="day" required /><input type="time" name="starts" value="09:00" required /><input type="time" name="ends" value="12:00" required />
+          <select name="kind"><option value="packing">Packing</option><option value="driving">Driving</option><option value="counter">Pickup counter</option><option value="other">Other</option></select>
+          <label>People <input name="spots" type="number" min="1" value="1" style="width:60px" /></label><label>Repeat weekly for <input name="repeatWeeks" type="number" min="0" max="12" value="0" style="width:60px" /> weeks</label>
+          <input name="note" placeholder="Note (optional)" /><button class="btn primary sm" type="submit">Add shift</button></form>
+        <div class="a-table-wrap"><table class="a-table mini-t" id="shTable"></table></div>
+      </div>
+      <div class="promo-form">
+        <div class="a-dayhead"><h2 class="h-s">Hours</h2><label>From <input type="date" id="hrFrom" /></label><label>To <input type="date" id="hrTo" /></label><a class="btn line sm owner-only" id="hrCsv">Download (CSV)</a></div>
+        <p class="muted">From check-in and check-out in the team app. Volunteer hours are counted the same way (useful for reference letters). Fix a time by clicking it in the shifts table.</p>
+        <div class="a-table-wrap"><table class="a-table mini-t" id="hrTable"></table></div>
+      </div>
+      <div class="promo-form">
         <div class="a-dayhead"><label class="h-s">Deliveries on <input type="date" id="asgDay" /></label></div>
-        <p class="muted">Choose a driver for each delivery. Drivers see only their own stops in the delivery app. When they press <b>Start route</b>, their customers get the “on its way” email; <b>Delivered</b> (after a photo at the door) sends the thank-you email. You don't need to change those steps here.</p>
+        <p class="muted">Choose a driver for each delivery. Drivers see only their own stops in the team app. When they press <b>Start route</b>, their customers get the “on its way” email; <b>Delivered</b> (after a photo at the door) sends the thank-you email. You don't need to change those steps here.</p>
         <div class="acts"><select id="asgAll"></select><button type="button" class="btn line sm" id="asgAllBtn">Give all unassigned to this driver</button></div>
         <div class="a-table-wrap"><table class="a-table mini-t" id="asgTable"></table></div>
       </div>
@@ -235,10 +250,33 @@ import '../../styles/global.css';
       </div>
       <div class="promo-form">
         <h2 class="h-s">The team</h2>
-        <p class="muted">Add a driver by email: they get an email with the link to the delivery app, log in with a code (Gmail or any email), fill in their details, read the driver guide (edit it in Words) and add the app to their phone. Helpers get the order desk without money or settings. Owners stay in Netlify (ADMIN_EMAILS).</p>
-        <form class="acts owner-only" id="invForm"><input name="email" type="email" placeholder="their@email.com" required /><input name="name" placeholder="Name (optional)" /><select name="role"><option value="driver">Driver</option><option value="helper">Helper</option></select><button class="btn primary sm" type="submit">Add and email them</button></form>
+        <p class="muted">Add people by email. Drivers and packers (paid or volunteer) get the team app: they log in with a code (Gmail or any email), fill in their details and papers, read the team guide (edit it in Words) and add the app to their phone. Helpers get this order desk without money or settings. Owners stay in Netlify (ADMIN_EMAILS).</p>
+        <form class="acts owner-only" id="invForm"><input name="email" type="email" placeholder="their@email.com" required /><input name="name" placeholder="Name (optional)" /><select name="role"><option value="driver">Driver</option><option value="packer">Packer</option><option value="helper">Helper (order desk)</option></select><label><input type="checkbox" name="volunteer" /> Volunteer</label><button class="btn primary sm" type="submit">Add and email them</button></form>
         <div class="a-table-wrap"><table class="a-table mini-t" id="teamTable"></table></div>
         <p class="muted">Deliveries counted per driver for paying them; set how you pay later.</p>
+      </div>
+    </section>
+
+    <!-- PRODUCTION: lots, recall, supplies -->
+    <section id="v-production" hidden class="plan">
+      <div class="promo-form">
+        <h2 class="h-s">Production lots</h2>
+        <p class="muted">Each batch you roast, grind or portion gets a lot code. Packing slips show the lots in each order, so if there's ever a problem with a batch you can find who got it. Put the lot code on the label too.</p>
+        <form class="acts" id="lotForm">
+          <select name="item"></select><label>Made <input type="date" name="made_on" /></label><label>Best before <input type="date" name="best_before" /></label>
+          <input name="quantity" placeholder="Quantity, e.g. 10 kg" /><input name="supplier" placeholder="Supplier / origin (optional)" /><button class="btn primary sm" type="submit">Add lot</button></form>
+        <div class="a-table-wrap"><table class="a-table mini-t" id="lotTable"></table></div>
+      </div>
+      <div class="promo-form">
+        <h2 class="h-s">Recall lookup</h2>
+        <form class="acts" id="recallForm"><input name="code" placeholder="Lot code, e.g. NAJDI-270201-1" required /><button class="btn line sm" type="submit">Find orders</button></form>
+        <div id="recallOut"></div>
+      </div>
+      <div class="promo-form">
+        <div class="a-dayhead"><h2 class="h-s">Supplies</h2><label>Week from <input type="date" id="supFrom" /></label></div>
+        <p class="muted">Type what you have on hand; the needs come from the week's orders. Set "warn at" to see when to reorder.</p>
+        <div class="a-table-wrap"><table class="a-table mini-t" id="supTable"></table></div>
+        <form class="acts" id="supNew"><input name="name" placeholder="Add a supply, e.g. Cardamom" required /><input name="unit" placeholder="Unit (kg, pcs)" style="width:100px" /><button class="btn line sm" type="submit">Add</button></form>
       </div>
     </section>
 
@@ -257,7 +295,10 @@ import '../../styles/global.css';
           <li><b>Pickup address and hours.</b> Tell Claude in a session; it replaces “[address]” across the site and emails.</li>
           <li><b>Photos</b> of the Guest Box and the Coffee Duo (they use the gift box photo for now). Names and prices are drafts too.</li>
           <li><b>GST</b>: ask your accountant whether gift boxes are zero-rated; the site says “GST pending”.</li>
-          <li><b>Settings</b>: Square, e-Transfer email, Twilio, Google review link, GitHub token. The list with ticks is in Settings.</li>
+          <li><b>Settings</b>: Square, e-Transfer email, Twilio, Google review link, GitHub token, shop address. The list with ticks is in Settings.</li>
+          <li><b>Reminder: Google Maps key.</b> Not needed to start: “Navigate to next stop” opens Google Maps for free. Add <code>GOOGLE_MAPS_API_KEY</code> when drivers have about 8 or more stops a day, for the shortest order and km counted by the app. Google's free monthly allowance (5,000 route calls) covers a shop this size; it needs a card on a Google billing account.</li>
+          <li><b>Team</b>: add your drivers and packers (Team tab), post the first shifts, and set limits in Settings (orders per day, gift boxes per day, deliveries per driver).</li>
+          <li><b>Production</b>: start a lot for each coffee and date batch, and count your packaging in Supplies.</li>
           <li><b>Rehearsal</b> (below), then the launch-day steps.</li>
         </ol>
       </div>
@@ -274,6 +315,7 @@ import '../../styles/global.css';
           <li>Buy a $25 gift card by e-Transfer, press Money received in Promotions, check the code arrives, use part of it.</li>
           <li>Ask Hikaya three questions, one by voice and one in Arabizi; read them in Conversations.</li>
           <li>When Square is connected: one $1 card order, then refund it from the desk.</li>
+          <li>Team: add yourself as a packer with a second email, sign up for a shift, check in and out, and pack an order from the team app.</li>
           <li>Write down anything odd and tell Claude.</li>
         </ol>
       </div>
@@ -289,6 +331,9 @@ import '../../styles/global.css';
           <li>Regular orders (every 2 or 4 weeks), order again, text-message reminders</li>
           <li>Ask Hikaya with team answers, backup answers, voice input and Arabizi; Inbox</li>
           <li>Mailing list with consent, Google review emails, visit numbers, monthly report</li>
+          <li>Team app for drivers and packers (paid or volunteer): shifts with sign-up, reminders and check-in, hours, papers with expiry reminders, packing list</li>
+          <li>Limits: orders per day, gift boxes per day, per-product daily limits, deliveries tied to drivers on shift</li>
+          <li>Production lots on every packing slip, recall lookup, supplies against the week's needs</li>
           <li>Words editor for product text and recipes; settings checklist; private preview gate</li>
         </ul>
       </div>
@@ -299,6 +344,8 @@ import '../../styles/global.css';
           <li>Push notifications to drivers when they get new stops (works on iPhone and Android for the installed app).</li>
           <li>An App Store / Google Play version of the delivery app, only if the home-screen app isn't enough.</li>
           <li>Loyalty: a free coffee after a number of orders, if customers ask for it.</li>
+          <li>Labels printed from the desk with lot code and best-before.</li>
+          <li>Costs and margins per product (ingredients + packaging) once prices are final.</li>
           <li>Wholesale price list for cafés, mosques and offices.</li>
           <li>Selling gift cards in person through Square at pickup.</li>
         </ul>
@@ -311,6 +358,13 @@ import '../../styles/global.css';
       <form id="setForm">
         <h2 class="h-s">Taking orders</h2>
         <label class="a-switch"><input type="checkbox" name="open" /> <span>Open for new orders</span></label>
+        <fieldset class="caps"><legend class="h-s">Limits (leave empty for none)</legend>
+          <label>Orders per day, at most <input name="capDaily" type="number" min="1" /></label>
+          <label>Gift boxes we can pack per day <input name="capBoxes" type="number" min="1" /></label>
+          <label class="a-switch"><input type="checkbox" name="capShifts" /> <span>Delivery places follow the drivers on shift (Team → Shifts)</span></label>
+          <label>Stops one driver can do per time window <input name="capStops" type="number" min="1" /></label>
+          <p class="muted">With the switch on, a time window with no driver on shift takes no deliveries. A product's own daily limit is in Products (“Per day”).</p>
+        </fieldset>
         <label class="a-switch"><input type="checkbox" name="autoConfirm" /> <span>Confirm new orders automatically (customers get the confirmation email straight away)</span></label>
         <h2 class="h-s">Places per time window</h2>
         <div class="two">
@@ -349,7 +403,8 @@ import '../../styles/global.css';
   .a-top { position: sticky; top: 0; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 12px clamp(16px, 3vw, 32px); background: var(--paper); border-bottom: 1px solid var(--line); }
   .a-top .lockup img { width: 40px; }
   .a-top .wm b { font-size: 24px; }
-  .a-tabs { display: flex; gap: 4px; }
+  .a-tabs { display: flex; flex-wrap: wrap; gap: 2px 4px; flex: 1 1 600px; min-width: 0; }
+  .a-tabs button, .a-tabs .drv-link { white-space: nowrap; }
   .a-tabs button { border: 0; background: none; padding: 9px 14px; border-radius: 999px; font-weight: 600; }
   .a-tabs button[aria-pressed='true'] { background: var(--bunn); color: var(--paper); }
   .a-who { margin-inline-start: auto; display: flex; gap: 12px; align-items: center; font-size: 14px; color: var(--ink-2); }
@@ -480,6 +535,9 @@ import '../../styles/global.css';
   .mini-t :global(th) { padding: 6px 8px !important; }
   .mini-t :global(td) { padding: 8px !important; }
   .linkish { border: 0; background: none; padding: 0; color: var(--tamr); font-weight: 600; text-decoration: underline; cursor: pointer; font: inherit; }
+  .caps { border: 0; padding: 0; margin: 12px 0; display: grid; gap: 8px; }
+  .caps label input[type=number] { width: 90px; margin-inline-start: 8px; }
+  :global(#supTable tr.warn) { background: #F8E9E3; }
   .plan { display: grid; gap: 16px; max-width: 900px; }
   .plan-list { margin: 8px 0 0; padding-inline-start: 22px; display: grid; gap: 8px; line-height: 1.5; }
   .plan-list.done li::marker { content: '✓  '; color: #6E8B4A; }
@@ -510,6 +568,9 @@ import '../../styles/global.css';
 
 <script>
   import { mountLogin, logout } from '../../scripts/login';
+  import { PRODUCTS, DATES } from '../../data/products';
+  const PRODUCT_LIST = PRODUCTS.map(p => ({ id: p.id, kind: p.kind, name: p.name.en }));
+  const DATE_LIST = Object.entries(DATES).map(([id, d]) => ({ id, name: d.name.en }));
   const $ = (id: string) => document.getElementById(id)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
   const money = (c: number) => `$${(c / 100).toFixed(c % 100 ? 2 : 0)}`;
@@ -538,10 +599,10 @@ import '../../styles/global.css';
 
   // ---------- auth ----------
   function showLogin() {
-    for (const id of ['v-orders', 'v-inbox', 'v-day', 'v-week', 'v-numbers', 'v-words', 'v-plan', 'v-drivers', 'v-customers', 'v-products', 'v-promos', 'v-assistant', 'v-chats', 'v-settings', 'tabs', 'who']) $(id).hidden = true;
+    for (const id of ['v-orders', 'v-inbox', 'v-day', 'v-week', 'v-numbers', 'v-words', 'v-plan', 'v-drivers', 'v-customers', 'v-production', 'v-products', 'v-promos', 'v-assistant', 'v-chats', 'v-settings', 'tabs', 'who']) $(id).hidden = true;
     $('login').hidden = false;
     mountLogin($('loginBox'), 'en', user => {
-      if (user.role === 'driver') { location.href = '/admin/driver/'; return; }
+      if (user.role === 'driver' || user.role === 'packer') { location.href = '/admin/driver/'; return; }
       if (user.role !== 'admin' && user.role !== 'staff') { $('notAdmin').hidden = false; return; }
       start(user.email, user.role);
     });
@@ -563,12 +624,13 @@ import '../../styles/global.css';
   // ---------- tabs ----------
   function tab(name: string) {
     document.querySelectorAll<HTMLButtonElement>('#tabs [data-tab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === name)));
-    for (const v of ['orders', 'inbox', 'day', 'week', 'numbers', 'words', 'plan', 'drivers', 'customers', 'products', 'promos', 'assistant', 'chats', 'settings']) $(`v-${v}`).hidden = v !== name;
+    for (const v of ['orders', 'inbox', 'day', 'week', 'numbers', 'words', 'plan', 'drivers', 'customers', 'production', 'products', 'promos', 'assistant', 'chats', 'settings']) $(`v-${v}`).hidden = v !== name;
     if (name === 'products') loadProducts();
     if (name === 'week') loadWeek();
     if (name === 'numbers') loadNumbers();
     if (name === 'words') loadWords();
     if (name === 'drivers') loadDrivers();
+    if (name === 'production') loadProduction();
     if (name === 'customers') loadCustomers();
     if (name === 'promos') loadPromos();
     if (name === 'assistant') loadAssistant();
@@ -805,12 +867,53 @@ import '../../styles/global.css';
     $('asgTable').innerHTML = '<tr><th>Time</th><th>Where</th><th>Customer</th><th>Status</th><th>Driver</th></tr>' + (d.deliveries.map((o: any) => `<tr><td>${esc(o.window)}</td><td>${esc(o.postal)}<br><small>${esc(o.street)}</small></td><td>${esc(o.gift ? o.gift.to + ' (gift)' : o.name)}<br><small>${esc(o.ref)}</small></td>
       <td>${STATUS_LABEL[o.status] ?? esc(o.status)}</td><td>${o.status === 'completed' ? esc(o.driver ?? '') : `<select data-asg="${esc(o.ref)}">${opts(o.driver)}</select>`}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No deliveries this day.</td></tr>');
     $('teamTable').innerHTML = '<tr><th>Name</th><th>Role</th><th>Status</th><th>Delivered (7 days / this month)</th><th>Cash not handed in</th><th></th></tr>' + (t.team.map((m: any) => `<tr><td>${esc(m.name || '–')}<br><small>${esc(m.email)}${m.phone ? ' · ' + esc(m.phone) : ''}${m.vehicle ? ' · ' + esc(m.vehicle) : ''}</small></td>
-      <td>${m.role === 'driver' ? 'Driver' : 'Helper'}</td><td>${m.status === 'off' ? 'Off' : m.agreedAt ? 'Ready' : 'Invited, not set up yet'}</td><td>${m.week} / ${m.month}</td><td>${m.cash ? money(m.cash) : '–'}</td>
+      <td>${({ driver: 'Driver', packer: 'Packer', helper: 'Helper' } as any)[m.role] ?? esc(m.role)}${m.volunteer ? '<br><small>Volunteer</small>' : ''}</td><td>${m.status === 'off' ? 'Off' : m.agreedAt ? 'Ready' : 'Invited, not set up yet'}${paperNote(m)}</td><td>${m.week} / ${m.month}</td><td>${m.cash ? money(m.cash) : '–'}</td>
       <td class="owner-only">${m.status !== 'off' ? `<button type="button" data-resend="${m.id}">Email the link again</button> <a class="btn line sm" target="_blank" rel="noopener" href="https://wa.me/${esc((m.phone ?? '').replace(/\D/g, '').replace(/^(\d{10})$/, '1$1'))}?text=${encodeURIComponent(shareText(m))}">WhatsApp</a> <button type="button" data-copy="${esc(shareText(m))}">Copy link</button> ` : ''}${m.status === 'off' ? `<button type="button" data-mem="${m.id}" data-st="active">Turn on</button>` : `<button type="button" data-mem="${m.id}" data-st="off">Turn off</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No drivers yet. Add one above.</td></tr>');
-    loadDriverReports();
+    loadDriverReports(); loadShiftsDesk(); loadHours();
     $('cashBox').innerHTML = `<h2 class="h-s">Cash to hand in</h2>` + (t.cash.length ? `<ul class="a-pack">${t.cash.map((c: any) => `<li><span>${esc(c.driver)} · ${c.orders} order${c.orders === 1 ? '' : 's'}</span><b>${money(c.cents)}</b> <button type="button" class="owner-only" data-cash="${esc(c.driver)}">Received</button></li>`).join('')}</ul>` : '<p class="muted">Nothing waiting.</p>');
   }
   asgDay.addEventListener('change', loadDrivers);
+  const shFrom = $('shFrom') as HTMLInputElement, hrFrom = $('hrFrom') as HTMLInputElement, hrTo = $('hrTo') as HTMLInputElement;
+  let teamPeople: any[] = [];
+  async function loadShiftsDesk() {
+    const t = await api('/api/admin/team'); teamPeople = t.team.filter((m: any) => m.status !== 'off');
+    const d = await api(`/api/admin/shifts${shFrom.value ? `?from=${shFrom.value}` : ''}`);
+    const who = (kind: string) => teamPeople.filter(m => kind === 'driving' ? m.role === 'driver' : m.role !== 'driver' || kind === 'other');
+    $('shTable').innerHTML = '<tr><th>Day</th><th>Shift</th><th>People</th><th>Who</th><th></th></tr>' + (d.shifts.map((x: any) => `<tr data-sid="${x.id}"><td>${fmtDay(x.day)}</td><td>${esc(x.label)} ${esc(x.starts)}–${esc(x.ends)}${x.note ? `<br><small>${esc(x.note)}</small>` : ''}</td>
+      <td style="${x.people.length < x.spots ? 'color:var(--tamr-2);font-weight:700' : ''}">${x.people.length} / ${x.spots}</td>
+      <td>${x.people.map((p: any) => `<span class="pill">${esc(p.name || p.email)}${p.how === 'assigned' ? ' (put on)' : ''} <button type="button" class="linkish" data-times="${esc(p.email)}" title="Fix check-in/out">${p.in ? `⏱ ${new Date(p.in).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false })}–${p.out ? new Date(p.out).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false }) : '…'}` : '⏱'}</button> <button type="button" class="linkish" data-unassign="${esc(p.email)}" title="Take off this shift">×</button></span>`).join(' ')}
+        ${x.people.length < x.spots ? `<select data-assign><option value="">Put someone on…</option>${who(x.kind).filter(m => !x.people.some((p: any) => p.email === m.email)).map(m => `<option value="${esc(m.email)}">${esc(m.name || m.email)}</option>`).join('')}</select>` : ''}</td>
+      <td><button type="button" class="linkish" data-del="1">Delete</button></td></tr>`).join('') || '<tr><td colspan="5" class="muted">No shifts yet. Add one above.</td></tr>');
+    shFrom.value ||= d.shifts[0]?.day ?? '';
+  }
+  $('shForm').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target as HTMLFormElement, v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement).value;
+    const r = await api('/api/admin/shifts', { day: v('day'), starts: v('starts'), ends: v('ends'), kind: v('kind'), spots: Number(v('spots')), repeatWeeks: Number(v('repeatWeeks')), note: v('note') });
+    alert(`Added ${r.made} shift${r.made === 1 ? '' : 's'}.`); if (!shFrom.value || shFrom.value > v('day')) shFrom.value = v('day'); loadShiftsDesk();
+  });
+  $('shTable').addEventListener('change', async e => {
+    const sel = e.target as HTMLSelectElement; if (!('assign' in sel.dataset) || !sel.value) return;
+    await api(`/api/admin/shifts/${sel.closest<HTMLElement>('tr')!.dataset.sid}/assign`, { email: sel.value }); loadShiftsDesk();
+  });
+  $('shTable').addEventListener('click', async e => {
+    const el = e.target as HTMLElement, tr = el.closest<HTMLElement>('tr[data-sid]'); if (!tr) return; const id = tr.dataset.sid;
+    if (el.dataset.del && confirm('Delete this shift? The people on it are emailed.')) { await api(`/api/admin/shifts/${id}/delete`, {}); loadShiftsDesk(); }
+    if (el.dataset.unassign && confirm(`Take ${el.dataset.unassign} off this shift?`)) { await api(`/api/admin/shifts/${id}/unassign`, { email: el.dataset.unassign }); loadShiftsDesk(); }
+    if (el.dataset.times) {
+      const i = prompt('Checked in at (YYYY-MM-DD HH:MM, Calgary time; empty to clear):', ''); if (i === null) return;
+      const o = prompt('Checked out at (YYYY-MM-DD HH:MM; empty if not yet):', ''); if (o === null) return;
+      const iso = (v: string) => v.trim() ? new Date(v.trim().replace(' ', 'T') + ':00').toISOString() : null;
+      await api(`/api/admin/shifts/${id}/times`, { email: el.dataset.times, in: iso(i), out: iso(o) }); loadShiftsDesk(); loadHours();
+    }
+  });
+  async function loadHours() {
+    if (!hrFrom.value) { const n = new Date(); hrFrom.value = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-01`; hrTo.value = new Date(Date.UTC(n.getFullYear(), n.getMonth() + 1, 0)).toISOString().slice(0, 10); }
+    const qs = `from=${hrFrom.value}&to=${hrTo.value}`;
+    const h = await api(`/api/admin/hours?${qs}`);
+    ($('hrCsv') as HTMLAnchorElement).href = `/api/admin/hours.csv?${qs}`;
+    $('hrTable').innerHTML = '<tr><th>Person</th><th>Role</th><th>Shifts</th><th>Hours</th><th>Not checked out</th></tr>' + (h.people.map((p: any) => `<tr><td>${esc(p.name || p.email)}</td><td>${esc(p.role ?? 'owner')}${p.volunteer ? ' · volunteer' : ''}</td><td>${p.shifts}</td><td>${(p.minutes / 60).toFixed(1)}</td><td>${p.missing || ''}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No shifts in these dates.</td></tr>');
+  }
+  shFrom.addEventListener('change', loadShiftsDesk); hrFrom.addEventListener('change', loadHours); hrTo.addEventListener('change', loadHours);
   const drFrom = $('drFrom') as HTMLInputElement, drTo = $('drTo') as HTMLInputElement;
   async function loadDriverReports() {
     const t = await api('/api/admin/team');
@@ -836,9 +939,14 @@ import '../../styles/global.css';
     if (!refs.length) { alert('Every delivery already has a driver.'); return; }
     const r = await api('/api/admin/assign', { refs, driver: ($('asgAll') as HTMLSelectElement).value }); alert(`Assigned ${r.assigned}.`); loadDrivers();
   });
-  const appLink = (m: any) => `${location.origin}/admin/${m.role === 'driver' ? 'driver/' : ''}`;
-  const shareText = (m: any) => m.role === 'driver'
-    ? `Hikaya delivery app: ${appLink(m)}\nLog in with ${m.email} (we email you a code), fill in your details and read the guide. Then add it to your home screen: iPhone Safari → Share → Add to Home Screen; Android Chrome → Install app.`
+  const paperNote = (m: any) => {
+    const t = new Date().toISOString().slice(0, 10), soon = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
+    const docs = [m.role === 'driver' ? ['Licence', m.licence] : null, m.role === 'driver' ? ['Insurance', m.insurance] : null, m.foodCert ? ['Food cert', m.foodCert] : null].filter(Boolean) as [string, string | null][];
+    return docs.map(([k, v]) => `<br><small style="${!v || v < t ? 'color:var(--tamr-2);font-weight:700' : v <= soon ? 'color:var(--tamr-2)' : ''}">${k}: ${v ? (v < t ? `expired ${v}` : `until ${v}`) : 'missing'}</small>`).join('');
+  };
+  const appLink = (m: any) => `${location.origin}/admin/${m.role !== 'helper' ? 'driver/' : ''}`;
+  const shareText = (m: any) => m.role !== 'helper'
+    ? `Hikaya team app: ${appLink(m)}\nLog in with ${m.email} (we email you a code), fill in your details and read the guide. Then add it to your home screen: iPhone Safari → Share → Add to Home Screen; Android Chrome → Install app.`
     : `Hikaya order desk: ${appLink(m)}\nLog in with ${m.email}; we email you a code.`;
   $('teamTable').addEventListener('click', async e => {
     const rs = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-resend]');
@@ -855,8 +963,39 @@ import '../../styles/global.css';
   });
   $('invForm').addEventListener('submit', async e => {
     e.preventDefault(); const f = e.target as HTMLFormElement, v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement).value;
-    await api('/api/admin/team', { email: v('email'), name: v('name'), role: v('role') }); f.reset(); alert('Added. They have an email with the link and the steps.'); loadDrivers();
+    await api('/api/admin/team', { email: v('email'), name: v('name'), role: v('role'), volunteer: (f.elements.namedItem('volunteer') as HTMLInputElement).checked }); f.reset(); alert('Added. They have an email with the link and the steps.'); loadDrivers();
   });
+
+  // ---------- production ----------
+  async function loadProduction() {
+    const [l, sp] = await Promise.all([api('/api/admin/lots'), api(`/api/admin/supplies${($('supFrom') as HTMLInputElement).value ? `?from=${($('supFrom') as HTMLInputElement).value}` : ''}`)]);
+    const sel = ($('lotForm') as HTMLFormElement).elements.namedItem('item') as HTMLSelectElement;
+    if (!sel.options.length) sel.innerHTML = `<optgroup label="Coffee">${PRODUCT_LIST.filter(p => p.kind === 'coffee').map(p => `<option value="coffee|${p.id}">${esc(p.name)}</option>`).join('')}</optgroup><optgroup label="Dates">${DATE_LIST.map(d => `<option value="dates|${d.id}">${esc(d.name)}</option>`).join('')}</optgroup>`;
+    $('lotTable').innerHTML = '<tr><th>Lot</th><th>What</th><th>Made</th><th>Best before</th><th>Quantity</th><th></th></tr>' + (l.lots.map((x: any) => `<tr class="${x.usedUpOn ? 'off' : ''}"><td class="ref">${esc(x.code)}</td><td>${esc(x.name)}${x.supplier ? `<br><small>${esc(x.supplier)}</small>` : ''}</td><td>${fmtDay(x.madeOn)}</td><td>${x.bestBefore ? fmtDay(x.bestBefore) : '–'}</td><td>${esc(x.quantity ?? '')}</td>
+      <td>${x.usedUpOn ? `Used up ${fmtDay(x.usedUpOn)}` : `<button type="button" data-used="${esc(x.code)}">Used up</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No lots yet.</td></tr>');
+    $('supTable').innerHTML = '<tr><th>Supply</th><th>On hand</th><th>Needed this week</th><th>Warn at</th><th></th></tr>' + sp.supplies.map((x: any) => `<tr data-sup="${esc(x.key)}" class="${x.short || x.low ? 'warn' : ''}"><td>${esc(x.name)}</td>
+      <td><input class="sup-have" type="number" min="0" step="any" value="${x.onHand ?? ''}" style="width:90px" /> ${esc(x.unit)}</td><td>${x.needThisWeek ?? '–'}${x.short ? ` <b style="color:var(--tamr-2)">short ${x.short}</b>` : ''}</td>
+      <td><input class="sup-low" type="number" min="0" step="any" value="${x.lowAt ?? ''}" style="width:80px" /></td><td><button type="button" data-supsave="1">Save</button>${x.low ? ' <b style="color:var(--tamr-2)">Low</b>' : ''}</td></tr>`).join('');
+  }
+  $('lotForm').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target as HTMLFormElement, v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement).value;
+    const [kind, id] = v('item').split('|');
+    const r = await api('/api/admin/lots', { item_kind: kind, item_id: id, made_on: v('made_on'), best_before: v('best_before'), quantity: v('quantity'), supplier: v('supplier') });
+    alert(`Lot code: ${r.code}. Put it on the labels.`); f.reset(); loadProduction();
+  });
+  $('lotTable').addEventListener('click', async e => { const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-used]'); if (b && confirm(`Mark ${b.dataset.used} as used up today?`)) { await api(`/api/admin/lots/${encodeURIComponent(b.dataset.used!)}/used`, {}); loadProduction(); } });
+  $('recallForm').addEventListener('submit', async e => {
+    e.preventDefault(); const code = ((e.target as HTMLFormElement).elements.namedItem('code') as HTMLInputElement).value.trim();
+    const r = await api(`/api/admin/recall?code=${encodeURIComponent(code)}`);
+    $('recallOut').innerHTML = `<p><b>${esc(r.lot.code)}</b> · ${esc(r.lot.name)} · made ${fmtDay(r.lot.madeOn)}${r.lot.usedUpOn ? `, used up ${fmtDay(r.lot.usedUpOn)}` : ''} · <b>${r.orders.length}</b> order${r.orders.length === 1 ? '' : 's'} <a class="owner-only" href="/api/admin/recall.csv?code=${encodeURIComponent(r.lot.code)}">Download (CSV)</a></p>
+      <div class="a-table-wrap"><table class="a-table mini-t"><tr><th>Order</th><th>Customer</th><th>Day</th><th>Status</th></tr>${r.orders.map((o: any) => `<tr><td class="ref">${esc(o.ref)}</td><td>${esc(o.name)}<br><small>${esc(o.email)} · ${esc(o.phone)}</small></td><td>${fmtDay(o.day)}</td><td>${STATUS_LABEL[o.status] ?? esc(o.status)}</td></tr>`).join('')}</table></div>`;
+  });
+  $('supTable').addEventListener('click', async e => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-supsave]'); if (!b) return; const tr = b.closest<HTMLElement>('tr')!;
+    await api(`/api/admin/supplies/${encodeURIComponent(tr.dataset.sup!)}`, { onHand: (tr.querySelector('.sup-have') as HTMLInputElement).value, lowAt: (tr.querySelector('.sup-low') as HTMLInputElement).value }); loadProduction();
+  });
+  $('supNew').addEventListener('submit', async e => { e.preventDefault(); const f = e.target as HTMLFormElement; await api('/api/admin/supplies/new', { name: (f.elements.namedItem('name') as HTMLInputElement).value, unit: (f.elements.namedItem('unit') as HTMLInputElement).value || 'pcs' }); f.reset(); loadProduction(); });
+  $('supFrom').addEventListener('change', loadProduction);
 
   // ---------- customers ----------
   async function loadCustomers() {
@@ -890,6 +1029,7 @@ import '../../styles/global.css';
       <h2>${esc(o.gift ? o.gift.to : o.name)}</h2><p>${o.method === 'delivery' ? `Delivery · ${esc(o.street)}, ${esc(o.postal)}` : 'Pickup'}${o.gift ? ` · gift from ${esc(o.name)}` : ''}</p>
       <table>${o.items.map((i: any) => `<tr><td class="q">${i.qty} ×</td><td>${esc(i.name_en)}${i.option_en ? ` <small>(${esc(i.option_en)})</small>` : ''}</td><td class="box">☐</td></tr>`).join('')}</table>
       ${o.notes ? `<p class="note">Customer note: ${esc(o.notes)}</p>` : ''}${o.customerNote ? `<p class="note">Team note: ${esc(o.customerNote)}</p>` : ''}
+      ${o.lots?.length ? `<p class="note">Lots: ${o.lots.map(esc).join(', ')}</p>` : ''}
       <p>${o.paymentStatus === 'paid' ? 'Paid' : o.payment === 'at-pickup' ? `Collect ${money(o.total)}` : 'Not paid yet'}${o.gift ? ' · GIFT: no prices in the bag' : ''}</p></section>
       ${o.gift && o.gift.message ? `<section class="card"><p class="msg">${esc(o.gift.message)}</p><p class="from">— ${esc(o.name)}</p><p class="brand">حكاية · Hikaya</p></section>` : ''}`;
     const w = window.open('', '_blank'); if (!w) { alert('Allow pop-ups to print the slips.'); return; }
@@ -987,6 +1127,7 @@ import '../../styles/global.css';
       <td><input type="checkbox" class="vis" ${p.visible ? 'checked' : ''} aria-label="Shown on the site" /></td>
       <td><input type="checkbox" class="sold" ${p.available ? '' : (p.visible && (!p.season || d.seasons[p.season]) ? 'checked' : '')} aria-label="Sold out" /></td>
       <td><input class="stock-in" type="number" min="0" step="1" value="${p.stock ?? ''}" placeholder="No limit" aria-label="Stock left" /></td>
+      <td><input class="cap-in" type="number" min="1" step="1" value="${p.dailyCap ?? ''}" placeholder="No limit" aria-label="Most per day" /></td>
       <td>${p.waiting ? `<b title="People who asked to be emailed when it is back">${p.waiting}</b>` : ''}</td>
       <td><button type="button" class="save">Save</button></td></tr>`).join('');
     document.querySelectorAll<HTMLTableRowElement>('#products tbody tr').forEach(tr => {
@@ -996,6 +1137,7 @@ import '../../styles/global.css';
       tr.querySelector('.save')!.addEventListener('click', () => save({
         price_cents: Math.round(Number((tr.querySelector('.price-in') as HTMLInputElement).value) * 100),
         stock: (tr.querySelector('.stock-in') as HTMLInputElement).value === '' ? null : Number((tr.querySelector('.stock-in') as HTMLInputElement).value),
+        daily_cap: (tr.querySelector('.cap-in') as HTMLInputElement).value === '' ? null : Number((tr.querySelector('.cap-in') as HTMLInputElement).value),
       }));
     });
   }
@@ -1129,6 +1271,10 @@ import '../../styles/global.css';
     const f = $('setForm') as HTMLFormElement;
     (f.elements.namedItem('open') as HTMLInputElement).checked = s.ordering.open;
     (f.elements.namedItem('autoConfirm') as HTMLInputElement).checked = Boolean(s.ordering.autoConfirm);
+    (f.elements.namedItem('capDaily') as HTMLInputElement).value = s.caps?.dailyOrders ?? '';
+    (f.elements.namedItem('capBoxes') as HTMLInputElement).value = s.caps?.giftBoxesPerDay ?? '';
+    (f.elements.namedItem('capStops') as HTMLInputElement).value = s.caps?.stopsPerDriver ?? '';
+    (f.elements.namedItem('capShifts') as HTMLInputElement).checked = Boolean(s.caps?.deliveryFromShifts);
     (f.elements.namedItem('pickup') as HTMLInputElement).value = s.capacity.pickup;
     (f.elements.namedItem('delivery') as HTMLInputElement).value = s.capacity.delivery;
     f.querySelectorAll<HTMLInputElement>('[name=cutoffMode]').forEach(i => { i.checked = i.value === s.ordering.cutoffMode; });
@@ -1155,6 +1301,8 @@ import '../../styles/global.css';
     await api('/api/admin/settings', {
       open: (f.elements.namedItem('open') as HTMLInputElement).checked,
       autoConfirm: (f.elements.namedItem('autoConfirm') as HTMLInputElement).checked,
+      caps: { dailyOrders: (f.elements.namedItem('capDaily') as HTMLInputElement).value, giftBoxesPerDay: (f.elements.namedItem('capBoxes') as HTMLInputElement).value,
+        stopsPerDriver: (f.elements.namedItem('capStops') as HTMLInputElement).value, deliveryFromShifts: (f.elements.namedItem('capShifts') as HTMLInputElement).checked },
       capacity: { pickup: Number((f.elements.namedItem('pickup') as HTMLInputElement).value), delivery: Number((f.elements.namedItem('delivery') as HTMLInputElement).value) },
       cutoffMode: (f.querySelector('[name=cutoffMode]:checked') as HTMLInputElement | null)?.value,
       cutoffWeekday: Number((f.elements.namedItem('cutoffWeekday') as HTMLSelectElement).value),
@@ -1168,7 +1316,7 @@ import '../../styles/global.css';
   (async () => {
     const me = await fetch('/api/me').then(r => r.json()).catch(() => ({ user: null }));
     if (me.error === 'preview') { location.replace(`/admin/?code=${Date.now()}`); return; }
-    if (me.user?.role === 'driver') { location.href = '/admin/driver/'; return; }
+    if (me.user?.role === 'driver' || me.user?.role === 'packer') { location.href = '/admin/driver/'; return; }
     if (me.user?.role === 'admin' || me.user?.role === 'staff') start(me.user.email, me.user.role); else showLogin();
   })();
 </script>

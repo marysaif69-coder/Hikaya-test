@@ -1,7 +1,7 @@
 {
-  "name": "Hikaya Deliveries",
-  "short_name": "Hikaya Drive",
-  "description": "Hikaya's delivery app: today's stops, photos at the door and payments.",
+  "name": "Hikaya Team",
+  "short_name": "Hikaya Team",
+  "description": "Hikaya's team app: shifts, packing, deliveries and hours.",
   "start_url": "/admin/driver/",
   "scope": "/admin/driver/",
   "display": "standalone",

@@ -13,14 +13,18 @@ export const SERVICE_DAYS = [4, 5, 6, 0]; // Thu, Fri, Sat, Sun
 const TZ = 'America/Edmonton';
 
 export type Ordering = { open: boolean; autoConfirm?: boolean; firstDay: string; cutoffHour: number; cutoffMode: 'day-before' | 'weekly'; cutoffWeekday: number; closedDates: string[] };
-export type Settings = { capacity: { pickup: number; delivery: number }; ordering: Ordering };
+/** Extra limits (all optional): orders per day, gift boxes per day (packing time), and delivery
+ * places taken from the drivers on driving shifts × stops each driver can do per window. */
+export type Caps = { dailyOrders: number | null; giftBoxesPerDay: number | null; stopsPerDriver: number | null; deliveryFromShifts: boolean };
+export type Settings = { capacity: { pickup: number; delivery: number }; ordering: Ordering; caps: Caps };
 
 export async function getSettings(): Promise<Settings> {
-  const rows = await sql`SELECT key, value FROM settings WHERE key IN ('capacity', 'ordering')`;
+  const rows = await sql`SELECT key, value FROM settings WHERE key IN ('capacity', 'ordering', 'caps')`;
   const m = Object.fromEntries(rows.map(r => [r.key, typeof r.value === 'string' ? JSON.parse(r.value) : r.value]));
   return {
     capacity: { pickup: 12, delivery: 8, ...m.capacity },
     ordering: { open: true, firstDay: '2027-01-22', cutoffHour: 20, cutoffMode: 'day-before', cutoffWeekday: 2, closedDates: [], ...m.ordering },
+    caps: { dailyOrders: null, giftBoxesPerDay: null, stopsPerDriver: null, deliveryFromShifts: false, ...m.caps },
   };
 }
 
@@ -65,13 +69,16 @@ export async function availability(days = 42, now = new Date()) {
   const taken = await sql`SELECT slot_date::text AS d, slot_window AS w, method, COUNT(*)::int AS n FROM orders
     WHERE status <> 'cancelled' AND NOT is_sample AND slot_date BETWEEN ${from} AND ${to} GROUP BY 1, 2, 3`;
   const used = new Map(taken.map(r => [`${r.d}|${r.w}|${r.method}`, r.n]));
+  const perDay = new Map<string, number>(); for (const r of taken) perDay.set(r.d, (perDay.get(r.d) ?? 0) + r.n);
+  const deliveryCap = await deliveryCapacity(s, from, to);
   const out: { date: string; orderBy: { date: string; hour: number }; windows: { window: string; pickup: number; delivery: number }[] }[] = [];
   for (let d = from; d <= to; d = addDays(d, 1)) {
     if (!bookable(d, s.ordering, now)) continue;
+    const dayLeft = s.caps.dailyOrders ? Math.max(0, s.caps.dailyOrders - (perDay.get(d) ?? 0)) : Infinity;
     out.push({ date: d, orderBy: cutoffFor(d, s.ordering), windows: WINDOWS.map(w => ({
       window: w,
-      pickup: Math.max(0, s.capacity.pickup - (used.get(`${d}|${w}|pickup`) ?? 0)),
-      delivery: Math.max(0, s.capacity.delivery - (used.get(`${d}|${w}|delivery`) ?? 0)),
+      pickup: Math.min(dayLeft, Math.max(0, s.capacity.pickup - (used.get(`${d}|${w}|pickup`) ?? 0))),
+      delivery: Math.min(dayLeft, Math.max(0, deliveryCap(d, w) - (used.get(`${d}|${w}|delivery`) ?? 0))),
     })) });
   }
   // The next deadline and the days it covers, for "order by … to get it …" messages.
@@ -89,5 +96,18 @@ export async function assertBookable(date: string, window: string, method: 'pick
   if (s.ordering.closedDates.includes(date)) throw new HttpError(409, 'closed-day', 'We are closed that day. Choose another.');
   if (!bookable(date, s.ordering, now)) throw new HttpError(409, 'too-soon', 'Orders for that day have closed. Choose a later day.');
   const row = await one`SELECT COUNT(*)::int AS n FROM orders WHERE status <> 'cancelled' AND NOT is_sample AND slot_date = ${date} AND slot_window = ${window} AND method = ${method}`;
-  if ((row?.n ?? 0) >= s.capacity[method]) throw new HttpError(409, 'slot-full', 'That time is full. Please choose another.');
+  const cap = method === 'delivery' ? (await deliveryCapacity(s, date, date))(date, window) : s.capacity.pickup;
+  if ((row?.n ?? 0) >= cap) throw new HttpError(409, 'slot-full', method === 'delivery' && cap === 0 ? 'No deliveries at that time. Please choose another time or pickup.' : 'That time is full. Please choose another.');
+  if (s.caps.dailyOrders) {
+    const d = await one`SELECT COUNT(*)::int AS n FROM orders WHERE status <> 'cancelled' AND NOT is_sample AND slot_date = ${date}`;
+    if ((d?.n ?? 0) >= s.caps.dailyOrders) throw new HttpError(409, 'slot-full', 'That day is full. Please choose another.');
+  }
+}
+
+/** Delivery places per window: the window limit, or fewer when tied to the drivers on shift. */
+async function deliveryCapacity(s: Settings, from: string, to: string) {
+  if (!s.caps.deliveryFromShifts || !s.caps.stopsPerDriver) return () => s.capacity.delivery;
+  const { driversOnShift } = await import('./team');
+  const on = await driversOnShift(from, to);
+  return (date: string, window: string) => Math.min(s.capacity.delivery, on(date, window) * (s.caps.stopsPerDriver ?? 0));
 }

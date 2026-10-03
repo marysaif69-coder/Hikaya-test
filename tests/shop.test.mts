@@ -428,7 +428,7 @@ assert.equal(dme.needsOnboarding, true); assert.ok(dme.guide.points.length >= 5)
 assert.equal((await call(driverApi, '/api/driver/stops', { cookie: dan })).data.error, 'onboarding');
 assert.equal((await call(driverApi, '/api/driver/onboard', { cookie: dan, body: { name: 'Dan', phone: '403 555 0123' } })).status, 400);
 const obMails = sent.length;
-assert.equal((await call(driverApi, '/api/driver/onboard', { cookie: dan, body: { name: 'Dan Driver', phone: '403 555 0123', vehicle: 'Grey Corolla', agree: true } })).status, 200);
+assert.equal((await call(driverApi, '/api/driver/onboard', { cookie: dan, body: { name: 'Dan Driver', phone: '403 555 0123', vehicle: 'Grey Corolla', agree: true, licence_expires: '2028-06-01', insurance_expires: '2028-06-01' } })).status, 200);
 assert.ok(sent.slice(obMails).some(m => /has joined as a driver/.test(m.subject))); ok('onboarding: details and agreeing to the guide; the owners are told');
 
 const dl1 = await order({ method: 'delivery', street: '1 Main St', postal: 'T2P1J9', day: '2027-01-30', payment: 'at-pickup', email: 'door1@example.com' });
@@ -469,7 +469,7 @@ assert.equal((await call(driverApi, '/api/driver/me', { cookie: dan })).status, 
 // ---------- routes, mileage and reports ----------
 await call(admin, '/api/admin/team', { cookie: adm, body: { email: 'eve@example.com', name: 'Eve', role: 'driver' } });
 const eve = await login('eve@example.com');
-await call(driverApi, '/api/driver/onboard', { cookie: eve, body: { name: 'Eve Driver', phone: '403 555 0124', agree: true } });
+await call(driverApi, '/api/driver/onboard', { cookie: eve, body: { name: 'Eve Driver', phone: '403 555 0124', agree: true, licence_expires: '2028-06-01', insurance_expires: '2028-06-01' } });
 const ev1 = await order({ method: 'delivery', street: '10 A St', postal: 'T2P1J9', day: '2027-02-04', window: '11:00–14:00', email: 'e1@example.com' });
 const ev2 = await order({ method: 'delivery', street: '20 B St', postal: 'T3A0A1', day: '2027-02-04', window: '11:00–14:00', email: 'e2@example.com', payment: 'at-pickup' });
 const ev3 = await order({ method: 'delivery', street: '30 C St', postal: 'T2N0A1', day: '2027-02-04', window: '17:00–20:00', email: 'e3@example.com' });
@@ -526,6 +526,105 @@ await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [ev5.data.re
 const noMaps = (await call(driverApi, '/api/driver/start?date=2027-02-06', { cookie: eve, body: {} })).data;
 assert.equal(noMaps.optimized, false); assert.equal(noMaps.km, null);
 assert.deepEqual((await call(driverApi, '/api/driver/stops?date=2027-02-06', { cookie: eve })).data.stops.map((x: any) => x.ref), [ev6.data.ref, ev5.data.ref]); ok('without the Maps key: stops by time window and area, still works');
+
+// ---------- the team: packers, volunteers, papers, shifts, hours ----------
+await call(admin, '/api/admin/team', { cookie: adm, body: { email: 'pat@example.com', name: 'Pat', role: 'packer', volunteer: true } });
+const pat = await login('pat@example.com');
+assert.equal((await call(auth, '/api/me', { cookie: pat })).data.user.role, 'packer');
+assert.equal((await call(admin, '/api/admin/orders', { cookie: pat })).status, 403);
+assert.equal((await call(driverApi, '/api/driver/me', { cookie: pat })).data.needsOnboarding, true);
+await call(driverApi, '/api/driver/onboard', { cookie: pat, body: { name: 'Pat Packer', phone: '403 555 0130', agree: true, food_cert_expires: '2026-10-20' } });
+assert.equal((await call(driverApi, '/api/driver/stops', { cookie: pat })).status, 403); ok('a volunteer packer onboards and gets the team app, not deliveries or the desk');
+const pk1 = await order({ day: '2027-02-11', email: 'pk1@example.com' });
+const packList = (await call(driverApi, '/api/driver/pack?date=2027-02-11', { cookie: pat })).data.orders;
+assert.ok(packList.some((o: any) => o.ref === pk1.data.ref));
+assert.equal((await call(driverApi, '/api/driver/pack?date=2027-02-11', { cookie: eve })).status, 403);
+const pkMails = sent.length;
+await call(driverApi, '/api/driver/packed', { cookie: pat, body: { ref: pk1.data.ref } });
+assert.equal((await pg.query(`SELECT status, packed_by FROM orders WHERE ref = $1`, [pk1.data.ref])).rows[0].packed_by, 'pat@example.com');
+assert.ok(sent.slice(pkMails).some(m => m.subject === `Order ${pk1.data.ref} is ready for pickup`)); ok('packing list; "packed" makes a pickup order ready and emails the customer');
+
+// shifts
+assert.equal((await call(admin, '/api/admin/shifts', { cookie: adm, body: { day: '2027-02-11', starts: '12:00', ends: '09:00', kind: 'packing' } })).status, 400);
+await call(admin, '/api/admin/shifts', { cookie: adm, body: { day: '2027-02-11', starts: '09:00', ends: '12:00', kind: 'packing', spots: 1, repeatWeeks: 1 } });
+await call(admin, '/api/admin/shifts', { cookie: helper, body: { day: '2027-02-11', starts: '13:00', ends: '20:00', kind: 'driving', spots: 2 } });
+const sh = (await call(admin, '/api/admin/shifts?from=2027-02-11', { cookie: adm })).data.shifts;
+assert.equal(sh.length, 3); ok('owners and helpers post shifts, repeating weekly if they want');
+const packShift = sh.find((x: any) => x.kind === 'packing' && x.day === '2027-02-11'), driveShift = sh.find((x: any) => x.kind === 'driving');
+assert.equal((await call(driverApi, `/api/driver/shifts/${driveShift.id}/signup`, { cookie: pat, body: {} })).status, 403);
+assert.equal((await call(driverApi, `/api/driver/shifts/${packShift.id}/signup`, { cookie: pat, body: {} })).status, 200);
+assert.equal((await call(driverApi, `/api/driver/shifts/${packShift.id}/signup`, { cookie: helper, body: {} })).data.error, 'full'); ok('people sign up for shifts that fit their role; full shifts are closed');
+assert.equal((await call(driverApi, `/api/driver/shifts/${driveShift.id}/signup`, { cookie: eve, body: {} })).status, 200);
+const myShifts = (await call(driverApi, '/api/driver/shifts?from=2027-02-08', { cookie: pat })).data.shifts;
+assert.equal(myShifts.find((x: any) => x.id === packShift.id).mine, true);
+// papers: an expired licence stops driving
+await pg.query(`UPDATE team_members SET licence_expires = '2027-01-01' WHERE email = 'eve@example.com'`);
+assert.equal((await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [pk1.data.ref], driver: 'eve@example.com' } })).data.error, 'papers');
+const papMails = sent.length;
+await daily('2026-10-05');
+assert.ok(sent.slice(papMails).some(m => /Expiring soon: food handler certificate \(Pat Packer\)/.test(m.subject)));
+const papMails2 = sent.length; await daily('2026-10-06'); assert.ok(!sent.slice(papMails2).some(m => /Expir/.test(m.subject)));
+const papMails3 = sent.length; await daily('2027-01-03');
+assert.ok(sent.slice(papMails3).some(m => /Expired: driver's licence \(Eve Driver\)/.test(m.subject))); ok('papers: expired licence blocks deliveries; one reminder before things expire');
+await pg.query(`UPDATE team_members SET licence_expires = '2028-06-01' WHERE email = 'eve@example.com'`);
+// reminders and gaps the evening before
+const shMails = sent.length;
+await daily('2027-02-10');
+const shSubj = sent.slice(shMails);
+assert.ok(shSubj.some(m => m.to.includes('pat@example.com') && /Tomorrow: Packing 09:00–12:00/.test(m.subject)));
+assert.ok(shSubj.some(m => /Tomorrow needs people/.test(m.subject) && /Driving 13:00–20:00: 1 of 2/.test(m.text))); ok('shift reminders the evening before; owners told about empty spots');
+// assigning by the owners
+await call(admin, `/api/admin/shifts/${driveShift.id}/assign`, { cookie: adm, body: { email: 'dan@example.com' } }).catch(() => null);
+// hours: check in and out on the day (the team can correct times)
+assert.equal((await call(driverApi, `/api/driver/shifts/${packShift.id}/in`, { cookie: pat, body: {} })).data.error, 'not-today');
+await call(admin, `/api/admin/shifts/${packShift.id}/times`, { cookie: adm, body: { email: 'pat@example.com', in: '2027-02-11T16:00:00Z', out: '2027-02-11T19:30:00Z' } });
+const hrs = (await call(admin, '/api/admin/hours?from=2027-02-01&to=2027-02-28', { cookie: adm })).data;
+const patH = hrs.people.find((p: any) => p.email === 'pat@example.com');
+assert.equal(patH.minutes, 210); assert.equal(patH.volunteer, true);
+const hcsv = String((await call(admin, '/api/admin/hours.csv?from=2027-02-01&to=2027-02-28', { cookie: adm })).data);
+assert.match(hcsv, /2027-02-11,pat@example.com,packing,09:00–12:00,.*,3\.50/);
+assert.equal((await call(driverApi, '/api/driver/hours?from=2027-02-01&to=2027-02-28', { cookie: pat })).data.people[0].minutes, 210); ok('hours from check-in/out (volunteer hours too), CSV for the owners, and each person sees their own');
+
+// ---------- capacity caps ----------
+await call(admin, '/api/admin/settings', { cookie: adm, body: { caps: { dailyOrders: 3, giftBoxesPerDay: 1, stopsPerDriver: 2, deliveryFromShifts: true } } });
+const capDay = '2027-02-12';
+const slotsCap = (await call(orders, '/api/slots')).data.days.find((d: any) => d.date === capDay);
+assert.equal(slotsCap.windows[0].delivery, 0); ok('no driver on shift: no delivery places that day');
+await call(admin, '/api/admin/shifts', { cookie: adm, body: { day: capDay, starts: '11:00', ends: '14:00', kind: 'driving', spots: 1 } });
+const capShift = (await call(admin, `/api/admin/shifts?from=${capDay}`, { cookie: adm })).data.shifts.find((x: any) => x.day === capDay);
+await call(driverApi, `/api/driver/shifts/${capShift.id}/signup`, { cookie: eve, body: {} });
+const slotsCap2 = (await call(orders, '/api/slots')).data.days.find((d: any) => d.date === capDay);
+assert.equal(slotsCap2.windows[0].delivery, 2); assert.equal(slotsCap2.windows[1].delivery, 0); ok('one driver on the 11–2 shift: 2 delivery places in that window only');
+assert.equal((await order({ day: capDay, lines: [{ id: 'guest-box', qty: 2 }] })).data.error, 'day-limit');
+assert.equal((await order({ day: capDay, lines: [{ id: 'guest-box', qty: 1 }] })).status, 201);
+assert.equal((await order({ day: capDay, lines: [{ id: 'coffee-duo', qty: 1 }] })).data.error, 'day-limit'); ok('gift boxes per day (packing time) are limited');
+await call(admin, '/api/admin/products/najdi', { cookie: adm, body: { daily_cap: 1 } });
+assert.equal((await order({ day: capDay, lines: [{ id: 'najdi', opt: 'dallah', qty: 2 }] })).data.error, 'day-limit');
+assert.equal((await order({ day: capDay, lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] })).status, 201); ok('a product can have its own daily limit');
+await call(admin, '/api/admin/products/najdi', { cookie: adm, body: { daily_cap: null } });
+assert.equal((await order({ day: capDay, lines: [{ id: 'radaey', opt: 'dallah', qty: 1 }] })).status, 201);
+assert.equal((await order({ day: capDay })).data.error, 'slot-full'); ok('orders per day are limited');
+await call(admin, '/api/admin/settings', { cookie: adm, body: { caps: { dailyOrders: null, giftBoxesPerDay: null, stopsPerDriver: null, deliveryFromShifts: false } } });
+
+// ---------- lots, recall, supplies ----------
+assert.equal((await call(admin, '/api/admin/lots', { cookie: adm, body: { item_kind: 'coffee', item_id: 'nope' } })).status, 400);
+const lot1 = (await call(admin, '/api/admin/lots', { cookie: adm, body: { item_kind: 'coffee', item_id: 'najdi', made_on: '2027-02-01', best_before: '2027-08-01', quantity: '10 kg' } })).data.code;
+const lot2 = (await call(admin, '/api/admin/lots', { cookie: helper, body: { item_kind: 'dates', item_id: 'khalas', made_on: '2027-02-01' } })).data.code;
+assert.equal(lot1, 'NAJDI-270201-1'); assert.equal(lot2, 'KHALAS-270201-1'); ok('production lots get a code (product, date, number)');
+const lo1 = await order({ day: '2027-02-13', lines: [{ id: 'guest-box', qty: 1 }], email: 'lot1@example.com' });
+const lo2 = await order({ day: '2027-02-13', lines: [{ id: 'sanaani', opt: 'dallah', qty: 1 }], email: 'lot2@example.com' }).catch(() => null);
+const dayLots = (await call(admin, '/api/admin/day?date=2027-02-13', { cookie: adm })).data;
+const lotOrder = dayLots.pickups.flatMap((w: any) => w.orders).find((o: any) => o.ref === lo1.data.ref);
+assert.deepEqual(lotOrder.lots.sort(), [lot2, lot1].sort()); ok('packing slips show the lots in each order (coffee inside gift boxes too)');
+const rcl = (await call(admin, `/api/admin/recall?code=${lot1}`, { cookie: adm })).data;
+assert.ok(rcl.orders.some((o: any) => o.ref === lo1.data.ref)); assert.ok(!rcl.orders.some((o: any) => o.email === 'lot2@example.com'));
+assert.match(String((await call(admin, `/api/admin/recall.csv?code=${lot1}`, { cookie: adm })).data), /lot1@example.com/); ok('recall: every order that may have had the lot, with contacts, as a CSV');
+await call(admin, `/api/admin/lots/${lot1}/used`, { cookie: adm, body: { on: '2027-02-05' } });
+assert.ok(!(await call(admin, `/api/admin/recall?code=${lot1}`, { cookie: adm })).data.orders.some((o: any) => o.ref === lo1.data.ref)); ok('a lot used up stops counting after that day');
+await call(admin, '/api/admin/supplies/boxC12', { cookie: adm, body: { onHand: 0, lowAt: 5 } });
+const sup = (await call(admin, '/api/admin/supplies?from=2027-02-11', { cookie: adm })).data.supplies.find((x: any) => x.key === 'boxC12');
+assert.ok(sup.needThisWeek >= 1); assert.equal(sup.short, sup.needThisWeek); assert.equal(sup.low, true);
+assert.equal((await call(admin, '/api/admin/supplies/boxC12', { cookie: adm, body: { onHand: -3 } })).status, 400); ok("supplies on hand against the week's needs, with low warnings");
 
 // ---------- confirming orders ----------
 const newO = await order({ day: '2027-01-31' });

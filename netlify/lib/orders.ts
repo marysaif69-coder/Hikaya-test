@@ -3,7 +3,7 @@ import { HttpError, str, isEmail, siteUrl } from './http';
 import { hash, token, isAdminEmail, type Session } from './auth';
 import { priceCart, totals, type PricedLine } from './pricing';
 import { assertBookable, bookable, getSettings } from './slots';
-import { liveCatalog, takeStock, giveStock, restock } from './catalog';
+import { liveCatalog, takeStock, giveStock, restock, assertDayLimits } from './catalog';
 import { checkPromo, redeem, unredeem, type Applied } from './promos';
 import { send, orderEmail, teamAlert, type OrderMailKind } from './email';
 import { randomInt } from 'node:crypto';
@@ -49,6 +49,7 @@ export async function createOrder(input: any, s: Session | null, cardEnabled: bo
 
   const lines = priceCart(input?.lines, await liveCatalog());
   await assertBookable(str(input?.day, 10), str(input?.window, 20), method);
+  await assertDayLimits(str(input?.day, 10), lines, (await getSettings()).caps.giftBoxesPerDay);
   const sub = lines.reduce((n, l) => n + l.unit_cents * l.qty, 0);
   let promo: Applied | null = null;
   if (str(input?.promo, 32)) {
@@ -187,6 +188,7 @@ export async function moveOrder(ref: string, day: string, window: string, actor:
     const s = await getSettings();
     if (!bookable(cur, s.ordering)) throw new HttpError(409, 'too-late', 'It is too late to change this order online. Reply to your confirmation email and we will help.');
     await assertBookable(day, window, o.method);
+    await assertDayLimits(day, (await items(o.id)).map(i => ({ product_id: i.product_id, qty: i.qty })), s.caps.giftBoxesPerDay, o.id);
   } else if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !window) throw new HttpError(400, 'bad-slot', 'Choose a day and a time.');
   const moved = await one`UPDATE orders SET slot_date = ${day}, slot_window = ${window}, reminded_at = NULL, sms_reminded_at = NULL, updated_at = NOW() WHERE id = ${o.id} RETURNING *`;
   await event(o.id, 'moved', `${cur} ${o.slot_window} → ${day} ${window}`, actor);

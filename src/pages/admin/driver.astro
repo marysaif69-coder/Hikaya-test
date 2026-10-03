@@ -15,20 +15,19 @@ import '../../styles/global.css';
   <meta name="theme-color" content="#33211A" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="Hikaya Drive" />
+  <meta name="apple-mobile-web-app-title" content="Hikaya Team" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="/admin-driver.webmanifest" />
   <link rel="apple-touch-icon" href="/brand/app-180.png" />
-  <title>Hikaya Deliveries</title>
+  <title>Hikaya Team</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 </head>
 <body class="drv">
   <header class="d-top">
-    <b class="brand">Hikaya Drive</b>
+    <b class="brand">Hikaya Team</b>
     <input type="date" id="day" aria-label="Day" hidden />
     <button type="button" id="reload" aria-label="Refresh" hidden>↻</button>
-    <button type="button" id="reportBtn" class="ghost" hidden>Report</button>
-    <button type="button" id="guideBtn" class="ghost" hidden>Guide</button>
+
   </header>
   <main>
     <section id="login" hidden class="card"><h1 class="h-m">Log in</h1><p class="muted">Use the email the owners added. We email you a 6-digit code.</p><div id="loginBox"></div><p class="err" id="notTeam" hidden>This email is not on the drivers list yet. Ask the owners to add you.</p></section>
@@ -45,12 +44,41 @@ import '../../styles/global.css';
       <form id="obForm" novalidate>
         <label>Your name<input name="name" autocomplete="name" required /></label>
         <label>Your phone<input name="phone" type="tel" inputmode="tel" autocomplete="tel" required /></label>
-        <label>Car (optional, e.g. "Grey Corolla, ABC 123")<input name="vehicle" /></label>
+        <label class="drv-only">Car (e.g. "Grey Corolla, ABC 123")<input name="vehicle" /></label>
+        <label class="drv-only">Driver's licence expires<input name="licence_expires" type="date" /></label>
+        <label class="drv-only">Car insurance expires<input name="insurance_expires" type="date" /></label>
+        <label>Food handler certificate expires (if you have one)<input name="food_cert_expires" type="date" /></label>
         <div class="guide" id="obGuide"></div>
-        <label class="tick"><input type="checkbox" name="agree" /> <span>I have read the driver guide and will follow it.</span></label>
+        <label class="tick"><input type="checkbox" name="agree" /> <span>I have read the team guide and will follow it.</span></label>
         <p class="err" id="obErr" hidden></p>
         <button type="submit" class="b done">Start</button>
       </form>
+    </section>
+
+    <section id="shiftsBox" hidden>
+      <p class="muted small">Sign up for shifts that fit you. Leave a shift up to 24 hours before; after that, message the owners. Check in when you arrive and out when you leave.</p>
+      <div id="shiftList" class="shifts"></div>
+    </section>
+
+    <section id="packBox" hidden>
+      <p id="packSummary" class="muted"></p>
+      <div class="row1"><button type="button" class="b map" id="packAll">Show all</button><button type="button" class="b map" id="packTodo">Still to pack</button></div>
+      <ol id="packList" class="stops"></ol>
+    </section>
+
+    <section id="meBox" hidden class="card">
+      <h1 class="h-m" id="meName"></h1>
+      <p class="muted small" id="meRole"></p>
+      <div class="totals" id="meHours"></div>
+      <form id="meForm" novalidate>
+        <label>Phone<input name="phone" type="tel" inputmode="tel" /></label>
+        <label class="drv-only">Car<input name="vehicle" /></label>
+        <label class="drv-only">Driver's licence expires<input name="licence_expires" type="date" /></label>
+        <label class="drv-only">Car insurance expires<input name="insurance_expires" type="date" /></label>
+        <label>Food handler certificate expires<input name="food_cert_expires" type="date" /></label>
+        <button type="submit" class="b ghost2">Save my details</button>
+      </form>
+      <div class="row1"><button type="button" class="b map drv-only" id="reportBtn">Delivery report</button><button type="button" class="b map" id="guideBtn">Team guide</button></div>
     </section>
 
     <section id="reportBox" hidden class="card">
@@ -84,6 +112,12 @@ import '../../styles/global.css';
       <ol id="stops" class="stops"></ol>
     </section>
   </main>
+  <nav class="tabbar" id="tabbar" hidden>
+    <button type="button" data-go="shiftsBox">Shifts</button>
+    <button type="button" data-go="packBox" class="pack-only">Pack</button>
+    <button type="button" data-go="app" class="drv-only">Deliver</button>
+    <button type="button" data-go="meBox">Me</button>
+  </nav>
   <input type="file" accept="image/*" capture="environment" id="cam" hidden />
 </body>
 </html>
@@ -136,6 +170,23 @@ import '../../styles/global.css';
   .b.ghost2 { background: none; color: var(--bunn); box-shadow: inset 0 0 0 1.5px var(--bunn); }
   .stops :global(small) { color: var(--ink-2); }
   .err { color: var(--tamr-2); font-weight: 600; }
+  main { padding-bottom: 90px; }
+  .tabbar { position: fixed; inset: auto 0 0 0; z-index: 6; display: flex; background: var(--sheet); box-shadow: 0 -1px 0 var(--line); padding-bottom: env(safe-area-inset-bottom); }
+  .tabbar[hidden] { display: none; }
+  .tabbar button { flex: 1; border: 0; background: none; padding: 14px 4px; font: inherit; font-weight: 700; color: var(--ink-2); }
+  .tabbar button[aria-current="page"] { color: var(--bunn); box-shadow: inset 0 3px 0 var(--khalal); }
+  :global(body.no-drive) .drv-only, :global(body.no-pack) .pack-only { display: none !important; }
+  #shiftsBox[hidden], #packBox[hidden], #meBox[hidden] { display: none; }
+  .shifts { display: grid; gap: 10px; }
+  .shifts :global(h3) { margin: 10px 0 0; font-size: 15px; color: var(--ink-2); }
+  .shifts :global(.sh) { background: var(--sheet); border-radius: 16px; padding: 14px; display: grid; gap: 8px; box-shadow: inset 0 0 0 1px var(--line); }
+  .shifts :global(.sh.mine) { box-shadow: inset 0 0 0 2px var(--bunn); }
+  .shifts :global(.sh .top) { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; }
+  .shifts :global(.sh small) { color: var(--ink-2); }
+  .shifts :global(.sh button) { min-height: 46px; border-radius: 12px; border: 0; font: inherit; font-weight: 700; background: var(--khalal); color: var(--bunn); }
+  .shifts :global(.sh button.ghost3) { background: none; box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink-2); }
+  .stops :global(.lots) { font-size: 13px; color: var(--ink-2); }
+  .stops :global(li.packed) { opacity: .55; }
   .small { font-size: 14px; }
   .from { display: flex; flex-wrap: wrap; gap: 14px; font-weight: 600; }
   .from input[type=date] { border: 1.5px solid var(--line); border-radius: 10px; padding: 6px 8px; font: inherit; }
@@ -163,7 +214,12 @@ import '../../styles/global.css';
   const $ = (id: string) => document.getElementById(id)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
   const money = (c: number) => `$${(c / 100).toFixed(c % 100 ? 2 : 0)}`;
-  const show = (id: string) => { for (const s of ['login', 'onboard', 'app', 'guideBox', 'reportBox']) $(s).hidden = s !== id; };
+  const show = (id: string) => {
+    for (const s of ['login', 'onboard', 'app', 'guideBox', 'reportBox', 'shiftsBox', 'packBox', 'meBox']) $(s).hidden = s !== id;
+    document.querySelectorAll<HTMLButtonElement>('#tabbar [data-go]').forEach(b => { if (b.dataset.go === id) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+    const dated = id === 'app' || id === 'packBox';
+    $('day').hidden = !dated; $('reload').hidden = !dated;
+  };
   const api = async (url: string, data?: object) => {
     const r = await fetch(url, data ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) } : undefined);
     const b = await r.json().catch(() => ({}));
@@ -311,20 +367,22 @@ import '../../styles/global.css';
     ($('rCsv') as HTMLAnchorElement).href = `/api/driver/report.csv?${qs}`;
   }
   $('reportBtn').addEventListener('click', () => { show('reportBox'); $('install').hidden = true; loadReport(); });
-  $('reportClose').addEventListener('click', () => show('app'));
+  $('reportClose').addEventListener('click', () => show('meBox'));
   rFrom.addEventListener('change', loadReport); rTo.addEventListener('change', loadReport);
-  dayIn.addEventListener('change', load);
-  $('reload').addEventListener('click', load);
+  const reloadView = () => (!$('packBox').hidden ? loadPack() : load());
+  dayIn.addEventListener('change', reloadView);
+  $('reload').addEventListener('click', reloadView);
   document.querySelectorAll('input[name=who]').forEach(r => r.addEventListener('change', load));
   $('guideBtn').addEventListener('click', () => show('guideBox'));
-  $('guideClose').addEventListener('click', () => show('app'));
+  $('guideClose').addEventListener('click', () => show('meBox'));
 
   // ---------- onboarding ----------
   $('obForm').addEventListener('submit', async e => {
     e.preventDefault();
     const f = e.target as HTMLFormElement, v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement);
     $('obErr').hidden = true;
-    const r = await fetch('/api/driver/onboard', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: v('name').value, phone: v('phone').value, vehicle: v('vehicle').value, agree: v('agree').checked }) });
+    const r = await fetch('/api/driver/onboard', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: v('name').value, phone: v('phone').value, vehicle: v('vehicle').value, agree: v('agree').checked,
+      licence_expires: v('licence_expires').value, insurance_expires: v('insurance_expires').value, food_cert_expires: v('food_cert_expires').value }) });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { $('obErr').textContent = d.message ?? 'Check the form.'; $('obErr').hidden = false; return; }
     boot();
@@ -344,14 +402,86 @@ import '../../styles/global.css';
     $('guideText').innerHTML = guideHtml(d.guide);
     installHint();
     if (d.needsOnboarding) {
+      document.body.classList.toggle('no-drive', d.role === 'packer');
       show('onboard'); $('obGuide').innerHTML = guideHtml(d.guide);
       const f = $('obForm') as HTMLFormElement; if (d.member?.name) (f.elements.namedItem('name') as HTMLInputElement).value = d.member.name;
       return;
     }
-    show('app');
-    for (const id of ['day', 'reload', 'guideBtn', 'reportBtn']) $(id).hidden = false;
+    const drives = d.role !== 'packer', packs = d.role !== 'driver';
+    document.body.classList.toggle('no-drive', !drives); document.body.classList.toggle('no-pack', !packs);
+    $('tabbar').hidden = false;
     $('filter').hidden = d.role === 'driver';
-    load();
+    if (drives) { show('app'); load(); } else { show('packBox'); loadPack(); }
   }
+
+  // ---------- tabs ----------
+  $('tabbar').addEventListener('click', e => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-go]'); if (!b) return;
+    const go = b.dataset.go!; show(go);
+    if (go === 'app') load(); if (go === 'packBox') loadPack(); if (go === 'shiftsBox') loadShifts(); if (go === 'meBox') loadMe();
+  });
+
+  // ---------- shifts ----------
+  const dayName = (iso: string) => new Date(iso + 'T12:00:00Z').toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' });
+  const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' });
+  async function loadShifts() {
+    const d = await api('/api/driver/shifts');
+    let last = '';
+    $('shiftList').innerHTML = d.shifts.map((x: any) => {
+      const head = x.day !== last ? `<h3>${dayName(x.day)}</h3>` : ''; last = x.day;
+      const full = x.people.length >= x.spots, isToday = x.day === today();
+      const act = x.mine
+        ? (isToday ? (x.me?.out ? '<small>Checked out. Thank you.</small>' : x.me?.in ? `<button type="button" data-sh="out" data-id="${x.id}">Check out</button>` : `<button type="button" data-sh="in" data-id="${x.id}">Check in</button>`) : `<button type="button" class="ghost3" data-sh="leave" data-id="${x.id}">Leave this shift</button>`)
+        : x.canTake && !full ? `<button type="button" data-sh="signup" data-id="${x.id}">Sign up</button>` : `<small>${full ? 'Full' : 'For other roles'}</small>`;
+      return `${head}<div class="sh ${x.mine ? 'mine' : ''}"><div class="top"><span>${esc(x.label)} · ${esc(x.starts)}–${esc(x.ends)}</span><span>${x.people.length}/${x.spots}</span></div>
+        ${x.note ? `<small>${esc(x.note)}</small>` : ''}${x.people.length ? `<small>With: ${x.people.map((p: any) => esc(p.name)).join(', ')}</small>` : ''}${act}</div>`;
+    }).join('') || '<p class="muted">No shifts posted yet.</p>';
+  }
+  $('shiftList').addEventListener('click', async e => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-sh]'); if (!b) return;
+    if (b.dataset.sh === 'leave' && !confirm('Leave this shift?')) return;
+    await api(`/api/driver/shifts/${b.dataset.id}/${b.dataset.sh}`, {}); loadShifts();
+  });
+
+  // ---------- packing ----------
+  let packFilter: 'all' | 'todo' = 'todo';
+  async function loadPack() {
+    const d = await api(`/api/driver/pack${dayIn.value ? `?date=${dayIn.value}` : ''}`);
+    dayIn.value = d.date;
+    const todo = d.orders.filter((o: any) => !o.packed);
+    $('packSummary').textContent = d.orders.length ? `${d.orders.length} order${d.orders.length === 1 ? '' : 's'}, ${todo.length} still to pack.` : 'No orders this day.';
+    const list = packFilter === 'todo' ? todo : d.orders;
+    $('packList').innerHTML = list.map((o: any) => `<li class="${o.packed ? 'packed' : ''}" data-ref="${esc(o.ref)}">
+      <div class="h"><b>${esc(o.window)}</b><small>${esc(o.ref)} · ${o.method === 'delivery' ? 'Delivery' : 'Pickup'}</small></div>
+      <div class="addr">${esc(o.name)}</div>
+      ${o.gift ? `<div class="gift">Gift from ${esc(o.gift.from)}${o.gift.message ? `: card says “${esc(o.gift.message)}”` : ''}. No prices in the bag.</div>` : ''}
+      <div>${o.items.map((i: any) => `${i.qty}× ${esc(i.name)}${i.option ? ` (${esc(i.option)})` : ''}`).join('<br>')}</div>
+      ${o.lots.length ? `<div class="lots">Lots: ${o.lots.map(esc).join(', ')}</div>` : ''}
+      ${o.notes ? `<div class="note">Customer's note: ${esc(o.notes)}</div>` : ''}${o.customerNote ? `<div class="note">Team note: ${esc(o.customerNote)}</div>` : ''}
+      ${o.packed ? '<small>Packed</small>' : `<button type="button" class="b done" data-pack="${esc(o.ref)}">Packed</button>`}</li>`).join('');
+  }
+  $('packAll').addEventListener('click', () => { packFilter = 'all'; loadPack(); });
+  $('packTodo').addEventListener('click', () => { packFilter = 'todo'; loadPack(); });
+  $('packList').addEventListener('click', async e => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-pack]'); if (!b) return;
+    b.disabled = true; await api('/api/driver/packed', { ref: b.dataset.pack }).finally(() => { b.disabled = false; }); loadPack();
+  });
+
+  // ---------- me ----------
+  async function loadMe() {
+    const d = await api('/api/driver/me'), m = d.member ?? {};
+    $('meName').textContent = m.name || d.email;
+    $('meRole').textContent = `${d.email} · ${({ driver: 'Driver', packer: 'Packer', staff: 'Team', admin: 'Owner' } as any)[d.role] ?? d.role}${m.volunteer ? ' · Volunteer' : ''}`;
+    const f = $('meForm') as HTMLFormElement;
+    for (const k of ['phone', 'vehicle', 'licence_expires', 'insurance_expires', 'food_cert_expires']) (f.elements.namedItem(k) as HTMLInputElement).value = m[k] ?? '';
+    const h = await api('/api/driver/hours');
+    const mine = h.people[0];
+    $('meHours').innerHTML = `<div><b>${mine?.shifts ?? 0}</b><small>shifts this month</small></div><div><b>${mine ? (mine.minutes / 60).toFixed(1) : 0}</b><small>hours</small></div><div><b>${mine?.missing ?? 0}</b><small>no check-out</small></div>`;
+  }
+  $('meForm').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target as HTMLFormElement, v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement).value;
+    await api('/api/driver/profile', { phone: v('phone'), vehicle: v('vehicle'), licence_expires: v('licence_expires'), insurance_expires: v('insurance_expires'), food_cert_expires: v('food_cert_expires') });
+    alert('Saved.'); loadMe();
+  });
   boot();
 </script>

@@ -44,6 +44,21 @@ All sent through Resend from the site itself; no n8n or Zapier needed. Admin →
 - **Day sheet → Packing slips & gift cards**: one printable slip per order, plus a card page with the gift message.
 - **Evening email** to owners and helpers with tomorrow's run sheet; **low-stock** email to owners when a limited product reaches 3.
 
+## The team: roles, shifts, hours, papers
+- **Roles** (Admin → Team): drivers, packers and helpers, each can be marked volunteer. Owners stay in `ADMIN_EMAILS`. Drivers and packers use the team app (`/admin/driver/`, installable); helpers use the desk.
+- **Team app tabs**: Shifts (sign up, leave up to 24 h before, check in/out on the day), Pack (packers and helpers: the day's orders with items, lots, gift messages; "Packed" makes a pickup order ready and emails the customer), Deliver (drivers), Me (details, papers, hours, report, guide).
+- **Shifts**: owners or helpers post them (repeat weekly if wanted) and can put people on; reminders go out the evening before, and owners get an email if tomorrow has empty spots. Hours come from check-in/out (fixable in the desk) with a CSV, volunteer hours included.
+- **Papers**: driver's licence and car insurance (drivers, required at onboarding) and food handler certificate, with expiry dates. One reminder 30 days before expiry and again if expired; drivers with expired papers can't be given deliveries, sign up for driving shifts or start a route.
+
+## Limits (Settings → Limits; Products → "Per day")
+- Orders per day, gift boxes per day (packing time), and per-product daily limits are checked at checkout and when an order is moved.
+- "Delivery places follow the drivers on shift": each delivery window gets drivers on a driving shift overlapping it × stops per driver (never more than the window's own limit); no driver, no deliveries in that window.
+
+## Production and supplies (Admin → Production)
+- **Lots**: one per batch (coffee or date variety), code like `NAJDI-270201-1`, made and best-before dates, quantity, supplier. The lot in use is the newest made on or before the day and not used up; packing slips and the packing list show each order's lots (including coffee and dates inside gift boxes).
+- **Recall lookup**: a lot code → every order from the day it was made until it was marked used up, with contacts and a CSV.
+- **Supplies**: packaging on hand vs what the week's orders need, with a "warn at" level; add your own lines (spices, bags).
+
 ## The desk at a glance
 - **Orders, Inbox, Day sheet** as before. **Week sheet**: coffee to roast and grind (kg, pouches, how many go in gift boxes), dates to portion, boxes, sleeves and cups for Thursday–Wednesday; printable.
 - **Driver** (`/admin/driver/`, made for a phone): the day's deliveries in postal-code order, Map and Call buttons, gift recipient and card message, "Collect $X" when paying on delivery, On my way / Delivered (emails the customer) / Couldn't deliver (note for the team).

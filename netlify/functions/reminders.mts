@@ -11,6 +11,7 @@ import { sendSms, smsEnabled, reminderText } from '../lib/sms';
 import { runSubscriptions } from '../lib/subscriptions';
 import { sendMonthlyReport } from '../lib/report';
 import { tomorrowEmail } from '../lib/tomorrow';
+import { shiftReminders, paperReminders } from '../lib/team';
 
 export async function daily(today = calgaryNow().date) {
   const tomorrow = addDays(today, 1);
@@ -44,8 +45,10 @@ export async function daily(today = calgaryNow().date) {
   }
   const regular = await runSubscriptions(undefined, today);
   const team = await tomorrowEmail(tomorrow);
+  const shifts = await shiftReminders(today);
+  const papers = await paperReminders(today);
   const report = await sendMonthlyReport(today);
-  const out = { reminders: rows.length, texts, reviews, regular, team, report };
+  const out = { reminders: rows.length, texts, reviews, regular, team, shifts, papers, report };
   console.log('daily', tomorrow, out);
   return out;
 }

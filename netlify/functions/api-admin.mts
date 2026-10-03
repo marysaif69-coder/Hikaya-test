@@ -7,6 +7,8 @@ import { listSubscriptions } from '../lib/subscriptions';
 import { monthlyReport, sendMonthlyReport } from '../lib/report';
 import { smsEnabled } from '../lib/sms';
 import { teamList, drivers, cashToHandIn, invite, cashReceived, setMember, assign, confirmNew, payRates, savePayRates } from '../lib/delivery';
+import { shiftsFrom, saveShift, deleteShift, assignShift, unassign, fixTimes, hours, hoursCsv } from '../lib/team';
+import { listLots, addLot, usedUp, recall, supplies, saveSupply, lotsOn, lotsForLines } from '../lib/production';
 import { readContent, saveContent, type FileId } from '../lib/content';
 import { requireTeam } from '../lib/auth';
 import { sql, one } from '../lib/db';
@@ -69,7 +71,7 @@ export default async (req: Request) => {
     // Helpers can read everything and run orders; money, catalog, settings and exports are owners only.
     if (admin.role !== 'admin') {
       const write = req.method !== 'GET';
-      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write)
+      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write) || parts[0] === 'recall.csv' || parts[0] === 'hours.csv'
         || (write && ['products', 'settings', 'ask', 'connections', 'content', 'giftcards', 'report', 'pay'].includes(parts[0])) || (parts[0] === 'orders' && parts[2] === 'refund');
       if (ownersOnly) throw new HttpError(403, 'owners-only', 'Only the owners can do this.');
     }
@@ -145,7 +147,8 @@ export default async (req: Request) => {
       const pack = await sql`SELECT i.name_en, COALESCE(i.option_en, '') AS option, SUM(i.qty)::int AS qty FROM order_items i JOIN orders o ON o.id = i.order_id
         WHERE o.slot_date = ${date} AND o.status <> 'cancelled' GROUP BY 1, 2 ORDER BY 1, 2`;
       const notes = new Map((await sql`SELECT email, team_note FROM customers WHERE team_note IS NOT NULL AND email IN (SELECT email FROM orders WHERE slot_date = ${date})`).map(c => [c.email, c.team_note]));
-      const withItems = await Promise.all(rows.map(async r => ({ ...summary({ ...r, items: await items(r.id) }), customerNote: notes.get(r.email) ?? null, giftCard: r.gift_card_cents ?? 0, subtotal: r.subtotal_cents, delivery: r.delivery_cents })));
+      const lotsDay = await lotsOn(date);
+      const withItems = await Promise.all(rows.map(async r => ({ ...summary({ ...r, items: await items(r.id) }), lots: lotsForLines(lotsDay, (await items(r.id)).map(i => ({ product_id: i.product_id, option: i.option }))), customerNote: notes.get(r.email) ?? null, giftCard: r.gift_card_cents ?? 0, subtotal: r.subtotal_cents, delivery: r.delivery_cents })));
       return json({
         date,
         pickups: WINDOWS.map(w => ({ window: w, orders: withItems.filter(o => o.method === 'pickup' && o.window === w) })),
@@ -172,6 +175,11 @@ export default async (req: Request) => {
         };
         await sql`INSERT INTO settings (key, value) VALUES ('capacity', ${JSON.stringify(capacity)}::jsonb) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`;
         await sql`INSERT INTO settings (key, value) VALUES ('ordering', ${JSON.stringify(ordering)}::jsonb) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`;
+        if (b.caps && typeof b.caps === 'object') {
+          const n = (v: unknown) => (v === null || v === '' || v === undefined ? null : Math.max(0, Math.min(10000, Math.round(Number(v)) || 0)) || null);
+          const caps = { dailyOrders: n(b.caps.dailyOrders), giftBoxesPerDay: n(b.caps.giftBoxesPerDay), stopsPerDriver: n(b.caps.stopsPerDriver), deliveryFromShifts: b.caps.deliveryFromShifts === true };
+          await sql`INSERT INTO settings (key, value) VALUES ('caps', ${JSON.stringify(caps)}::jsonb) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`;
+        }
       }
       return json(await getSettings());
     }
@@ -220,6 +228,7 @@ export default async (req: Request) => {
         ...(typeof b.visible === 'boolean' ? { visible: b.visible } : {}),
         ...(typeof b.available === 'boolean' ? { available: b.available } : {}),
         ...(b.stock !== undefined ? { stock: b.stock === null || b.stock === '' ? null : Math.round(Number(b.stock)) } : {}),
+        ...(b.daily_cap !== undefined ? { daily_cap: b.daily_cap === null || b.daily_cap === '' ? null : Math.round(Number(b.daily_cap)) } : {}),
       }, admin.email);
       return json({ ok: true, told: await sendBackInStock(req) });
     }
@@ -252,6 +261,37 @@ export default async (req: Request) => {
       return json(await assign(Array.isArray(b.refs) ? b.refs.map((r: unknown) => str(r, 12)) : [], str(b.driver, 254).toLowerCase(), admin.email));
     }
     if (parts[0] === 'confirm-new' && req.method === 'POST') return json(await confirmNew(admin.email, req));
+
+    // ---------- shifts and hours ----------
+    if (parts[0] === 'shifts' && !parts[1] && req.method === 'GET') return json({ shifts: await shiftsFrom(/^\d{4}-\d{2}-\d{2}$/.test(q('from', 10)) ? q('from', 10) : calgaryNow().date, 120) });
+    if (parts[0] === 'shifts' && !parts[1] && req.method === 'POST') return json(await saveShift(await body(req), admin.email));
+    if (parts[0] === 'shifts' && parts[1] && req.method === 'POST') {
+      const id = Number(parts[1]) || 0, b = await body(req);
+      if (parts[2] === 'delete') return json(await deleteShift(id));
+      if (parts[2] === 'assign') return json(await assignShift(id, str(b.email, 254).toLowerCase(), admin.email));
+      if (parts[2] === 'unassign') return json(await unassign(id, str(b.email, 254).toLowerCase()));
+      if (parts[2] === 'times') return json(await fixTimes(id, str(b.email, 254).toLowerCase(), b));
+    }
+    if ((parts[0] === 'hours' || parts[0] === 'hours.csv') && req.method === 'GET') {
+      const today = calgaryNow().date;
+      const h = await hours(/^\d{4}-\d{2}-\d{2}$/.test(q('from', 10)) ? q('from', 10) : today.slice(0, 8) + '01', /^\d{4}-\d{2}-\d{2}$/.test(q('to', 10)) ? q('to', 10) : today, q('email', 254) || undefined);
+      if (parts[0] === 'hours') return json(h);
+      return new Response(hoursCsv(h), { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="hikaya-hours-${h.from}-to-${h.to}.csv"`, 'cache-control': 'no-store' } });
+    }
+
+    // ---------- production: lots, recall, supplies ----------
+    if (parts[0] === 'lots' && !parts[1] && req.method === 'GET') return json({ lots: await listLots() });
+    if (parts[0] === 'lots' && !parts[1] && req.method === 'POST') return json(await addLot(await body(req), admin.email));
+    if (parts[0] === 'lots' && parts[1] && parts[2] === 'used' && req.method === 'POST') return json(await usedUp(parts[1], (await body(req)).on));
+    if ((parts[0] === 'recall' || parts[0] === 'recall.csv') && req.method === 'GET') {
+      const r = await recall(q('code', 40));
+      if (parts[0] === 'recall') return json(r);
+      const cell = (v: unknown) => { const x = String(v ?? ''); return /^[=+\-@]/.test(x) ? `'${x}` : /[",\n]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x; };
+      return new Response(['order,name,email,phone,day,method,status', ...r.orders.map(o => [o.ref, o.name, o.email, o.phone, o.day, o.method, o.status].map(cell).join(','))].join('\n'),
+        { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="hikaya-recall-${r.lot.code}.csv"`, 'cache-control': 'no-store' } });
+    }
+    if (parts[0] === 'supplies' && req.method === 'GET') return json({ supplies: await supplies(/^\d{4}-\d{2}-\d{2}$/.test(q('from', 10)) ? q('from', 10) : weekStart()) });
+    if (parts[0] === 'supplies' && parts[1] && req.method === 'POST') return json(await saveSupply(parts[1], await body(req), admin.email));
 
     // ---------- customers ----------
     if (parts[0] === 'customers' && !parts[1] && req.method === 'GET') {

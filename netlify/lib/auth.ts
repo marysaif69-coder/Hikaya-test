@@ -19,7 +19,7 @@ export async function roleFor(email: string): Promise<Role> {
   if (isAdminEmail(email)) return 'admin';
   if (isStaffEmail(email)) return 'staff';
   const m = await one`SELECT role FROM team_members WHERE email = ${email.toLowerCase()} AND status <> 'off'`;
-  return m ? (m.role === 'helper' ? 'staff' : 'driver') : 'customer';
+  return m ? (m.role === 'helper' ? 'staff' : m.role === 'packer' ? 'packer' : 'driver') : 'customer';
 }
 
 export async function issueCode(email: string) {
@@ -50,7 +50,7 @@ export async function verifyCode(email: string, code: string) {
 export const sessionCookie = (t: string) => `${COOKIE}=${t}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${DAYS * 86400}`;
 export const clearCookie = () => `${COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 
-export type Role = 'customer' | 'driver' | 'staff' | 'admin';
+export type Role = 'customer' | 'driver' | 'packer' | 'staff' | 'admin';
 export type Session = { email: string; role: Role };
 
 export async function session(req: Request): Promise<Session | null> {
@@ -72,11 +72,11 @@ export async function requireAdmin(req: Request) {
 export async function requireTeam(req: Request) {
   const s = await session(req);
   if (!s) throw new HttpError(401, 'login');
-  if (s.role === 'customer' || s.role === 'driver') throw new HttpError(403, 'admin-only');
+  if (s.role === 'customer' || s.role === 'driver' || s.role === 'packer') throw new HttpError(403, 'admin-only');
   return s;
 }
 
-/** Anyone who delivers or runs orders: the team plus drivers (drivers only reach the delivery app). */
+/** Anyone on the team, including drivers and packers (who only reach the team app). */
 export async function requireCrew(req: Request) {
   const s = await session(req);
   if (!s) throw new HttpError(401, 'login');
