@@ -5,12 +5,10 @@ import { HttpError, isEmail, siteUrl } from './http';
 import { hash, token } from './auth';
 import { send, listConfirmEmail } from './email';
 
-export const CONSENT = {
-  en: 'Yes, send me Hikaya letters (about three emails a year: pre-orders, the seasons, news). I can unsubscribe at any time.',
-  ar: 'نعم، أرسلوا لي رسائل حكاية (نحو ثلاث رسائل في السنة: الطلب المسبق، المواسم، الأخبار). أستطيع إلغاء الاشتراك في أي وقت.',
-};
+import { CONSENT } from './consent';
+export { CONSENT };
 
-export async function subscribe(email: string, lang: 'en' | 'ar', source: 'footer' | 'checkout', req?: Request) {
+export async function subscribe(email: string, lang: 'en' | 'ar', source: 'footer' | 'checkout' | 'soon', req?: Request) {
   const e = email.trim().toLowerCase();
   if (!isEmail(e)) throw Object.assign(new HttpError(400, 'invalid', 'Check the email.'), { fields: { email: 'email' } });
   const cur = await one`SELECT confirmed_at, unsubscribed_at FROM subscribers WHERE email = ${e}`;
@@ -36,4 +34,6 @@ export async function unsubscribe(t: string) {
 }
 
 export const listStats = () => one`SELECT COUNT(*) FILTER (WHERE confirmed_at IS NOT NULL AND unsubscribed_at IS NULL)::int AS confirmed,
+  COUNT(*) FILTER (WHERE confirmed_at IS NOT NULL AND unsubscribed_at IS NULL AND source = 'soon')::int AS from_soon,
+  COUNT(*) FILTER (WHERE confirmed_at > NOW() - INTERVAL '7 days' AND unsubscribed_at IS NULL)::int AS this_week,
   COUNT(*) FILTER (WHERE confirmed_at IS NULL AND unsubscribed_at IS NULL)::int AS waiting, COUNT(*) FILTER (WHERE unsubscribed_at IS NOT NULL)::int AS left FROM subscribers`;

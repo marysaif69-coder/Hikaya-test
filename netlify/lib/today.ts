@@ -7,6 +7,7 @@ import { checklists, todayLogs } from './ops';
 import { PRODUCTS } from '../../src/data/products';
 import { dollars } from './pricing';
 import { KIND_LABEL } from './team';
+import { listStats } from './list';
 
 export type Todo = { level: 'now' | 'soon' | 'fyi'; text: string; tab: string; ref?: string };
 
@@ -79,5 +80,7 @@ export async function today(role: string, date = calgaryNow().date) {
       FROM orders WHERE NOT is_sample AND status <> 'cancelled' AND created_at > NOW() - INTERVAL '7 days'`)!;
     money = { today: m.today, week: m.week, orders: m.orders };
   }
-  return { date, counts, todo, money };
+  const l = (await listStats())!;
+  const list = { confirmed: l.confirmed as number, waiting: l.waiting as number, thisWeek: l.this_week as number, fromSoon: l.from_soon as number };
+  return { date, counts, todo, money, list };
 }

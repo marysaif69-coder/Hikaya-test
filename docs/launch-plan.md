@@ -2,6 +2,9 @@
 
 The same list, the launch rehearsal and ideas for later are in the desk: **Admin → Numbers → Plan**.
 
+**Phases from now until after Eid:** `docs/launch-phases.md` (Coming soon + waitlist now, then
+Ramadan pre-orders once the paperwork is done).
+
 ## Before launch: who does what (3 October 2026)
 
 The same list is at the top of Admin → Numbers → Plan.

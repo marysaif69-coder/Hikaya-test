@@ -56,7 +56,7 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
     <div class="wrap">
       <a class="lockup" href={path(lang)} aria-label={lang === 'ar' ? 'حكاية، الصفحة الرئيسية' : 'Hikaya, home'}>
         <img src="/brand/logo.svg" alt="" width="52" height="44" />
-        <span class="wm"><b>حكاية</b><small>HIKAYA</small></span>
+        <picture><source media="(max-width: 430px)" srcset="/brand/wordmark-ar.svg" /><img class="wm-img" src="/brand/wordmark.svg" alt="" width="163" height="30" /></picture>
       </a>
       <nav id="nav" aria-label={lang === 'ar' ? 'الرئيسية' : 'Main'}>
         {nav.map(([k, p]) => <a href={path(lang, p)} aria-current={current === k ? 'page' : undefined} data-season={k === 'ramadan' || k === 'eid' ? k : undefined}>{UI.nav[k][lang]}</a>)}
@@ -86,7 +86,7 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
     <div class="wrap">
       <div class="grid">
         <div class="stack" style="--gap:16px">
-          <a class="lockup" href={path(lang)} aria-label="Hikaya"><img src="/brand/logo.svg" alt="" width="52" height="44" /><span class="wm"><b>حكاية</b><small>HIKAYA</small></span></a>
+          <a class="lockup" href={path(lang)} aria-label="Hikaya"><img src="/brand/logo.svg" alt="" width="52" height="44" /><picture><source media="(max-width: 430px)" srcset="/brand/wordmark-ar.svg" /><img class="wm-img" src="/brand/wordmark.svg" alt="" width="163" height="30" /></picture></a>
           <p class="muted measure">{UI.footLine[lang]}</p>
           <p><a class="ig" href="https://www.instagram.com/hikaya.yyc/" rel="me noopener" target="_blank"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.8" /><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8" /><circle cx="17.3" cy="6.7" r="1.2" fill="currentColor" /></svg><span dir="ltr">@hikaya.yyc</span><span class="sr"> · Instagram</span></a></p>
           <p class="open-line"><span lang="ar">{UI.open.ar}</span>{lang === 'en' && <span class="muted"> · {UI.openEn.en}</span>}</p>
@@ -193,7 +193,7 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
     .ig svg { width: 20px; height: 20px; }
     .open-line { font-family: var(--display); font-size: 22px; }
     .open-line .muted { font-family: var(--body); font-size: 15px; }
-    .lockup img { width: 52px; height: auto; }
+    .lockup img:not(.wm-img) { width: 52px; height: auto; }
     .offseason { display: grid; gap: 18px; padding-block: clamp(64px, 10vw, 140px); max-width: 760px; }
     :global(.sold-out-tag) { font-size: 13px; font-weight: 600; color: var(--tamr-2); }
     .listform { flex-wrap: wrap; }
@@ -206,7 +206,7 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
     :global(.notify-me button) { border: 1.5px solid var(--bunn); background: none; border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
     :global(.notify-me p) { width: 100%; font-size: 13.5px; }
     :global([data-product].is-sold-out .pc-media) { opacity: .55; }
-    @media (max-width: 520px) { .top .lockup img { width: 42px; } }
+    @media (max-width: 520px) { .top .lockup img:not(.wm-img) { width: 42px; } }
   </style>
 </body>
 </html>

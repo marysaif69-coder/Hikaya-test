@@ -35,6 +35,20 @@ const inside = await run('/en/', { headers: { cookie } });
 assert.equal(await inside.text(), '<h1>shop</h1>'); assert.match(inside.headers.get('x-robots-tag')!, /noindex/); ok('with the cookie the site works, still noindex');
 assert.equal((await post('dates-2027', '//evil.example')).headers.get('location'), '/'); ok('cannot redirect to another site');
 
+// ---------- the waitlist on the Coming soon screen ----------
+const runWith = (path: string, init: RequestInit, res: Response) => gate(new Request(H + path, init), { next: async () => res });
+const soon = await (await run('/en/')).text();
+assert.ok(soon.includes('id="wl"') && soon.includes('Tell me') && soon.includes('about three emails a year') && soon.includes('نحو ثلاث رسائل')); ok('the Coming soon screen asks for an email, with the consent text in Arabic and English');
+assert.ok(/<details><summary>للفريق · Team<\/summary>/.test(soon)); ok('the preview code is tucked under "Team"');
+assert.equal(await (await run('/api/list', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })).text(), '<h1>shop</h1>'); ok('joining the list gets through while the site is hidden');
+const conf = await runWith('/api/list/confirm?t=abc', {}, new Response(null, { status: 303, headers: { location: 'https://hikaya.test/ar/thanks/?list=1' } }));
+assert.equal(conf.status, 303); assert.equal(conf.headers.get('location'), '/?list=1');
+assert.ok((await (await run('/?list=1')).text()).includes('you are on the list')); ok('the confirm link from the email lands on "you are on the list"');
+const un = await runWith('/api/list/unsubscribe?t=abc', {}, new Response(null, { status: 303, headers: { location: 'https://hikaya.test/en/thanks/?unsub=1' } }));
+assert.equal(un.headers.get('location'), '/?unsub=1'); assert.ok((await (await run('/?unsub=1')).text()).includes('You are off the list')); ok('unsubscribe links work while the site is hidden');
+assert.equal((await run('/api/list/confirm', { method: 'POST' })).status, 401); assert.equal((await run('/api/orders', { method: 'POST' })).status, 401); ok('everything else on the API stays closed');
+assert.ok(!(await (await run('/?list=1')).text()).includes('<details open>')); assert.ok((await (await post('wrong')).text()).includes('<details open>')); ok('a wrong code opens the Team box again');
+
 process.env.PREVIEW_PASSWORD = 'new-code';
 assert.notEqual(await (await run('/en/', { headers: { cookie } })).text(), '<h1>shop</h1>'); ok('changing the passcode signs everyone out');
 console.log(`\n${pass} checks passed`);

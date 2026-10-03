@@ -102,6 +102,9 @@ h1, h2, h3 { font-family: var(--display); font-weight: 700; line-height: 1.12; m
 .lockup .wm { display: grid; justify-items: center; line-height: 1; }
 .lockup .wm b { font-family: var(--display); font-weight: 700; font-size: 31px; }
 .lockup .wm small { font: 600 9.5px/1 var(--body); letter-spacing: .44em; padding-inline-start: .44em; margin-top: 6px; color: var(--ink-2); }
+/* The official wordmark (حكاية | HIKAYA, logo pack v0.8.1), beside the logo as in the lockup. */
+.lockup .wm-img { height: 30px; width: auto; display: block; }
+.lockup picture { display: block; }
 .top nav { display: flex; gap: 2px; margin-inline: auto; }
 .top nav a { text-decoration: none; padding: 9px 13px; border-radius: 999px; font-size: 15.5px; font-weight: 500; white-space: nowrap; }
 .top nav a:hover { background: var(--paper-2); }
@@ -127,10 +130,20 @@ html[dir='rtl'] .cartbtn { padding: 9px 16px 9px 10px; }
   .lockup svg { width: 42px; }
   .lockup .wm b { font-size: 26px; }
   .lockup .wm small { display: none; }
+  .lockup .wm-img { height: 24px; }
+  .lockup { gap: 8px; }
   .cartbtn .lbl { display: none; }
   .cartbtn, html[dir='rtl'] .cartbtn { padding: 8px 10px; }
   .top .wrap { gap: 6px; min-height: 64px; }
   .langsw { padding: 8px; }
+}
+/* Small phones (360–380 px): keep every header button on screen. */
+@media (max-width: 380px) {
+  .top .acts { gap: 2px; }
+  .menubtn { padding: 7px 10px; }
+  .langsw { padding: 8px 6px; font-size: 14px; }
+  .lockup { gap: 6px; }
+  .lockup .wm-img { height: 21px; }
 }
 
 /* ---------- sections ---------- */

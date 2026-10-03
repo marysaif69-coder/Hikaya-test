@@ -349,6 +349,17 @@ import '../../styles/global.css';
     <!-- PLAN: what is built, what is left before launch, and ideas for later -->
     <section id="v-plan" hidden class="plan">
       <div class="promo-form">
+        <h2 class="h-s">Phases until after Eid</h2>
+        <ol class="plan-list">
+          <li><b>Now: Coming soon + waitlist.</b> The Coming soon page collects emails (Today shows the count). Instagram builds the list: “link in bio, join the list”.</li>
+          <li><b>Ramadan pre-orders</b> open as soon as the paperwork is done (AHS food permit, City business licence, insurance, dates importer or CFIA licence, labels, GST answer); aim for early January. Pickup and delivery from 22 January. Email the whole list that day.</li>
+          <li><b>During Ramadan</b> (about 8 Feb – 8 Mar): Today every morning; Eid boxes on about halfway, with a last day to order.</li>
+          <li><b>Eid</b> (about 9 Mar): Eid deliveries, then both seasons off; thank-you letter.</li>
+          <li><b>After Eid</b>: the everyday shop, regular orders, gift cards. Later: wholesale, loyalty, the café and tastings.</li>
+        </ol>
+        <p class="muted">Details for each phase, including Instagram: <code>docs/launch-phases.md</code>.</p>
+      </div>
+      <div class="promo-form">
         <h2 class="h-s">Before launch: who does what</h2>
         <p class="muted">Everything here is done in the desk or on your phones; nothing needs Claude. Items in order.</p>
         <h3 class="plan-h">Maryam and Shadi (owners)</h3>
@@ -836,7 +847,8 @@ import '../../styles/global.css';
     $('tdTitle').textContent = `Today, ${fmtDay(d.date)}`;
     $('tdStats').innerHTML = [[c.orders, 'orders today'], [c.pickups, 'pickups'], [c.deliveries, 'deliveries'], [c.toPack, 'still to pack'], [c.out, 'out for delivery'], [c.done, 'done']]
       .map(([v, k]) => `<div class="st"><b>${v}</b><span>${k}</span></div>`).join('')
-      + (d.money ? `<div class="st"><b>${money(d.money.today)}</b><span>ordered today (${d.money.orders})</span></div><div class="st"><b>${money(d.money.week)}</b><span>last 7 days</span></div>` : '');
+      + (d.money ? `<div class="st"><b>${money(d.money.today)}</b><span>ordered today (${d.money.orders})</span></div><div class="st"><b>${money(d.money.week)}</b><span>last 7 days</span></div>` : '')
+      + `<div class="st"><b>${d.list.confirmed}</b><span>on the mailing list${d.list.thisWeek ? ` (+${d.list.thisWeek} this week)` : ''}${d.list.waiting ? `, ${d.list.waiting} to confirm` : ''}</span></div>`;
     $('tdList').innerHTML = d.todo.map((t: any) => `<li class="td-${t.level}"><span class="td-lv">${LEVEL[t.level]}</span><span>${esc(t.text)}</span>${!(ROLE !== 'admin' && ['products', 'promos'].includes(t.tab)) ? `<button type="button" class="btn line sm" data-go="${t.tab}">${TAB_NAME[t.tab] ?? 'Open'}</button>` : ''}</li>`).join('')
       || '<li class="td-clear">Nothing waiting. All caught up.</li>';
   }
@@ -1539,7 +1551,7 @@ import '../../styles/global.css';
   async function loadPromos() {
     loadGiftCards(); if (ROLE === 'admin') loadLetters();
     api('/api/admin/list').then(l => {
-      $('listBox').innerHTML = `<h2 class="h-s">Mailing list</h2><p><b>${l.confirmed}</b> confirmed · ${l.waiting} waiting to confirm · ${l.left} unsubscribed</p>
+      $('listBox').innerHTML = `<h2 class="h-s">Mailing list</h2><p><b>${l.confirmed}</b> confirmed (${l.from_soon ?? 0} from the Coming soon page) · ${l.waiting} waiting to confirm · ${l.left} unsubscribed</p>
         <p class="muted">People sign up at the bottom of every page or at checkout, tick the consent box, and confirm by email (Canada's anti-spam law). Download the confirmed list to send your letters from Mailchimp, Buttondown or Resend; every letter must include an unsubscribe link.</p>
         <p><a class="btn line sm" href="/api/admin/list.csv">Download the list (CSV)</a></p>`;
     });

@@ -877,6 +877,17 @@ const sr3 = (await call(admin, '/api/admin/search?q=today2', { cookie: adm })).d
 assert.ok(sr3.orders.some((o: any) => o.ref === tdB.data.ref)); assert.equal((await call(admin, '/api/admin/search?q=a', { cookie: adm })).data.orders.length, 0);
 assert.equal((await call(admin, '/api/admin/search?q=x', { cookie: dan2 })).status, 403); ok('search by email; one letter is not searched; drivers cannot search');
 
+// ---------- waitlist from the Coming soon page ----------
+const wlMails = sent.length;
+assert.equal((await call(orders, '/api/list', { body: { email: 'Waiting@Example.com', lang: 'ar', consent: true, source: 'soon' } })).status, 200);
+const wlRow = (await pg.query(`SELECT source, lang, consent_text FROM subscribers WHERE email = 'waiting@example.com'`)).rows[0] as any;
+assert.equal(wlRow.source, 'soon'); assert.equal(wlRow.lang, 'ar'); assert.match(wlRow.consent_text, /ثلاث رسائل/);
+const wlConfirm = sent.slice(wlMails).find(m => m.to.includes('waiting@example.com'));
+const wlT = wlConfirm.text.match(/list\/confirm\?t=([A-Za-z0-9_-]+)/)[1];
+await call(orders, `/api/list/confirm?t=${wlT}`);
+const tdList = (await todayFn('admin', '2027-03-26')).list;
+assert.ok(tdList.confirmed >= 1 && tdList.fromSoon === 1 && tdList.thisWeek >= 1); ok('waitlist sign-ups are kept with where they came from and their Arabic consent; Today counts them');
+
 // ---------- confirming orders ----------
 const newO = await order({ day: '2027-01-31' });
 const cMails = sent.length;
