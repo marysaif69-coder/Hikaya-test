@@ -58,6 +58,7 @@ export type OrderForMail = {
   slot_date: string; slot_window: string; payment: string; payment_status: string; status: string;
   subtotal_cents: number; delivery_cents: number; total_cents: number; notes?: string | null;
   gift?: boolean; gift_to?: string | null; gift_message?: string | null; discount_cents?: number; promo_code?: string | null;
+  gift_card_cents?: number; gift_card_code?: string | null; every_weeks?: number | null;
 };
 export type ItemForMail = { name_en: string; name_ar: string; option_en: string | null; option_ar: string | null; qty: number; unit_cents: number };
 
@@ -103,18 +104,19 @@ export function orderEmail(kind: OrderMailKind, o: OrderForMail, items: ItemForM
   const where = o.method === 'pickup'
     ? (ar ? 'استلام من [العنوان]، كالغاري' : 'Pickup at [address], Calgary')
     : (ar ? `توصيل إلى ${esc(o.street)}، ${esc(o.postal)}` : `Delivery to ${esc(o.street)}, ${esc(o.postal)}`);
-  const pay = o.payment_status === 'paid' ? (ar ? 'مدفوع. شكراً.' : 'Paid. Thank you.')
+  const pay = o.total_cents === 0 ? (ar ? 'دُفع كاملاً ببطاقة الهدية.' : 'Paid in full with your gift card.') : o.payment_status === 'paid' ? (ar ? 'مدفوع. شكراً.' : 'Paid. Thank you.')
     : o.payment === 'e-transfer' ? (ar ? `أرسل ${dollars(o.total_cents)} بتحويل Interac إلى ${esc(env('ETRANSFER_EMAIL') || 'orders@hikayacoffee.ca')}، واكتب رقم الطلب <span style="white-space:nowrap">${o.ref}</span> في الرسالة.` : `Send ${dollars(o.total_cents)} by Interac e-Transfer to ${esc(env('ETRANSFER_EMAIL') || 'orders@hikayacoffee.ca')} with <span style="white-space:nowrap">${o.ref}</span> in the message.`)
     : o.payment === 'card' ? (ar ? 'الدفع بالبطاقة عبر Square.' : 'Card payment through Square.')
     : (ar ? 'الدفع عند الاستلام، بالبطاقة أو نقداً.' : 'Pay at pickup or handover, by card or cash.');
   const showDetails = kind !== 'cancelled';
-  const body = `<p>${c.p}</p>
+  const body = `<p>${c.p}</p>${o.every_weeks && kind === 'received' ? `<p>${ar ? `هذا طلبك المنتظم كل ${o.every_weeks === 2 ? 'أسبوعين' : '٤ أسابيع'}. تستطيع تخطّي المرة القادمة أو إيقافه من حسابك.` : `This is your regular order, every ${o.every_weeks} weeks. You can skip the next one or stop it from your account.`}</p>` : ''}
 <p style="margin:16px 0 6px;font-size:14px;color:#66503F">${ar ? 'رقم الطلب' : 'Order number'}</p><p style="margin:0;font-size:22px;font-weight:700;color:#A93B28;direction:ltr;${ar ? 'text-align:right' : ''}">${o.ref}</p>
 ${showDetails ? `${o.gift ? `<p style="margin:16px 0 0;background:#EDE3D0;border-radius:12px;padding:10px 14px">${ar ? 'هدية إلى' : 'A gift for'} <b>${esc(o.gift_to)}</b>${o.gift_message ? `<br><i>“${esc(o.gift_message)}”</i>` : ''}</p>` : ''}
 <p style="margin:16px 0 0"><strong>${day(o.slot_date, L)}</strong> · <span style="direction:ltr;unicode-bidi:embed">${esc(o.slot_window)}</span><br>${where}</p>
 <table role="presentation" width="100%" style="margin:16px 0;border-top:1px solid #DFD1BA;border-bottom:1px solid #DFD1BA;font-size:15px">${rows}
 ${o.delivery_cents ? `<tr><td style="padding:6px 0">${ar ? 'التوصيل' : 'Delivery'}</td><td style="text-align:${ar ? 'left' : 'right'}">${dollars(o.delivery_cents)}</td></tr>` : ''}
 ${o.discount_cents ? `<tr><td style="padding:6px 0">${ar ? 'الخصم' : 'Discount'}${o.promo_code ? ` (${esc(o.promo_code)})` : ''}</td><td style="text-align:${ar ? 'left' : 'right'}">−${dollars(o.discount_cents)}</td></tr>` : ''}
+${o.gift_card_cents ? `<tr><td style="padding:6px 0">${ar ? 'بطاقة هدية' : 'Gift card'}</td><td style="text-align:${ar ? 'left' : 'right'}">−${dollars(o.gift_card_cents)}</td></tr>` : ''}
 <tr><td style="padding:8px 0;font-weight:700">${ar ? 'الإجمالي' : 'Total'}</td><td style="text-align:${ar ? 'left' : 'right'};font-weight:700">${dollars(o.total_cents)}</td></tr></table>
 <p>${pay}</p>` : ''}
 ${btn(viewUrl, ar ? 'عرض طلبك' : 'View your order')}
@@ -201,4 +203,57 @@ export function reviewEmail(o: OrderForMail, reviewUrl: string, siteUrl: string)
   const body = `<p>${ar ? `نرجو أن طلبك ${o.ref} أعجبك. إن أعجبك، كلمتان على Google تساعدان الناس في كالغاري على إيجادنا.` : `We hope you enjoyed order ${o.ref}. If you did, a few words on Google help people in Calgary find us.`}</p>${btn(reviewUrl, ar ? 'اكتب رأيك' : 'Leave a review')}
 <p>${ar ? 'وإن لم يكن كل شيء كما يجب، ردّ على هذه الرسالة وأخبرنا.' : 'And if something wasn’t right, reply to this email and tell us.'}</p>`;
   return { to: o.email, subject: s, html: layout(L, s, body, siteUrl), text: `${s}\n\n${reviewUrl}`, kind: 'review-request', orderId: o.id };
+}
+
+// ---------- gift cards ----------
+export type GiftCardForMail = { ref: string; code: string; amount_cents: number; balance_cents?: number; buyer_name: string; buyer_email: string; to_name: string; to_email: string | null; message: string | null; lang: Lang; payment: string; square_link_url?: string | null };
+
+/** To the person receiving it (or to the buyer to pass on, when no recipient email was given). */
+export function giftCardEmail(g: GiftCardForMail, siteUrl: string): Mail {
+  const ar = g.lang === 'ar', L = g.lang;
+  const forBuyer = !g.to_email;
+  const s = ar ? `بطاقة هدية من حكاية بقيمة ${dollars(g.amount_cents)}` : `A ${dollars(g.amount_cents)} Hikaya gift card`;
+  const intro = forBuyer
+    ? (ar ? `هذه بطاقة الهدية التي اشتريتها لـ <b>${esc(g.to_name)}</b>. أرسل لهم الرمز أو اطبع هذه الرسالة.` : `Here is the gift card you bought for <b>${esc(g.to_name)}</b>. Pass the code on, or print this email.`)
+    : (ar ? `أهداك <b>${esc(g.buyer_name)}</b> بطاقة هدية من حكاية، قهوة وتمر من كالغاري.` : `<b>${esc(g.buyer_name)}</b> sent you a Hikaya gift card: coffee and dates from Calgary.`);
+  const body = `<p>${intro}</p>
+${g.message ? `<p style="background:#EDE3D0;border-radius:12px;padding:10px 14px"><i>“${esc(g.message)}”</i></p>` : ''}
+<p style="margin:18px 0 4px;font-size:14px;color:#66503F;text-align:center">${ar ? 'الرمز' : 'Your code'}</p>
+<p style="margin:0;font-size:28px;font-weight:700;letter-spacing:3px;color:#A93B28;direction:ltr;text-align:center">${g.code}</p>
+<p style="text-align:center;font-weight:700">${dollars(g.amount_cents)}</p>
+<p>${ar ? 'اكتب الرمز في خانة «بطاقة هدية» عند الطلب. ما يتبقى من الرصيد يبقى للمرة القادمة.' : 'Type the code in the "Gift card" box at checkout. Whatever is left stays on the card for next time.'}</p>
+${btn(`${siteUrl}/${L}/shop/`, ar ? 'إلى المتجر' : 'To the shop')}`;
+  return { to: g.to_email || g.buyer_email, subject: s, html: layout(L, ar ? 'بطاقة هدية' : 'A gift card for you', body, siteUrl), text: `${s}\n\n${g.code}\n\n${siteUrl}/${L}/shop/`, kind: 'gift-card' };
+}
+
+/** To the buyer when they order: how to pay, or that it is paid and on its way. */
+export function giftCardReceipt(g: GiftCardForMail, paid: boolean, siteUrl: string): Mail {
+  const ar = g.lang === 'ar', L = g.lang;
+  const s = paid ? (ar ? `أُرسلت بطاقة الهدية ${g.ref}` : `Gift card ${g.ref} is on its way`) : (ar ? `وصلنا طلب بطاقة الهدية ${g.ref}` : `We have your gift card order ${g.ref}`);
+  const who = g.to_email ? (ar ? `إلى ${esc(g.to_name)} (${esc(g.to_email)})` : `to ${esc(g.to_name)} (${esc(g.to_email)})`) : (ar ? 'إليك لتعطيه بنفسك' : 'to you, to pass on');
+  const pay = paid ? (ar ? `دُفعت، وأرسلنا الرمز ${who}.` : `It's paid, and we have emailed the code ${who}.`)
+    : g.payment === 'e-transfer' ? (ar ? `أرسل ${dollars(g.amount_cents)} بتحويل Interac إلى ${esc(env('ETRANSFER_EMAIL') || 'orders@hikayacoffee.ca')} واكتب ${g.ref} في الرسالة. نرسل الرمز ${who} حين يصلنا المبلغ.` : `Send ${dollars(g.amount_cents)} by Interac e-Transfer to ${esc(env('ETRANSFER_EMAIL') || 'orders@hikayacoffee.ca')} with ${g.ref} in the message. We email the code ${who} as soon as it arrives.`)
+    : (ar ? `أكمل الدفع بالبطاقة، ونرسل الرمز ${who} فوراً.` : `Finish paying by card and we email the code ${who} straight away.`);
+  const body = `<p>${pay}</p>${!paid && g.square_link_url ? btn(g.square_link_url, ar ? 'ادفع الآن' : 'Pay now') : ''}<p style="color:#66503F;font-size:14px">${g.ref} · ${dollars(g.amount_cents)}</p>`;
+  return { to: g.buyer_email, subject: s, html: layout(L, ar ? 'بطاقة هدية' : 'Gift card', body, siteUrl), text: `${s}\n\n${pay.replace(/<[^>]+>/g, '')}`, kind: paid ? 'gift-card-sent' : 'gift-card-received' };
+}
+
+// ---------- regular orders ----------
+export function subscriptionEmail(kind: 'started' | 'skipped' | 'not-placed' | 'stopped', to: string, lang: Lang, d: { every: number; next: string | null; why?: string }, siteUrl: string): Mail {
+  const ar = lang === 'ar';
+  const next = d.next ? day(d.next, lang) : '';
+  const T = {
+    started: ar ? { s: 'بدأ طلبك المنتظم', p: `سنجهّز الطلب نفسه كل ${d.every === 2 ? 'أسبوعين' : '٤ أسابيع'}، ونرسل لك تأكيداً قبل كل موعد بأسبوع. المرة القادمة: ${next}.` } : { s: 'Your regular order is set', p: `We'll prepare the same order every ${d.every} weeks and email you a week before each one. Next: ${next}.` },
+    skipped: ar ? { s: 'تخطّينا المرة القادمة', p: `لن نجهّز الطلب هذه المرة. الموعد التالي: ${next}.` } : { s: 'We skipped the next one', p: `No order this time. The next one is ${next}.` },
+    'not-placed': ar ? { s: 'لم نستطع تجهيز طلبك المنتظم هذه المرة', p: `${esc(d.why ?? '')} الموعد التالي: ${next}. ردّ على هذه الرسالة إن أردت شيئاً آخر.` } : { s: "We couldn't place your regular order this time", p: `${esc(d.why ?? '')} The next one is ${next}. Reply to this email if you'd like something else instead.` },
+    stopped: ar ? { s: 'أوقفنا طلبك المنتظم', p: 'لن نجهّز طلبات أخرى. تستطيع البدء من جديد عند أي طلب.' } : { s: 'Your regular order is stopped', p: 'No more orders will be made. You can start again with any order.' },
+  }[kind];
+  const body = `<p>${T.p}</p>${btn(`${siteUrl}/${lang}/account/`, ar ? 'إدارة طلبك المنتظم' : 'Manage it in your account')}`;
+  return { to, subject: T.s, html: layout(lang, T.s, body, siteUrl), text: `${T.s}\n\n${T.p.replace(/<[^>]+>/g, '')}\n\n${siteUrl}/${lang}/account/`, kind: `subscription-${kind}` };
+}
+
+// ---------- monthly report (to the owners) ----------
+export function monthlyReportEmails(month: string, html: string, text: string): Mail[] {
+  return env('ADMIN_EMAILS').split(',').map((e: string) => e.trim()).filter(Boolean)
+    .map((to: string) => ({ to, subject: `Hikaya: your month in numbers (${month})`, html: `<div style="font:15px/1.55 Arial,sans-serif;color:#33211A;max-width:620px">${html}</div>`, text, kind: 'monthly-report' }));
 }

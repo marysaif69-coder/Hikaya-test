@@ -2,6 +2,10 @@
 import type { Config } from '@netlify/functions';
 import { json, fail, body, str, HttpError, siteUrl, env } from '../lib/http';
 import { cardEnabled, squareCheck } from '../lib/square';
+import { listGiftCards, giftCardPaid } from '../lib/giftcards';
+import { listSubscriptions } from '../lib/subscriptions';
+import { monthlyReport, sendMonthlyReport } from '../lib/report';
+import { smsEnabled } from '../lib/sms';
 import { readContent, saveContent, type FileId } from '../lib/content';
 import { requireTeam } from '../lib/auth';
 import { sql, one } from '../lib/db';
@@ -34,6 +38,9 @@ const SETTINGS = [
   { group: 'Payments', name: 'SQUARE_LOCATION_ID', secret: false, what: 'Which Square location takes the money.', where: 'Same app → Locations.' },
   { group: 'Payments', name: 'SQUARE_ENV', secret: false, what: 'Live or test payments.', where: 'Type production (sandbox while testing).' },
   { group: 'Payments', name: 'SQUARE_WEBHOOK_SIGNATURE_KEY', secret: true, what: 'Marks card orders paid by themselves.', where: 'Same app → Webhooks → add the URL shown above for payment.updated → Signature key.' },
+  { group: 'Text messages', name: 'TWILIO_ACCOUNT_SID', secret: false, what: 'Text-message reminders the evening before (for customers who tick the box).', where: 'twilio.com → Console → Account Info → Account SID.' },
+  { group: 'Text messages', name: 'TWILIO_AUTH_TOKEN', secret: true, what: 'Lets the site send texts.', where: 'Same page → Auth Token.' },
+  { group: 'Text messages', name: 'TWILIO_FROM', secret: false, what: 'The number texts come from.', where: 'Twilio → Phone Numbers → buy a Canadian (403/587) number, e.g. +15875550100.' },
   { group: 'Assistant', name: 'ANTHROPIC_API_KEY', secret: true, what: 'Turns on Ask Hikaya.', where: 'console.anthropic.com → API Keys.' },
   { group: 'Extras', name: 'STAFF_EMAILS', secret: false, what: 'Helpers: orders, Inbox, sheets, Driver. No money or settings.', where: 'Helper emails, separated by commas.' },
   { group: 'Extras', name: 'GOOGLE_REVIEW_URL', secret: false, what: 'One "How was it?" email after a completed order.', where: 'Google Business Profile → Ask for reviews → copy link.' },
@@ -58,8 +65,8 @@ export default async (req: Request) => {
     // Helpers can read everything and run orders; money, catalog, settings and exports are owners only.
     if (admin.role !== 'admin') {
       const write = req.method !== 'GET';
-      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos'
-        || (write && ['products', 'settings', 'ask', 'connections', 'content'].includes(parts[0])) || (parts[0] === 'orders' && parts[2] === 'refund');
+      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report'
+        || (write && ['products', 'settings', 'ask', 'connections', 'content', 'giftcards', 'report'].includes(parts[0])) || (parts[0] === 'orders' && parts[2] === 'refund');
       if (ownersOnly) throw new HttpError(403, 'owners-only', 'Only the owners can do this.');
     }
     const q = (k: string, max = 40) => str(url.searchParams.get(k), max);
@@ -169,6 +176,7 @@ export default async (req: Request) => {
         email: { key: Boolean(env('RESEND_API_KEY')), from: env('EMAIL_FROM') || 'Hikaya <orders@hikayacoffee.ca>', replyTo: env('EMAIL_REPLY_TO') || null, last, failedThisWeek: failed?.n ?? 0, team: env('ADMIN_EMAILS') },
         square: { enabled: cardEnabled(), env: env('SQUARE_ENV') || 'sandbox', webhook: Boolean(env('SQUARE_WEBHOOK_SIGNATURE_KEY')), webhookUrl: `${siteUrl(req)}/api/square/webhook` },
         ask: { enabled: askEnabled() },
+        sms: { enabled: smsEnabled() },
         etransfer: env('ETRANSFER_EMAIL') || null,
         // Which Netlify settings exist. Only yes/no: values never leave the server.
         checklist: admin.role === 'admin' ? SETTINGS.map(x => ({ ...x, set: Boolean(env(x.name)) })) : [],
@@ -212,6 +220,23 @@ export default async (req: Request) => {
       const b = await body(req, 200_000);
       return json(await saveContent(parts[1] as FileId, b.data, str(b.sha, 64), admin.email));
     }
+
+    // ---------- gift cards ----------
+    if (parts[0] === 'giftcards' && !parts[1] && req.method === 'GET') return json({ giftcards: await listGiftCards() });
+    if (parts[0] === 'giftcards' && parts[1] && parts[2] === 'paid' && req.method === 'POST') {
+      const g = await giftCardPaid(parts[1], req);
+      return json({ ok: true, sentTo: g.to_email || g.buyer_email });
+    }
+
+    // ---------- regular orders ----------
+    if (parts[0] === 'subscriptions' && req.method === 'GET') return json({ subscriptions: await listSubscriptions() });
+
+    // ---------- monthly report: preview, or send it now ----------
+    if (parts[0] === 'report' && req.method === 'GET') {
+      const r = await monthlyReport(q('month', 7) && /^\d{4}-\d{2}$/.test(q('month', 7)) ? `${q('month', 7)}-01` : calgaryNow().date);
+      return json({ month: r.month, name: r.name, html: r.html });
+    }
+    if (parts[0] === 'report' && req.method === 'POST') return json({ sent: await sendMonthlyReport(calgaryNow().date, true) });
 
     // ---------- mailing list ----------
     if (parts[0] === 'list' && req.method === 'GET') return json(await listStats());

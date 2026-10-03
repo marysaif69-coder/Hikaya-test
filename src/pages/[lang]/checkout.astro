@@ -53,6 +53,16 @@ const ar = lang === 'ar';
         <div class="choice row" id="windows">
           {['11:00–14:00', '14:00–17:00', '17:00–20:00'].map((w, i) => <label><input type="radio" name="window" value={w} checked={i === 0} /><span><b class="tnum" dir="ltr">{w}</b><small class="left"></small></span></label>)}
         </div>
+        <label class="tick"><input type="checkbox" name="sms" id="f-sms" /> <span>{ar ? 'أرسلوا لي رسالة نصية تذكيراً في المساء السابق' : 'Text me a reminder the evening before'}</span></label>
+        <div class="field repeat">
+          <label for="f-repeat">{ar ? 'طلب منتظم؟' : 'A regular order?'}</label>
+          <select id="f-repeat" name="repeat">
+            <option value="0">{ar ? 'هذه المرة فقط' : 'Just this once'}</option>
+            <option value="2">{ar ? 'الطلب نفسه كل أسبوعين' : 'The same again every 2 weeks'}</option>
+            <option value="4">{ar ? 'الطلب نفسه كل ٤ أسابيع' : 'The same again every 4 weeks'}</option>
+          </select>
+          <p class="hint">{ar ? 'نجهّزه في اليوم والوقت نفسيهما، ونرسل تأكيداً قبل كل مرة بأسبوع. تتخطّاه أو توقفه من حسابك.' : 'Same day and time each round. We email you a week before each one; skip or stop it from your account.'}</p>
+        </div>
       </fieldset>
 
       <fieldset class="block">
@@ -90,6 +100,7 @@ const ar = lang === 'ar';
         <div><dt>{ar ? 'المجموع الفرعي' : 'Subtotal'}</dt><dd id="sSub"></dd></div>
         <div><dt>{ar ? 'التوصيل' : 'Delivery'}</dt><dd id="sFee"></dd></div>
         <div id="sDiscRow" hidden><dt id="sDiscLabel"></dt><dd id="sDisc"></dd></div>
+        <div id="sGcRow" hidden><dt>{ar ? 'بطاقة هدية' : 'Gift card'}</dt><dd id="sGc"></dd></div>
         <div><dt>{ar ? 'ضريبة السلع (مواد غذائية أساسية)' : 'GST (basic groceries)'}</dt><dd>{ar ? "0 $" : "$0"}</dd></div>
         <div class="tot"><dt>{ar ? 'الإجمالي' : 'Total'}</dt><dd id="sTot"></dd></div>
       </dl>
@@ -98,6 +109,11 @@ const ar = lang === 'ar';
         <label for="f-promo">{ar ? 'رمز خصم' : 'Promo code'}</label>
         <div class="promo-row"><input id="f-promo" autocomplete="off" autocapitalize="characters" dir="ltr" /><button type="submit" class="btn line">{ar ? 'طبّق' : 'Apply'}</button></div>
         <p class="promo-msg" id="promoMsg" aria-live="polite"></p>
+      </form>
+      <form class="promo" id="gcForm" novalidate>
+        <label for="f-gc">{ar ? 'بطاقة هدية' : 'Gift card'}</label>
+        <div class="promo-row"><input id="f-gc" autocomplete="off" autocapitalize="characters" dir="ltr" placeholder="GIFT-XXXXXX" /><button type="submit" class="btn line">{ar ? 'استخدم' : 'Use'}</button></div>
+        <p class="promo-msg" id="gcMsg" aria-live="polite"></p>
       </form>
       <a href={path(lang, 'cart')} class="small">{ar ? 'عدّل السلة' : 'Edit cart'}</a>
     </aside>
@@ -172,6 +188,7 @@ const ar = lang === 'ar';
   let open = true;
   type Promo = { code: string; discount: number; freeDelivery: boolean; label: { en: string; ar: string } };
   let promo: Promo | null = null;
+  let gift: { code: string; balance: number } | null = null; // gift card, balance in cents
 
   function paint() {
     const lines = read();
@@ -192,7 +209,11 @@ const ar = lang === 'ar';
     $('sFee').textContent = delivery() ? (fee ? money(fee) : (ar ? 'مجاناً' : 'Free')) : (ar ? 'استلام · مجاناً' : 'Pickup · free');
     $('sDiscRow').hidden = !promo;
     if (promo) { $('sDiscLabel').textContent = `${promo.code} · ${promo.label[lang]}`; $('sDisc').textContent = disc ? `−${money(+disc.toFixed(2))}` : '✓'; }
-    $('sTot').textContent = money(+(t.sub - disc + fee).toFixed(2));
+    const before = +(t.sub - disc + fee).toFixed(2);
+    const gc = gift ? Math.min(gift.balance / 100, before) : 0;
+    $('sGcRow').hidden = !gift;
+    if (gift) $('sGc').textContent = `−${money(+gc.toFixed(2))}`;
+    $('sTot').textContent = money(+(before - gc).toFixed(2));
     $('addr').hidden = !delivery();
     $('giftBox').hidden = !($('f-gift') as HTMLInputElement).checked;
     $('emptyCo').hidden = lines.length > 0;
@@ -263,6 +284,17 @@ const ar = lang === 'ar';
     }
     paint();
   }
+  $('gcForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const code = ($('f-gc') as HTMLInputElement).value.trim(), msg = $('gcMsg');
+    if (!code) { gift = null; msg.textContent = ''; paint(); return; }
+    try {
+      const r = await fetch('/api/giftcard/check', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code }) });
+      const d = await r.json(); if (!r.ok) throw new Error(d.message);
+      gift = d; msg.className = 'promo-msg'; msg.textContent = ar ? `الرصيد: ${money(d.balance / 100)}` : `Balance: ${money(d.balance / 100)}`;
+    } catch (x) { gift = null; msg.className = 'promo-msg bad'; msg.textContent = (x as Error).message || (ar ? 'تعذّر استخدام البطاقة.' : 'That card could not be used.'); }
+    paint();
+  });
   $('promoForm').addEventListener('submit', e => { e.preventDefault(); applyPromo(($('f-promo') as HTMLInputElement).value.trim()); });
   form.addEventListener('change', e => { if ((e.target as HTMLInputElement).name === 'method') paintDays(); paint(); });
   load();
@@ -297,6 +329,7 @@ const ar = lang === 'ar';
           lines: lines.map(l => ({ id: l.id, opt: l.opt, qty: l.qty })), promo: promo?.code ?? '',
           gift: ($('f-gift') as HTMLInputElement).checked, gift_to: val('gift_to'), gift_phone: val('gift_phone'), gift_message: val('gift_message'),
           newsletter: ($('f-news') as HTMLInputElement).checked,
+          giftcard: gift?.code ?? '', sms: ($('f-sms') as HTMLInputElement).checked, repeat: Number(val('repeat')),
         }),
       });
       const data = await res.json();
@@ -305,6 +338,7 @@ const ar = lang === 'ar';
           for (const [k, v] of Object.entries(data.fields)) if (FIELD[k]) setErr($(FIELD[k]), MSG[v as string] ?? MSG.required);
           form.querySelector<HTMLElement>('[aria-invalid=true]')?.focus();
         }
+        if (data.error === 'giftcard') { gift = null; $('gcMsg').className = 'promo-msg bad'; $('gcMsg').textContent = data.message; paint(); }
         if (data.error === 'promo') { promo = null; $('promoMsg').className = 'promo-msg bad'; $('promoMsg').textContent = data.message; paint(); }
         if (data.error === 'slot-full' || data.error === 'too-soon') { const s = await fetch('/api/slots').then(r => r.json()); days = s.days; paintDays(); paint(); }
         fe.textContent = data.message ?? (ar ? 'تعذّر إرسال الطلب.' : 'We could not send your order.'); fe.hidden = false;

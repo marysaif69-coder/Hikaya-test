@@ -1,5 +1,7 @@
 # Hikaya: what a finished shop needs, and what is left
 
+The same list, the launch rehearsal and ideas for later are in the desk: **Admin → Plan**.
+
 What small food businesses selling pre-orders online actually run on, checked against what the
 Hikaya site already does. ✅ built · 🟡 partly / needs you · ⬜ not built yet.
 Written 2 October 2026, updated 3 October.
@@ -18,9 +20,11 @@ Written 2 October 2026, updated 3 October.
 | ✅ | Promo codes: % off, $ off, free delivery; dates, minimum, uses, once per customer | Admin → Promotions |
 | ✅ | Refunds: full or partial, card, e-Transfer, cash or store credit | Admin → order → Refund |
 | 🟡 | Card payment online | Built for Square; turns on when you add the Square keys (section 4) |
-| ⬜ | Gift cards you can sell | Not built. Store-credit codes already work as a simple version |
+| ✅ | Gift cards ($25–100), emailed once paid, balance carries over | Gift cards page; Admin → Promotions |
 | ✅ | "Email me when it's back" for sold-out products and out-of-season boxes | Product pages; Admin → Products shows who waits |
-| ⬜ | Subscriptions (a coffee every month) | Not built; only after launch, if customers ask |
+| ✅ | Regular orders every 2 or 4 weeks, skip/pause/stop by the customer | Checkout; My account; Week sheet |
+| ✅ | Order again, text-message reminders (Twilio), voice input in Ask Hikaya | Built |
+| ✅ | Monthly report to the owners on the 1st | Admin → Numbers |
 
 ## 2. Running the orders
 

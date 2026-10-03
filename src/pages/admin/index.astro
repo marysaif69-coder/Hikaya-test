@@ -27,6 +27,7 @@ import '../../styles/global.css';
       <button type="button" data-tab="chats" aria-pressed="false">Conversations</button>
       <button type="button" data-tab="numbers" aria-pressed="false" class="owner-only">Numbers</button>
       <button type="button" data-tab="words" aria-pressed="false" class="owner-only">Words</button>
+      <button type="button" data-tab="plan" aria-pressed="false" class="owner-only">Plan</button>
       <a class="drv-link" href="/admin/driver/">Driver</a>
       <button type="button" data-tab="settings" aria-pressed="false" class="owner-only">Settings</button>
     </nav>
@@ -130,6 +131,8 @@ import '../../styles/global.css';
         <button class="btn primary" type="submit">Save code</button>
       </form>
       <div class="promo-form" id="listBox"></div>
+      <div class="promo-form" id="gcBox"><h2 class="h-s">Gift cards</h2><p class="muted">Sold on the Gift cards page (footer link). Card payments send the code by themselves. For e-Transfer, press “Money received” when it arrives and the code is emailed.</p>
+        <div class="a-table-wrap"><table class="a-table mini-t" id="gcTable"></table></div></div>
       <div class="a-table-wrap"><table class="a-table" id="promos">
         <thead><tr><th>Code</th><th>Gives</th><th>When</th><th>Used</th><th>Discount given</th><th>Note</th><th></th></tr></thead>
         <tbody></tbody>
@@ -175,6 +178,8 @@ import '../../styles/global.css';
         <div><h2 class="h-s">Packaging</h2><ul class="a-pack" id="wkPack"></ul></div>
         <div><h2 class="h-s">Orders by day</h2><ul class="a-pack" id="wkDays"></ul><h2 class="h-s" style="margin-top:10px">Everything ordered</h2><ul class="a-pack" id="wkItems"></ul></div>
       </div>
+      <div class="promo-form"><h2 class="h-s">Regular orders</h2><p class="muted">Customers who chose “the same again every 2 or 4 weeks”. Each one becomes a normal order a week before its day (it then shows in Orders and on this sheet).</p>
+        <div class="a-table-wrap"><table class="a-table mini-t" id="subTable"></table></div></div>
     </section>
 
     <!-- NUMBERS: visits and sales -->
@@ -186,6 +191,9 @@ import '../../styles/global.css';
         <div><h2 class="h-s">Most visited pages</h2><table class="a-table mini-t" id="nPages"></table></div>
         <div><h2 class="h-s">Sites that sent visitors</h2><table class="a-table mini-t" id="nRefs"></table></div>
       </div>
+      <div class="promo-form"><h2 class="h-s">Monthly report</h2><p class="muted">Emailed to the owners on the 1st of every month. Preview it here, or send last month's now.</p>
+        <p><button type="button" class="btn line sm" id="repShow">Preview last month</button> <button type="button" class="btn line sm" id="repSend">Email it to the owners now</button> <span class="ev" id="repMsg"></span></p>
+        <div id="repBody"></div></div>
     </section>
 
     <!-- WORDS: recipes and product text -->
@@ -197,6 +205,59 @@ import '../../styles/global.css';
       </div>
       <p class="muted a-intro">Change the words in English and Arabic, then save. The site updates in about two minutes. Prices, sold out and seasons are in Products.</p>
       <div id="wForm" class="w-form"></div>
+    </section>
+
+    <!-- PLAN: what is built, what is left before launch, and ideas for later -->
+    <section id="v-plan" hidden class="plan">
+      <div class="promo-form">
+        <h2 class="h-s">Before launch</h2>
+        <ol class="plan-list">
+          <li><b>Final prices.</b> Products tab, any time. Everything else works with draft prices, so nothing waits for this.</li>
+          <li><b>Pickup address and hours.</b> Tell Claude in a session; it replaces “[address]” across the site and emails.</li>
+          <li><b>Photos</b> of the Guest Box and the Coffee Duo (they use the gift box photo for now). Names and prices are drafts too.</li>
+          <li><b>GST</b>: ask your accountant whether gift boxes are zero-rated; the site says “GST pending”.</li>
+          <li><b>Settings</b>: Square, e-Transfer email, Twilio, Google review link, GitHub token. The list with ticks is in Settings.</li>
+          <li><b>Rehearsal</b> (below), then the launch-day steps.</li>
+        </ol>
+      </div>
+      <div class="promo-form">
+        <h2 class="h-s">Rehearsal: one full order, start to finish (about 30 minutes)</h2>
+        <p class="muted">Do it now with draft prices; changing prices later changes nothing else. Use your own email and phone. Afterwards tick “This is a sample / test order” on it so it stays out of the numbers.</p>
+        <ol class="plan-list">
+          <li>On your phone, open the site, add a coffee and a date box, check out as a guest with <b>delivery</b>, tick the gift, the text reminder and “every 4 weeks”.</li>
+          <li>Check the email: right name, items, day, total, gift message. Reply to it and see where the reply lands.</li>
+          <li>Desk → Orders: find it, mark Confirmed (email), then Week sheet and Day sheet: is it there, are the quantities right?</li>
+          <li>Driver page on your phone: Map, Call, On my way (email), Delivered (email).</li>
+          <li>My account: log in with the code, see the order and the regular order; press Skip, then Stop.</li>
+          <li>Refund $1 to store credit from the order; use the credit code on a second order.</li>
+          <li>Buy a $25 gift card by e-Transfer, press Money received in Promotions, check the code arrives, use part of it.</li>
+          <li>Ask Hikaya three questions, one by voice and one in Arabizi; read them in Conversations.</li>
+          <li>When Square is connected: one $1 card order, then refund it from the desk.</li>
+          <li>Write down anything odd and tell Claude.</li>
+        </ol>
+      </div>
+      <div class="promo-form">
+        <h2 class="h-s">Built</h2>
+        <ul class="plan-list done">
+          <li>Shop, checkout, accounts, emails at every step, reminders the evening before</li>
+          <li>Order desk, day and week sheets, driver page, helpers with fewer rights</li>
+          <li>Prices, show/hide, sold out, stock, Ramadan and Eid switches, promo codes, refunds, sample orders</li>
+          <li>Gift orders and year-round gift boxes, gift cards, “email me when it's back”</li>
+          <li>Regular orders (every 2 or 4 weeks), order again, text-message reminders</li>
+          <li>Ask Hikaya with team answers, backup answers, voice input and Arabizi; Inbox</li>
+          <li>Mailing list with consent, Google review emails, visit numbers, monthly report</li>
+          <li>Words editor for product text and recipes; settings checklist; private preview gate</li>
+        </ul>
+      </div>
+      <div class="promo-form">
+        <h2 class="h-s">Ideas for later</h2>
+        <ul class="plan-list">
+          <li>Route planning (RouteXL) when deliveries pass about 10 a day: a button to copy the day's addresses.</li>
+          <li>Loyalty: a free coffee after a number of orders, if customers ask for it.</li>
+          <li>Wholesale price list for cafés, mosques and offices.</li>
+          <li>Selling gift cards in person through Square at pickup.</li>
+        </ul>
+      </div>
     </section>
 
     <!-- SETTINGS -->
@@ -372,6 +433,9 @@ import '../../styles/global.css';
   .mini-t { font-size: 14px; }
   .mini-t :global(th) { padding: 6px 8px !important; }
   .mini-t :global(td) { padding: 8px !important; }
+  .plan { display: grid; gap: 16px; max-width: 900px; }
+  .plan-list { margin: 8px 0 0; padding-inline-start: 22px; display: grid; gap: 8px; line-height: 1.5; }
+  .plan-list.done li::marker { content: '✓  '; color: #6E8B4A; }
   .w-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   #wFile { border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 10px; font: inherit; background: var(--sheet); }
   .w-form { display: grid; gap: 10px; }
@@ -427,7 +491,7 @@ import '../../styles/global.css';
 
   // ---------- auth ----------
   function showLogin() {
-    for (const id of ['v-orders', 'v-inbox', 'v-day', 'v-week', 'v-numbers', 'v-words', 'v-products', 'v-promos', 'v-assistant', 'v-chats', 'v-settings', 'tabs', 'who']) $(id).hidden = true;
+    for (const id of ['v-orders', 'v-inbox', 'v-day', 'v-week', 'v-numbers', 'v-words', 'v-plan', 'v-products', 'v-promos', 'v-assistant', 'v-chats', 'v-settings', 'tabs', 'who']) $(id).hidden = true;
     $('login').hidden = false;
     mountLogin($('loginBox'), 'en', user => {
       if (user.role !== 'admin' && user.role !== 'staff') { $('notAdmin').hidden = false; return; }
@@ -451,7 +515,7 @@ import '../../styles/global.css';
   // ---------- tabs ----------
   function tab(name: string) {
     document.querySelectorAll<HTMLButtonElement>('#tabs [data-tab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === name)));
-    for (const v of ['orders', 'inbox', 'day', 'week', 'numbers', 'words', 'products', 'promos', 'assistant', 'chats', 'settings']) $(`v-${v}`).hidden = v !== name;
+    for (const v of ['orders', 'inbox', 'day', 'week', 'numbers', 'words', 'plan', 'products', 'promos', 'assistant', 'chats', 'settings']) $(`v-${v}`).hidden = v !== name;
     if (name === 'products') loadProducts();
     if (name === 'week') loadWeek();
     if (name === 'numbers') loadNumbers();
@@ -642,6 +706,7 @@ import '../../styles/global.css';
   async function loadWeek() {
     const d = await api(`/api/admin/week?sample=${($('weekSample') as HTMLSelectElement).value}${weekPick.value ? `&from=${weekPick.value}` : ''}`);
     weekPick.value = d.from;
+    loadSubs();
     $('weekHead').textContent = `${fmtDay(d.from)} to ${fmtDay(d.to)} · ${d.orders} order${d.orders === 1 ? '' : 's'} (cancelled orders left out)`;
     $('wkCoffee').innerHTML = '<tr><th>Coffee</th><th>Grind</th><th>Pouches</th><th>Weight</th></tr>' + (d.coffee.map((c: any) => `<tr><td>${esc(c.name)}${c.inBoxes ? `<br><small>${c.inBoxes} in gift boxes</small>` : ''}</td><td>${esc(c.grind)}</td><td>${c.pouches}</td><td>${(c.grams / 1000).toFixed(2)} kg</td></tr>`).join('') || '<tr><td colspan="4" class="muted">No coffee this week.</td></tr>');
     $('wkCoffeeTot').textContent = `Total ground coffee: ${d.coffeeTotalKg} kg (add your roast loss on top).`;
@@ -652,6 +717,13 @@ import '../../styles/global.css';
       .filter(([, n]) => n).map(([k, n]) => `<li><span>${k}</span><b>${n}</b></li>`).join('') || '<li class="muted">Nothing to pack.</li>';
     $('wkDays').innerHTML = d.days.map((x: any) => `<li><span>${fmtDay(x.day)}</span><b>${x.pickup} pickup · ${x.delivery} delivery</b></li>`).join('') || '<li class="muted">No orders.</li>';
     $('wkItems').innerHTML = d.products.map((x: any) => `<li><span>${esc(x.name)}${x.option ? ` <small>(${esc(x.option)})</small>` : ''}</span><b>${x.qty}</b></li>`).join('');
+  }
+
+  // ---------- regular orders (shown under the week sheet) ----------
+  async function loadSubs() {
+    const d = await api('/api/admin/subscriptions');
+    $('subTable').innerHTML = '<tr><th>Customer</th><th>Every</th><th>Next</th><th>What</th><th>Status</th></tr>' + (d.subscriptions.map((x: any) => `<tr><td>${esc(x.name)}<br><small>${esc(x.email)}</small></td><td>${x.every} weeks</td><td>${fmtDay(x.next)}<br><small>${esc(x.method)} · ${esc(x.window)}</small></td>
+      <td>${x.lines.map((l: any) => `${l.qty}× ${esc(l.name.en)}`).join(', ')}${x.note ? `<br><small>${esc(x.note)}</small>` : ''}</td><td>${x.status === 'paused' ? 'Paused' : 'Active'}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">None yet.</td></tr>');
   }
 
   // ---------- numbers ----------
@@ -744,8 +816,32 @@ import '../../styles/global.css';
     });
   }
 
+  // ---------- monthly report ----------
+  $('repShow').addEventListener('click', async () => { const r = await api('/api/admin/report'); $('repBody').innerHTML = r.html; });
+  $('repSend').addEventListener('click', async () => {
+    if (!confirm('Email last month’s report to every owner now?')) return;
+    const r = await api('/api/admin/report', {}); $('repMsg').textContent = r.sent ? `Sent (${r.sent}).` : 'Not sent.';
+  });
+
+  // ---------- gift cards ----------
+  async function loadGiftCards() {
+    const d = await api('/api/admin/giftcards');
+    $('gcTable').innerHTML = '<tr><th>Ref</th><th>Amount</th><th>Left</th><th>From → to</th><th>Paid</th><th></th></tr>' + (d.giftcards.map((g: any) => `<tr>
+      <td class="ref">${esc(g.ref)}${g.sent_at ? `<br><small>${esc(g.code)}</small>` : ''}</td><td>${money(g.amount_cents)}</td><td>${g.paid_at ? money(g.balance_cents) : '–'}</td>
+      <td>${esc(g.buyer_name)} → ${esc(g.to_name)}<br><small>${esc(g.to_email || g.buyer_email)}</small></td>
+      <td>${g.paid_at ? `Yes, ${g.payment === 'card' ? 'card' : 'e-Transfer'}` : `<b>Not yet</b> (${g.payment === 'card' ? 'card' : 'e-Transfer'})`}</td>
+      <td>${g.paid_at ? '' : `<button type="button" data-gcpaid="${esc(g.ref)}">Money received</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">None sold yet.</td></tr>');
+  }
+  $('gcTable').addEventListener('click', async e => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-gcpaid]');
+    if (!b || !confirm(`Mark ${b.dataset.gcpaid} as paid and email the gift card code?`)) return;
+    const r = await api(`/api/admin/giftcards/${b.dataset.gcpaid}/paid`, {});
+    alert(`Done. The code was emailed to ${r.sentTo}.`); loadGiftCards();
+  });
+
   // ---------- promotions ----------
   async function loadPromos() {
+    loadGiftCards();
     api('/api/admin/list').then(l => {
       $('listBox').innerHTML = `<h2 class="h-s">Mailing list</h2><p><b>${l.confirmed}</b> confirmed · ${l.waiting} waiting to confirm · ${l.left} unsubscribed</p>
         <p class="muted">People sign up at the bottom of every page or at checkout, tick the consent box, and confirm by email (Canada's anti-spam law). Download the confirmed list to send your letters from Mailchimp, Buttondown or Resend; every letter must include an unsubscribe link.</p>

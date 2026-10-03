@@ -289,6 +289,85 @@ edited.palm.serve.ar = '  '; assert.equal((await call(admin, '/api/admin/content
 edited.palm.serve.ar = 'x'; edited.palm.steps.pop(); assert.equal((await call(admin, '/api/admin/content/recipes', { cookie: adm, body: { data: edited, sha: 'sha2' } })).status, 400); ok('empty text and missing steps are refused');
 globalThis.fetch = prevFetch; delete process.env.GITHUB_CONTENT_TOKEN;
 
+// ---------- gift cards ----------
+const gcBad = await call(orders, '/api/giftcard', { body: { amount_cents: 1234, buyer_name: 'Sara', buyer_email: 'sara@example.com', to_name: 'Huda' } });
+assert.equal(gcBad.status, 400); assert.ok(gcBad.data.fields.amount); ok('gift cards only in the set amounts');
+const mailsGc = sent.length;
+const gc = await call(orders, '/api/giftcard', { body: { amount_cents: 5000, buyer_name: 'Sara', buyer_email: 'sara@example.com', to_name: 'Huda', to_email: 'huda@example.com', message: 'Ramadan Kareem', payment: 'e-transfer', lang: 'en' } });
+assert.equal(gc.status, 201); assert.match(gc.data.ref, /^GC-/);
+assert.equal(sent.length, mailsGc + 1); assert.match(sent.at(-1).subject, /gift card order/); assert.ok(!/GIFT-/.test(sent.at(-1).html)); ok('buying by e-Transfer: the buyer gets payment details, no code yet');
+const gcCode = (await pg.query(`SELECT code FROM gift_cards WHERE ref = $1`, [gc.data.ref])).rows[0].code as string;
+assert.equal((await call(orders, '/api/giftcard/check', { body: { code: gcCode } })).status, 400); ok('an unpaid gift card does not work');
+assert.equal((await call(admin, `/api/admin/giftcards/${gc.data.ref}/paid`, { cookie: helper, body: {} })).status, 403);
+const gp = await call(admin, `/api/admin/giftcards/${gc.data.ref}/paid`, { cookie: adm, body: {} });
+assert.equal(gp.data.sentTo, 'huda@example.com');
+const toHuda = sent.find(m => m.to?.includes('huda@example.com') && m.html.includes(gcCode));
+assert.ok(toHuda && toHuda.html.includes('Ramadan Kareem')); assert.ok(sent.some(m => m.to?.includes('sara@example.com') && /on its way/.test(m.subject)));
+const n1 = sent.length; await call(admin, `/api/admin/giftcards/${gc.data.ref}/paid`, { cookie: adm, body: {} }); assert.equal(sent.length, n1); ok('marked paid: the code goes to the recipient with the message, once');
+assert.equal((await call(orders, '/api/giftcard/check', { body: { code: gcCode.toLowerCase() } })).data.balance, 5000); ok('balance check');
+const gcO1 = await order({ giftcard: gcCode, lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] });
+const r1 = (await pg.query(`SELECT total_cents, gift_card_cents, payment_status FROM orders WHERE ref = $1`, [gcO1.data.ref])).rows[0] as any;
+assert.equal(r1.total_cents, 0); assert.equal(r1.payment_status, 'paid'); assert.equal((await call(orders, '/api/giftcard/check', { body: { code: gcCode } })).data.balance, 5000 - r1.gift_card_cents);
+assert.match(sent.find(m => m.subject?.includes(gcO1.data.ref) && m.to?.[0]?.startsWith('t'))!.html, /Paid in full with your gift card/); ok('a small order is paid in full by the card; the rest stays on it');
+const left = 5000 - r1.gift_card_cents;
+const gcO2 = await order({ giftcard: gcCode, lines: [{ id: 'najdi', opt: 'dallah', qty: 3 }] });
+const r2 = (await pg.query(`SELECT total_cents, subtotal_cents, gift_card_cents, payment_status FROM orders WHERE ref = $1`, [gcO2.data.ref])).rows[0] as any;
+assert.equal(r2.gift_card_cents, left); assert.equal(r2.total_cents, r2.subtotal_cents - left); assert.equal(r2.payment_status, 'unpaid');
+assert.equal((await call(orders, '/api/giftcard/check', { body: { code: gcCode } })).status, 400); ok('a bigger order uses what is left and the customer pays the rest');
+await call(admin, `/api/admin/orders/${gcO2.data.ref}`, { cookie: adm, body: { status: 'cancelled', notify: false } });
+assert.equal((await call(orders, '/api/giftcard/check', { body: { code: gcCode } })).data.balance, left); ok('cancelling puts the money back on the card');
+assert.equal((await order({ giftcard: 'GIFT-NOPE99' })).data.error, 'giftcard'); ok('a wrong code is refused');
+
+// ---------- text-message reminders and the daily job ----------
+const { e164 } = await import('../netlify/lib/sms');
+assert.equal(e164('403 555 0100'), '+14035550100'); assert.equal(e164('1-587-555-0100'), '+15875550100'); assert.equal(e164('12'), null); ok('phone numbers made ready for texting');
+process.env.TWILIO_ACCOUNT_SID = 'AC1'; process.env.TWILIO_AUTH_TOKEN = 'tok'; process.env.TWILIO_FROM = '+15875550000';
+const texts: any[] = []; const f0 = globalThis.fetch;
+globalThis.fetch = (async (url: string, init: any) => { if (String(url).includes('api.twilio.com')) { texts.push(Object.fromEntries(new URLSearchParams(init.body))); return new Response('{}', { status: 201 }); } return f0(url, init); }) as any;
+const smsO = await order({ sms: true, day: '2027-01-29', lang: 'ar' });
+await order({ day: '2027-01-29' });
+const { daily } = await import('../netlify/functions/reminders.mts');
+const d1 = await daily('2027-01-28');
+assert.equal(texts.length, 1); assert.equal(texts[0].To, '+14035550100'); assert.ok(texts[0].Body.includes(smsO.data.ref) && /تذكير/.test(texts[0].Body)); ok('only customers who ticked the box get a text, in their language');
+await daily('2027-01-28'); assert.equal(texts.length, 1); ok('one text per order');
+globalThis.fetch = f0; delete process.env.TWILIO_ACCOUNT_SID;
+
+// ---------- regular orders ----------
+const subO = await order({ repeat: 2, email: 'regular@example.com', day: '2027-01-22', lines: [{ id: 'najdi', opt: 'dallah', qty: 2 }] });
+assert.equal(subO.status, 201);
+const sub = (await pg.query(`SELECT * FROM subscriptions WHERE email = 'regular@example.com'`)).rows[0] as any;
+assert.equal(String(sub.next_date instanceof Date ? sub.next_date.toISOString() : sub.next_date).slice(0, 10), '2027-02-05'); assert.equal(sub.every_weeks, 2);
+assert.ok(sent.some(m => m.to?.includes('regular@example.com') && /regular order is set/.test(m.subject))); ok('"repeat every 2 weeks" sets up the next one two weeks later');
+await daily('2027-01-25');
+assert.equal((await pg.query(`SELECT COUNT(*)::int AS n FROM orders WHERE subscription_id = $1`, [sub.id])).rows[0].n, 1); ok('nothing is placed more than a week ahead');
+await daily('2027-01-29');
+const placedRows = (await pg.query(`SELECT ref, slot_date::text AS d, total_cents FROM orders WHERE subscription_id = $1 ORDER BY id`, [sub.id])).rows as any[];
+assert.equal(placedRows.length, 2); assert.equal(placedRows[1].d, '2027-02-05');
+assert.ok(sent.some(m => m.subject?.includes(placedRows[1].ref) && /your regular order, every 2 weeks/.test(m.html))); ok('a week before, it becomes a real order with the usual emails');
+await daily('2027-01-30'); assert.equal((await pg.query(`SELECT COUNT(*)::int AS n FROM orders WHERE subscription_id = $1`, [sub.id])).rows[0].n, 2); ok('and only once');
+const regCookie = await login('regular@example.com');
+const mine = (await call(orders, '/api/my/subscriptions', { cookie: regCookie })).data.subscriptions;
+assert.equal(mine.length, 1); assert.equal(mine[0].next, '2027-02-19'); assert.equal(mine[0].lines[0].name.en, 'Najdi');
+assert.equal((await call(orders, '/api/my/subscriptions', { cookie: regCookie, body: { id: sub.id, action: 'skip' } })).data.next, '2027-03-05'); ok('the customer sees it and can skip one');
+assert.equal((await call(orders, '/api/my/subscriptions', { cookie: adm, body: { id: sub.id, action: 'stop' } })).status, 404); ok('nobody else can change it');
+assert.equal((await call(orders, '/api/my/subscriptions', { cookie: regCookie, body: { id: sub.id, action: 'pause' } })).data.status, 'paused');
+await daily('2027-02-27'); assert.equal((await pg.query(`SELECT COUNT(*)::int AS n FROM orders WHERE subscription_id = $1`, [sub.id])).rows[0].n, 2); ok('paused: nothing is placed');
+await call(orders, '/api/my/subscriptions', { cookie: regCookie, body: { id: sub.id, action: 'stop' } });
+assert.equal((await call(orders, '/api/my/subscriptions', { cookie: regCookie })).data.subscriptions.length, 0); ok('stopped');
+await call(admin, '/api/admin/products/sanaani', { cookie: adm, body: { available: false } });
+await order({ repeat: 4, email: 'gone@example.com', day: '2027-01-22', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] });
+await pg.query(`UPDATE subscriptions SET lines = '[{"id":"sanaani","opt":"dallah","qty":1}]'::jsonb WHERE email = 'gone@example.com'`);
+await daily('2027-02-12');
+assert.ok(sent.some(m => m.to?.includes('gone@example.com') && /couldn't place/i.test(m.subject))); ok('if something is sold out, the customer is told and the next one stays');
+
+// ---------- monthly report ----------
+const rep = (await call(admin, '/api/admin/report?month=2026-11', { cookie: adm })).data;
+assert.equal(rep.month, '2026-10'); assert.match(rep.html, /Sales \(after refunds\)/); ok('report preview for last month');
+const before2 = sent.length;
+await daily('2027-03-01'); assert.ok(sent.slice(before2).some(m => /month in numbers \(February 2027\)/.test(m.subject))); 
+const before3 = sent.length; await daily('2027-03-01'); assert.ok(!sent.slice(before3).some(m => /month in numbers/.test(m.subject))); ok('on the 1st the owners get last month in numbers, once');
+assert.equal((await call(admin, '/api/admin/report', { cookie: helper })).status, 403); ok('helpers do not see the money report');
+
 // ---------- rate limits ----------
 const rl = await import('../netlify/lib/rate');
 let blocked = false;

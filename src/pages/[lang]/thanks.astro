@@ -17,6 +17,11 @@ const ar = lang === 'ar';
       <p class="muted">{ar ? 'أرسلنا لك بريداً بالتفاصيل. يمكنك متابعة طلبك في أي وقت.' : 'We emailed you the details. You can follow your order any time.'}</p>
       <a class="btn tamr" id="follow" href={path(lang, 'account')}>{ar ? 'تابع طلبك' : 'Follow your order'}</a>
     </div>
+    <div data-kind="giftcard" hidden>
+      <Pair lang={lang} size="l" bunn={{ ar: 'وصل طلب الهدية.', en: 'Your gift is on its way.' }} tamr={{ ar: 'والرمز يصل بالبريد.', en: 'The code goes by email.' }} />
+      <h1 class="h-m">{ar ? 'شكراً. حين يصلنا الدفع نرسل رمز البطاقة بالبريد.' : 'Thank you. As soon as the payment arrives, we email the gift card code.'}</h1>
+      <p class="ref" id="gcRef"></p>
+    </div>
     <div data-kind="list" hidden>
       <Pair lang={lang} size="l" bunn={{ ar: 'سجّلنا بريدك.', en: 'We have your email.' }} tamr={{ ar: 'ثلاث رسائل فقط في السنة.', en: 'Only three letters a year.' }} />
       <h1 class="h-m">{ar ? 'أنت على القائمة.' : 'You’re on the list.'}</h1>
@@ -50,8 +55,9 @@ const ar = lang === 'ar';
 <script>
   import { clear } from '../../scripts/cart';
   const q = new URLSearchParams(location.search);
-  const kind = q.has('list') ? 'list' : q.has('unsub') ? 'unsub' : q.has('listexpired') ? 'listexpired' : q.has('story') ? 'story' : 'order';
+  const kind = q.has('giftcard') ? 'giftcard' : q.has('list') ? 'list' : q.has('unsub') ? 'unsub' : q.has('listexpired') ? 'listexpired' : q.has('story') ? 'story' : 'order';
   document.querySelector<HTMLElement>(`[data-kind="${kind}"]`)!.hidden = false;
+  if (kind === 'giftcard') document.getElementById('gcRef')!.textContent = q.get('giftcard') ?? '';
   if (kind === 'order') {
     clear();
     const ref = q.get('order'), t = q.get('t');

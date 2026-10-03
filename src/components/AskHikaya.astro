@@ -32,6 +32,9 @@ const T = {
   yes: ar ? 'نعم' : 'Yes',
   no: ar ? 'لا' : 'No',
   thanks: ar ? 'شكراً.' : 'Thank you.',
+  mic: ar ? 'تحدّث بدلاً من الكتابة' : 'Speak instead of typing',
+  listening: ar ? 'أستمع… تكلّم ثم اضغط مرة أخرى' : 'Listening… speak, then tap again',
+  micOff: ar ? 'لم نستطع استخدام الميكروفون. اسمح به في المتصفح أو اكتب سؤالك.' : "We couldn't use the microphone. Allow it in your browser, or type your question.",
 };
 ---
 <button class="ask-fab" type="button" id="askFab" aria-controls="askPanel" aria-expanded="false">
@@ -51,6 +54,7 @@ const T = {
   <form class="ask-form" id="askForm">
     <label class="sr" for="askInput">{T.placeholder}</label>
     <textarea id="askInput" rows="1" maxlength="1500" placeholder={T.placeholder} autocomplete="off"></textarea>
+    <button type="button" class="ask-mic" id="askMic" aria-label={T.mic} title={T.mic} aria-pressed="false" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="7" y="2.5" width="6" height="10" rx="3" /><path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v3" /></svg></button>
     <button type="submit" class="ask-send" aria-label={T.send}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h13M11 5l5 5-5 5" /></svg></button>
   </form>
   <p class="ask-note">{T.note} <a href={path(lang, 'help')}>{T.form}</a></p>
@@ -203,6 +207,27 @@ const T = {
   document.getElementById('askReset')!.addEventListener('click', () => { st = { chat: null, log: [], open: true }; save(); paint(); input.focus(); });
   panel.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
   chips.querySelectorAll('button').forEach(b => b.addEventListener('click', () => send(b.textContent || '')));
+  // Voice: the browser turns speech into text in the box (nothing is recorded or sent as audio);
+  // the customer checks it and presses send. Hidden where the browser can't do it (e.g. Firefox).
+  const Rec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+  const mic = document.getElementById('askMic') as HTMLButtonElement;
+  if (Rec) {
+    mic.hidden = false;
+    let rec: any = null;
+    const stop = () => { rec?.stop(); };
+    mic.addEventListener('click', () => {
+      if (rec) return stop();
+      rec = new Rec();
+      rec.lang = document.documentElement.lang === 'ar' ? 'ar-SA' : 'en-CA';
+      rec.interimResults = true; rec.continuous = false;
+      const start = input.value ? input.value.trimEnd() + ' ' : '';
+      rec.onresult = (e: any) => { input.value = start + Array.from(e.results as ArrayLike<any>).map((r: any) => r[0].transcript).join(''); grow(); };
+      rec.onerror = (e: any) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'audio-capture') input.placeholder = T.micOff; };
+      rec.onend = () => { rec = null; mic.setAttribute('aria-pressed', 'false'); input.placeholder = input.placeholder === T.listening ? T.placeholder : input.placeholder; input.focus(); };
+      mic.setAttribute('aria-pressed', 'true'); input.placeholder = T.listening;
+      try { rec.start(); } catch { rec = null; mic.setAttribute('aria-pressed', 'false'); }
+    });
+  }
   form.addEventListener('submit', e => { e.preventDefault(); const v = input.value; input.value = ''; grow(); send(v); });
   input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); } });
   const grow = () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 140) + 'px'; };
@@ -291,6 +316,12 @@ const T = {
   .ask-form textarea:focus { outline: none; border-color: var(--bunn); box-shadow: 0 0 0 4px color-mix(in srgb, var(--khalal) 35%, transparent); }
   .ask-send { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--bunn); color: var(--paper); display: grid; place-items: center; border-bottom-right-radius: 8px; }
   .ask-send:hover { background: var(--bunn-2); }
+  .ask-mic { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--paper-2); color: var(--bunn); display: grid; place-items: center; }
+  .ask-mic[hidden] { display: none; }
+  .ask-mic svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+  .ask-mic[aria-pressed="true"] { background: var(--tamr); color: var(--paper); animation: askPulse 1.2s ease-in-out infinite; }
+  @keyframes askPulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--tamr) 25%, transparent); } }
+  @media (prefers-reduced-motion: reduce) { .ask-mic[aria-pressed="true"] { animation: none; } }
   .ask-send svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   [dir='rtl'] .ask-send svg { transform: scaleX(-1); }
   .ask-note { font-size: 12.5px; color: var(--ink-2); padding: 0 14px 12px; background: var(--paper); line-height: 1.4; }

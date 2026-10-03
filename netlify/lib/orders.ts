@@ -7,6 +7,8 @@ import { liveCatalog, takeStock, giveStock, restock } from './catalog';
 import { checkPromo, redeem, unredeem, type Applied } from './promos';
 import { send, orderEmail, teamAlert, type OrderMailKind } from './email';
 import { randomInt } from 'node:crypto';
+import { paymentLink } from './square';
+import { takeFromGiftCard, giveBackToGiftCard, normGift } from './giftcards';
 
 export const STATUSES = ['received', 'confirmed', 'ready', 'out-for-delivery', 'completed', 'cancelled'] as const;
 export type Status = typeof STATUSES[number];
@@ -22,7 +24,7 @@ export const calgaryPostal = (v: string) => {
 
 export type NewOrder = { lines: PricedLine[]; order: Row; guestToken: string };
 
-export async function createOrder(input: any, s: Session | null, cardEnabled: boolean): Promise<NewOrder> {
+export async function createOrder(input: any, s: Session | null, cardEnabled: boolean, opts: { subscriptionId?: number } = {}): Promise<NewOrder> {
   const lang = input?.lang === 'ar' ? 'ar' : 'en';
   const name = str(input?.name, 120), phone = str(input?.phone, 40), notes = str(input?.notes, 1000);
   const email = (s?.email ?? str(input?.email, 254)).toLowerCase();
@@ -59,6 +61,12 @@ export async function createOrder(input: any, s: Session | null, cardEnabled: bo
   // Take stock and use the promo code before saving; give both back if saving fails.
   const taken = isSample ? [] : await takeStock(lines);
   try { if (promo) await redeem(promo.code); } catch (e) { await giveStock(taken); throw e; }
+  // A gift card pays what it can of the total; the rest is paid the usual way.
+  const gcCode = normGift(input?.giftcard) || null;
+  let gcCents = 0;
+  try { if (gcCode) gcCents = await takeFromGiftCard(gcCode, t.total_cents); }
+  catch (e) { await giveStock(taken); await unredeem(promo?.code ?? null); throw Object.assign(e as HttpError, { fields: { giftcard: 'giftcard' } }); }
+  const total = t.total_cents - gcCents;
   try {
 
   const customer = await one`INSERT INTO customers (email, name, phone, lang) VALUES (${email}, ${name}, ${phone}, ${lang})
@@ -68,9 +76,11 @@ export async function createOrder(input: any, s: Session | null, cardEnabled: bo
   for (let i = 0; i < 5 && !order; i++) {
     try {
       order = await one`INSERT INTO orders (ref, customer_id, email, name, phone, lang, method, street, postal, slot_date, slot_window, payment,
-          subtotal_cents, delivery_cents, discount_cents, total_cents, promo_code, notes, guest_token_hash, is_sample, gift, gift_to, gift_phone, gift_message)
+          subtotal_cents, delivery_cents, discount_cents, total_cents, promo_code, notes, guest_token_hash, is_sample, gift, gift_to, gift_phone, gift_message,
+          gift_card_code, gift_card_cents, payment_status, sms_ok, subscription_id)
         VALUES (${newRef()}, ${customer!.id}, ${email}, ${name}, ${phone}, ${lang}, ${method}, ${street}, ${postal}, ${str(input.day, 10)}, ${str(input.window, 20)}, ${payment},
-          ${t.subtotal_cents}, ${t.delivery_cents}, ${t.discount_cents}, ${t.total_cents}, ${promo?.code ?? null}, ${notes || null}, ${hash(guestToken)}, ${isSample}, ${gift}, ${giftTo}, ${giftPhone}, ${giftMessage})
+          ${t.subtotal_cents}, ${t.delivery_cents}, ${t.discount_cents}, ${total}, ${promo?.code ?? null}, ${notes || null}, ${hash(guestToken)}, ${isSample}, ${gift}, ${giftTo}, ${giftPhone}, ${giftMessage},
+          ${gcCode && gcCents ? gcCode : null}, ${gcCents}, ${total === 0 ? 'paid' : 'unpaid'}, ${input?.sms === true}, ${opts.subscriptionId ?? null})
         RETURNING *`;
     } catch (e: any) { if (!String(e?.message).includes('unique')) throw e; }
   }
@@ -79,9 +89,29 @@ export async function createOrder(input: any, s: Session | null, cardEnabled: bo
     await sql`INSERT INTO order_items (order_id, product_id, name_en, name_ar, option, option_en, option_ar, qty, unit_cents)
       VALUES (${order.id}, ${l.product_id}, ${l.name_en}, ${l.name_ar}, ${l.option}, ${l.option_en}, ${l.option_ar}, ${l.qty}, ${l.unit_cents})`;
   }
-  await event(order.id, 'created', `${method} · ${str(input.day, 10)} ${order.slot_window} · ${payment}${promo ? ` · code ${promo.code}` : ''}`, s?.email ?? 'guest');
+  await event(order.id, 'created', `${method} · ${str(input.day, 10)} ${order.slot_window} · ${payment}${promo ? ` · code ${promo.code}` : ''}${gcCents ? ` · gift card ${gcCode} −${(gcCents / 100).toFixed(2)}` : ''}${opts.subscriptionId ? ' · regular order' : ''}`, s?.email ?? (opts.subscriptionId ? 'regular order' : 'guest'));
   return { lines, order, guestToken };
-  } catch (e) { await giveStock(taken); await unredeem(promo?.code ?? null); throw e; }
+  } catch (e) { await giveStock(taken); await unredeem(promo?.code ?? null); await giveBackToGiftCard(gcCode, gcCents); throw e; }
+}
+
+/** After an order is saved: the card payment page (if paying by card), the customer's email and the team alert. */
+export async function finishOrder(n: NewOrder, req?: Request, extra: { every_weeks?: number } = {}) {
+  const { order, lines, guestToken } = n;
+  let payUrl: string | null = null;
+  if (order.payment === 'card' && order.total_cents > 0) {
+    try {
+      const link = await paymentLink(order, lines, `${siteUrl(req)}/${order.lang}/thanks/?order=${order.ref}&t=${guestToken}`);
+      payUrl = link.url;
+      await sql`UPDATE orders SET square_order_id = ${link.orderId}, square_link_url = ${link.url} WHERE id = ${order.id}`;
+      order.square_link_url = link.url;
+    } catch (e) {
+      console.error(e);
+      await event(order.id, 'payment-link-failed', String(e).slice(0, 300), 'system');
+    }
+  }
+  await notify('received', { ...order, ...extra }, req, guestToken);
+  await notifyTeam(order, req);
+  return payUrl;
 }
 
 export async function event(orderId: number, kind: string, detail: string | null, actor: string) {
@@ -112,7 +142,7 @@ export async function publicOrder(o: Row) {
   return {
     ref: o.ref, status: o.status, paymentStatus: o.payment_status, payment: o.payment, method: o.method,
     day: mailShape(o).slot_date, window: o.slot_window, street: o.street, postal: o.postal, name: o.name,
-    subtotal: o.subtotal_cents, delivery: o.delivery_cents, discount: o.discount_cents ?? 0, promo: o.promo_code ?? null, gift: o.gift ? { to: o.gift_to, phone: o.gift_phone, message: o.gift_message } : null, refunded: o.refunded_cents ?? 0, total: o.total_cents, notes: o.notes, payUrl: o.payment_status === 'unpaid' ? o.square_link_url : null,
+    subtotal: o.subtotal_cents, delivery: o.delivery_cents, discount: o.discount_cents ?? 0, promo: o.promo_code ?? null, gift: o.gift ? { to: o.gift_to, phone: o.gift_phone, message: o.gift_message } : null, giftCard: o.gift_card_cents ?? 0, regular: Boolean(o.subscription_id), refunded: o.refunded_cents ?? 0, total: o.total_cents, notes: o.notes, payUrl: o.payment_status === 'unpaid' ? o.square_link_url : null,
     created: o.created_at, items: await items(o.id),
   };
 }
@@ -143,6 +173,7 @@ export async function setStatus(ref: string, status: string, actor: string, req?
 export async function releaseOrder(o: Row) {
   if (!o.is_sample) await restock(o.id);
   await unredeem(o.promo_code ?? null);
+  await giveBackToGiftCard(o.gift_card_code ?? null, o.gift_card_cents ?? 0);
 }
 
 export async function setPayment(ref: string, paymentStatus: string, actor: string) {

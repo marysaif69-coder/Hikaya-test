@@ -1,0 +1,101 @@
+---
+// Gift cards: choose an amount, who it is for and a message; pay by card (Square) or e-Transfer.
+// Once paid, the code is emailed to the person receiving it (or to the buyer to pass on).
+import Base from '../../layouts/Base.astro';
+import Pair from '../../components/Pair.astro';
+import type { Lang } from '../../data/products';
+
+export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
+const lang = Astro.params.lang as Lang;
+const ar = lang === 'ar';
+const AMOUNTS = [25, 50, 75, 100];
+---
+<Base lang={lang} title={ar ? 'بطاقة هدية' : 'Gift card'}>
+  <section class="wrap gc">
+    <div class="gc-intro">
+      <h1 class="h-l">{ar ? 'بطاقة هدية من حكاية' : 'A Hikaya gift card'}</h1>
+      <Pair lang={lang} bunn={{ ar: 'هم يختارون القهوة.', en: 'They choose the coffee.' }} tamr={{ ar: 'وتمرة بجانبها.', en: 'And a date beside it.' }} />
+      <p class="lead">{ar ? 'نرسل رمز البطاقة بالبريد إلى من تهديه، مع رسالتك. يستعمله عند الطلب، وما يتبقى يبقى للمرة القادمة.' : 'We email the code to the person you choose, with your message. They use it at checkout, and whatever is left stays for next time.'}</p>
+    </div>
+    <form class="gc-form" id="gc" novalidate>
+      <fieldset class="block">
+        <legend class="h-s">{ar ? 'القيمة' : 'Amount'}</legend>
+        <div class="amts">{AMOUNTS.map((a, i) => <label><input type="radio" name="amount" value={a * 100} checked={i === 1} /><span class="tnum">{ar ? `${a} $` : `$${a}`}</span></label>)}</div>
+      </fieldset>
+      <fieldset class="block">
+        <legend class="h-s">{ar ? 'لمن؟' : 'Who is it for?'}</legend>
+        <div class="two">
+          <div class="field"><label for="g-to">{ar ? 'اسمه' : 'Their name'}</label><input id="g-to" name="to_name" required /><p class="err" hidden></p></div>
+          <div class="field"><label for="g-toemail">{ar ? 'بريده (اختياري)' : 'Their email (optional)'}</label><input id="g-toemail" name="to_email" type="email" dir="ltr" /><p class="hint">{ar ? 'اتركه فارغاً ونرسل الرمز إليك لتعطيه بنفسك.' : 'Leave it empty and we send the code to you to pass on.'}</p><p class="err" hidden></p></div>
+        </div>
+        <div class="field"><label for="g-msg">{ar ? 'رسالتك (اختياري)' : 'Your message (optional)'}</label><textarea id="g-msg" name="message" rows="3" maxlength="300"></textarea></div>
+      </fieldset>
+      <fieldset class="block">
+        <legend class="h-s">{ar ? 'منك' : 'From you'}</legend>
+        <div class="two">
+          <div class="field"><label for="g-name">{ar ? 'اسمك' : 'Your name'}</label><input id="g-name" name="buyer_name" required autocomplete="name" /><p class="err" hidden></p></div>
+          <div class="field"><label for="g-email">{ar ? 'بريدك' : 'Your email'}</label><input id="g-email" name="buyer_email" type="email" required autocomplete="email" dir="ltr" /><p class="err" hidden></p></div>
+        </div>
+      </fieldset>
+      <fieldset class="block">
+        <legend class="h-s">{ar ? 'الدفع' : 'Paying'}</legend>
+        <div class="choice">
+          <label id="gPayCard" hidden><input type="radio" name="payment" value="card" /><span><b>{ar ? 'بالبطاقة الآن' : 'Card, now'}</b><small>{ar ? 'يصل الرمز فوراً' : 'The code goes out straight away'}</small></span></label>
+          <label><input type="radio" name="payment" value="e-transfer" checked /><span><b>Interac e-Transfer</b><small>{ar ? 'نرسل الرمز حين يصل التحويل' : 'We send the code when it arrives'}</small></span></label>
+        </div>
+      </fieldset>
+      <p class="err" id="gErr" hidden role="alert"></p>
+      <button class="btn tamr" type="submit">{ar ? 'أرسل بطاقة الهدية' : 'Send the gift card'}</button>
+    </form>
+  </section>
+</Base>
+
+<style>
+  .gc { display: grid; grid-template-columns: .8fr 1.2fr; gap: clamp(28px, 5vw, 72px); padding-block: clamp(40px, 6vw, 80px) clamp(64px, 8vw, 104px); align-items: start; }
+  @media (max-width: 900px) { .gc { grid-template-columns: 1fr; } }
+  .gc-intro { display: grid; gap: 22px; }
+  .gc-form { display: grid; gap: 26px; }
+  .block { border: 0; margin: 0; padding: 22px 0 0; display: grid; gap: 14px; border-top: 1px solid var(--line); }
+  .block legend { padding: 0; float: left; width: 100%; margin-bottom: 4px; }
+  .block legend + * { clear: both; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 560px) { .two { grid-template-columns: 1fr; } }
+  .amts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .amts label, .choice label { cursor: pointer; }
+  .amts input, .choice input { position: absolute; opacity: 0; }
+  .amts span { display: grid; place-items: center; min-height: 64px; border-radius: 18px; background: var(--sheet); box-shadow: inset 0 0 0 1.5px var(--line); font-family: var(--display); font-size: 24px; font-weight: 700; }
+  .amts input:checked + span, .choice input:checked + span { box-shadow: inset 0 0 0 2px var(--bunn); border-bottom-right-radius: 5px; }
+  .amts input:focus-visible + span, .choice input:focus-visible + span { outline: 2.5px solid var(--tamr); outline-offset: 3px; }
+  .choice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 560px) { .choice { grid-template-columns: 1fr; } }
+  .choice span { display: grid; gap: 2px; padding: 14px 16px; border-radius: 18px; box-shadow: inset 0 0 0 1.5px var(--line); background: var(--sheet); height: 100%; }
+  .choice small { font-size: 14px; color: var(--ink-2); }
+  .gc-form > .btn { justify-self: start; font-size: 17px; padding-inline: 28px; }
+</style>
+
+<script>
+  const lang = document.documentElement.lang as 'en' | 'ar', ar = lang === 'ar';
+  const form = document.getElementById('gc') as HTMLFormElement;
+  const val = (n: string) => (form.elements.namedItem(n) as RadioNodeList | HTMLInputElement).value;
+  fetch('/api/config').then(r => r.json()).then(c => { document.getElementById('gPayCard')!.hidden = !c.card; }).catch(() => {});
+  const MSG: Record<string, string> = { required: ar ? 'نحتاج هذا.' : 'We need this.', email: ar ? 'تحقق من البريد.' : 'Check the email.' };
+  const FIELD: Record<string, string> = { to_name: 'g-to', to_email: 'g-toemail', buyer_name: 'g-name', buyer_email: 'g-email' };
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    form.querySelectorAll<HTMLElement>('.field .err').forEach(x => { x.hidden = true; });
+    const err = document.getElementById('gErr')!; err.hidden = true;
+    const btn = form.querySelector<HTMLButtonElement>('button[type=submit]')!; btn.disabled = true;
+    try {
+      const r = await fetch('/api/giftcard', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
+        lang, amount_cents: Number(val('amount')), to_name: val('to_name'), to_email: val('to_email'), message: val('message'), buyer_name: val('buyer_name'), buyer_email: val('buyer_email'), payment: val('payment'),
+      }) });
+      const d = await r.json();
+      if (!r.ok) {
+        for (const [k, v] of Object.entries(d.fields ?? {})) { const p = document.getElementById(FIELD[k] ?? '')?.closest('.field')?.querySelector<HTMLElement>('.err'); if (p) { p.textContent = MSG[v as string] ?? MSG.required; p.hidden = false; } }
+        err.textContent = d.message ?? (ar ? 'تعذّر الإرسال.' : 'That did not go through.'); err.hidden = false; return;
+      }
+      location.href = d.payUrl || `/${lang}/thanks/?giftcard=${encodeURIComponent(d.ref)}`;
+    } catch { err.textContent = ar ? 'انقطع الاتصال. حاول مرة أخرى.' : 'The connection dropped. Try again.'; err.hidden = false; }
+    finally { btn.disabled = false; }
+  });
+</script>

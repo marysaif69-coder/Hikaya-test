@@ -21,6 +21,9 @@ The same list, with a tick for each one already added, is in **Admin → Setting
 | `ETRANSFER_EMAIL` | The address customers send Interac e-Transfers to (shown at checkout and in emails) | Your bank's e-Transfer email, e.g. `pay@hikayacoffee.ca` |
 | `STAFF_EMAILS` | Helpers: orders, Inbox, day/week sheets, Driver page. No refunds, prices, promo codes, settings, Words or exports | Their emails, comma-separated |
 | `GOOGLE_REVIEW_URL` | Sends one "How was it?" email 3–10 days after a completed order | Google Business Profile → **Ask for reviews** → copy the link |
+| `TWILIO_ACCOUNT_SID` | Text-message reminders (with the two below) | twilio.com → Console → Account Info |
+| `TWILIO_AUTH_TOKEN` 🔒 | | Same page → Auth Token |
+| `TWILIO_FROM` | The number texts come from | Twilio → Phone Numbers → buy a Canadian 403/587 number |
 | `GITHUB_CONTENT_TOKEN` 🔒 | Turns on **Save** in Admin → Words (product text and recipes) | See "GitHub token" below |
 
 ## Square (card payments)

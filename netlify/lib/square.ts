@@ -21,10 +21,30 @@ export async function paymentLink(o: Row, lines: PricedLine[], redirectUrl: stri
       idempotency_key: o.ref,
       order: {
         location_id: env('SQUARE_LOCATION_ID'), reference_id: o.ref, line_items: lineItems,
-        ...(o.discount_cents ? { discounts: [{ name: o.promo_code ? `Code ${o.promo_code}` : 'Discount', amount_money: { amount: o.discount_cents, currency: 'CAD' }, scope: 'ORDER' }] } : {}),
+        ...(o.discount_cents || o.gift_card_cents ? { discounts: [
+          ...(o.discount_cents ? [{ name: o.promo_code ? `Code ${o.promo_code}` : 'Discount', amount_money: { amount: o.discount_cents, currency: 'CAD' }, scope: 'ORDER' }] : []),
+          ...(o.gift_card_cents ? [{ name: 'Gift card', amount_money: { amount: o.gift_card_cents, currency: 'CAD' }, scope: 'ORDER' }] : []),
+        ] } : {}),
       },
       checkout_options: { redirect_url: redirectUrl, ask_for_shipping_address: false },
       pre_populated_data: { buyer_email: o.email },
+    }),
+  });
+  const data: any = await r.json();
+  if (!r.ok) throw new Error(`Square: ${JSON.stringify(data.errors ?? data).slice(0, 300)}`);
+  return { url: data.payment_link.url as string, orderId: data.payment_link.order_id as string };
+}
+
+/** A payment page for one amount (used for gift cards). */
+export async function amountLink(ref: string, name: string, cents: number, email: string, redirectUrl: string) {
+  const r = await fetch(`${base()}/v2/online-checkout/payment-links`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${env('SQUARE_ACCESS_TOKEN')}`, 'content-type': 'application/json', 'square-version': '2025-01-23' },
+    body: JSON.stringify({
+      idempotency_key: ref,
+      order: { location_id: env('SQUARE_LOCATION_ID'), reference_id: ref, line_items: [{ name, quantity: '1', base_price_money: { amount: cents, currency: 'CAD' } }] },
+      checkout_options: { redirect_url: redirectUrl, ask_for_shipping_address: false },
+      pre_populated_data: { buyer_email: email },
     }),
   });
   const data: any = await r.json();

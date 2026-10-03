@@ -5,6 +5,7 @@ import { json, siteUrl } from '../lib/http';
 import { one, sql } from '../lib/db';
 import { verifyWebhook } from '../lib/square';
 import { setPayment } from '../lib/orders';
+import { giftCardPaid } from '../lib/giftcards';
 
 export default async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'method' }, 405);
@@ -17,6 +18,10 @@ export default async (req: Request) => {
     const o = await one`SELECT ref, payment_status FROM orders WHERE square_order_id = ${payment.order_id}`;
     if (o) await sql`UPDATE orders SET square_payment_id = ${payment.id} WHERE ref = ${o.ref}`;
     if (o && o.payment_status === 'unpaid') await setPayment(o.ref, 'paid', 'square');
+    if (!o) {
+      const g = await one`SELECT ref FROM gift_cards WHERE square_order_id = ${payment.order_id}`;
+      if (g) await giftCardPaid(g.ref, req, payment.id);
+    }
   }
   return json({ ok: true });
 };

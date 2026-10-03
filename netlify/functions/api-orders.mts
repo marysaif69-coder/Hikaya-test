@@ -4,7 +4,9 @@ import { json, fail, body, str, siteUrl, HttpError } from '../lib/http';
 import { session } from '../lib/auth';
 import { sql, one } from '../lib/db';
 import { availability } from '../lib/slots';
-import { createOrder, publicOrder, findForGuest, notify, notifyTeam, event, releaseOrder } from '../lib/orders';
+import { createOrder, finishOrder, publicOrder, findForGuest, notify, event, releaseOrder } from '../lib/orders';
+import { startSubscription, mySubscriptions, changeSubscription } from '../lib/subscriptions';
+import { buyGiftCard, giftCardBalance } from '../lib/giftcards';
 import { liveCatalog, getSeasons } from '../lib/catalog';
 import { checkPromo } from '../lib/promos';
 import { priceCart } from '../lib/pricing';
@@ -12,7 +14,7 @@ import { limit, ipKey } from '../lib/rate';
 import { addAlert } from '../lib/alerts';
 import { subscribe, confirm, unsubscribe } from '../lib/list';
 import { countView } from '../lib/visits';
-import { cardEnabled, paymentLink } from '../lib/square';
+import { cardEnabled } from '../lib/square';
 import { DELIVERY_CENTS, FREE_DELIVERY_FROM } from '../lib/pricing';
 
 export default async (req: Request) => {
@@ -73,22 +75,34 @@ export default async (req: Request) => {
       const s = await session(req);
       if (!s || s.role === 'customer') await limit(`order:${ipKey(req)}`, 8, 60, 'Too many orders from here in a short time. Please wait, or write to us with the help form.');
       const input = await body(req);
-      const { order, lines, guestToken } = await createOrder(input, s, cardEnabled());
-      let payUrl: string | null = null;
-      if (order.payment === 'card') {
-        try {
-          const link = await paymentLink(order, lines, `${siteUrl(req)}/${order.lang}/thanks/?order=${order.ref}&t=${guestToken}`);
-          payUrl = link.url;
-          await sql`UPDATE orders SET square_order_id = ${link.orderId}, square_link_url = ${link.url} WHERE id = ${order.id}`;
-        } catch (e) {
-          console.error(e);
-          await event(order.id, 'payment-link-failed', String(e).slice(0, 300), 'system');
-        }
-      }
+      const made = await createOrder(input, s, cardEnabled());
+      const { order, guestToken } = made;
+      const every = [2, 4].includes(Number(input.repeat)) ? Number(input.repeat) : 0;
+      const payUrl = await finishOrder(made, req, every ? { every_weeks: every } : {});
+      if (every && !order.is_sample) await startSubscription(order, input, every, req).catch(e => console.error('subscription', e));
       if (input.newsletter === true) await subscribe(order.email, order.lang, 'checkout', req).catch(e => console.error('newsletter', e));
-      await notify('received', order, req, guestToken);
-      await notifyTeam(order, req);
       return json({ ref: order.ref, token: guestToken, payUrl }, 201);
+    }
+    // Gift cards: buy one, or check a code's balance at checkout.
+    if (path === '/api/giftcard' && req.method === 'POST') {
+      await limit(`giftcard:${ipKey(req)}`, 10, 60);
+      return json(await buyGiftCard(await body(req), req), 201);
+    }
+    if (path === '/api/giftcard/check' && req.method === 'POST') {
+      await limit(`gccheck:${ipKey(req)}`, 20, 60, 'Too many tries. Please wait a little.');
+      return json(await giftCardBalance((await body(req)).code));
+    }
+    // Regular orders: the customer's own, and skip / pause / resume / stop.
+    if (path === '/api/my/subscriptions' && req.method === 'GET') {
+      const s = await session(req);
+      if (!s) throw new HttpError(401, 'login');
+      return json({ subscriptions: await mySubscriptions(s.email) });
+    }
+    if (path === '/api/my/subscriptions' && req.method === 'POST') {
+      const s = await session(req);
+      if (!s) throw new HttpError(401, 'login');
+      const b = await body(req);
+      return json(await changeSubscription(s.email, Number(b.id), str(b.action, 10), req));
     }
     // A guest opening the link from their email.
     if (path === '/api/orders/view' && req.method === 'GET') {
@@ -118,4 +132,4 @@ export default async (req: Request) => {
   } catch (e) { return fail(e); }
 };
 
-export const config: Config = { path: ['/api/config', '/api/catalog', '/api/promo', '/api/notify-me', '/api/list', '/api/list/confirm', '/api/list/unsubscribe', '/api/hit', '/api/slots', '/api/orders', '/api/orders/view', '/api/my/orders', '/api/my/orders/cancel'] };
+export const config: Config = { path: ['/api/config', '/api/catalog', '/api/promo', '/api/notify-me', '/api/list', '/api/list/confirm', '/api/list/unsubscribe', '/api/hit', '/api/giftcard', '/api/giftcard/check', '/api/my/subscriptions', '/api/slots', '/api/orders', '/api/orders/view', '/api/my/orders', '/api/my/orders/cancel'] };

@@ -70,6 +70,14 @@ Edit this file to change what the assistant says, then run the test questions
 - At checkout, tick "This is a gift": add the person's name, their phone (so the driver can reach them) and an optional message. For delivery, put their Calgary address as the delivery address.
 - The message reaches the team with the order. Do not promise a printed card or how the message is presented; say the team adds it to the order.
 - Year-round gift boxes: The Guest Box (a coffee and 12 dates) and The Coffee Duo (two coffees). Ramadan and Eid boxes only in their season.
+- Gift cards: $25, $50, $75 or $100 on the Gift cards page (/en/gift-card/, link in the footer). Pay by e-Transfer (or card when available); once paid, the code is emailed to the person (or to the buyer to pass on if no email was given), with the buyer's message. At checkout the code goes in the "Gift card" box; it pays what it can and the rest of the balance stays on the card. A cancelled order puts the money back on the card. Any other gift card question (lost code, refund): open a request for the team. You cannot look up or create gift card codes.
+
+## Regular orders and reminders
+
+- Regular order (a subscription): at checkout, under the day and time, choose "The same again every 2 weeks" or "every 4 weeks". Same day of the week and time window each round. A week before each one we place it as a normal order at that day's prices and email a confirmation; it is paid the usual way each time (no charge in advance, no subscription discount). Skip the next one, pause, resume or stop from My account (/en/account/). If something in it is sold out, we email them and keep the next one.
+- Text reminder: at checkout tick "Text me a reminder the evening before" and we text the phone number on the order the evening before pickup or delivery. It can't be added to an order already placed; the email reminder still comes.
+- Order again: in My account, every past order has an "Order again" button that puts the same items back in the cart.
+- Voice: on phones and in Chrome or Safari, the microphone button in this chat turns speech into text.
 
 ## Account, emails and privacy
 

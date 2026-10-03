@@ -718,6 +718,97 @@
         "answers both: yes, Thursday to Sunday",
         "Baydani contains sesame, so not for a sesame allergy"
       ]
+    },
+    {
+      "id": "arabizi-delivery",
+      "lang": "en",
+      "q": "marhaba, bt wasslo 3a NW Calgary? T3A",
+      "must": [
+        "understands they ask about delivery to NW Calgary (T3A)",
+        "says yes, T3A is in Calgary and delivery is $9, free over $80",
+        "replies briefly in Arabic script and English together"
+      ],
+      "must_not": [
+        "replies only in Latin-letter Arabic",
+        "invents a delivery time not in the handbook"
+      ]
+    },
+    {
+      "id": "arabizi-gift",
+      "lang": "en",
+      "q": "bdi ab3at hdiye la ummi, fi gift card?",
+      "must": [
+        "understands they want to send a gift to their mother and ask about gift cards",
+        "says yes: gift cards of $25, $50, $75 or $100 on the Gift cards page, code emailed once paid",
+        "may also mention the This is a gift option at checkout"
+      ],
+      "must_not": [
+        "says gift cards don't exist"
+      ]
+    },
+    {
+      "id": "arabizi-order",
+      "lang": "en",
+      "q": "wen talabi? HK-TEST1 , 7atait emaily ma7ad radd",
+      "must": [
+        "understands they ask where their order HK-TEST1 is",
+        "looks up the order and gives its status, day and time",
+        "replies briefly in Arabic script and English together"
+      ],
+      "must_not": [
+        "asks for a card number"
+      ]
+    },
+    {
+      "id": "arabizi-regular",
+      "lang": "en",
+      "q": "mumken a3mel talab kel shahr nafs el ahwe?",
+      "must": [
+        "understands they want the same coffee every month",
+        "says yes: at checkout choose The same again every 4 weeks (or 2 weeks); skip, pause or stop from their account",
+        "says each one is paid like a normal order"
+      ],
+      "must_not": [
+        "invents a subscription discount"
+      ]
+    },
+    {
+      "id": "arabizi-gulf",
+      "lang": "en",
+      "q": "3indkum gahwa sha2ra? ab8a wa7da khafeefa",
+      "must": [
+        "understands they want a light, blond (shaqra) Gulf coffee",
+        "recommends a light coffee from Pot & Palm, such as Najdi or Shamaliyya, by name",
+        "replies briefly in Arabic script and English together"
+      ],
+      "must_not": [
+        "recommends a dark Levantine coffee as light"
+      ]
+    },
+    {
+      "id": "voice-ramble",
+      "lang": "en",
+      "q": "um hi yes so I wanted to ask about the uh the dates the box of dates the big one for Eid how much is it and can I pick it up on Saturday",
+      "must": [
+        "handles the rambling spoken-style question calmly",
+        "answers about the Eid date box: its name and price if Eid season is on, or that it comes back next season if off",
+        "says Saturday is a pickup day (Thursday to Sunday) and how to choose it at checkout"
+      ],
+      "must_not": [
+        "invents a price"
+      ]
+    },
+    {
+      "id": "sms-reminder",
+      "lang": "en",
+      "q": "Can you text me before my pickup? I always forget emails",
+      "must": [
+        "says yes: tick Text me a reminder the evening before at checkout",
+        "is honest that it is for new orders (they can reply to the confirmation email for an existing one)"
+      ],
+      "must_not": [
+        "promises a text for an order without the tick"
+      ]
     }
   ]
 }

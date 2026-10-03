@@ -22,6 +22,15 @@ Everything runs on Netlify: the website, the server code (Netlify Functions in `
 Order received (with the gift details and any discount) · confirmed · ready for pickup · out for delivery · completed · cancelled · reminder the evening before (5–6 pm Calgary) · login codes · new-order alert to the team · help request received (to the customer) · help request alert (to the team) · replies written in the Inbox · back in stock ("email me when it's back") · mailing list confirmation · Google review request (when `GOOGLE_REVIEW_URL` is set).
 All sent through Resend from the site itself; no n8n or Zapier needed. Admin → Settings → Connections shows the last email and has "Send me a test email".
 
+## Gift cards, regular orders, texts, monthly report
+- **Gift cards** (`/en/gift-card/`): $25–100; card (Square) or e-Transfer. Once paid (Square webhook, or Admin → Promotions → "Money received") the code is emailed to the recipient. At checkout the "Gift card" box pays what it can; the balance stays; a cancelled order puts it back. Tables: `gift_cards`; orders carry `gift_card_code` / `gift_card_cents`.
+- **Regular orders** (checkout → "The same again every 2/4 weeks"): stored in `subscriptions`. The daily job (`netlify/functions/reminders.mts`) turns each into a normal order 7 days before its day, at that day's prices, with the usual emails; if something is sold out the customer is emailed and the next one stays. Customers skip / pause / resume / stop in My account; the desk lists them under the Week sheet.
+- **Text reminders**: checkout tick; sent by the same daily job through Twilio when its three settings exist.
+- **Order again**: My account puts a past order's items back in the cart.
+- **Ask Hikaya voice**: the browser's own speech-to-text fills the box (Chrome, Safari, Edge); no audio is sent to us.
+- **Monthly report**: emailed to ADMIN_EMAILS on the 1st (Calgary); preview or send in Admin → Numbers.
+- **Plan tab**: what's built, what's left before launch, the rehearsal steps and ideas for later.
+
 ## The desk at a glance
 - **Orders, Inbox, Day sheet** as before. **Week sheet**: coffee to roast and grind (kg, pouches, how many go in gift boxes), dates to portion, boxes, sleeves and cups for Thursday–Wednesday; printable.
 - **Driver** (`/admin/driver/`, made for a phone): the day's deliveries in postal-code order, Map and Call buttons, gift recipient and card message, "Collect $X" when paying on delivery, On my way / Delivered (emails the customer) / Couldn't deliver (note for the team).
@@ -37,6 +46,7 @@ All sent through Resend from the site itself; no n8n or Zapier needed. Admin →
 | `ADMIN_EMAILS` | Owners: can do everything. Comma-separated, e.g. `maryam@hikayacoffee.ca,shadi@hikayacoffee.ca` |
 | `STAFF_EMAILS` | Optional. Helpers: orders, Inbox, day and week sheets, the driver page. Not refunds, prices, promo codes, settings, words or exports. |
 | `GOOGLE_REVIEW_URL` | Optional. Your Google review link (Google Business Profile → Ask for reviews). When set, completed orders get one "How was it?" email 3–10 days later. |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | Optional. Text-message reminders the evening before, for customers who tick the box at checkout. About 1–2¢ a text. |
 | `GITHUB_CONTENT_TOKEN` | Optional. Turns on saving in Admin → Words. A fine-grained GitHub token for the Hikaya-test repository only, with "Contents: read and write". Secret. |
 | `RESEND_API_KEY` | From resend.com (free tier: 3,000 emails/month). Until set, emails are logged but not sent. |
 | `EMAIL_FROM` | e.g. `Hikaya <orders@hikayacoffee.ca>` (domain must be verified in Resend) |
