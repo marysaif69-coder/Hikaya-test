@@ -492,11 +492,15 @@ assert.equal(planCalls[1].origin.address, '10 A St, T2P 1J9, Calgary, AB'); ok('
 assert.equal(stEve.km, 16); assert.equal(stEve.minutes, 40);
 const evStops = (await call(driverApi, '/api/driver/stops?date=2027-02-04', { cookie: eve })).data.stops;
 assert.deepEqual(evStops.map((x: any) => x.ref), [ev2.data.ref, ev1.data.ref, ev3.data.ref]); assert.equal(evStops[0].seq, 1); ok('stops shown in driving order, numbered');
+const { publicOrder: pubO } = await import('../netlify/lib/orders');
+const ahead = async (ref: string) => (await pubO((await pg.query(`SELECT * FROM orders WHERE ref = $1`, [ref])).rows[0])).stopsBefore;
+assert.equal(await ahead(ev2.data.ref), 0); assert.equal(await ahead(ev3.data.ref), 2); assert.equal(await ahead(ev1.data.ref), 1); ok('customers see how many stops are before theirs');
 let rt = (await call(driverApi, '/api/driver/route?date=2027-02-04', { cookie: eve })).data.route;
 assert.equal(rt.next.ref, ev2.data.ref); assert.match(rt.next.url, /google\.com\/maps\/dir\/.*destination=20%20B%20St/); assert.equal(rt.kmSoFar, 0); ok('"Navigate to next stop" opens Google Maps to the next stop');
 assert.equal((await call(driverApi, '/api/driver/start?date=2027-02-04', { cookie: eve, body: {} })).data.error, 'route-open');
 const photo = async (ref: string) => driverApi(new Request(`${H}/api/driver/photo?ref=${ref}`, { method: 'POST', headers: { 'content-type': 'image/jpeg', origin: H, cookie: eve }, body: jpeg }));
 await photo(ev2.data.ref); await call(driverApi, '/api/driver/delivered', { cookie: eve, body: { ref: ev2.data.ref, collected: 'card' } });
+assert.equal(await ahead(ev3.data.ref), 1); assert.equal(await ahead(ev2.data.ref), null); ok('the count goes down as stops are delivered');
 rt = (await call(driverApi, '/api/driver/route?date=2027-02-04', { cookie: eve })).data.route;
 assert.equal(rt.next.ref, ev1.data.ref); assert.equal(rt.kmSoFar, 4); ok('after Delivered, the next stop moves on and the km count goes up');
 await photo(ev1.data.ref); await call(driverApi, '/api/driver/delivered', { cookie: eve, body: { ref: ev1.data.ref } });

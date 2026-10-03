@@ -147,13 +147,21 @@ export async function notifyTeam(o: Row, req?: Request) {
 }
 const mailShape = (o: Row) => ({ ...o, slot_date: String(o.slot_date instanceof Date ? o.slot_date.toISOString() : o.slot_date).slice(0, 10) }) as any;
 
+/** Stops still ahead of this one on the driver's route (only while it is out for delivery). */
+async function stopsBefore(o: Row) {
+  if (o.status !== 'out-for-delivery' || o.route_seq == null || !o.driver_email) return null;
+  const r = await one`SELECT COUNT(*)::int AS n FROM orders WHERE driver_email = ${o.driver_email} AND slot_date = ${mailShape(o).slot_date}
+    AND status = 'out-for-delivery' AND route_seq IS NOT NULL AND route_seq < ${o.route_seq} AND id <> ${o.id}`;
+  return r!.n as number;
+}
+
 /** What a customer may see about their order. */
 export async function publicOrder(o: Row) {
   return {
     ref: o.ref, status: o.status, paymentStatus: o.payment_status, payment: o.payment, method: o.method,
     day: mailShape(o).slot_date, window: o.slot_window, street: o.street, postal: o.postal, name: o.name,
     subtotal: o.subtotal_cents, delivery: o.delivery_cents, discount: o.discount_cents ?? 0, promo: o.promo_code ?? null, gift: o.gift ? { to: o.gift_to, phone: o.gift_phone, message: o.gift_message } : null, giftCard: o.gift_card_cents ?? 0, regular: Boolean(o.subscription_id), refunded: o.refunded_cents ?? 0, total: o.total_cents, notes: o.notes, payUrl: o.payment_status === 'unpaid' ? o.square_link_url : null,
-    created: o.created_at, items: await items(o.id),
+    created: o.created_at, items: await items(o.id), stopsBefore: await stopsBefore(o),
   };
 }
 

@@ -36,6 +36,7 @@ const ar = lang === 'ar';
 </Base>
 
 <style>
+  :global(.eta) { background: var(--sheet, #EDE3D0); border-radius: 12px; padding: 10px 14px; font-weight: 600; margin: 8px 0; }
   .acc { padding-block: clamp(40px, 6vw, 80px) clamp(64px, 8vw, 104px); display: grid; gap: 22px; max-width: 920px; }
   .acc-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 10px 20px; }
   .acc-who { font-size: 15px; color: var(--ink-2); }
@@ -91,6 +92,17 @@ const ar = lang === 'ar';
   } as const;
   const PAY: Record<string, string> = { 'at-pickup': ar ? 'الدفع عند الاستلام' : 'Pay at pickup or handover', 'e-transfer': 'Interac e-Transfer', card: ar ? 'بطاقة عبر Square' : 'Card through Square' };
 
+  /** "2 stops before yours", in English or Arabic (with Arabic number agreement). */
+  function aheadText(n: number) {
+    if (ar) return n === 0 ? 'السائق في الطريق إليك الآن، أنت التالي.' : `السائق في الطريق: ${n === 1 ? 'قبلك توقّف واحد' : n === 2 ? 'قبلك توقّفان' : n <= 10 ? `قبلك ${n} توقّفات` : `قبلك ${n} توقّفاً`}.`;
+    return n === 0 ? "Your driver is heading to you now. You're next." : `Your driver is on the way: ${n} ${n === 1 ? 'stop' : 'stops'} before yours.`;
+  }
+  let liveTimer: number | undefined;
+  /** While an order is out for delivery, check again every minute. */
+  function keepFresh(list: any[], again: () => void) {
+    clearTimeout(liveTimer);
+    if (list.some(o => o.status === 'out-for-delivery')) liveTimer = window.setTimeout(again, 60000);
+  }
   function card(o: any) {
     const steps = STEPS[o.method as 'pickup' | 'delivery'];
     const idx = steps.findIndex(s => s[0] === o.status);
@@ -104,6 +116,7 @@ const ar = lang === 'ar';
       <p>${where}</p>
       ${o.status === 'cancelled' ? `<p class="cancelled">${ar ? 'أُلغي هذا الطلب.' : 'This order was cancelled.'}</p>` :
         `<ol class="steps">${steps.map((s, i) => `<li class="${i < idx ? 'on' : i === idx ? 'now' : ''}">${s[1]}</li>`).join('')}</ol>`}
+      ${o.stopsBefore != null ? `<p class="eta">${aheadText(o.stopsBefore)}</p>` : ''}
       <ul class="its">${its}${o.delivery ? `<li><span>${ar ? 'التوصيل' : 'Delivery'}</span><span class="tnum">${money(o.delivery)}</span></li>` : ''}</ul>
       ${o.giftCard ? `<p class="its"><span>${ar ? 'بطاقة هدية' : 'Gift card'}: −${money(o.giftCard)}</span></p>` : ''}
       <p class="tot"><span>${ar ? 'الإجمالي' : 'Total'}</span><span class="tnum">${money(o.total)}</span></p>
@@ -120,6 +133,7 @@ const ar = lang === 'ar';
     const { orders } = await r.json();
     mine = orders;
     $('orders').innerHTML = orders.map(card).join('');
+    keepFresh(orders, showMine);
     loadSubs();
     $('empty').hidden = orders.length > 0;
     document.getElementById(`o-${q.get('order')}`)?.scrollIntoView({ block: 'center' });
@@ -213,6 +227,7 @@ const ar = lang === 'ar';
         const { order } = await r.json();
         $('accTitle').textContent = ar ? 'طلبك' : 'Your order';
         $('orders').innerHTML = card(order);
+        keepFresh([order], () => location.reload());
         $('guestNote').hidden = false;
         return;
       }

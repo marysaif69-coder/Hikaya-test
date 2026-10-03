@@ -217,6 +217,7 @@ async function shapeOrder(o: Row) {
     payment: p.payment, payment_status: p.paymentStatus, total: `$${(p.total / 100).toFixed(2)}`,
     items: (p.items as Row[]).map(i => `${i.qty} × ${i.name_en}${i.option_en ? ` (${i.option_en})` : ''}`),
     can_self_cancel: p.status === 'received' && p.paymentStatus === 'unpaid',
+    ...(p.stopsBefore != null ? { stops_before_yours: p.stopsBefore } : {}),
   };
 }
 
