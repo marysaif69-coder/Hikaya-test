@@ -413,6 +413,21 @@ async function handle(req: Request) {
     // ---------- numbers: visits and sales ----------
     if (parts[0] === 'numbers' && req.method === 'GET') return json(await numbers(30));
     if (parts[0] === 'today' && req.method === 'GET') return json(await today(admin.role));
+    // ---------- quick search (header): orders, customers, messages ----------
+    if (parts[0] === 'search' && req.method === 'GET') {
+      const raw = q('q', 80).toLowerCase();
+      if (raw.length < 2) return json({ orders: [], customers: [], tickets: [] });
+      const term = `%${raw}%`, digits = raw.replace(/\D/g, ''), dterm = digits.length >= 3 ? `%${digits}%` : '-';
+      const [orders, customers, tickets] = await Promise.all([
+        sql`SELECT ref, name, status, method, slot_date::text AS day, total_cents FROM orders
+          WHERE LOWER(ref || ' ' || name || ' ' || email || ' ' || COALESCE(postal, '')) LIKE ${term} OR regexp_replace(phone, '[^0-9]', '', 'g') LIKE ${dterm}
+          ORDER BY created_at DESC LIMIT 8`,
+        sql`SELECT id, name, email, phone FROM customers WHERE email NOT LIKE '%.sample@example.com'
+          AND (LOWER(email) LIKE ${term} OR LOWER(COALESCE(name, '')) LIKE ${term} OR regexp_replace(COALESCE(phone, ''), '[^0-9]', '', 'g') LIKE ${dterm}) ORDER BY id DESC LIMIT 5`,
+        sql`SELECT ref, name, email, status, kind FROM tickets WHERE LOWER(ref || ' ' || COALESCE(name, '') || ' ' || email) LIKE ${term} ORDER BY created_at DESC LIMIT 4`,
+      ]);
+      return json({ orders, customers, tickets });
+    }
 
     // ---------- promo codes ----------
     if (parts[0] === 'promos' && !parts[1] && req.method === 'GET') {

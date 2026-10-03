@@ -856,6 +856,15 @@ assert.equal(tdH.money, null); assert.ok(Array.isArray(tdH.todo)); ok('helpers s
 await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [tdB.data.ref], driver: 'dan@example.com' } });
 assert.ok(!(await todayFn('admin', '2027-03-26')).todo.some(t => /no driver/.test(t.text))); ok('assigning a driver clears that line');
 
+// ---------- quick search ----------
+const sr1 = (await call(admin, `/api/admin/search?q=${tdA.data.ref.toLowerCase()}`, { cookie: helper })).data;
+assert.equal(sr1.orders[0].ref, tdA.data.ref); ok('quick search finds an order by its number, for helpers too');
+const sr2 = (await call(admin, `/api/admin/search?q=${encodeURIComponent('(403) 555-0100')}`, { cookie: adm })).data;
+assert.ok(sr2.orders.length > 0); ok('quick search matches a phone number however it is typed');
+const sr3 = (await call(admin, '/api/admin/search?q=today2', { cookie: adm })).data;
+assert.ok(sr3.orders.some((o: any) => o.ref === tdB.data.ref)); assert.equal((await call(admin, '/api/admin/search?q=a', { cookie: adm })).data.orders.length, 0);
+assert.equal((await call(admin, '/api/admin/search?q=x', { cookie: dan2 })).status, 403); ok('search by email; one letter is not searched; drivers cannot search');
+
 // ---------- confirming orders ----------
 const newO = await order({ day: '2027-01-31' });
 const cMails = sent.length;
