@@ -3,7 +3,7 @@
 Where: **Netlify → hikaya-v4-preview → Project configuration → Environment variables → Add a variable**.
 After adding or changing any of them: **Deploys → Trigger deploy → Deploy site**.
 Mark the ones with 🔒 as **secret** ("Contains secret values"). Never paste these values into a chat.
-To check what works: **Admin → Settings → Connections**.
+The same list, with a tick for each one already added, is in **Admin → Settings**.
 
 ## Already added (you told me on 2–3 October)
 

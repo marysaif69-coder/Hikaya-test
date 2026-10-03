@@ -22,6 +22,26 @@ import { PRODUCTS, FAMILIES } from '../../src/data/products';
 import { send, ticketReply } from '../lib/email';
 
 const day = (v: unknown) => (v instanceof Date ? v.toISOString() : String(v ?? '')).slice(0, 10);
+// The Netlify settings the owners still have to add, shown in Admin → Settings (see docs/settings-checklist.md).
+const SETTINGS = [
+  { group: 'Basics', name: 'ADMIN_EMAILS', secret: false, what: 'Owners: can do everything in the desk.', where: 'Owner emails, separated by commas.' },
+  { group: 'Basics', name: 'PREVIEW_PASSWORD', secret: true, what: 'The code on the "Coming soon" screen.', where: 'Any code you choose.' },
+  { group: 'Emails', name: 'RESEND_API_KEY', secret: true, what: 'Sends every email (orders, codes, reminders).', where: 'resend.com → API Keys.' },
+  { group: 'Emails', name: 'EMAIL_FROM', secret: false, what: 'Who emails come from.', where: 'e.g. Hikaya <hello@hikayacoffee.ca> (domain verified in Resend).' },
+  { group: 'Emails', name: 'EMAIL_REPLY_TO', secret: false, what: 'Where customer replies go.', where: 'e.g. hello@hikayacoffee.ca' },
+  { group: 'Payments', name: 'ETRANSFER_EMAIL', secret: false, what: 'Where customers send Interac e-Transfers.', where: "Your bank's e-Transfer email." },
+  { group: 'Payments', name: 'SQUARE_ACCESS_TOKEN', secret: true, what: 'Card payments and card refunds.', where: 'developer.squareup.com → your app → Credentials → Production → Access token.' },
+  { group: 'Payments', name: 'SQUARE_LOCATION_ID', secret: false, what: 'Which Square location takes the money.', where: 'Same app → Locations.' },
+  { group: 'Payments', name: 'SQUARE_ENV', secret: false, what: 'Live or test payments.', where: 'Type production (sandbox while testing).' },
+  { group: 'Payments', name: 'SQUARE_WEBHOOK_SIGNATURE_KEY', secret: true, what: 'Marks card orders paid by themselves.', where: 'Same app → Webhooks → add the URL shown above for payment.updated → Signature key.' },
+  { group: 'Assistant', name: 'ANTHROPIC_API_KEY', secret: true, what: 'Turns on Ask Hikaya.', where: 'console.anthropic.com → API Keys.' },
+  { group: 'Extras', name: 'STAFF_EMAILS', secret: false, what: 'Helpers: orders, Inbox, sheets, Driver. No money or settings.', where: 'Helper emails, separated by commas.' },
+  { group: 'Extras', name: 'GOOGLE_REVIEW_URL', secret: false, what: 'One "How was it?" email after a completed order.', where: 'Google Business Profile → Ask for reviews → copy link.' },
+  { group: 'Extras', name: 'GITHUB_CONTENT_TOKEN', secret: true, what: 'Turns on saving in the Words tab.', where: 'GitHub → Settings → Developer settings → Fine-grained token, only Hikaya-test, Contents: read and write.' },
+  { group: 'Launch day only', name: 'SITE_URL', secret: false, what: 'The address used in emails and links.', where: 'https://hikayacoffee.ca' },
+  { group: 'Launch day only', name: 'SITE_PUBLIC', secret: false, what: 'Opens the site to everyone. Leave empty until launch.', where: 'Type true on launch day.' },
+];
+
 const summary = (o: any) => ({
   ref: o.ref, name: o.name, email: o.email, phone: o.phone, method: o.method, street: o.street, postal: o.postal,
   day: day(o.slot_date), window: o.slot_window, payment: o.payment, paymentStatus: o.payment_status, status: o.status,
@@ -150,6 +170,8 @@ export default async (req: Request) => {
         square: { enabled: cardEnabled(), env: env('SQUARE_ENV') || 'sandbox', webhook: Boolean(env('SQUARE_WEBHOOK_SIGNATURE_KEY')), webhookUrl: `${siteUrl(req)}/api/square/webhook` },
         ask: { enabled: askEnabled() },
         etransfer: env('ETRANSFER_EMAIL') || null,
+        // Which Netlify settings exist. Only yes/no: values never leave the server.
+        checklist: admin.role === 'admin' ? SETTINGS.map(x => ({ ...x, set: Boolean(env(x.name)) })) : [],
       });
     }
     if (parts[0] === 'connections' && parts[1] === 'test-email' && req.method === 'POST') {

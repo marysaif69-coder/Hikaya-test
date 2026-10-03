@@ -242,7 +242,9 @@ assert.equal(nums.refs[0].ref, 'instagram.com'); ok('page counts without cookies
 
 // ---------- connections ----------
 const con = (await call(admin, '/api/admin/connections', { cookie: adm })).data;
-assert.equal(con.email.key, true); assert.equal(con.square.enabled, false); assert.match(con.square.webhookUrl, /\/api\/square\/webhook$/);
+assert.equal(con.email.key, true);
+assert.equal(con.checklist.find((x: any) => x.name === 'RESEND_API_KEY').set, true); assert.equal(con.checklist.find((x: any) => x.name === 'GOOGLE_REVIEW_URL').set, false);
+assert.ok(!JSON.stringify(con).includes('test-key')); ok('settings checklist says which are added, never their values'); assert.equal(con.square.enabled, false); assert.match(con.square.webhookUrl, /\/api\/square\/webhook$/);
 const te = await call(admin, '/api/admin/connections/test-email', { cookie: adm, body: {} });
 assert.deepEqual(sent.at(-1).to, ['maryam@hikayacoffee.ca']); assert.match(sent.at(-1).subject, /test email/); assert.equal(te.data.to, 'maryam@hikayacoffee.ca'); ok('Settings shows the connections and sends a test email');
 
@@ -251,7 +253,7 @@ const helper = await login('helper@hikayacoffee.ca');
 const hOrders = await call(admin, '/api/admin/orders', { cookie: helper });
 assert.equal(hOrders.status, 200);
 assert.equal((await call(admin, `/api/admin/orders/${g.data.ref}`, { cookie: helper, body: { status: 'out-for-delivery', notify: false } })).status, 200);
-assert.equal((await call(admin, '/api/admin/week', { cookie: helper })).status, 200); ok('a helper can run orders, deliveries and the week sheet');
+assert.equal((await call(admin, '/api/admin/week', { cookie: helper })).status, 200); assert.equal((await call(admin, '/api/admin/connections', { cookie: helper })).data.checklist.length, 0); ok('a helper can run orders, deliveries and the week sheet');
 for (const [path, body] of [[`/api/admin/orders/${g.data.ref}/refund`, { amount_cents: 100, method: 'cash' }], ['/api/admin/products/najdi', { price_cents: 100 }], ['/api/admin/seasons', { eid: false }], ['/api/admin/promos', { code: 'FREE', kind: 'percent', value: 100 }], ['/api/admin/settings', { open: false }]] as const)
   assert.equal((await call(admin, path, { cookie: helper, body })).status, 403, path);
 for (const path of ['/api/admin/export.csv', '/api/admin/list.csv']) assert.equal((await call(admin, path, { cookie: helper })).status, 403, path);
