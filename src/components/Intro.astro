@@ -45,13 +45,14 @@ const g = svg.match(/<g transform="([^"]+)">/)![1];
   .intro-wm small { font: 600 12px/1 var(--body); letter-spacing: .5em; padding-inline-start: .5em; margin-top: 10px; color: var(--ink-2); }
 
   /* the conversation, frame by frame: the words come first, then each becomes its bubble */
-  .intro-art { position: relative; margin-bottom: 30px; }
-  /* The names, held under each bubble until the logo leaves. */
-  .nm { position: absolute; margin: 0; transform: translate(-50%, 0); display: grid; justify-items: center; gap: 2px; line-height: 1; opacity: 0; white-space: nowrap; }
-  .nm b { font-family: var(--display); font-weight: 700; font-size: clamp(20px, 2.4vw, 26px); }
+  .intro-art { position: relative; }
+  /* The names, held beside each bubble until the logo leaves: Bunn on the right of the dark bubble,
+     Tamr on the left of the red one. Big enough to belong to the bubble, smaller than حكاية. */
+  .nm { position: absolute; margin: 0; display: grid; gap: 4px; line-height: 1; opacity: 0; white-space: nowrap; }
+  .nm b { font-family: var(--display); font-weight: 700; font-size: clamp(32px, 3.2vw, 40px); }
   .nm small { font: 600 11px/1 var(--body); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-2); }
-  .nm-bunn { left: 74%; top: 80%; color: #33211A; }
-  .nm-tamr { left: 22%; top: 101%; color: #A93B28; }
+  .nm-bunn { left: calc(100% + 14px); top: 22%; justify-items: start; color: #33211A; }
+  .nm-tamr { right: calc(100% + 14px); top: 52%; justify-items: end; color: #A93B28; }
   :global(html.intro-on) .nm-bunn { animation: i-wm .45s cubic-bezier(.23, 1, .32, 1) 1.75s forwards; }
   :global(html.intro-on) .nm-tamr { animation: i-wm .45s cubic-bezier(.23, 1, .32, 1) 1.85s forwards; }
   .iw { position: absolute; margin: 0; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 4px; line-height: 1; opacity: 0; white-space: nowrap; font-family: var(--display); font-weight: 700; font-size: clamp(48px, 7vw, 76px); }
