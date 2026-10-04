@@ -8,14 +8,14 @@ export const BREWING_HTML = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Hikaya · حكاية</title>
-<meta name="description" content="Something is brewing in Calgary. شيء ما يغلي.">
+<meta name="description" content="شيء ما يغلي. Something is brewing in Calgary.">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#160E0A">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%23160E0A%22/%3E%3Ccircle%20cx%3D%2218%22%20cy%3D%2232%22%20r%3D%226%22%20fill%3D%22%23F5EFE3%22%20opacity%3D%22.45%22/%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%226%22%20fill%3D%22%23F5EFE3%22%20opacity%3D%22.7%22/%3E%3Ccircle%20cx%3D%2246%22%20cy%3D%2232%22%20r%3D%226%22%20fill%3D%22%23F5EFE3%22/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="/brand/app-180.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Hikaya · حكاية">
-<meta property="og:description" content="Something is brewing. شيء ما يغلي.">
+<meta property="og:description" content="شيء ما يغلي. Something is brewing.">
 <meta name="twitter:card" content="summary">
 <style>
 @font-face{font-family:'El Messiri';font-weight:600;font-display:swap;src:url('/fonts/ElMessiri-600-arabic.woff2') format('woff2');unicode-range:U+0600-06FF,U+FE70-FEFF}
@@ -63,7 +63,9 @@ main{flex:1;display:grid;place-items:center;text-align:center;padding-block:clam
 .eyebrow{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--khalal);font-weight:600}
 html[dir=rtl] .eyebrow{letter-spacing:0;font-size:14px}
 h1{margin:0;font-family:var(--display);font-weight:700;line-height:1.05;text-wrap:balance;font-size:clamp(46px,9vw,120px);letter-spacing:-.01em}
-.sub{font-family:var(--display);font-weight:600;color:var(--tamr);font-size:clamp(26px,4.4vw,56px);line-height:1.2}
+/* The owners' choice (4 Oct 2026): the headline big and white in the page's language; on the
+   English page the Arabic sits under it, smaller. The Arabic page shows the Arabic headline only. */
+.sub{font-family:var(--display);font-weight:600;color:var(--tamr);font-size:clamp(20px,3.2vw,40px);line-height:1.3}
 html[dir=rtl] .sub{display:none}
 
 /* Tamr's three dots: someone is typing */
@@ -103,7 +105,8 @@ footer{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;al
 (function(){
 const L={en:{eb:'Calgary · soon',h1:'Something is brewing.',ask:'Say hello:',foot:'Hikaya · Calgary'},
          ar:{eb:'كالغاري · قريبًا',h1:'شيء ما يغلي.',ask:'راسلنا:',foot:'حكاية · كالغاري'}};
-let lang='en';try{lang=localStorage.getItem('hk-soon-lang')||'en'}catch(e){}
+// Until someone picks a language, follow the browser (as the main site does).
+let lang=/^ar\\b/i.test(navigator.language||'')?'ar':'en';try{lang=localStorage.getItem('hk-soon-lang')||lang}catch(e){}
 const root=document.documentElement,btn=document.getElementById('langBtn');
 function apply(){const d=L[lang];root.lang=lang;root.dir=lang==='ar'?'rtl':'ltr';
   document.querySelectorAll('[data-t]').forEach(e=>{e.textContent=d[e.dataset.t]});
