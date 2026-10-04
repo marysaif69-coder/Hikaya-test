@@ -173,8 +173,9 @@ export function ticketReceived(t: TicketForMail, siteUrl: string, ramadan: boole
   const c = ar
     ? { s: `وصلتنا رسالتك · ${t.ref}`, h: 'وصلتنا رسالتك', p: `رقم طلبك عندنا ${t.ref}. سيقرأه أحد من فريق حكاية ويرد عليك بالبريد ${when}.`, k: 'إن كان في الطلب شيء تالف، احتفظ به وبالتغليف حتى نرد عليك.' }
     : { s: `We have your message · ${t.ref}`, h: 'We have your message', p: `Your request number is ${t.ref}. Someone from the Hikaya team will read it and reply by email, ${when}.`, k: 'If something arrived damaged, please keep it and the packaging until we reply.' };
-  const body = `<p>${esc(c.p)}</p><p style="background:#EDE3D0;border-radius:14px;padding:12px 16px">${esc(t.summary)}</p><p>${esc(c.k)}</p>`;
-  return { to: t.email, subject: c.s, html: layout(t.lang, c.h, body, siteUrl), text: `${c.h}\n\n${c.p}\n\n${t.summary}\n\n${c.k}`, kind: 'ticket-received', replyTo: env('EMAIL_REPLY_TO') || undefined };
+  // No visitor-written text here: anyone can type any address, so the email must not carry their words.
+  const body = `<p>${esc(c.p)}</p><p>${esc(c.k)}</p>`;
+  return { to: t.email, subject: c.s, html: layout(t.lang, c.h, body, siteUrl), text: `${c.h}\n\n${c.p}\n\n${c.k}`, kind: 'ticket-received', replyTo: env('EMAIL_REPLY_TO') || undefined };
 }
 
 /** New request alert for the team; urgent kinds are marked in the subject. */

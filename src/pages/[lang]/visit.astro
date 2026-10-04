@@ -7,7 +7,7 @@ const lang = Astro.params.lang as Lang;
 const ar = lang === 'ar';
 const WAYS = [
   { h: { en: 'Pickup', ar: 'الاستلام' }, p: { en: 'Free, at [address], Calgary. Thursday to Sunday, 11:00 to 20:00, from 22 January 2027. Pick a time window at checkout.', ar: 'مجاناً من [العنوان]، كالغاري. من الخميس إلى الأحد، ١١:٠٠ حتى ٢٠:٠٠، من ٢٢ يناير ٢٠٢٧. اختر موعدك عند الطلب.' } },
-  { h: { en: 'Calgary delivery', ar: 'التوصيل داخل كالغاري' }, p: { en: 'We deliver ourselves, $9, free over $80. Postal codes starting T1, T2 or T3.', ar: 'نوصل بأنفسنا، ٩ $، ومجاناً فوق ٨٠ $. للرموز البريدية التي تبدأ بـ T1 أو T2 أو T3.' }, ps: [{ s: 'ramadan', en: 'Ramadan orders arrive before sunset.', ar: 'طلبات رمضان تصل قبل الغروب.' }, { s: 'eid', en: 'Eid orders arrive before Eid morning.', ar: 'وطلبات العيد قبل صباح العيد.' }] },
+  { h: { en: 'Calgary delivery', ar: 'التوصيل داخل كالغاري' }, p: { en: 'We deliver ourselves, $9, free over $80. Calgary postal codes only, not nearby towns.', ar: 'نوصل بأنفسنا، ٩ $، ومجاناً فوق ٨٠ $. لرموز كالغاري البريدية فقط، لا المدن المجاورة.' }, ps: [{ s: 'ramadan', en: 'Ramadan orders arrive before sunset.', ar: 'طلبات رمضان تصل قبل الغروب.' }, { s: 'eid', en: 'Eid orders arrive before Eid morning.', ar: 'وطلبات العيد قبل صباح العيد.' }] },
   { h: { en: 'Paying', ar: 'الدفع' }, p: { en: 'For now: at pickup (card or cash) or by Interac e-Transfer once we confirm your order. Card payment online comes with the full launch.', ar: 'حالياً: عند الاستلام (بطاقة أو نقداً) أو بتحويل Interac بعد تأكيد طلبك. الدفع بالبطاقة عبر الموقع يأتي مع الإطلاق الكامل.' } },
 ];
 const FAQ = [

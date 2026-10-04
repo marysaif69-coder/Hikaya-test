@@ -52,3 +52,7 @@ the server refuses the order until a price is set:
   customers) but switched off (`REFILLS_ON` in `netlify/functions/reminders.mts`). Waiting on the
   owners: either a separate tick at checkout for these reminders, or widen "about three emails a
   year" everywhere it appears (consent text, confirmation email, footer, handbook).
+- Delivery area edges: the site now delivers only to Calgary's own postal areas (T1Y, T2A–T2Z,
+  T3A–T3S; list in `CALGARY_FSAS`, `netlify/lib/orders.ts`). Before this, any T1/T2/T3 code passed,
+  including Lethbridge, Medicine Hat, Okotoks and Canmore. Waiting on the owners: should T1X
+  (Chestermere) or T3Z (Springbank) be added? Both are refused until then.

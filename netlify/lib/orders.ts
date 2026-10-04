@@ -17,10 +17,20 @@ const PAYMENTS = ['at-pickup', 'e-transfer', 'card'] as const;
 const REF_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const newRef = () => 'HK-' + Array.from({ length: 5 }, () => REF_CHARS[randomInt(REF_CHARS.length)]).join('');
 
-/** Calgary postal codes start T1, T2 or T3. Returns "T2P 1J9" or null. */
+/** The first three characters (FSA) of Calgary's own postal codes. Many other T1 areas are other
+ *  towns (Medicine Hat, Lethbridge, Okotoks, Canmore), so only these count. Edge areas such as
+ *  T1X (Chestermere) and T3Z (Springbank) wait for the owners (docs/coffee-tbd.md). */
+export const CALGARY_FSAS: ReadonlySet<string> = new Set([
+  'T1Y',
+  ...'ABCEGHJKLMNPRSTVWXYZ'.split('').map(l => `T2${l}`),
+  ...'ABCEGHJKLMNPRS'.split('').map(l => `T3${l}`),
+]);
+export const calgaryFsa = (fsa: string) => CALGARY_FSAS.has(fsa.toUpperCase());
+
+/** A full Calgary postal code, normalised to "T2P 1J9", or null. */
 export const calgaryPostal = (v: string) => {
   const c = v.toUpperCase().replace(/[\s-]+/g, '');
-  return /^T[123][A-Z]\d[A-Z]\d$/.test(c) ? `${c.slice(0, 3)} ${c.slice(3)}` : null;
+  return /^T\d[A-Z]\d[A-Z]\d$/.test(c) && calgaryFsa(c.slice(0, 3)) ? `${c.slice(0, 3)} ${c.slice(3)}` : null;
 };
 
 export type NewOrder = { lines: PricedLine[]; order: Row; guestToken: string };

@@ -37,7 +37,7 @@ const ar = lang === 'ar';
         </div>
         <div class="addr" id="addr" hidden>
           <div class="field"><label for="f-street">{ar ? 'العنوان' : 'Street address'}</label><input id="f-street" name="street" autocomplete="street-address" /><p class="err" hidden></p></div>
-          <div class="field"><label for="f-postal">{ar ? 'الرمز البريدي' : 'Postal code'}</label><input id="f-postal" name="postal" autocomplete="postal-code" placeholder="T2P 1J9" maxlength="7" dir="ltr" /><p class="hint">{ar ? 'نوصل داخل كالغاري: يبدأ الرمز بـ T1 أو T2 أو T3.' : 'We deliver in Calgary: codes starting T1, T2 or T3.'}</p><p class="err" hidden></p></div>
+          <div class="field"><label for="f-postal">{ar ? 'الرمز البريدي' : 'Postal code'}</label><input id="f-postal" name="postal" autocomplete="postal-code" placeholder="T2P 1J9" maxlength="7" dir="ltr" /><p class="hint">{ar ? 'نوصل داخل كالغاري فقط، لا المدن المجاورة.' : 'We deliver in Calgary only, not nearby towns.'}</p><p class="err" hidden></p></div>
         </div>
       </fieldset>
 
@@ -310,7 +310,7 @@ const ar = lang === 'ar';
     required: ar ? 'نحتاج هذا لنؤكد طلبك.' : 'We need this to confirm your order.',
     email: ar ? 'تحقق من البريد، مثل name@example.com' : 'Check the email, like name@example.com',
     phone: ar ? 'اكتب رقم هاتف من ١٠ أرقام.' : 'Enter a 10-digit phone number.',
-    postal: ar ? 'نوصل داخل كالغاري فقط: يبدأ الرمز بـ T1 أو T2 أو T3. اختر الاستلام إن كنت خارجها.' : 'We only deliver in Calgary: codes start T1, T2 or T3. Choose pickup if you are outside it.',
+    postal: ar ? 'نوصل داخل كالغاري فقط، ولا يبدو هذا رمزاً بريدياً في كالغاري. اختر الاستلام إن كنت خارجها.' : 'We only deliver in Calgary, and this does not look like a Calgary postal code. Choose pickup if you are outside the city.',
   };
   const FIELD: Record<string, string> = { gift_to: 'f-giftto', name: 'f-name', phone: 'f-phone', email: 'f-email', street: 'f-street', postal: 'f-postal' };
   const setErr = (el: HTMLElement, msg: string) => {

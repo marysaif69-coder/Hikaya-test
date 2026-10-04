@@ -6,6 +6,7 @@ import { sql, one, type Row, isUniqueViolation } from './db';
 import { HttpError, str, isEmail, siteUrl } from './http';
 import { hash, token } from './auth';
 import { send, ticketReceived, ticketAlert } from './email';
+import { limit, ipKey } from './rate';
 import { calgaryNow, addDays } from './slots';
 import { RAMADAN_START, EID } from '../../src/data/calendar';
 
@@ -31,6 +32,8 @@ export async function createTicket(input: TicketInput, source: 'form' | 'ask', r
   if (!summary) errors.summary = 'required';
   if (Object.keys(errors).length) throw Object.assign(new HttpError(400, 'invalid', 'Check the highlighted fields.'), { fields: errors });
 
+  // One cap per address for the help form and Ask Hikaya together.
+  if (req) await limit(`ticket:${ipKey(req)}`, 10, 60);
   const recent = await one`SELECT COUNT(*)::int AS n FROM tickets WHERE email = ${email} AND created_at > NOW() - INTERVAL '1 hour'`;
   if ((recent?.n ?? 0) >= 5) throw new HttpError(429, 'too-many', 'We already have several messages from you. The team will reply soon.');
 

@@ -1637,7 +1637,7 @@ import '../../styles/global.css';
   });
 
   // ---------- assistant ----------
-  const WHY: Record<string, string> = { credits: 'The Anthropic account is out of credit. Add credit at console.anthropic.com → Plans & Billing.', key: 'The API key in Netlify is missing or wrong.', 'rate-limit': 'Too many messages at once; it clears by itself.', outage: 'Anthropic did not answer; it usually clears by itself.' };
+  const WHY: Record<string, string> = { credits: 'The Anthropic account is out of credit. Add credit at console.anthropic.com → Plans & Billing.', key: 'The API key in Netlify is missing or wrong.', 'rate-limit': 'Too many messages at once; it clears by itself.', 'bad-request': 'Anthropic refused one conversation as malformed; the service itself is working.', outage: 'Anthropic did not answer; it usually clears by itself.' };
   async function loadAskWarn() { try { const d = await api('/api/admin/ask'); $('askWarn').hidden = $('askWarnMain').hidden = d.status.ok !== false; } catch { /* not critical */ } }
   async function loadAssistant() {
     const d = await api('/api/admin/ask');

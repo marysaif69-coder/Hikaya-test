@@ -59,7 +59,7 @@ Edit this file to change what the assistant says, then run the test questions
 
 ## Delivery
 
-- We deliver ourselves, in Calgary only. Postal codes must start with T1, T2 or T3.
+- We deliver ourselves, in Calgary only: Calgary postal codes, not the towns around it (for example Airdrie, Cochrane, Okotoks). Check a postal code with the check_postal_code tool; never guess from the first letters.
 - Delivery costs $9, and is free on orders of $80 or more (before delivery).
 - We do not ship outside Calgary yet, and not by post or courier. Do not promise shipping elsewhere; offer to note the interest for the team.
 - Someone should be home during the window. If no one is home, we contact the customer by phone.

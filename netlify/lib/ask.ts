@@ -13,7 +13,8 @@ import { BREW } from '../../src/data/brew';
 import { RAMADAN_START, EID } from '../../src/data/calendar';
 import { availability, calgaryNow } from './slots';
 import { priceCart, DELIVERY_CENTS, FREE_DELIVERY_FROM } from './pricing';
-import { calgaryPostal, publicOrder } from './orders';
+import { calgaryPostal, calgaryFsa, publicOrder } from './orders';
+import { limit, ipKey } from './rate';
 import { createTicket, KINDS, ramadanNow } from './tickets';
 import { liveCatalog, getSeasons } from './catalog';
 import { offlineAnswer, classify, markDown, markOk } from './ask-fallback';
@@ -169,6 +170,8 @@ async function runTool(name: string, input: any, c: ToolCtx): Promise<unknown> {
   switch (name) {
     case 'lookup_order': {
       if (c.state.lookupsFailed >= 5) return { error: 'Too many lookups in this chat. Ask the customer to use the link in their order email, or open a request.' };
+      // Per address across chats, so a script can't guess order numbers by starting new messages.
+      if (c.req) { try { await limit(`asklookup:${ipKey(c.req)}`, 10, 60); } catch { return { error: 'Too many lookups. Ask the customer to use the link in their order email, or open a request.' }; } }
       const ref = String(input.order_ref ?? '').trim().toUpperCase().replace(/^HK-?/, 'HK-');
       const o = await one`SELECT * FROM orders WHERE ref = ${ref}`;
       const email = String(input.email ?? '').trim().toLowerCase();
@@ -190,9 +193,9 @@ async function runTool(name: string, input: any, c: ToolCtx): Promise<unknown> {
     case 'check_postal_code': {
       // The first three characters (e.g. "T3A") are enough to know the area.
       const fsa = String(input.postal_code ?? '').toUpperCase().replace(/[\s-]+/g, '');
-      if (/^T[123][A-Z]\d?$/.test(fsa) && fsa.length <= 4) return { delivers: true, area: fsa.slice(0, 3), fee: `$${DELIVERY_CENTS / 100}, free from $${FREE_DELIVERY_FROM / 100}`, note: 'This area is in Calgary, so we deliver there. The full postal code goes in at checkout.' };
+      if (fsa.length <= 4 && /^T\d[A-Z]\d?$/.test(fsa) && calgaryFsa(fsa.slice(0, 3))) return { delivers: true, area: fsa.slice(0, 3), fee: `$${DELIVERY_CENTS / 100}, free from $${FREE_DELIVERY_FROM / 100}`, note: 'This area is in Calgary, so we deliver there. The full postal code goes in at checkout.' };
       const p = calgaryPostal(String(input.postal_code ?? ''));
-      return p ? { delivers: true, postal_code: p, fee: `$${DELIVERY_CENTS / 100}, free from $${FREE_DELIVERY_FROM / 100}` } : { delivers: false, note: 'Outside our Calgary delivery area (codes start T1, T2 or T3), or not a valid postal code. Pickup is free.' };
+      return p ? { delivers: true, postal_code: p, fee: `$${DELIVERY_CENTS / 100}, free from $${FREE_DELIVERY_FROM / 100}` } : { delivers: false, note: 'Outside our Calgary delivery area (Calgary postal codes only, not nearby towns), or not a valid postal code. Pickup is free.' };
     }
     case 'add_to_cart': {
       const lines = (Array.isArray(input.items) ? input.items : []).map((i: any) => ({ id: String(i.product_id), opt: i.option ? String(i.option) : '', qty: Number(i.qty) }));
@@ -259,15 +262,23 @@ const FALLBACK = {
 
 /** One customer message in, one reply out, with any tool calls in between. */
 export async function askTurn(chat: Row, text: string, lang: 'en' | 'ar', s: Session | null, req?: Request) {
-  if (chat.turns >= MAX_TURNS) throw new HttpError(429, 'long-chat', 'This conversation is long. Start a new one, or use the help form.');
-  const history: BetaMessageParam[] = typeof chat.messages === 'string' ? JSON.parse(chat.messages) : chat.messages;
+  const longChat = () => new HttpError(429, 'long-chat', 'This conversation is long. Start a new one, or use the help form.');
+  if (chat.turns >= MAX_TURNS) throw longChat();
+  // Claim the turn before any model work, so messages sent at the same moment on one chat can't
+  // each pass the limits, call the model and open requests: only one turn runs at a time.
+  const claimed = await one`UPDATE chats SET turns = turns + 1, updated_at = NOW()
+    WHERE id = ${chat.id} AND turns = ${chat.turns} AND turns < ${MAX_TURNS} RETURNING turns`;
+  if (!claimed) throw new HttpError(409, 'busy', 'One message at a time, please.');
+  const raw: BetaMessageParam[] = typeof chat.messages === 'string' ? JSON.parse(chat.messages) : chat.messages;
+  // Chats saved before refusals were dropped can hold an empty assistant message, which the API refuses.
+  const history = raw.filter(m => !(m.role === 'assistant' && Array.isArray(m.content) && m.content.length === 0));
   const messages: BetaMessageParam[] = [...history, { role: 'user', content: text }];
   const ctx: ToolCtx = { session: s, lang, chatId: chat.id, req, actions: [], state: { lookupsFailed: 0, requests: 0 } };
   const prior = await one`SELECT COUNT(*)::int AS n FROM tickets WHERE chat_id = ${chat.id}`;
   ctx.state.requests = prior?.n ?? 0;
 
   const sysContext = await context(lang, s);
-  let reply = '', reached = false;
+  let reply = '', reached = false, failed = false;
   for (let step = 0; step < MAX_STEPS; step++) {
     let res: BetaMessage;
     try {
@@ -287,14 +298,16 @@ export async function askTurn(chat: Row, text: string, lang: 'en' | 'ar', s: Ses
       } as MessageCreateParamsNonStreaming);
     } catch (e: any) {
       console.error('ask: model call failed', e);
+      failed = true;
       // Out of credit, bad key or an outage: answer the key questions from the built-in list and tell the team.
       reply = offlineAnswer(text, lang);
       await markDown(classify(e), String(e?.error?.error?.message ?? e?.message ?? e), req).catch(err => console.error('ask: alert failed', err));
       break;
     }
     reached = true;
-    messages.push({ role: 'assistant', content: res.content as BetaContentBlock[] });
+    // A refusal has no content: drop it, and the fallback text is stored as the reply below.
     if (res.stop_reason === 'refusal') { reply = FALLBACK[lang]; break; }
+    messages.push({ role: 'assistant', content: res.content as BetaContentBlock[] });
     const uses = res.content.filter(b => b.type === 'tool_use');
     if (res.stop_reason !== 'tool_use' || !uses.length) {
       reply = res.content.filter(b => b.type === 'text').map(b => (b as any).text).join('\n\n').trim() || FALLBACK[lang];
@@ -312,12 +325,12 @@ export async function askTurn(chat: Row, text: string, lang: 'en' | 'ar', s: Ses
     if (step === MAX_STEPS - 1) reply = FALLBACK[lang];
   }
 
-  if (reached) await markOk().catch(() => {});
+  if (reached && !failed) await markOk().catch(() => {});
   // Keep the history valid for the next turn: it must not end on unanswered tool calls.
   const last = messages.at(-1)!;
   if (last.role === 'user') messages.push({ role: 'assistant', content: [{ type: 'text', text: reply }] });
-  const saved = await one`UPDATE chats SET messages = ${JSON.stringify(messages)}::jsonb, turns = turns + 1, updated_at = NOW()
-    WHERE id = ${chat.id} AND turns = ${chat.turns} RETURNING id`;
+  const saved = await one`UPDATE chats SET messages = ${JSON.stringify(messages)}::jsonb, updated_at = NOW()
+    WHERE id = ${chat.id} AND turns = ${chat.turns + 1} RETURNING id`;
   if (!saved) throw new HttpError(409, 'busy', 'One message at a time, please.');
   return { reply, actions: ctx.actions };
 }

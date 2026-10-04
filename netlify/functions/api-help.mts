@@ -25,6 +25,7 @@ export default async (req: Request) => {
       const text = str(b.text, MAX_CHARS + 1);
       if (!text) throw new HttpError(400, 'empty');
       if (text.length > MAX_CHARS) throw new HttpError(413, 'too-long', 'That message is long. Please keep it shorter.');
+      await limit(`ask:${ipKey(req)}`, 40, 60, 'Too many messages. Try again later, or use the help form.');
       const s = await session(req);
       const { chat, token } = await openChat(str(b.chat, 64) || null, lang, ipHash(req), s);
       const { reply, actions } = await askTurn(chat, text, lang, s, req);

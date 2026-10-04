@@ -185,6 +185,33 @@ ask.setCreate(async () => ({ id: 'm', type: 'message', role: 'assistant', model:
 await call(help, '/api/ask', { body: { text: 'hi', lang: 'en' } });
 st = (await call(admin, '/api/admin/ask', { cookie: adm })).data;
 assert.equal(st.status.ok, true); assert.equal(st.notes.length, 1); ok('recovers by itself when the model answers again');
+ask.setCreate(async () => { throw credit; });
+const mails2 = sent.length;
+await call(help, '/api/ask', { body: { text: 'hello', lang: 'en' } });
+assert.equal(sent.length, mails2); ok('a recovery does not reset the six-hour alert gap');
+ask.setCreate(async () => ({ id: 'm', type: 'message', role: 'assistant', model: 'x', stop_reason: 'end_turn', content: [{ type: 'text', text: 'Back.' }], usage: {} } as any));
+await call(help, '/api/ask', { body: { text: 'hi', lang: 'en' } });
+let step = 0;
+ask.setCreate(async () => {
+  if (step++ === 0) return { id: 'm', type: 'message', role: 'assistant', model: 'x', stop_reason: 'tool_use', content: [{ type: 'tool_use', id: 'tu_x', name: 'check_postal_code', input: { postal_code: 'T2P' } }], usage: {} } as any;
+  throw credit;
+});
+await call(help, '/api/ask', { body: { text: 'Do you deliver to T2P?', lang: 'en' } });
+st = (await call(admin, '/api/admin/ask', { cookie: adm })).data;
+assert.equal(st.status.ok, false); ok('a turn that fails after its first answer still shows as down');
+ask.setCreate(async () => ({ id: 'm', type: 'message', role: 'assistant', model: 'x', stop_reason: 'end_turn', content: [{ type: 'text', text: 'Back.' }], usage: {} } as any));
+await call(help, '/api/ask', { body: { text: 'hi', lang: 'en' } });
+
+// Backup answers: every suggestion chip gets a real answer, and a missing delivery goes to the help form.
+const { offlineAnswer } = await import('../netlify/lib/ask-fallback');
+const generic = (l: 'en' | 'ar') => offlineAnswer('zzz', l);
+const chipsSrc = fs.readFileSync('src/components/AskHikaya.astro', 'utf8').match(/chips: ar \? (\[.*?\]) : (\[.*?\]),/)!;
+for (const [i, l] of [[1, 'ar'], [2, 'en']] as const) for (const chip of JSON.parse(chipsSrc[i].replace(/'/g, '"')) as string[])
+  assert.notEqual(offlineAnswer(chip, l), generic(l), chip);
+for (const [q, l] of [['My delivery did not arrive', 'en'], ['My order is late', 'en'], ['لم يصل التوصيل', 'ar']] as const) {
+  const a = offlineAnswer(q, l); assert.match(a, /\/help\//, q); assert.doesNotMatch(a, /\$9|٩ \$/, q);
+}
+assert.doesNotMatch(offlineAnswer('Is it too late to order chocolate?', 'en'), /did not arrive/); ok('backup answers: every chip answered; a missing delivery goes to the help form');
 
 // ---------- weekly roast and pack sheet ----------
 const { weekStart } = await import('../netlify/lib/week');

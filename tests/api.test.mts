@@ -27,10 +27,10 @@ const admin = (await import('../netlify/functions/api-admin.mts')).default;
 const help = (await import('../netlify/functions/api-help.mts')).default;
 const H = 'https://hikaya.test';
 let ipN = 0; // each request from a different address, so the rate limits don't trip
-const call = async (fn: any, path: string, opts: { method?: string; body?: any; cookie?: string } = {}) => {
+const call = async (fn: any, path: string, opts: { method?: string; body?: any; cookie?: string; ip?: string } = {}) => {
   const res: Response = await fn(new Request(H + path, {
     method: opts.method ?? (opts.body ? 'POST' : 'GET'),
-    headers: { 'content-type': 'application/json', origin: H, 'x-nf-client-connection-ip': `10.0.0.${++ipN % 250}`, ...(opts.cookie ? { cookie: opts.cookie } : {}) },
+    headers: { 'content-type': 'application/json', origin: H, 'x-nf-client-connection-ip': opts.ip ?? `10.0.0.${++ipN % 250}`, ...(opts.cookie ? { cookie: opts.cookie } : {}) },
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   }));
   const text = await res.text();
@@ -82,6 +82,13 @@ assert.equal(bad.status, 400); assert.equal(bad.data.fields.postal, 'postal'); a
 const del = await call(orders, '/api/orders', { body: { ...base, method: 'delivery', street: '1 Stephen Ave SW', postal: 't2p1j9', lines: [{ id: 'qishr', qty: 1 }] } });
 assert.equal(del.status, 201); const dv = await call(orders, `/api/orders/view?ref=${del.data.ref}&t=${del.data.token}`);
 assert.equal(dv.data.order.postal, 'T2P 1J9'); assert.equal(dv.data.order.delivery, 900); ok('Calgary delivery: postal normalised, $9 fee under $80');
+const leth = await call(orders, '/api/orders', { body: { ...base, method: 'delivery', street: '1 Main St S', postal: 'T1J 0A1', lines: [{ id: 'qishr', qty: 1 }] } });
+assert.equal(leth.status, 400); assert.equal(leth.data.fields.postal, 'postal');
+const { calgaryPostal, calgaryFsa } = await import('../netlify/lib/orders');
+assert.equal(calgaryPostal('T1H1A1'), null); assert.equal(calgaryPostal('t3a 0a1'), 'T3A 0A1'); assert.equal(calgaryPostal('T1Y 2B3'), 'T1Y 2B3');
+for (const f of ['T2P', 'T3A', 'T2N', 'T3H', 'T3R', 'T3M', 'T3P', 'T3L', 'T3J', 'T3G', 'T2T']) assert.ok(calgaryFsa(f), f);
+for (const f of ['T1A', 'T1J', 'T1S', 'T1V', 'T1W', 'T4B']) assert.ok(!calgaryFsa(f), f);
+ok('a T1 code from another town (Lethbridge T1J) is not Calgary');
 assert.equal((await call(orders, '/api/orders', { body: { ...base, lines: [{ id: 'hack', qty: 1 }] } })).status, 400); ok('unknown product rejected');
 assert.equal((await call(orders, '/api/orders', { body: { ...base, day: '2027-01-25' } })).data.error, 'bad-day'); ok('Monday rejected');
 assert.equal((await call(orders, '/api/orders', { body: { ...base, payment: 'card' } })).data.fields.payment, 'card-off'); ok('card refused until Square is connected');
@@ -142,7 +149,8 @@ assert.ok(rem.subject.startsWith('غداً') && rem.html.includes('dir="rtl"'));
 // ---------- Help form, photos and the Inbox ----------
 const hf = await call(help, '/api/help', { body: { kind: 'damaged', name: 'Layla Haddad', email: 'layla@example.com', order_ref: g.data.ref, summary: 'Date box arrived crushed', details: 'The lid was split.', lang: 'en' } });
 assert.equal(hf.status, 201, JSON.stringify(hf.data)); assert.match(hf.data.ref, /^Q-[A-Z2-9]{5}$/); ok(`help form opens a request: ${hf.data.ref}`);
-assert.ok(sent.some(m => m.subject === `We have your message · ${hf.data.ref}`)); assert.ok(sent.filter(m => m.subject.startsWith(`⚠ Help request ${hf.data.ref}`)).length === 2); ok('customer acknowledged, both admins alerted (marked urgent)');
+const ack = sent.find(m => m.subject === `We have your message · ${hf.data.ref}`);
+assert.ok(ack && !ack.text.includes('Date box arrived crushed') && !ack.html.includes('Date box arrived crushed')); ok('the customer email never repeats what the visitor typed'); assert.ok(sent.filter(m => m.subject.startsWith(`⚠ Help request ${hf.data.ref}`)).length === 2); ok('customer acknowledged, both admins alerted (marked urgent)');
 assert.equal((await call(help, '/api/help', { body: { kind: 'question', email: 'nope', summary: '' } })).data.fields.email, 'email'); ok('help form validates email and summary');
 const photo = (t: string, type = 'image/jpeg', bytes = new Uint8Array([0xff, 0xd8, 0xff, 1, 2, 3])) => help(new Request(`${H}/api/help/photo?ref=${hf.data.ref}&t=${t}`, { method: 'POST', headers: { 'content-type': type, origin: H }, body: bytes }));
 assert.equal((await photo(hf.data.token)).status, 201); ok('photo attached with the upload token');
@@ -204,7 +212,7 @@ assert.equal(viaAsk.data.ticket.source, 'ask'); assert.ok(viaAsk.data.transcript
 
 script = [() => ({ ...say(''), stop_reason: 'refusal', content: [] })];
 assert.match((await call(help, '/api/ask', { body: { chat: a1.data.chat, text: 'something odd', lang: 'ar' } })).data.reply, /\/ar\/help\//); ok('a declined answer falls back to the help form, in Arabic');
-script = [() => { throw new Error('network'); }];
+script = [p => { assert.ok(p.messages.every((m: any) => typeof m.content === 'string' || m.content.length > 0), 'empty message sent'); throw new Error('network'); }];
 assert.match((await call(help, '/api/ask', { body: { chat: a1.data.chat, text: 'hello', lang: 'en' } })).data.reply, /help form/); ok('model outage falls back to the help form');
 
 // The stored history must stay valid for the API: every tool call answered, roles alternate.
@@ -214,8 +222,27 @@ for (let i = 0; i < msgs.length; i++) {
   const m = msgs[i];
   if (m.role === 'assistant' && Array.isArray(m.content)) for (const b of m.content.filter((b: any) => b.type === 'tool_use'))
     assert.ok(msgs[i + 1]?.content?.some?.((r: any) => r.tool_use_id === b.id), 'tool call without result');
+  assert.ok(typeof m.content === 'string' || m.content.length > 0, 'empty message stored');
 }
-assert.equal(stored.turns, 7); ok('stored conversation is valid and append-only');
+assert.equal(stored.turns, 7); ok('stored conversation is valid and append-only; a refusal leaves no empty message');
+
+// Two messages at the same moment on one chat: only one runs, so the limits can't be skipped.
+const before3 = calls.length;
+const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
+script = [async () => { await wait(30); return say('One at a time.'); }];
+const par = await Promise.all([1, 2].map(() => call(help, '/api/ask', { body: { chat: a1.data.chat, text: 'hello?', lang: 'en' } })));
+assert.deepEqual(par.map(r => r.status).sort(), [200, 409]); assert.equal(calls.length, before3 + 1); ok('parallel messages on one chat: one answered, one refused, one model call');
+await pg.query('UPDATE chats SET turns = 30 WHERE id = (SELECT id FROM chats ORDER BY id LIMIT 1)');
+assert.equal((await call(help, '/api/ask', { body: { chat: a1.data.chat, text: 'still there?', lang: 'en' } })).status, 429); assert.equal(calls.length, before3 + 1); ok('a chat at the turn limit is refused before any model call');
+
+// Failed order lookups are capped per address across messages and chats.
+let lastLookup: any = null, lookupChat: string | undefined;
+for (let i = 0; i < 11; i++) {
+  script = [() => use('lookup_order', { order_ref: g.data.ref, email: `guess${i}@example.com` }), p => { lastLookup = lastResult(p); return say('No match.'); }];
+  const r = await call(help, '/api/ask', { ip: '10.9.9.9', body: { chat: lookupChat, text: 'my order?', lang: 'en' } });
+  lookupChat = r.data.chat;
+}
+assert.match(lastLookup.error, /Too many lookups/); ok('the 11th order lookup in an hour from one address is refused');
 
 const cust2 = await login('someone@else.com');
 script = [() => use('my_orders', {}), p => { assert.deepEqual(lastResult(p).orders, []); return say('You have no orders yet.'); }];
