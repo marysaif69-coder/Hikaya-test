@@ -6,7 +6,7 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
-    id: '3-1', title: 'Round 3 · batch 1: dates in three tiers (data and server) · branch dates-and-gifts', date: '2026-10-04',
+    id: '3-1', title: 'Round 3 · batch 1: dates in three tiers (data and server)', date: '2026-10-04',
     checks: [
       { id: '3-1-prices', text: 'Admin → Shop → Products: the new dates (Everyday 250 g, 500 g, 1 kg; Reserve 12 and 24; Stuffed 12 and 24) show “no price”. Set their prices there when you are ready; until then they say “Price coming” and can’t be ordered.', links: [{ label: 'Desk', href: '/admin/' }] },
       { id: '3-1-everyday', text: 'Everyday dates 1 kg: the choice is only Khalas or Sukkari Qassimi (سكري قصيمي).', links: [{ label: '1 kg (AR)', href: '/ar/shop/dates-1kg/' }, { label: '1 kg (EN)', href: '/en/shop/dates-1kg/' }] },
