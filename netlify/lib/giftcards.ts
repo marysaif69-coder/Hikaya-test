@@ -59,7 +59,7 @@ export async function giftCardPaid(ref: string, req?: Request, paymentId: string
       await send(giftCardReceipt(mail(g), true, siteUrl(req)));
     }
   }
-  return { ...g, emailStatus };
+  return Object.assign(g, { emailStatus });
 }
 
 /** A gift card sold in person (market, pop-up, at the door): paid on the spot by cash, card on the
