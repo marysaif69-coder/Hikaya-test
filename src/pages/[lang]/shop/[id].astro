@@ -31,6 +31,11 @@ const dateBox = PRODUCTS.find(o => o.id === 'date-box')!;
 const styles = p.kind === 'coffee' ? stylesFor(p.id) : [];
 // Other bags of the same line that are ways of their own (Jubani, Qishr on the Yemeni page).
 const ownWays = styles.length ? COFFEES.filter(c => c.line === (p as Coffee).line && c.id !== p.id) : [];
+// The style ticked when the page opens: the classic one where we know it (Najdi for Gulf coffee),
+// otherwise the bag with nothing added.
+const DEFAULT_STYLE: Record<string, string> = { gulf: 'najdi' };
+const startId = styles.some(k => k.id === DEFAULT_STYLE[p.id]) ? DEFAULT_STYLE[p.id] : p.id;
+const start = PRODUCTS.find(x => x.id === startId)!;
 const packsFor = p.kind === 'coffee' ? PACKS.filter(k => k.for === p.id) : [];
 const discoveryFor = p.kind === 'coffee' ? KITS.find(k => k.discovery && k.base === p.id) : null;
 const grinds = bag && p.kind !== 'pack' ? bag.grinds : [];
@@ -73,7 +78,7 @@ const sizeText = p.kind === 'coffee' ? p.size : p.kind === 'kit' ? kitInside(p, 
 
     <div class="pdp-info">
       <h1 class="h-l">{p.name[lang]}{lang === 'en' && <span lang="ar">{p.name.ar}</span>}</h1>
-      <p class="pdp-price"><span class="price" data-price-for={p.id} id="mainPrice">{priceText(p.price, lang)}</span> {p.price != null && <span class="draft">· {UI.draftPrice[lang]}</span>} <span class="muted">· {sizeText}</span></p>
+      <p class="pdp-price"><span class="price" data-price-for={startId} id="mainPrice">{priceText(start.price, lang)}</span> {p.price != null && <span class="draft">· {UI.draftPrice[lang]}</span>} <span class="muted">· {sizeText}</span></p>
       <p class="pdp-notes">{p.notes[lang]}</p>
       {cup && <p class="taste"><span class="label">{ar ? 'الطعم' : 'Tastes like'}</span> {cup.taste[lang]}</p>}
 
@@ -118,12 +123,12 @@ const sizeText = p.kind === 'coffee' ? p.size : p.kind === 'kit' ? kitInside(p, 
           <fieldset class="styles" id="styles">
             <legend>{L('How do you take it?', 'كيف تشربها؟')}<small>{L('Every region has its way, every home its cup.', 'لكل منطقة طريقتها، ولكل بيت فنجان.')}</small></legend>
             {styles.map(k => (
-              <label><input type="radio" name="style" value={k.id} data-priced={k.price != null ? '1' : ''} data-price-text={priceText(k.price, lang)} /><span><b>{k.name[lang]}</b><small>{L('The bag + ', 'الكيس + ')}{k.parts.map(x => packOf(x.id)!.name[lang]).join(' + ')}</small><small class={`allergy ${allergyNote(k, lang).none ? 'none' : ''}`}>{allergyNote(k, lang).text}</small></span></label>
+              <label><input type="radio" name="style" value={k.id} checked={k.id === startId} data-priced={k.price != null ? '1' : ''} data-price-text={priceText(k.price, lang)} /><span><b>{k.name[lang]}</b><small>{L('The bag + ', 'الكيس + ')}{k.parts.map(x => packOf(x.id)!.name[lang]).join(' + ')}</small><small class={`allergy ${allergyNote(k, lang).none ? 'none' : ''}`}>{allergyNote(k, lang).text}</small></span></label>
             ))}
             {ownWays.map(c => (
               <label><input type="radio" name="style" value={c.id} data-priced={c.price != null ? '1' : ''} data-price-text={priceText(c.price, lang)} /><span><b>{c.name[lang]}</b><small>{L('A bag of its own: ', 'كيس قائم بذاته: ')}{c.notes[lang]}</small></span></label>
             ))}
-            <label class="nothing"><input type="radio" name="style" value={p.id} checked data-priced={p.price != null ? '1' : ''} data-price-text={priceText(p.price, lang)} /><span><b>{L('Nothing added', 'بدون إضافات')}</b><small>{L(`Just the bag${p.spices.length ? ', with its ' + p.spices.map(x => SPICES[x].name.en.toLowerCase()).join(' and ') : ''}`, `الكيس وحده${p.spices.length ? '، بال' + p.spices.map(x => SPICES[x].name.ar).join(' وال') : ''}`)}</small></span></label>
+            <label class="nothing"><input type="radio" name="style" value={p.id} checked={startId === p.id} data-priced={p.price != null ? '1' : ''} data-price-text={priceText(p.price, lang)} /><span><b>{L('Nothing added', 'بدون إضافات')}</b><small>{p.spices.length ? L(`${p.name.en} with ${p.spices.map(x => SPICES[x].name.en.toLowerCase()).join(' and ')} only`, `${p.name.ar} بال${p.spices.map(x => SPICES[x].name.ar).join(' وال')} فقط`) : L('Just the bag', 'الكيس وحده')}</small></span></label>
             {packsFor.length > 0 && <p class="muted try">{L('Already have the bag? Take the pack by itself: ', 'عندك الكيس؟ خذ الظرف وحده: ')}{packsFor.map((k, i) => <>{i > 0 && (ar ? '، ' : ', ')}<a href={path(lang, `shop/${k.id}`)}>{k.name[lang]}</a></>)}</p>}
             {discoveryFor && <p class="muted try">{L('Not sure which? ', 'لست متأكداً؟ ')}<a href={path(lang, `shop/${discoveryFor.id}`)}>{discoveryFor.name[lang]}</a>{L(' has a small pack of each.', ' فيها ظرف صغير من كل طريقة.')}</p>}
           </fieldset>
@@ -141,7 +146,7 @@ const sizeText = p.kind === 'coffee' ? p.size : p.kind === 'kit' ? kitInside(p, 
           <label class="qty"><span class="sr">{UI.qty[lang]}</span>
             <select name="qty">{[1, 2, 3, 4, 5, 6].map(n => <option value={n}>{n}</option>)}</select>
           </label>
-          <button class="btn primary grow" type="button" id="mainAdd" data-add={p.id} data-opt="" disabled={p.price == null}><span>{UI.add[lang]} · <span data-price-for={p.id} id="addPrice">{priceText(p.price, lang)}</span></span></button>
+          <button class="btn primary grow" type="button" id="mainAdd" data-add={startId} data-opt="" disabled={start.price == null}><span>{UI.add[lang]} · <span data-price-for={startId} id="addPrice">{priceText(start.price, lang)}</span></span></button>
         </div>
       </form>
 
@@ -228,6 +233,7 @@ const sizeText = p.kind === 'coffee' ? p.size : p.kind === 'kit' ? kitInside(p, 
       if (tag) tag.hidden = !main.disabled;
     };
     styleBox.addEventListener('change', sync);
+    sync();
     document.addEventListener('catalog:live', sync);
   }
   // Sticky add-to-cart on phones once the main button scrolls away.
