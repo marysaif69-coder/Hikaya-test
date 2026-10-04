@@ -6,6 +6,14 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'site-review-1', title: 'Site review: homepage dates and Yemeni beans, team bar, old names', date: '2026-10-04',
+    checks: [
+      { id: 'home-dates', text: 'Homepage: “وتمر بجانب الفنجان · And a date beside the cup”, three cards (Everyday, Reserve, Stuffed) that open their tab in the shop.', links: [{ label: 'Home (AR)', href: '/ar/' }, { label: 'Home (EN)', href: '/en/' }] },
+      { id: 'home-beans', text: 'Homepage: the black “بن اليمن · من مزارعنا” band with a button to the Yemeni beans; it disappears when you hide the three bean products.', links: [{ label: 'Home (AR)', href: '/ar/' }] },
+      { id: 'team-bar', text: 'The team bar at the top of the preview says what customers see (e.g. “Phase 0 · Something is brewing”), never “undefined”.', links: [{ label: 'Home', href: '/en/' }] },
+    ],
+  },
+  {
     id: 'shop-4-tabs', title: 'Shop: four tabs (Coffee, Dates, Gift boxes, Yemeni beans)', date: '2026-10-04',
     checks: [
       { id: 'tabs-4', text: 'Shop: four tabs, القهوة · Coffee, التمر · Dates, علب الهدايا · Gift boxes and بن اليمن · Yemeni beans (shown for now so you can look; hide all three bean products in Admin → Shop → Products and the tab goes away).', links: [{ label: 'Shop (AR)', href: '/ar/shop/' }, { label: 'Shop (EN)', href: '/en/shop/' }] },

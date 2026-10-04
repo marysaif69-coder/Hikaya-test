@@ -13,7 +13,7 @@ The same list is at the top of Admin → Numbers → Plan.
 1. Settings → Business details: pickup address and hours, phone, e-Transfer email, Google review link, GST number.
 2. Team: yourselves as shared people under hello@hikayacoffee.ca (own email each for the code); Ahmed with his Gmail as a driver or helper who also drives; add him under Business details → Owners if he should be an owner.
 3. Shop → Products: final prices. Numbers → Costs: cost of one of each product.
-4. Photos of the Guest Box and Coffee Duo; final product text in Shop → Words.
+4. Photos of the boxes (shot list in Settings → Decisions → What we need from you); final product text in Shop → Words.
 5. GST: ask the accountant whether gift boxes are zero-rated.
 6. Settings → Limits; post the first shifts.
 7. Production: adjust the draft food-safety checklists; count packaging in Supplies.
@@ -41,7 +41,7 @@ Written 2 October 2026, updated 3 October.
 | ✅ | Closed days (Eid day, holidays) and the first day orders open | Admin → Settings |
 | ✅ | Change prices, hide products, mark sold out, limit stock | Admin → Shop → Products |
 | ✅ | Ramadan and Eid switch on/off: pages, menu, banner, boxes and every mention | Admin → Shop → Products (top) |
-| ✅ | Gift orders: recipient, phone and message; year-round Guest Box and Coffee Duo (names and prices are drafts) | Checkout |
+| ✅ | Gift orders: recipient, phone and message; year-round Coffee & Dates and Two Coffees (choices inside; the Ramadan or Eid sticker in season) | Checkout |
 | ✅ | Promo codes: % off, $ off, free delivery; dates, minimum, uses, once per customer | Admin → Shop → Promotions |
 | ✅ | Refunds: full or partial, card, e-Transfer, cash or store credit | Admin → order → Refund |
 | 🟡 | Card payment online | Built for Square; turns on when you add the Square keys (section 4) |
@@ -59,7 +59,7 @@ Written 2 October 2026, updated 3 October.
 | ✅ | Day sheet: what to pack, pickups by window, deliveries sorted by area with map links, printable | Admin → Orders → Day sheet |
 | ✅ | Sample orders over five weeks to practise on; one click removes them | Admin → Orders |
 | ✅ | CSV export for the accountant | Admin → Orders |
-| ✅ | Weekly roast and pack sheet: kg of each coffee, dates to portion, boxes, sleeves, cups | Admin → Orders → Week sheet |
+| ✅ | Weekly roast and pack sheet: kg of each coffee, dates to portion, boxes, gold sleeves, Ramadan and Eid stickers, black boxes, cups | Admin → Orders → Week sheet |
 | ✅ | Driver view on a phone: deliveries by postal area, map, call, collect, delivered | Admin → Driver |
 | ✅ | Team roles: owners (ADMIN_EMAILS) and helpers (STAFF_EMAILS, no money or settings) | Netlify settings |
 
@@ -88,7 +88,7 @@ Shopify's templates, in a weaker Arabic layout, and moving the order desk there.
 | Monthly fee | $0 | about $51/month on a yearly plan, $68 monthly |
 | Online card payment | 2.8% + 30¢ | 2.9% + 30¢ (with Shopify Payments) |
 | In person at pickup | Square Reader: 2.5% credit, Interac debit 0.75% + 7¢ | Needs Shopify POS hardware and plan |
-| On a $54 Iftar Pair | $1.81 | $1.87 + the monthly fee |
+| On a $54 gift box | $1.81 | $1.87 + the monthly fee |
 | Works with what's built | Yes: payment link at checkout, automatic "paid", refunds from the desk | Would replace the site's checkout |
 
 Square also gives you a card reader for pickup that puts in-person and online money in one

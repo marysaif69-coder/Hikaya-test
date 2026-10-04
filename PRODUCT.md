@@ -31,7 +31,7 @@ Coffee and dates belong to the same table: Gulf qahwa is poured with a date, oth
 
 - Stages, in order: A1 set up the business (now) · A2 online from January 2027 · A3 grow · the café only after A3. The café menu ("Coffee Road") is future, not a current offer.
 - Fulfilment: free pickup at [address], Calgary (address not set yet; always write "[address], Calgary"), Thursday to Sunday from 22 Jan 2027; own delivery in Calgary $9, free over $80; Calgary postal codes start T1, T2 or T3. Ramadan orders arrive before sunset; Eid orders before Eid morning. No shipping outside Calgary yet.
-- Packaging system: one printed 250 g pouch for every coffee, with front and back stickers printed in Calgary; one gift box (inserts D24 dates only, C12 coffee + 12 dates, C2 two coffees); one 500 g everyday date box; occasion changes only by sleeve (regular khalal gold, Ramadan, Eid). Pouch QR code points to hikayacoffee.ca/brew, so that page must exist.
+- Packaging system: one printed 250 g pouch for every coffee, with front and back stickers printed in Calgary; one gift box (inserts D24 dates only, C12 coffee + 12 dates, C2 two coffees); clear trays for the Everyday dates (250 g, 500 g, 1 kg); a 100 g black box for the Yemeni beans; one gold khalal sleeve on every gift box, and the occasion is our own Ø50 sticker (Ramadan, Eid). Pouch QR code points to hikayacoffee.ca/brew, so that page must exist.
 - GST shown as 0% (basic groceries) is unconfirmed; flag it as pending an accountant.
 
 ## Capabilities and Constraints
