@@ -267,8 +267,9 @@ const DATE_PICKS = [
   <div id="view-beans" role="tabpanel" aria-labelledby="view-tab-beans" data-view-panel="beans">
     <section class="fam dsec" id="beans" aria-labelledby="h-beans">
       <div class="wrap">
-        <div class="panel-head"><div><h2 id="h-beans" class="h-m">{ar ? 'بن اليمن' : 'Yemeni beans'}{!ar && <span lang="ar" class="h-ar">بن اليمن</span>}</h2><p class="slogan">{ar ? 'من مزارعنا' : <>From our farms <span lang="ar">· من مزارعنا</span></>}</p></div><p class="muted">{ar ? 'زُرع في اليمن، ونحمّصه في كالغاري.' : 'Grown in Yemen, roasted in Calgary.'}</p></div>
-        <p class="muted panel-note">{ar ? 'قهوتنا اليمنية على الطريقة اليمنية، من حبوب إثيوبية. وهذه حبوب من اليمن نفسه، من مدرجاته العالية، في دفعات صغيرة: ١٠٠ غ في علبة سوداء، لفنجان يُشرب وحده بلا هيل ولا بهار.' : 'Our Yemeni qahwa is Yemeni-style, from Ethiopian beans. These are beans from Yemen itself, from its high terraces, in small lots: 100 g in a black box, for a cup on its own, no cardamom, no spice.'}</p>
+        <div class="panel-head"><div><h2 id="h-beans" class="h-m">{ar ? 'بن اليمن' : 'Yemeni beans'}{!ar && <span lang="ar" class="h-ar">بن اليمن</span>}</h2><p class="slogan">{ar ? 'من مزارعنا' : <>From our farms <span lang="ar">· من مزارعنا</span></>}</p></div></div>
+        <p class="beans-lead">{ar ? 'من مدرجات جبال اليمن، حيث بدأت حكاية القهوة.' : 'From the mountain terraces of Yemen, where the story of coffee began.'}</p>
+        <p class="muted panel-note">{ar ? 'دفعات صغيرة، نحمّصها في كالغاري، ١٠٠ غ في العلبة السوداء. لفنجان يُشرب وحده، بلا هيل ولا بهار، لتعرف طعم المكان الذي جاء منه.' : 'Small lots, roasted in Calgary, 100 g in the black box. For a cup taken on its own, no cardamom, no spice, so it tastes of where it was grown.'}</p>
         <div class="grid">{SPECIALTY.map(p => <ProductCard p={p} lang={lang} />)}</div>
       </div>
     </section>
@@ -420,6 +421,7 @@ const DATE_PICKS = [
   .ed-buy { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
   .ed-buy .price { font-weight: 700; }
   .more { margin-top: 16px; }
+  .beans-lead { font-family: var(--display); font-size: clamp(22px, 3vw, 28px); line-height: 1.35; margin: -6px 0 14px; max-width: 760px; }
   .slogan { margin: 6px 0 0; font-family: var(--display); font-size: 20px; color: var(--tamr); }
   .h-ar { font-size: .6em; color: var(--ink-2); margin-inline-start: 10px; }
   .kinds { border: 0; padding: 0; margin: 0 0 18px; display: flex; flex-wrap: wrap; gap: 8px; }
