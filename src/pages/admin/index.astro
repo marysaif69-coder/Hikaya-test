@@ -4,7 +4,13 @@
 import '../../styles/fonts.css';
 import '../../styles/global.css';
 import { RELEASES } from '../../data/release-checks';
-import { DECISIONS } from '../../data/decisions';
+import { DECISIONS, groupOf, type Decision } from '../../data/decisions';
+// Decisions in two lists (questions; what we need from you), each grouped by type.
+const decGroups = (list: Decision[]) => [...new Set(list.map(groupOf))].sort().map(g => ({ g, items: list.filter(d => groupOf(d) === g) }));
+const DEC_LISTS = [
+  { id: 'provide', title: 'What we need from you', intro: 'Things only you can give: photos, an address, prices, labels, words. Tick “Given” and add a note (or write it here), then Save.', groups: decGroups(DECISIONS.filter(d => d.kind === 'provide')) },
+  { id: 'questions', title: 'Questions', intro: 'Pick an option or write your answer, then Save. The site keeps “[TBD]” until it is answered, and the next change to the site starts from your answer.', groups: decGroups(DECISIONS.filter(d => d.kind !== 'provide')) },
+];
 ---
 <!doctype html>
 <html lang="en" dir="ltr">
@@ -519,15 +525,26 @@ import { DECISIONS } from '../../data/decisions';
     <!-- Decisions only the owners can make (src/data/decisions.ts); answers are saved with who and when -->
     <section id="v-decisions" hidden class="a-settings">
       <div class="conn"><h2 class="h-s">Decisions for Maryam and Shadi</h2>
-        <p class="muted">Questions only you can answer. Pick an option or write your answer, then Save. The site keeps “[TBD]” until it is answered, and the next change to the site starts from your answer. Clear both and save to reopen a question.</p></div>
-      {DECISIONS.map(d => (
-        <form class="conn dec" data-dec={d.id}>
-          <h3>{d.question} <small class="muted">· {d.topic}</small></h3>
-          <p class="muted small">{d.context}</p>
-          {d.options && <div class="dec-opts">{d.options.map(o => <label class="notify"><input type="radio" name="choice" value={o} /> <span>{o}</span></label>)}</div>}
-          <textarea name="answer" rows="2" placeholder="Your answer or notes"></textarea>
-          <div class="acts"><button type="submit" class="btn line sm">Save answer</button><small class="muted dec-who"></small></div>
-        </form>
+        <p class="muted">Two lists, each grouped by type: tap a group to open or close it; each says how many are still open. Clear both the choice and the note and save to reopen an item.</p></div>
+      {DEC_LISTS.map(list => (
+        <div class="dec-list" data-dec-list={list.id}>
+          <h2 class="h-s">{list.title} <span class="badge dec-list-n" hidden></span></h2>
+          <p class="muted small">{list.intro}</p>
+          {list.groups.map(({ g, items }) => (
+            <details class="dec-group">
+              <summary><b>{g}</b> <small class="muted dec-group-n"></small></summary>
+              {items.map(d => (
+                <form class="conn dec" data-dec={d.id}>
+                  <h3>{d.question} <small class="muted">· {d.topic}</small></h3>
+                  <p class="muted small">{d.context}</p>
+                  {d.options && <div class="dec-opts">{d.options.map(o => <label class="notify"><input type="radio" name="choice" value={o} /> <span>{o}</span></label>)}</div>}
+                  <textarea name="answer" rows="2" placeholder={d.kind === 'provide' ? 'A note, or what you are giving' : 'Your answer or notes'}></textarea>
+                  <div class="acts"><button type="submit" class="btn line sm">Save</button><small class="muted dec-who"></small></div>
+                </form>
+              ))}
+            </details>
+          ))}
+        </div>
       ))}
     </section>
 
@@ -708,6 +725,12 @@ import { DECISIONS } from '../../data/decisions';
   .rel-who { padding-inline-start: 28px; }
   .dec h3 { margin: 0; } .dec textarea { width: 100%; font: inherit; } .dec-opts { display: grid; gap: 6px; }
   .dec.done { opacity: .8; }
+  .dec-list { display: grid; gap: 10px; margin-top: 18px; }
+  .dec-list > h2 { display: flex; align-items: center; gap: 8px; margin: 0; }
+  .dec-group { border-radius: 14px; background: var(--paper-2); padding: 4px 14px; }
+  .dec-group summary { cursor: pointer; padding: 10px 0; font-size: 16px; list-style-position: inside; }
+  .dec-group[open] summary { margin-bottom: 6px; }
+  .dec-group .dec { margin-bottom: 10px; }
   .conn { display: grid; gap: 10px; background: var(--sheet); padding: 22px; border-radius: 24px; }
   .conn :global(.cn) { border-radius: 14px; padding: 10px 14px; background: var(--paper); font-size: 14.5px; }
   .conn :global(.cn.ok) { box-shadow: inset 4px 0 0 #6E8B4A; }
@@ -1856,6 +1879,15 @@ import { DECISIONS } from '../../data/decisions';
       f.classList.toggle('done', Boolean(a));
     }
     $('decN').textContent = String(open); $('decN').hidden = !open;
+    // Each group (closed until tapped) says how many are still open.
+    document.querySelectorAll<HTMLDetailsElement>('#v-decisions .dec-group').forEach(g => {
+      const all = g.querySelectorAll('.dec').length, left = g.querySelectorAll('.dec:not(.done)').length;
+      g.querySelector<HTMLElement>('.dec-group-n')!.textContent = left ? `${left} open of ${all}` : `all ${all} done`;
+    });
+    document.querySelectorAll<HTMLElement>('#v-decisions .dec-list').forEach(l => {
+      const left = l.querySelectorAll('.dec:not(.done)').length, n = l.querySelector<HTMLElement>('.dec-list-n')!;
+      n.textContent = String(left); n.hidden = !left;
+    });
   }
   $('v-decisions').addEventListener('submit', async e => {
     e.preventDefault();

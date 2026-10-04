@@ -2,9 +2,95 @@
 // Shadi write their answer there; it is saved with who and when, and the next session reads it
 // (Admin → Settings → Decisions, or GET /api/admin/decisions) before changing the site.
 // Keep each id unchanged once published: the answers are saved against it. Add new ones at the top.
-export type Decision = { id: string; topic: string; question: string; context: string; options?: string[]; asked: string };
+// kind 'provide': something the owners need to give us (photos, an address, prices, a label), not a
+// question; it is listed under "What we need from you" and ticked "Given".
+export type Decision = { id: string; topic: string; question: string; context: string; options?: string[]; asked: string; kind?: 'provide' };
+
+/** The section a decision is listed under in the desk, from the first part of its topic. */
+const GROUPS: Record<string, string> = { Ramadan: 'Ramadan and Eid', 'Privacy page': 'Website and emails', 'Story page': 'Website and emails', Emails: 'Website and emails', 'Mailing list': 'Website and emails', 'Delivery area': 'Delivery', Business: 'Website and emails', 'Food safety': 'Permits and food safety' };
+export const groupOf = (d: Decision) => { const first = d.topic.split(' · ')[0]; return GROUPS[first] ?? first; };
 
 export const DECISIONS: Decision[] = [
+  // ---------- what we need from you ----------
+  {
+    id: 'box-photos', kind: 'provide', topic: 'Photos · Date and gift boxes', asked: '2026-10-04',
+    question: 'Photos of the real boxes, when the samples arrive',
+    context: 'Until then the site draws each box. Shot list, all 4:5 portrait, same angle, on the cream background: Coffee & Dates open (a pouch and 12 dates); Two Coffees open; Reserve 12 and 24 (one variety, and Mixed); Stuffed 12 (showing the seals and the fillings); Four Palms; the closed box with the gold band, then with the Ramadan sticker and with the Eid sticker; the Everyday clear tray in 250 g, 500 g and 1 kg. Send them to the website session; a box with a photo shows it, the rest keep the drawing.',
+    options: ['Given'],
+  },
+  {
+    id: 'pouch-artwork', kind: 'provide', topic: 'Photos · Coffee bags and packs', asked: '2026-10-04',
+    question: 'Final artwork or photos of the coffee pouches and the small packs',
+    context: 'The site draws placeholder bags and sachets. After the recipes are final (docs/coffee-tbd.md, Packaging).',
+    options: ['Given'],
+  },
+  {
+    id: 'business-details', kind: 'provide', topic: 'Business · Pickup', asked: '2026-10-04',
+    question: 'The pickup address, opening hours and phone',
+    context: 'Enter them in Settings → Business details. Until then the site shows “[address]” and the footer, emails and Ask Hikaya can’t give it.',
+    options: ['Given'],
+  },
+  {
+    id: 'coffee-prices', kind: 'provide', topic: 'Coffee · Prices', asked: '2026-10-04',
+    question: 'Prices for the coffee: base bags, styles, tasting boxes and packs',
+    context: 'Set them in Admin → Shop → Products. Until a price is set the item says “Price coming” and can’t be ordered. List: Gulf coffee, Yemeni qahwa, Jubani, Qishr, Shami with cardamom, Shami sada; Najdi, Qassimi, Hijazi, Hadrami, Rada’i, Baydani; Taste the Gulf, Taste Yemen; the six packs.',
+    options: ['Given'],
+  },
+  {
+    id: 'dates-box-prices', kind: 'provide', topic: 'Dates · Prices', asked: '2026-10-04',
+    question: 'Prices for the dates and gift boxes',
+    context: 'Set them in Admin → Shop → Products: Everyday 250 g, 500 g, 1 kg; Reserve 12 and 24; Stuffed 12 and 24; Coffee & Dates; Two Coffees; Four Palms (draft $44).',
+    options: ['Given'],
+  },
+  {
+    id: 'recipe-amounts', kind: 'provide', topic: 'Coffee · Recipes', asked: '2026-10-04',
+    question: 'Amounts from the tasting: grams of coffee per pot, grams in each pack, saffron per pot',
+    context: 'The brew cards and the tasting boxes say “[TBD] g” until then. Weigh the samples and write them here.',
+    options: ['Given'],
+  },
+  {
+    id: 'pack-ingredients', kind: 'provide', topic: 'Coffee · Packs', asked: '2026-10-04',
+    question: 'The full ingredient lists of the packs (Qassim, Hijazi with or without mastic, Hadrami, Rada’i, Baydani)',
+    context: 'Needed for the labels (English and French) and the allergen lines, which say “to be confirmed” until then.',
+    options: ['Given'],
+  },
+  {
+    id: 'taste-notes', kind: 'provide', topic: 'Coffee · Taste notes', asked: '2026-10-04',
+    question: 'Taste notes for each coffee and style, after the tasting',
+    context: 'Today’s notes are drafts from research. Correct them in Admin → Shop → Words, or write them here.',
+    options: ['Given'],
+  },
+  {
+    id: 'pairings', kind: 'provide', topic: 'Coffee · Pairings', asked: '2026-10-04',
+    question: 'Which date goes with each coffee, after the tasting',
+    context: 'Until then no pairing shows anywhere on the site (product pages, the homepage, Ask Hikaya). Write the pairs here.',
+    options: ['Given'],
+  },
+  {
+    id: 'filling-labels', kind: 'provide', topic: 'Dates · Stuffed', asked: '2026-10-04',
+    question: 'The labels of the fillings: the biscuit cream jar, the pistachio-dipped coating, and each filling’s ingredients',
+    context: 'Their allergen lines say “[TBD]” and the stuffed lot labels say “[TBD: filling ingredients]” until then. A photo of each label is enough.',
+    options: ['Given'],
+  },
+  {
+    id: 'date-notes', kind: 'provide', topic: 'Dates · Varieties', asked: '2026-10-04',
+    question: 'Taste notes for Royal Sukkari Mufattal, and where the Medjool comes from',
+    context: 'The site shows “[TBD]” for both.',
+    options: ['Given'],
+  },
+  {
+    id: 'permits', kind: 'provide', topic: 'Food safety · Permits', asked: '2026-10-04',
+    question: 'The food permits, the food-safety plan, and a CFIA check of the label wording',
+    context: 'The timeline says pre-orders open “when our permits are in”. The label printer (Desk → Production) asks you to check the wording with the CFIA before selling.',
+    options: ['Given'],
+  },
+  {
+    id: 'why-note', kind: 'provide', topic: 'Story page · Why Hikaya', asked: '2026-10-04',
+    question: 'The “Why Hikaya?” note on the story page, in your own words',
+    context: 'Today it is a draft signed “Hikaya”. Write yours here (Arabic and English) and the next session puts it on the page.',
+    options: ['Given'],
+  },
+  // ---------- questions ----------
   {
     id: 'story-timeline', topic: 'Story page · Timeline', asked: '2026-10-04',
     question: 'The story page timeline no longer gives months. Is this wording right?',
@@ -53,9 +139,10 @@ export const DECISIONS: Decision[] = [
     options: ['Yes, “may contain tree nuts” on plain dates', 'No (separate packing)', 'Ask AHS first'],
   },
   {
-    id: 'supplier-claims', topic: 'Dates · Reserve', asked: '2026-10-04',
+    id: 'supplier-claims', kind: 'provide', topic: 'Dates · Reserve', asked: '2026-10-04',
     question: 'What does the supplier certify for the Reserve dates: “hand-picked”, “larger”, the grade?',
     context: 'The Reserve box text shows these with [TBD: confirm with the supplier] until you confirm them.',
+    options: ['Given'],
   },
   {
     id: 'caramel-almond', topic: 'Dates · Stuffed', asked: '2026-10-04',
@@ -139,9 +226,10 @@ export const DECISIONS: Decision[] = [
     options: ['Neither', 'Chestermere (T1X)', 'Springbank (T3Z)', 'Both'],
   },
   {
-    id: 'mailing-address', topic: 'Mailing list', asked: '2026-10-04',
+    id: 'mailing-address', kind: 'provide', topic: 'Mailing list', asked: '2026-10-04',
     question: 'Which mailing address goes at the bottom of our letters?',
     context: 'The law needs one in every marketing email. A PO box is fine. Enter it in Settings → Business details → “Mailing address for letters”; letters can’t be sent until there is one.',
+    options: ['Given'],
   },
   {
     id: 'running-low-email', topic: 'Emails', asked: '2026-10-04',

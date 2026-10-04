@@ -8,6 +8,7 @@ export const RELEASES: Release[] = [
   {
     id: '4-1', title: 'Round 4: Story page and Bunn & Tamr page', date: '2026-10-04',
     checks: [
+      { id: '4-1-decisions-groups', text: 'Settings → Decisions: two lists, “What we need from you” (photos, address, prices, labels, words) and “Questions”, each in groups by type (Coffee, Dates, Gift boxes, Ramadan and Eid…) that open and close, with how many are still open.', links: [{ label: 'Desk', href: '/admin/' }] },
       { id: '4-1-dates-tabs', text: 'Shop → Dates: tap Everyday, Reserve or Stuffed: only that one shows. Inside, pick a kind (e.g. Mixed): only its card shows, with 12 / 24 (or 250 g / 500 g / 1 kg) and Add.', links: [{ label: 'Dates (EN)', href: '/en/shop/#dates' }, { label: 'Reserve (AR)', href: '/ar/shop/#reserve' }] },
       { id: '4-1-stuffed-art', text: 'Stuffed dates: each filling has its own drawing (opened lengthwise with the filling in the middle; the dipped one coated from one end), and the Stuffed box drawing shows them.', links: [{ label: 'Stuffed (EN)', href: '/en/shop/#stuffed' }, { label: 'Stuffed 12', href: '/en/shop/stuffed-12/' }] },
       { id: '4-1-bt-phone', text: 'Bunn & Tamr on a phone: the English lines are readable under each card (not tiny inside the bubbles).', links: [{ label: 'Bunn & Tamr (EN)', href: '/en/bunn-and-tamr/' }, { label: 'Bunn & Tamr (AR)', href: '/ar/bunn-and-tamr/' }] },
