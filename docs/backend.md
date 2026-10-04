@@ -3,7 +3,7 @@
 Everything runs on Netlify: the website, the server code (Netlify Functions in `netlify/functions/`) and the database (Netlify Database, Postgres, created automatically on deploy from `netlify/database/migrations/`).
 
 ## What customers can do
-- Order as a guest with just an email, or log in with an emailed 6-digit code (no passwords). A code works only in the browser that asked for it (the `hk_login` cookie), so strangers' wrong guesses can't lock anyone out; 5 codes an hour per email and address, 15 per email in all.
+- Order as a guest with just an email, or log in with an emailed 6-digit code (no passwords). For team logins (owners, helpers, drivers, packers) a code works only in the browser that asked for it (the `hk_login` cookie), so strangers' wrong guesses can't lock the team out; customers can type it on any device; 5 codes an hour per email and address, 15 per email in all.
 - See every order placed with their email (guest orders included) at `/en/account/` or `/ar/account/`: status, pickup/delivery day and window, items, payment.
 - Cancel an order themselves while it is still "Received" and unpaid.
 - Ask Hikaya (the chat button on every page): questions about coffee, dates, brewing, pickup and delivery; look up an order with its number and email; check a postal code or open days; add things to the cart; report a damaged, wrong, missing or late item with a photo; ask for a person.

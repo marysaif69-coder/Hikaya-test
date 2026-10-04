@@ -66,10 +66,13 @@ export async function checkCode(email: string, code: string, requester?: string)
   if (!used) throw new HttpError(400, 'expired', 'That code has expired. Ask for a new one.');
 }
 
+/** Team logins (owners, helpers, drivers, packers) only work in the browser that asked for the code,
+ *  so nobody can lock them out by guessing. Customers can ask on one device and type the code on
+ *  another (the owners' choice, 4 Oct 2026). */
 export async function verifyCode(email: string, code: string, requester: string) {
-  await checkCode(email, code, requester);
-  const t = token();
   const role = await roleFor(email);
+  await checkCode(email, code, role === 'customer' ? undefined : requester);
+  const t = token();
   await sql`INSERT INTO sessions (token_hash, email, role, expires_at) VALUES (${hash(t)}, ${email}, ${role}, NOW() + make_interval(days => ${DAYS}))`;
   await sql`INSERT INTO customers (email) VALUES (${email}) ON CONFLICT (email) DO NOTHING`;
   return { token: t, role };

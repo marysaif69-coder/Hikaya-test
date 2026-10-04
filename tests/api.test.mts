@@ -105,14 +105,17 @@ const xc = (await call(auth, '/api/auth/request', { body: { email: 'x@example.co
 for (let i = 0; i < 5; i++) await call(auth, '/api/auth/verify', { body: { email: 'x@example.com', code: '000000' }, cookie: xc });
 assert.equal((await call(auth, '/api/auth/verify', { body: { email: 'x@example.com', code: sent.at(-1).text.match(/\b\d{6}\b/)[0] }, cookie: xc })).status, 429); ok('code locks after 5 wrong tries');
 // A stranger who knows the owner's email can't lock them out: their requests and guesses only touch their own codes.
-const ownerLc = (await call(auth, '/api/auth/request', { body: { email: 'owner@example.com' } })).cookie!.split(';')[0];
+const ownerLc = (await call(auth, '/api/auth/request', { body: { email: 'shadi@hikayacoffee.ca' } })).cookie!.split(';')[0];
 const ownerCode = sent.at(-1).text.match(/\b\d{6}\b/)[0];
-for (let i = 0; i < 5; i++) await call(auth, '/api/auth/request', { body: { email: 'owner@example.com' }, ip: '10.66.6.6' });
-const sixth = await call(auth, '/api/auth/request', { body: { email: 'owner@example.com' }, ip: '10.66.6.6' });
+for (let i = 0; i < 5; i++) await call(auth, '/api/auth/request', { body: { email: 'shadi@hikayacoffee.ca' }, ip: '10.66.6.6' });
+const sixth = await call(auth, '/api/auth/request', { body: { email: 'shadi@hikayacoffee.ca' }, ip: '10.66.6.6' });
 assert.equal(sixth.status, 429); ok('one address can ask for at most 5 codes an hour for one email');
-for (let i = 0; i < 5; i++) await call(auth, '/api/auth/verify', { body: { email: 'owner@example.com', code: '000000' } });
-assert.equal((await call(auth, '/api/auth/verify', { body: { email: 'owner@example.com', code: ownerCode } })).status, 400); ok('a code does not work from a browser that did not ask for it');
-assert.equal((await call(auth, '/api/auth/verify', { body: { email: 'owner@example.com', code: ownerCode }, cookie: ownerLc })).status, 200); ok("a stranger's requests and wrong guesses do not lock the owner out");
+for (let i = 0; i < 5; i++) await call(auth, '/api/auth/verify', { body: { email: 'shadi@hikayacoffee.ca', code: '000000' } });
+assert.equal((await call(auth, '/api/auth/verify', { body: { email: 'shadi@hikayacoffee.ca', code: ownerCode } })).status, 400); ok('a code does not work from a browser that did not ask for it');
+assert.equal((await call(auth, '/api/auth/verify', { body: { email: 'shadi@hikayacoffee.ca', code: ownerCode }, cookie: ownerLc })).status, 200); ok("a stranger's requests and wrong guesses do not lock the owner out");
+const custLc = (await call(auth, '/api/auth/request', { body: { email: 'anywhere@example.com' } })).cookie;
+assert.ok(custLc); const custCode = sent.at(-1).text.match(/\b\d{6}\b/)[0];
+assert.equal((await call(auth, '/api/auth/verify', { body: { email: 'anywhere@example.com', code: custCode } })).status, 200); ok('customers can ask for a code on one device and type it on another');
 assert.equal((await call(auth, '/api/auth/request', { body: { email: 'x@example.com' }, cookie: '' })).status, 200);
 const crossSite = await auth(new Request(H + '/api/auth/request', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://evil.example' }, body: '{"email":"a@b.co"}' }));
 assert.equal(crossSite.status, 403); ok('cross-site posts blocked');

@@ -29,7 +29,7 @@ export const RELEASES: Release[] = [
     id: '1b-3', title: 'Round 1b · batch 3: private gate, launch day, logins', date: '2026-10-04',
     checks: [
       { id: 'login-ar', text: 'My account in Arabic: ask for a code, type a wrong one. The error is in Arabic (الرمز غير صحيح.). Then log in with the right code from the same phone: it works.', links: [{ label: 'Account (AR)', href: '/ar/account/' }, { label: 'Account (EN)', href: '/en/account/' }] },
-      { id: 'login-other-device', text: 'Ask for a code on your phone, then type it on another device or browser: it is refused. Ask again on the second device and it works. (Codes now work only where they were asked for.)' },
+      { id: 'login-other-device', text: 'Customers: ask for a code on your phone, type it on your laptop: it works. Team logins (desk, team app): a code works only on the device that asked for it.' },
       { id: 'preview-code', text: 'In a private window on the preview, type a wrong preview code: “That code is not right”. The right code still lets you in.', links: [{ label: 'Preview', href: '/team' }] },
       { id: 'team-bar', text: 'The dark TEAM VIEW bar still shows on the preview, and says what customers on hikayacoffee.ca see.', links: [{ label: 'Home (EN)', href: '/en/' }] },
       { id: 'sachet-small', text: 'Shop: a small pack drawing reads “صغير · SMALL” (Arabic first).', links: [{ label: 'Shop (AR)', href: '/ar/shop/' }, { label: 'Shop (EN)', href: '/en/shop/' }] },
