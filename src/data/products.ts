@@ -129,7 +129,7 @@ export const FAMILIES: Record<Family, { name: L; line: L }> = {
   palm: { name: { en: 'Gulf', ar: 'الخليج' }, line: { en: 'Pale and golden, poured from the dallah. One bag, taken your way.', ar: 'شقراء وذهبية، تُصبّ من الدلّة. كيس واحد، تشربه بطريقتك.' } },
   mountain: { name: { en: 'Yemen', ar: 'اليمن' }, line: { en: 'Yemeni-style coffee from Ethiopian beans, with cardamom. The ginger and each town’s additions come in the packs.', ar: 'قهوة على الطريقة اليمنية من حبوب إثيوبية، بالهيل. والزنجبيل وإضافة كل بلدة في الظروف.' } },
   house: { name: { en: 'Shami', ar: 'الشام' }, line: { en: 'Shami coffee, ground to powder and boiled in the rakwa.', ar: 'القهوة الشامية، مطحونة كالبودرة وتُغلى في الركوة.' } },
-  origin: { name: { en: 'Yemeni beans', ar: 'بن يمني' }, line: { en: 'Grown in Yemen, roasted in Calgary. 100 g in the black box.', ar: 'بن زُرع في اليمن، ونحمّصه في كالغاري. ١٠٠ غ في العلبة السوداء.' } },
+  origin: { name: { en: 'Yemeni beans', ar: 'بن اليمن' }, line: { en: 'Grown in Yemen, roasted in Calgary. 100 g in the black box.', ar: 'بن زُرع في اليمن، ونحمّصه في كالغاري. ١٠٠ غ في العلبة السوداء.' } },
   husk: { name: { en: 'Qishr', ar: 'القشر' }, line: { en: 'Qishr – dried coffee cherry husk, with ginger.', ar: 'القشر – قشر ثمرة البن المجفف، مع الزنجبيل.' } },
   dates: { name: { en: 'Dates', ar: 'التمر' }, line: { en: 'Everyday dates by weight; Reserve and stuffed in boxes.', ar: 'تمر كل يوم بالوزن، والنخبة والمحشي في علب.' } },
   ramadan: { name: { en: 'Ramadan', ar: 'رمضان' }, line: { en: 'For the table at sunset.', ar: 'لمائدة الغروب.' } },
@@ -329,10 +329,11 @@ export const KITS: Kit[] = [
 ];
 
 // Yemeni beans: coffee grown in Yemen (our other Yemeni coffee is Yemeni-style, from Ethiopian
-// beans), 100 g in a black box. Not decided yet: built ready, hidden until the owners show them in
-// Admin → Shop → Products. The lots and regions are placeholders until the supplier confirms them.
+// beans), 100 g in a black box. Not decided yet: shown for now so the owners can look at them; they
+// hide them in Admin → Shop → Products (or set `startHidden: true` here so new sites start hidden).
+// The lots and regions are placeholders until the supplier confirms them.
 const Y = (id: string, name: L, region: L, bunn: L): Coffee => ({
-  kind: 'coffee', id, fam: 'origin', line: 'yemen', startHidden: true, name, price: null,
+  kind: 'coffee', id, fam: 'origin', line: 'yemen', name, price: null,
   size: { en: '100 g', ar: '١٠٠ غ' }, roast: 0, spices: [], grinds: ['beans', 'dallah'],
   notes: { en: `Grown in ${region.en}, Yemen, and roasted in Calgary. 100 g in the black box. [TBD: the lot, from the supplier]`, ar: `زُرع في ${region.ar} باليمن، ونحمّصه في كالغاري. ١٠٠ غ في العلبة السوداء. [يُحدد لاحقاً: الدفعة، من المورّد]` },
   story: { en: 'A small lot, for the cup on its own: no cardamom, no spice.', ar: 'دفعة صغيرة، لفنجان وحده: بلا هيل ولا بهار.' },

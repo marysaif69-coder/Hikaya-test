@@ -38,8 +38,8 @@ const stuffed = BOXES.filter(b => b.tier === 'stuffed');
 const VIEWS = [
   { id: 'coffee', name: { ar: 'القهوة', en: 'Coffee' } },
   { id: 'dates', name: { ar: 'التمر', en: 'Dates' } },
-  { id: 'gifts', name: { ar: 'علب الهدايا', en: 'Gift boxes' } },
-  { id: 'beans', name: { ar: 'بن يمني', en: 'Yemeni beans' } },
+  { id: 'gifts', name: { ar: 'الهدايا', en: 'Gifts' } },
+  { id: 'beans', name: { ar: 'بن اليمن', en: 'Yemeni beans' } },
 ];
 const dateArt = (c: string, filling?: string | null, mix?: { c: string; f?: string | null }[]) => mix
   ? `<svg viewBox="-72 -46 144 92" aria-hidden="true">${mix.map((m, i) => `<g transform="translate(${(i - 1) * 46} 0) scale(.9)">${dateSvg(m.c, m.f as FillingId | undefined)}</g>`).join('')}</svg>`
@@ -75,7 +75,7 @@ const DATE_PICKS = [
   <!-- Coffee | Dates | Gift boxes | Yemeni beans. Without JavaScript the tabs stay hidden and the
        views simply show (the Yemeni beans only once the owners show them). -->
   <div class="wrap top-tabs" role="tablist" aria-label={ar ? 'أقسام المتجر' : 'Shop sections'} id="topTabs" hidden>
-    {VIEWS.map((v, i) => <button type="button" role="tab" id={`view-tab-${v.id}`} aria-controls={`view-${v.id}`} aria-selected={i === 0 ? 'true' : 'false'} data-view={v.id} hidden={v.id === 'beans'}>{v.name[lang]}{!ar && <span lang="ar">{v.name.ar}</span>}</button>)}
+    {VIEWS.map((v, i) => <button type="button" role="tab" id={`view-tab-${v.id}`} aria-controls={`view-${v.id}`} aria-selected={i === 0 ? 'true' : 'false'} data-view={v.id}>{v.name[lang]}{!ar && <span lang="ar">{v.name.ar}</span>}</button>)}
   </div>
 
   <div id="view-coffee" role="tabpanel" aria-labelledby="view-tab-coffee" data-view-panel="coffee">
@@ -262,12 +262,12 @@ const DATE_PICKS = [
     </section>
   </div>
 
-  <!-- Yemeni beans: coffee grown in Yemen, 100 g in the black box. Hidden (also without JavaScript)
-       until the owners show the products in Admin → Shop → Products. -->
-  <div id="view-beans" role="tabpanel" aria-labelledby="view-tab-beans" data-view-panel="beans" hidden>
+  <!-- Yemeni beans: coffee grown in Yemen, 100 g in the black box. The tab goes away by itself when
+       the owners hide all of them in Admin → Shop → Products. -->
+  <div id="view-beans" role="tabpanel" aria-labelledby="view-tab-beans" data-view-panel="beans">
     <section class="fam dsec" id="beans" aria-labelledby="h-beans">
       <div class="wrap">
-        <div class="panel-head"><h2 id="h-beans" class="h-m">{ar ? 'بن يمني' : 'Yemeni beans'}</h2><p class="muted">{ar ? 'زُرع في اليمن، ونحمّصه في كالغاري.' : 'Grown in Yemen, roasted in Calgary.'}</p></div>
+        <div class="panel-head"><div><h2 id="h-beans" class="h-m">{ar ? 'بن اليمن' : 'Yemeni beans'}{!ar && <span lang="ar" class="h-ar">بن اليمن</span>}</h2><p class="slogan">{ar ? 'من مزارعنا' : <>From our farms <span lang="ar">· من مزارعنا</span></>}</p></div><p class="muted">{ar ? 'زُرع في اليمن، ونحمّصه في كالغاري.' : 'Grown in Yemen, roasted in Calgary.'}</p></div>
         <p class="muted panel-note">{ar ? 'قهوتنا اليمنية على الطريقة اليمنية، من حبوب إثيوبية. وهذه حبوب من اليمن نفسه، من مدرجاته العالية، في دفعات صغيرة: ١٠٠ غ في علبة سوداء، لفنجان يُشرب وحده بلا هيل ولا بهار.' : 'Our Yemeni qahwa is Yemeni-style, from Ethiopian beans. These are beans from Yemen itself, from its high terraces, in small lots: 100 g in a black box, for a cup on its own, no cardamom, no spice.'}</p>
         <div class="grid">{SPECIALTY.map(p => <ProductCard p={p} lang={lang} />)}</div>
       </div>
@@ -380,7 +380,15 @@ const DATE_PICKS = [
 </script>
 
 <style>
-  .top-tabs { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 20px; }
+  /* One row: the four tabs share it; on a narrow phone it scrolls sideways rather than wrapping. */
+  .top-tabs { display: flex; flex-wrap: nowrap; gap: 8px; padding-bottom: 20px; overflow-x: auto; scrollbar-width: none; }
+  .top-tabs::-webkit-scrollbar { display: none; }
+  .top-tabs button { flex: 0 0 auto; white-space: nowrap; }
+  @media (max-width: 560px) {
+    .top-tabs { gap: 6px; }
+    .top-tabs > button[role=tab] { flex: 1 1 auto; justify-content: center; padding: 9px 8px; font-size: 15px; }
+    .top-tabs > button[role=tab] span { display: none; }
+  }
   .top-tabs button { border: 0; border-radius: 999px; padding: 10px 22px; font: inherit; font-weight: 700; font-size: 17px; background: var(--sheet); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); cursor: pointer; display: inline-flex; gap: 8px; align-items: baseline; }
   .top-tabs button span { font-weight: 600; font-size: 15px; color: var(--ink-2); }
   .top-tabs button[aria-selected='true'] { background: var(--bunn); color: var(--paper); box-shadow: none; }
@@ -412,6 +420,8 @@ const DATE_PICKS = [
   .ed-buy { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
   .ed-buy .price { font-weight: 700; }
   .more { margin-top: 16px; }
+  .slogan { margin: 6px 0 0; font-family: var(--display); font-size: 20px; color: var(--tamr); }
+  .h-ar { font-size: .6em; color: var(--ink-2); margin-inline-start: 10px; }
   .kinds { border: 0; padding: 0; margin: 0 0 18px; display: flex; flex-wrap: wrap; gap: 8px; }
   .kinds label { position: relative; }
   .kinds input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
