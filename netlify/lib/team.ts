@@ -14,9 +14,9 @@ const hhmm = (v: unknown) => /^([01]\d|2[0-3]):[0-5]\d$/.test(String(v)) ? Strin
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
 /** Who may take a kind of shift: drivers drive; packers and helpers pack or run the counter. */
-export function canTake(role: string, kind: string) {
+export function canTake(role: string, kind: string, drives = false) {
   if (role === 'admin' || role === 'staff') return true;
-  if (kind === 'driving') return role === 'driver';
+  if (kind === 'driving') return role === 'driver' || drives;
   return role === 'packer' || kind === 'other';
 }
 
@@ -53,7 +53,8 @@ export async function signUp(s: Session, id: number) {
   if (!sh) throw new HttpError(404, 'not-found');
   const now = calgaryNow(), hhmm = `${String(now.hour).padStart(2, '0')}:${String(now.minute).padStart(2, '0')}`;
   if (day(sh.day) < now.date || (day(sh.day) === now.date && String(sh.ends).slice(0, 5) <= hhmm)) throw new HttpError(400, 'past', 'That shift has passed.');
-  if (!canTake(s.role, sh.kind)) throw new HttpError(403, 'role', sh.kind === 'driving' ? 'Driving shifts are for drivers.' : 'This shift is for packers and helpers.');
+  const drives = Boolean((await one`SELECT drives FROM team_members WHERE email = ${s.email}`)?.drives);
+  if (!canTake(s.role, sh.kind, drives)) throw new HttpError(403, 'role', sh.kind === 'driving' ? 'Driving shifts are for drivers.' : 'This shift is for packers and helpers.');
   if (sh.kind === 'driving') await assertPapers(s.email, day(sh.day));
   const n = await one`SELECT COUNT(*)::int AS n FROM shift_people WHERE shift_id = ${id}`;
   if ((n?.n ?? 0) >= sh.spots) throw new HttpError(409, 'full', 'That shift is full.');

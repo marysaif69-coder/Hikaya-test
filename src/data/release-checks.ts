@@ -6,6 +6,17 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: '1b-5', title: 'Round 1b · batch 5: desk fixes, packers who drive (end of round 1b)', date: '2026-10-04',
+    checks: [
+      { id: 'packer-drives', text: 'Team: add a test Packer with “Also drives”. In the team app they fill in licence and insurance, then see the packing list and their own deliveries only.', links: [{ label: 'Desk', href: '/admin/' }, { label: 'Team app', href: '/admin/driver/' }] },
+      { id: 'keyboard', text: 'Desk on a laptop: press Tab to an order in All orders and press Enter; the order opens. Press Esc; you are back on the same row.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'fix-times', text: 'Team → shifts: the ⏱ button shows the current check-in and check-out times in the prompts; pressing OK keeps them.' },
+      { id: 'places-blank', text: 'Settings → Places per time window: an empty box can’t be saved (type 0 to close).' },
+      { id: 'costs-not-set', text: 'Numbers → Costs: products with no price say “Not set”, not $0.' },
+      { id: 'round-check', text: 'End of round 1b: log in on the desk and the team app; check Today, an order panel, the Team tab and a driver route.', links: [{ label: 'Desk', href: '/admin/' }, { label: 'Team app', href: '/admin/driver/' }] },
+    ],
+  },
+  {
     id: '1b-4', title: 'Round 1b · batch 4: team app, drivers and shifts (and Something is brewing)', date: '2026-10-04',
     checks: [
       { id: 'brewing', text: 'hikayacoffee.ca on a phone set to English: “Something is brewing.” big and white, شيء ما يغلي. smaller under it. On an Arabic phone it opens in Arabic.', links: [{ label: 'See Phase 0', href: '/?phase=brewing' }] },

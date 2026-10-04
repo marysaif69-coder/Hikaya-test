@@ -627,6 +627,21 @@ assert.equal((await call(driverApi, '/api/driver/me', { cookie: pat })).data.nee
 await call(driverApi, '/api/driver/onboard', { cookie: pat, body: { name: 'Pat Packer', phone: '403 555 0130', agree: true, food_cert_expires: '2026-10-20' } });
 assert.equal((await call(driverApi, '/api/driver/stops', { cookie: pat })).status, 403); ok('a volunteer packer onboards and gets the team app, not deliveries or the desk');
 assert.equal((await call(driverApi, '/api/driver/report?driver=eve@example.com', { cookie: pat })).data.driver, 'pat@example.com'); ok("a packer cannot read a driver's pay report");
+// The owners decided (4 Oct 2026): a packer can also drive. Then papers are needed, and only their own stops show.
+await call(admin, '/api/admin/team', { cookie: adm, body: { email: 'pia@example.com', name: 'Pia', role: 'packer', drives: true } });
+const pia = await login('pia@example.com');
+assert.equal((await call(driverApi, '/api/driver/onboard', { cookie: pia, body: { name: 'Pia Packer', phone: '403 555 0131', agree: true } })).data.fields?.licence_expires, 'required');
+assert.equal((await call(driverApi, '/api/driver/onboard', { cookie: pia, body: { name: 'Pia Packer', phone: '403 555 0131', agree: true, licence_expires: '2029-01-01', insurance_expires: '2029-01-01' } })).status, 200);
+assert.ok((await call(admin, '/api/admin/team', { cookie: adm })).data.drivers.some((d: any) => d.email === 'pia@example.com'));
+const pd1 = await order({ method: 'delivery', street: '5 Pia St', postal: 'T2P1J9', day: '2027-02-14', email: 'pd1@example.com' });
+const pd2 = await order({ method: 'delivery', street: '6 Eve St', postal: 'T2P1J9', day: '2027-02-14', email: 'pd2@example.com' });
+await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [pd1.data.ref], driver: 'pia@example.com' } });
+await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [pd2.data.ref], driver: 'eve@example.com' } });
+assert.deepEqual((await call(driverApi, '/api/driver/stops?date=2027-02-14', { cookie: pia })).data.stops.map((x: any) => x.ref), [pd1.data.ref]);
+assert.equal((await call(driverApi, '/api/driver/start?date=2027-02-14', { cookie: pia, body: {} })).data.started, 1);
+assert.equal((await call(driverApi, '/api/driver/delivered', { cookie: pia, body: { ref: pd2.data.ref } })).status, 404);
+assert.equal((await call(driverApi, '/api/driver/pack?date=2027-02-14', { cookie: pia })).status, 200);
+assert.equal((await call(driverApi, '/api/driver/stops?date=2027-02-14', { cookie: pat })).status, 403); ok('a packer who also drives: papers at sign-up, only their own stops, and still packs; other packers do not deliver');
 const pk1 = await order({ day: '2027-02-11', email: 'pk1@example.com' });
 const packList = (await call(driverApi, '/api/driver/pack?date=2027-02-11', { cookie: pat })).data.orders;
 assert.ok(packList.some((o: any) => o.ref === pk1.data.ref));

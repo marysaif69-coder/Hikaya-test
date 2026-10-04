@@ -52,9 +52,10 @@ const stopShape = async (o: Row) => ({
   items: (await items(o.id)).map(i => ({ qty: i.qty, name: i.name_en, option: i.option_en })),
 });
 
-/** A driver's stops for a day: their own; owners and helpers see everyone's (or "mine"). */
+/** A driver's stops for a day: their own (drivers and packers who also drive); owners and helpers
+ *  see everyone's (or "mine"). */
 export async function stops(s: Session, date: string, mine: boolean) {
-  const onlyMine = s.role === 'driver' || mine;
+  const onlyMine = s.role === 'driver' || s.role === 'packer' || mine;
   const rows = await sql`SELECT o.*, c.team_note FROM orders o LEFT JOIN customers c ON c.email = o.email
     WHERE o.slot_date = ${date} AND o.method = 'delivery' AND o.status <> 'cancelled' AND (${!onlyMine} OR o.driver_email = ${s.email})
     ORDER BY o.route_seq NULLS LAST, o.slot_window, o.postal, o.id`;
@@ -64,7 +65,7 @@ export async function stops(s: Session, date: string, mine: boolean) {
 /** One of my stops. `active`: refuse a cancelled order (a screen that is out of date must not deliver it). */
 async function myStop(s: Session, ref: string, opts: { active?: boolean } = {}) {
   const o = await one`SELECT * FROM orders WHERE ref = ${ref} AND method = 'delivery'`;
-  if (!o || (s.role === 'driver' && o.driver_email !== s.email)) throw new HttpError(404, 'not-found', 'That stop is not on your list.');
+  if (!o || ((s.role === 'driver' || s.role === 'packer') && o.driver_email !== s.email)) throw new HttpError(404, 'not-found', 'That stop is not on your list.');
   if (opts.active && o.status === 'cancelled') throw new HttpError(409, 'cancelled', 'This order was cancelled. Do not hand it over; call the owners.');
   return o;
 }

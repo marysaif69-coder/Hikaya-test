@@ -440,15 +440,16 @@ import '../../styles/global.css';
     $('guideText').innerHTML = guideHtml(d.guide);
     installHint();
     if (d.needsOnboarding) {
-      document.body.classList.toggle('no-drive', d.role === 'packer');
+      document.body.classList.toggle('no-drive', d.role === 'packer' && !d.member?.drives);
       show('onboard'); $('obGuide').innerHTML = guideHtml(d.guide);
       const f = $('obForm') as HTMLFormElement; if (d.member?.name) (f.elements.namedItem('name') as HTMLInputElement).value = d.member.name;
       return;
     }
-    const drives = d.role !== 'packer', packs = d.role !== 'driver';
+    // Packers marked "Also drives" get deliveries too (their own stops only).
+    const drives = d.role !== 'packer' || Boolean(d.member?.drives), packs = d.role !== 'driver';
     document.body.classList.toggle('no-drive', !drives); document.body.classList.toggle('no-pack', !packs);
     $('tabbar').hidden = false;
-    $('filter').hidden = d.role === 'driver';
+    $('filter').hidden = d.role === 'driver' || d.role === 'packer';
     if (drives) { show('app'); load(); } else { show('packBox'); loadPack(); }
   }
 

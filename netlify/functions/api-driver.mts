@@ -40,8 +40,9 @@ export default async (req: Request) => {
     // ---------- shifts ----------
     if (path === 'shifts' && req.method === 'GET') {
       const f = url.searchParams.get('from') ?? '';
+      const drives = Boolean((await member(s.email))?.drives);
       const list = await shiftsFrom(/^\d{4}-\d{2}-\d{2}$/.test(f) && f >= calgaryNow().date ? f : calgaryNow().date, 120);
-      return json({ shifts: list.map(x => ({ ...x, mine: x.people.some(p => p.email === s.email), me: x.people.find(p => p.email === s.email) ?? null, canTake: canTake(s.role, x.kind),
+      return json({ shifts: list.map(x => ({ ...x, mine: x.people.some(p => p.email === s.email), me: x.people.find(p => p.email === s.email) ?? null, canTake: canTake(s.role, x.kind, drives),
         people: x.people.map(p => ({ name: p.name || p.email.split('@')[0] })) })) });
     }
     const sm = /^shifts\/(\d+)\/(signup|leave|in|out)$/.exec(path);
@@ -65,7 +66,8 @@ export default async (req: Request) => {
       if (path === 'pack' && req.method === 'GET') return json({ date, orders: await packList(date) });
       if (path === 'packed' && req.method === 'POST') return json(await markPacked(s, str((await body(req)).ref, 12), req));
     }
-    if (s.role === 'packer' && ['stops', 'start', 'end', 'route', 'photo', 'delivered', 'missed'].some(x => path === x || path.startsWith('photo/'))) throw new HttpError(403, 'role', 'Deliveries are for drivers.');
+    // Packers deliver only when the owners ticked "Also drives" (then, like drivers, only their own stops).
+    if (s.role === 'packer' && !(await member(s.email))?.drives && ['stops', 'start', 'end', 'route', 'photo', 'delivered', 'missed'].some(x => path === x || path.startsWith('photo/'))) throw new HttpError(403, 'role', 'Deliveries are for drivers.');
 
     if (path === 'stops' && req.method === 'GET') return json({ date, stops: await stops(s, date, url.searchParams.get('mine') === '1') });
     if (path === 'start' && req.method === 'POST') return json(await startRoute(s, date, req, await body(req)));
@@ -87,7 +89,7 @@ export default async (req: Request) => {
     }
     if (path.startsWith('photo/') && req.method === 'GET') {
       const p = await one`SELECT p.mime, p.data, o.driver_email FROM delivery_photos p JOIN orders o ON o.id = p.order_id WHERE p.id = ${Number(path.slice(6)) || 0}`;
-      if (!p || (s.role === 'driver' && p.driver_email !== s.email)) throw new HttpError(404, 'not-found');
+      if (!p || ((s.role === 'driver' || s.role === 'packer') && p.driver_email !== s.email)) throw new HttpError(404, 'not-found');
       return new Response(p.data, { headers: { 'content-type': p.mime, 'cache-control': 'private, max-age=3600' } });
     }
     if (path === 'delivered' && req.method === 'POST') { const b = await body(req); return json(await delivered(s, str(b.ref, 12), b.collected, req)); }

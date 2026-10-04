@@ -141,6 +141,12 @@ assert.equal(s2.data.days[0].windows[0].pickup, 0); ok('slot shows 0 left');
 await call(admin, '/api/admin/settings', { cookie: adm, body: { open: false } });
 assert.equal((await call(orders, '/api/orders', { body: { ...base, window: '14:00–17:00' } })).data.error, 'closed'); ok('pause switch stops new orders');
 await call(admin, '/api/admin/settings', { cookie: adm, body: { open: true, capacity: { pickup: 12, delivery: 8 } } });
+await call(admin, '/api/admin/settings', { cookie: adm, body: { capacity: {} } });
+assert.equal((await call(orders, '/api/slots')).data.days[0].windows[0].pickup > 0, true); ok('a blank places field in Settings keeps the saved number (never closes every window)');
+const { calgaryToIso, isoToCalgary } = await import('../src/scripts/calgary-time');
+assert.equal(calgaryToIso('2027-02-11 09:00'), '2027-02-11T16:00:00.000Z'); assert.equal(calgaryToIso('2027-07-11 09:00'), '2027-07-11T15:00:00.000Z');
+assert.equal(isoToCalgary('2027-02-11T16:00:00.000Z'), '2027-02-11 09:00'); assert.equal(calgaryToIso('11/2 9am'), undefined); assert.equal(calgaryToIso(''), null);
+ok('fixing check-in times: Calgary time is read as Calgary time, winter and summer; a typo is caught');
 
 // Customer cancel
 const cancel = await call(orders, '/api/my/orders/cancel', { cookie: cust, body: { ref: del.data.ref } });

@@ -495,8 +495,8 @@ import { RELEASES } from '../../data/release-checks';
         <label class="a-switch"><input type="checkbox" name="autoConfirm" /> <span>Confirm new orders automatically (customers get the confirmation email straight away)</span></label>
         <h2 class="h-s">Places per time window</h2>
         <div class="two">
-          <div class="field"><label for="capP">Pickups per window</label><input id="capP" name="pickup" type="number" min="0" max="200" /></div>
-          <div class="field"><label for="capD">Deliveries per window</label><input id="capD" name="delivery" type="number" min="0" max="200" /></div>
+          <div class="field"><label for="capP">Pickups per window</label><input id="capP" name="pickup" type="number" min="0" max="200" required /></div>
+          <div class="field"><label for="capD">Deliveries per window</label><input id="capD" name="delivery" type="number" min="0" max="200" required /></div>
         </div>
         <p class="muted">Windows: 11:00–14:00, 14:00–17:00, 17:00–20:00, Thursday to Sunday.</p>
         <h2 class="h-s">Order-by deadline</h2>
@@ -538,7 +538,7 @@ import { RELEASES } from '../../data/release-checks';
   <!-- ORDER PANEL -->
   <div class="scrim" id="pScrim" hidden></div>
   <aside class="drawer a-panel" id="panel" aria-label="Order" aria-hidden="true" inert>
-    <div class="dr-head"><h2 class="h-s" id="pRef"></h2><button class="dr-x" type="button" id="pClose" aria-label="Close"><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button></div>
+    <div class="dr-head"><h2 class="h-s" id="pRef" tabindex="-1"></h2><button class="dr-x" type="button" id="pClose" aria-label="Close"><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button></div>
     <div class="a-pbody" id="pBody"></div>
   </aside>
 </body>
@@ -720,6 +720,9 @@ import { RELEASES } from '../../data/release-checks';
   .mini-t { font-size: 14px; }
   .mini-t :global(th) { padding: 6px 8px !important; }
   .mini-t :global(td) { padding: 8px !important; }
+  /* The first cell of a list row: a real button, so rows open from the keyboard too; looks like plain text. */
+  .rowbtn { border: 0; background: none; padding: 0; margin: 0; font: inherit; color: inherit; text-align: inherit; cursor: pointer; }
+  .rowbtn:focus-visible { outline: 2px solid var(--tamr); outline-offset: 2px; border-radius: 4px; }
   .linkish { border: 0; background: none; padding: 0; color: var(--tamr); font-weight: 600; text-decoration: underline; cursor: pointer; font: inherit; }
   .caps { border: 0; padding: 0; margin: 12px 0; display: grid; gap: 8px; }
   .caps label input[type=number] { width: 90px; margin-inline-start: 8px; }
@@ -775,6 +778,7 @@ import { RELEASES } from '../../data/release-checks';
 <script>
   import { mountLogin, logout } from '../../scripts/login';
   import { askWho, whoLabel } from '../../scripts/whois';
+  import { calgaryToIso, isoToCalgary } from '../../scripts/calgary-time';
   import { PRODUCTS, DATES, GRINDS } from '../../data/products';
   const PRODUCT_LIST = PRODUCTS.map(p => ({ id: p.id, kind: p.kind, name: p.name.en }));
   const DATE_LIST = Object.entries(DATES).map(([id, d]) => ({ id, name: d.name.en }));
@@ -952,7 +956,7 @@ import { RELEASES } from '../../data/release-checks';
     ].map(([k, v, cls]) => `<div class="st ${cls ?? ''}"><b>${v}</b><span>${k}</span></div>`).join('');
     $('none').hidden = d.orders.length > 0;
     document.querySelector('#list tbody')!.innerHTML = d.orders.map((o: any) => `<tr class="row" data-ref="${esc(o.ref)}">
-      <td class="ref">${esc(o.ref)}${o.sample ? '<br><span class="pill sample">SAMPLE</span>' : ''}</td><td>${fmtDay(o.day)}<br><small>${esc(o.window)}</small></td>
+      <td class="ref"><button type="button" class="rowbtn">${esc(o.ref)}</button>${o.sample ? '<br><span class="pill sample">SAMPLE</span>' : ''}</td><td>${fmtDay(o.day)}<br><small>${esc(o.window)}</small></td>
       <td>${esc(o.name)}<br><small>${esc(o.phone)}</small>${o.gift ? `<br><span class="pill gift">Gift → ${esc(o.gift.to)}</span>` : ''}</td>
       <td>${o.method === 'delivery' ? `Delivery<br><small>${esc(o.postal)}</small>` : 'Pickup'}</td>
       <td class="its">${(o.items ?? []).map((i: any) => `${i.qty}× ${esc(i.name)}${i.option ? ` (${esc(i.option)})` : ''}`).join(', ')}</td>
@@ -970,12 +974,24 @@ import { RELEASES } from '../../data/release-checks';
 
   // ---------- order panel ----------
   const panel = $('panel'), scrim = $('pScrim');
-  const closePanel = () => { panel.classList.remove('on'); scrim.classList.remove('on'); panel.setAttribute('inert', ''); panel.setAttribute('aria-hidden', 'true'); setTimeout(() => { scrim.hidden = true; }, 300); };
+  // Keyboard: the drawer takes focus when it opens and gives it back to what opened it.
+  let opener: Element | null = null;
+  const takeFocus = () => { if (panel.getAttribute('aria-hidden') !== 'false') opener = document.activeElement; };
+  const closePanel = () => {
+    const wasOpen = panel.getAttribute('aria-hidden') === 'false';
+    panel.classList.remove('on'); scrim.classList.remove('on'); panel.setAttribute('inert', ''); panel.setAttribute('aria-hidden', 'true'); setTimeout(() => { scrim.hidden = true; }, 300);
+    if (wasOpen && opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    opener = null;
+  };
   $('pClose').addEventListener('click', closePanel); scrim.addEventListener('click', closePanel);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 
+  let orderSeq = 0;
   async function openOrder(ref: string) {
+    const seq = ++orderSeq;
+    takeFocus();
     const [d, cat] = await Promise.all([api(`/api/admin/orders/${encodeURIComponent(ref)}`), api('/api/catalog').catch(() => null)]);
+    if (seq !== orderSeq) return; // another order was opened meanwhile
     const o = d.order;
     // Products with no price yet can't go into a real order; sample orders use a stand-in price.
     const unpriced = (id: string) => cat?.products?.[id] && cat.products[id].price == null;
@@ -1022,7 +1038,7 @@ import { RELEASES } from '../../data/release-checks';
       <h3>History</h3><ul>${d.events.map((e: any) => `<li class="ev">${new Date(e.created_at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })} · <b>${esc(e.kind)}</b> ${esc(e.detail ?? '')} <small>${esc(e.actor ?? '')}</small></li>`).join('')}</ul>
       <h3>Emails</h3><ul>${d.emails.map((m: any) => `<li class="ev">${esc(m.subject)} → ${esc(m.to_email)} · <b>${esc(m.status)}</b></li>`).join('') || '<li class="ev">None yet.</li>'}</ul>`;
     scrim.hidden = false; panel.removeAttribute('inert'); panel.setAttribute('aria-hidden', 'false');
-    requestAnimationFrame(() => { scrim.classList.add('on'); panel.classList.add('on'); });
+    requestAnimationFrame(() => { scrim.classList.add('on'); panel.classList.add('on'); $('pRef').focus(); });
     const refresh = async () => { await openOrder(ref); if (!$('v-orders').hidden) loadOrders(); if (!$('v-day').hidden) loadDay(); };
     $('pBody').querySelectorAll<HTMLButtonElement>('[data-status]').forEach(b => b.addEventListener('click', async () => {
       if (b.dataset.status === 'cancelled' && !confirm(`Cancel ${ref}?`)) return;
@@ -1048,9 +1064,11 @@ import { RELEASES } from '../../data/release-checks';
       const r = await api(`/api/admin/orders/${encodeURIComponent(ref)}/move`, { day: ($('mvDay') as HTMLInputElement).value, window: ($('mvWin') as HTMLSelectElement).value, force: ($('mvForce') as HTMLInputElement).checked });
       alert(`Moved to ${fmtDay(r.day)} ${r.window}. The customer was emailed.`); refresh();
     });
-    if (document.getElementById('pDriver')) {
+    // Keep this order's own select: if another order opens before the team list arrives, do nothing.
+    const sel = document.getElementById('pDriver') as HTMLSelectElement | null;
+    if (sel) {
       api('/api/admin/team').then(t => {
-        const sel = $('pDriver') as HTMLSelectElement;
+        if (!sel.isConnected) return;
         for (const x of t.drivers) sel.add(new Option(x.name, x.email, false, x.email === o.driver));
         sel.addEventListener('change', async () => { await api('/api/admin/assign', { refs: [ref], driver: sel.value }); refresh(); });
       });
@@ -1067,9 +1085,10 @@ import { RELEASES } from '../../data/release-checks';
     return `<div class="ei acts" data-pid="${p.id}"><span>${esc(p.name.en)}</span>${opts.length ? `<select>${opts.map(([v, l]) => `<option value="${v}" ${v === opt ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>` : ''}<input type="number" min="0" max="20" value="${qty}" style="width:70px" aria-label="Quantity" /></div>`;
   }
   const showPanel = (title: string, html: string) => {
+    takeFocus(); orderSeq++;
     $('pRef').textContent = title; $('pBody').innerHTML = html;
     scrim.hidden = false; panel.removeAttribute('inert'); panel.setAttribute('aria-hidden', 'false');
-    requestAnimationFrame(() => { scrim.classList.add('on'); panel.classList.add('on'); });
+    requestAnimationFrame(() => { scrim.classList.add('on'); panel.classList.add('on'); $('pRef').focus(); });
   };
   const when = (iso: string) => new Date(iso).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' });
   const KIND: Record<string, string> = { damaged: 'Damaged', 'wrong-item': 'Wrong item', missing: 'Missing item', late: 'Late delivery', 'change-order': 'Change order', 'large-order': 'Large order', question: 'Question', other: 'Other' };
@@ -1091,7 +1110,7 @@ import { RELEASES } from '../../data/release-checks';
     const n = d.counts?.open ?? 0; $('inboxN').textContent = String(n); $('inboxN').hidden = !n; $('inboxMain').textContent = String(n); $('inboxMain').hidden = !n;
     $('noTickets').hidden = d.tickets.length > 0;
     document.querySelector('#tickets tbody')!.innerHTML = d.tickets.map((t: any) => `<tr class="row" data-ticket="${esc(t.ref)}">
-      <td class="ref">${esc(t.ref)}${t.photos ? `<br><small>${t.photos} photo${t.photos > 1 ? 's' : ''}</small>` : ''}</td><td>${when(t.created_at)}<br><small>${t.source === 'ask' ? 'Ask Hikaya' : 'Help form'} · ${t.lang === 'ar' ? 'Arabic' : 'English'}</small></td>
+      <td class="ref"><button type="button" class="rowbtn">${esc(t.ref)}</button>${t.photos ? `<br><small>${t.photos} photo${t.photos > 1 ? 's' : ''}</small>` : ''}</td><td>${when(t.created_at)}<br><small>${t.source === 'ask' ? 'Ask Hikaya' : 'Help form'} · ${t.lang === 'ar' ? 'Arabic' : 'English'}</small></td>
       <td>${esc(t.name ?? '')}<br><small>${esc(t.email)}</small></td>
       <td><span class="pill ${URGENT.includes(t.kind) ? 'unpaid' : ''}">${KIND[t.kind] ?? esc(t.kind)}</span></td>
       <td class="its">${esc(t.summary)}</td><td>${esc(t.order_ref ?? '')}</td><td><span class="pill ${t.status === 'resolved' ? 'completed' : t.status === 'open' ? 'received' : 'confirmed'}">${esc(t.status)}</span></td></tr>`).join('');
@@ -1128,7 +1147,7 @@ import { RELEASES } from '../../data/release-checks';
     const d = await api('/api/admin/chats');
     $('noChats').hidden = d.chats.length > 0;
     document.querySelector('#chats tbody')!.innerHTML = d.chats.map((c: any) => `<tr class="row" data-chat="${c.id}">
-      <td>${when(c.updated_at)}</td><td>${c.lang === 'ar' ? 'AR' : 'EN'}</td><td class="its" dir="auto">${esc(c.first ?? '')}</td><td>${c.turns}</td>
+      <td><button type="button" class="rowbtn">${when(c.updated_at)}</button></td><td>${c.lang === 'ar' ? 'AR' : 'EN'}</td><td class="its" dir="auto">${esc(c.first ?? '')}</td><td>${c.turns}</td>
       <td>${c.handed_off ? 'Yes' : ''}</td><td>${c.rating === 'up' ? 'Yes' : c.rating === 'down' ? '<b class="warn">No</b>' : ''}</td></tr>`).join('');
   }
   async function openChat(id: number) {
@@ -1142,6 +1161,9 @@ import { RELEASES } from '../../data/release-checks';
       const firstQ = d.transcript.find((l: any) => l.who === 'customer')?.text ?? '';
       closePanel(); tab('assistant');
       const f = $('noteForm') as HTMLFormElement;
+      // A new answer, never an edit of the one that was open (not f.reset(): it would clear fromChat).
+      (f.elements.namedItem('id') as HTMLInputElement).value = '';
+      (f.elements.namedItem('answer') as HTMLTextAreaElement).value = '';
       (f.elements.namedItem('question') as HTMLInputElement).value = firstQ.slice(0, 500);
       (f.elements.namedItem('fromChat') as HTMLInputElement).value = String(id);
       (f.elements.namedItem('answer') as HTMLTextAreaElement).focus();
@@ -1215,7 +1237,7 @@ import { RELEASES } from '../../data/release-checks';
     const who = (kind: string) => teamPeople.filter(m => kind === 'driving' ? m.role === 'driver' || m.drives : m.role !== 'driver' || kind === 'other');
     $('shTable').innerHTML = '<tr><th>Day</th><th>Shift</th><th>People</th><th>Who</th><th></th></tr>' + (d.shifts.map((x: any) => `<tr data-sid="${x.id}"><td>${fmtDay(x.day)}</td><td>${esc(x.label)} ${esc(x.starts)}–${esc(x.ends)}${x.note ? `<br><small>${esc(x.note)}</small>` : ''}</td>
       <td style="${x.people.length < x.spots ? 'color:var(--tamr-2);font-weight:700' : ''}">${x.people.length} / ${x.spots}</td>
-      <td>${x.people.map((p: any) => `<span class="pill">${esc(p.name || p.email)}${p.how === 'assigned' ? ' (put on)' : ''} <button type="button" class="linkish" data-times="${esc(p.email)}" title="Fix check-in/out">${p.in ? `⏱ ${new Date(p.in).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false })}–${p.out ? new Date(p.out).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false }) : '…'}` : '⏱'}</button> <button type="button" class="linkish" data-unassign="${esc(p.email)}" title="Take off this shift">×</button></span>`).join(' ')}
+      <td>${x.people.map((p: any) => `<span class="pill">${esc(p.name || p.email)}${p.how === 'assigned' ? ' (put on)' : ''} <button type="button" class="linkish" data-times="${esc(p.email)}" data-in="${esc(p.in ?? '')}" data-out="${esc(p.out ?? '')}" title="Fix check-in/out">${p.in ? `⏱ ${new Date(p.in).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false })}–${p.out ? new Date(p.out).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false }) : '…'}` : '⏱'}</button> <button type="button" class="linkish" data-unassign="${esc(p.email)}" title="Take off this shift">×</button></span>`).join(' ')}
         ${x.people.length < x.spots ? `<select data-assign><option value="">Put someone on…</option>${who(x.kind).filter(m => !x.people.some((p: any) => p.email === m.email)).map(m => `<option value="${esc(m.email)}">${esc(m.name || m.email)}</option>`).join('')}</select>` : ''}</td>
       <td><button type="button" class="linkish" data-del="1">Delete</button></td></tr>`).join('') || '<tr><td colspan="5" class="muted">No shifts yet. Add one above.</td></tr>');
     shFrom.value ||= d.shifts[0]?.day ?? '';
@@ -1234,10 +1256,12 @@ import { RELEASES } from '../../data/release-checks';
     if (el.dataset.del && confirm('Delete this shift? The people on it are emailed.')) { await api(`/api/admin/shifts/${id}/delete`, {}); loadShiftsDesk(); }
     if (el.dataset.unassign && confirm(`Take ${el.dataset.unassign} off this shift?`)) { await api(`/api/admin/shifts/${id}/unassign`, { email: el.dataset.unassign }); loadShiftsDesk(); }
     if (el.dataset.times) {
-      const i = prompt('Checked in at (YYYY-MM-DD HH:MM, Calgary time; empty to clear):', ''); if (i === null) return;
-      const o = prompt('Checked out at (YYYY-MM-DD HH:MM; empty if not yet):', ''); if (o === null) return;
-      const iso = (v: string) => v.trim() ? new Date(v.trim().replace(' ', 'T') + ':00').toISOString() : null;
-      await api(`/api/admin/shifts/${id}/times`, { email: el.dataset.times, in: iso(i), out: iso(o) }); loadShiftsDesk(); loadHours();
+      // Both times are saved together, so each prompt starts with what is there now (Calgary time).
+      const i = prompt('Checked in at (YYYY-MM-DD HH:MM, Calgary time; empty to clear):', isoToCalgary(el.dataset.in)); if (i === null) return;
+      const o = prompt('Checked out at (YYYY-MM-DD HH:MM, Calgary time; empty if not yet):', isoToCalgary(el.dataset.out)); if (o === null) return;
+      const ti = calgaryToIso(i), to = calgaryToIso(o);
+      if (ti === undefined || to === undefined) { alert('Check the times: like 2027-02-11 09:00.'); return; }
+      await api(`/api/admin/shifts/${id}/times`, { email: el.dataset.times, in: ti, out: to }); loadShiftsDesk(); loadHours();
     }
   });
   async function loadHours() {
@@ -1386,7 +1410,7 @@ import { RELEASES } from '../../data/release-checks';
   async function loadCustomers() {
     const q = ((($('custFilter') as HTMLFormElement).elements.namedItem('q')) as HTMLInputElement).value;
     const d = await api(`/api/admin/customers?q=${encodeURIComponent(q)}`);
-    $('custTable').innerHTML = '<thead><tr><th>Customer</th><th>Orders</th><th>Spent</th><th>Last day</th><th></th></tr></thead><tbody>' + (d.customers.map((c: any) => `<tr data-cid="${c.id}"><td><b>${esc(c.name || '–')}</b><br><small>${esc(c.email)}${c.phone ? ' · ' + esc(c.phone) : ''}</small>${c.team_note ? `<br><small>📝 ${esc(c.team_note)}</small>` : ''}</td>
+    $('custTable').innerHTML = '<thead><tr><th>Customer</th><th>Orders</th><th>Spent</th><th>Last day</th><th></th></tr></thead><tbody>' + (d.customers.map((c: any) => `<tr data-cid="${c.id}"><td><button type="button" class="rowbtn"><b>${esc(c.name || '–')}</b></button><br><small>${esc(c.email)}${c.phone ? ' · ' + esc(c.phone) : ''}</small>${c.team_note ? `<br><small>📝 ${esc(c.team_note)}</small>` : ''}</td>
       <td>${c.orders}</td><td>${money(c.spent)}</td><td>${c.last_day ? fmtDay(c.last_day) : '–'}</td><td>${c.regular ? '<span class="pill">Regular</span> ' : ''}${c.on_list ? '<span class="pill">List</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No customers yet.</td></tr>') + '</tbody>';
   }
   let custT: any = 0;
@@ -1460,7 +1484,7 @@ import { RELEASES } from '../../data/release-checks';
   }
   async function loadCosts() {
     const d = await api('/api/admin/costs');
-    $('costTable').innerHTML = '<tr><th>Product</th><th>Price</th><th>Cost of one ($)</th><th>Margin</th></tr>' + d.costs.map((c: any) => `<tr><td>${esc(c.name)}</td><td>${money(c.price_cents)}</td>
+    $('costTable').innerHTML = '<tr><th>Product</th><th>Price</th><th>Cost of one ($)</th><th>Margin</th></tr>' + d.costs.map((c: any) => `<tr><td>${esc(c.name)}</td><td>${c.price_cents == null ? '<i>Not set</i>' : money(c.price_cents)}</td>
       <td><input class="cost-in" data-cost="${esc(c.id)}" type="number" min="0" step="0.01" value="${c.cost_cents === null ? '' : (c.cost_cents / 100).toFixed(2)}" /></td>
       <td>${c.cost_cents === null || !c.price_cents ? '–' : `${Math.round(((c.price_cents - c.cost_cents) / c.price_cents) * 100)}%`}</td></tr>`).join('');
   }
@@ -1713,8 +1737,8 @@ import { RELEASES } from '../../data/release-checks';
     if (seq !== daySeq || dayPick.value !== asked) return;
     dayPick.value = d.date;
     $('pack').innerHTML = d.pack.map((p: any) => `<li><span>${esc(p.name_en)}${p.option ? ` <small>(${esc(p.option)})</small>` : ''}</span><b>${p.qty}</b></li>`).join('') || '<li class="muted">Nothing to pack.</li>';
-    $('pickups').innerHTML = d.pickups.map((w: any) => `<h3>${esc(w.window)} · ${w.orders.length}</h3>${w.orders.map((o: any) => `<div class="mini" data-ref="${esc(o.ref)}"><span><b>${esc(o.ref)}</b> · ${esc(o.name)} · ${esc(o.phone)}</span><span>${o.items.map((i: any) => `${i.qty}× ${esc(i.name_en)}`).join(', ')} · ${money(o.total)} · ${payPill(o)}</span></div>`).join('')}`).join('');
-    $('deliveries').innerHTML = d.deliveries.map((o: any) => `<li><div class="mini" data-ref="${esc(o.ref)}"><span><b>${esc(o.postal)}</b> · ${esc(o.street)} · ${esc(o.window)}${o.gift ? ` · <span class="pill gift">Gift → ${esc(o.gift.to)}${o.gift.phone ? ' ' + esc(o.gift.phone) : ''}</span>` : ''}</span><span>${esc(o.name)} · <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a> · ${money(o.total)} · ${payPill(o)}</span></div></li>`).join('') || '<li class="muted">No deliveries.</li>';
+    $('pickups').innerHTML = d.pickups.map((w: any) => `<h3>${esc(w.window)} · ${w.orders.length}</h3>${w.orders.map((o: any) => `<div class="mini" data-ref="${esc(o.ref)}"><button type="button" class="rowbtn"><b>${esc(o.ref)}</b> · ${esc(o.name)} · ${esc(o.phone)}</button><span>${o.items.map((i: any) => `${i.qty}× ${esc(i.name_en)}`).join(', ')} · ${money(o.total)} · ${payPill(o)}</span></div>`).join('')}`).join('');
+    $('deliveries').innerHTML = d.deliveries.map((o: any) => `<li><div class="mini" data-ref="${esc(o.ref)}"><button type="button" class="rowbtn"><b>${esc(o.postal)}</b> · ${esc(o.street)} · ${esc(o.window)}${o.gift ? ` · <span class="pill gift">Gift → ${esc(o.gift.to)}${o.gift.phone ? ' ' + esc(o.gift.phone) : ''}</span>` : ''}</button><span>${esc(o.name)} · <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a> · ${money(o.total)} · ${payPill(o)}</span></div></li>`).join('') || '<li class="muted">No deliveries.</li>';
   }
 
   // ---------- settings ----------
@@ -1841,12 +1865,14 @@ import { RELEASES } from '../../data/release-checks';
   $('setForm').addEventListener('submit', async e => {
     e.preventDefault();
     const f = e.target as HTMLFormElement;
+    const capNum = (n: string) => { const v = (f.elements.namedItem(n) as HTMLInputElement).value.trim(); return v === '' ? undefined : Number(v); };
     await api('/api/admin/settings', {
       open: (f.elements.namedItem('open') as HTMLInputElement).checked,
       autoConfirm: (f.elements.namedItem('autoConfirm') as HTMLInputElement).checked,
       caps: { dailyOrders: (f.elements.namedItem('capDaily') as HTMLInputElement).value, giftBoxesPerDay: (f.elements.namedItem('capBoxes') as HTMLInputElement).value,
         stopsPerDriver: (f.elements.namedItem('capStops') as HTMLInputElement).value, deliveryFromShifts: (f.elements.namedItem('capShifts') as HTMLInputElement).checked },
-      capacity: { pickup: Number((f.elements.namedItem('pickup') as HTMLInputElement).value), delivery: Number((f.elements.namedItem('delivery') as HTMLInputElement).value) },
+      // A blank field keeps the saved number (never 0, which would close every window).
+      capacity: { pickup: capNum('pickup'), delivery: capNum('delivery') },
       cutoffMode: (f.querySelector('[name=cutoffMode]:checked') as HTMLInputElement | null)?.value,
       cutoffWeekday: Number((f.elements.namedItem('cutoffWeekday') as HTMLSelectElement).value),
       cutoffHour: Number((f.elements.namedItem('cutoffHour') as HTMLSelectElement).value),
