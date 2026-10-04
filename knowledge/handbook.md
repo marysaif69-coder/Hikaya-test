@@ -17,7 +17,7 @@ Edit this file to change what the assistant says, then run the test questions
 - There is no café yet. The café comes later; do not describe it as open or give a date for it.
 - Instagram: @hikaya.yyc. Website: hikayacoffee.ca.
 
-## Our coffee: the bag, your family's way, and the packs
+## Our coffee: the bag, how you take it, and the packs
 
 - Three lines: Gulf coffee, Yemeni coffee and Shami coffee. Each bag holds the coffee and its everyday spice only: Gulf coffee has cardamom mixed in; Yemeni qahwa has cardamom only (no ginger in the bag); Shami comes with cardamom or plain (sada). Jubani (coffee with its own husk) and qishr (dried coffee cherry husk, with ginger) are in the Yemeni line.
 - Family styles: the same bag with its sealed packs, in one box at one price. For Gulf coffee: Najdi (with the saffron packet), Qassimi (Qassim blend pack and saffron), Hijazi (Hijazi blend pack and saffron). For Yemeni qahwa: Hadrami (ginger and the Hadrami additions), Rada'i (ginger, roasted sesame and almonds) and Baydani (ginger and sorghum). The ginger is in these packs, not in the bag; plain Yemeni qahwa is cardamom only.

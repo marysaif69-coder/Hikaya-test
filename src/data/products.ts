@@ -98,7 +98,7 @@ export interface Box {
 export type Product = Coffee | Pack | Kit | Box;
 
 export const FAMILIES: Record<Family, { name: L; line: L }> = {
-  palm: { name: { en: 'Gulf', ar: 'الخليج' }, line: { en: 'Pale and golden, poured from the dallah. One bag, made the way your family makes it.', ar: 'شقراء وذهبية، تُصبّ من الدلّة. كيس واحد، تصنعه على طريقة أهلك.' } },
+  palm: { name: { en: 'Gulf', ar: 'الخليج' }, line: { en: 'Pale and golden, poured from the dallah. One bag, taken your way.', ar: 'شقراء وذهبية، تُصبّ من الدلّة. كيس واحد، تشربه بطريقتك.' } },
   mountain: { name: { en: 'Yemen', ar: 'اليمن' }, line: { en: 'Yemeni-style coffee from Ethiopian beans, with cardamom. The ginger and each town’s additions come in the packs.', ar: 'قهوة على الطريقة اليمنية من حبوب إثيوبية، بالهيل. والزنجبيل وإضافة كل بلدة في الظروف.' } },
   house: { name: { en: 'Shami', ar: 'الشام' }, line: { en: 'Shami coffee, ground to powder and boiled in the rakwa.', ar: 'القهوة الشامية، مطحونة كالبودرة وتُغلى في الركوة.' } },
   husk: { name: { en: 'Qishr', ar: 'القشر' }, line: { en: 'Qishr – dried coffee cherry husk, with ginger.', ar: 'القشر – قشر ثمرة البن المجفف، مع الزنجبيل.' } },
@@ -152,10 +152,10 @@ const C = (c: Omit<Coffee, 'kind' | 'size' | 'price'> & { size?: string; price?:
 export const COFFEES: Coffee[] = [
   C({ id: 'gulf', line: 'gulf', fam: 'palm', name: { en: 'Gulf coffee', ar: 'قهوة خليجية' }, roast: 1, spices: ['cardamom'], grinds: ['dallah'],
     taste: { en: 'Golden · cardamom · light', ar: 'ذهبية · هيل · خفيفة' },
-    notes: { en: 'Blonde roast, coarse ground, cardamom already mixed in. Drink it as it is, or add the packs that make it the way your family does.', ar: 'تحميص أشقر، طحنة خشنة، والهيل مخلوط فيها. اشربها كما هي، أو أضف الظروف التي تجعلها على طريقة أهلك.' },
+    notes: { en: 'Blonde roast, coarse ground, cardamom already mixed in. Drink it as it is, or add the packs that make it the way you take it at home.', ar: 'تحميص أشقر، طحنة خشنة، والهيل مخلوط فيها. اشربها كما هي، أو أضف الظروف التي تجعلها كما تشربها في بيتك.' },
     story: { en: 'The pale qahwa of Arabia, poured from the dallah into a small cup. This one bag is the start of every Gulf style we make; the packs do the rest.', ar: 'قهوة الجزيرة الشقراء، تُصبّ من الدلّة في فنجان صغير. هذا الكيس بداية كل طريقة خليجية نصنعها، والظروف تكمل الباقي.' },
     ingredients: ['Coffee, cardamom.', 'Café, cardamome.'],
-    bunn: { en: 'Cardamom only. Add what your family adds.', ar: 'هيل فقط، وأضف ما يضيفه أهلك.' }, date: 'khalas',
+    bunn: { en: 'Cardamom only. Add what you like.', ar: 'هيل فقط، وأضف ما تحبه.' }, date: 'khalas',
     why: { en: 'Toffee-soft Khalas with a pale cup.', ar: 'خلاص الطرية مع فنجان أشقر.' } }),
   C({ id: 'yemeni', line: 'yemen', fam: 'mountain', name: { en: 'Yemeni qahwa', ar: 'قهوة يمنية' }, roast: 2, spices: ['cardamom'], grinds: ['fine'],
     taste: { en: 'Bright · cardamom · round', ar: 'مشرقة · هيل · مستديرة' },

@@ -32,7 +32,7 @@ const PICK_LINE: Record<CoffeeLine, { en: string; ar: string }> = {
 <Base lang={lang} title={ar ? 'المتجر' : 'Shop'} current="shop">
   <section class="wrap shop-head">
     <h1 class="h-l">{ar ? 'القهوة والتمر' : 'Coffee & dates'}</h1>
-    <p class="lead">{ar ? 'اختر قهوتك، ثم اصنعها على طريقة أهلك.' : 'Choose your coffee, then make it the way your family does.'}</p>
+    <p class="lead">{ar ? 'اختر قهوتك، ثم اختر كيف تشربها.' : 'Choose your coffee, then how you take it.'}</p>
     <p class="muted small">{ar ? 'كل طريقة تأتي في علبة واحدة، الكيس وظروفه معاً. الأسعار تُعلن قريباً.' : 'Each style comes in one box, the bag and its packs together. Prices are announced soon.'}</p>
   </section>
 
@@ -65,7 +65,7 @@ const PICK_LINE: Record<CoffeeLine, { en: string; ar: string }> = {
         <section class="fam panel" id={l.id} role="tabpanel" aria-labelledby={`tab-${l.id}`} data-panel={l.id}>
           <div class="wrap">
             <div class="panel-head">
-              <h2 class="h-m">{l.ways.length ? (ar ? 'على طريقة أهلك' : 'Your family’s way') : LINES[l.id].name[lang]}</h2>
+              <div><h2 class="h-m">{l.ways.length ? (ar ? 'كيف تشربها؟' : 'How do you take it?') : LINES[l.id].name[lang]}</h2>{l.ways.length > 0 && <p class="muted tagline">{ar ? 'لكل منطقة طريقتها، ولكل بيت فنجان.' : 'Every region has its way, every home its cup.'}</p>}</div>
               {tasting && <a class="link" href={path(lang, `shop/${tasting.id}`)}>{ar ? `لست متأكداً؟ ${tasting.name.ar}، فيها قليل من كل طريقة` : `Not sure? ${tasting.name.en} has a little of each`} <span aria-hidden="true">{ar ? '←' : '→'}</span></a>}
             </div>
             {l.ways.length > 0 && <div class="grid">{l.ways.map(p => <ProductCard p={p} lang={lang} />)}</div>}
@@ -155,6 +155,7 @@ const PICK_LINE: Record<CoffeeLine, { en: string; ar: string }> = {
   .panel { background: var(--paper-2); }
   .fam.alt { background: var(--paper-2); }
   .panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: 24px; }
+  .tagline { margin-top: 4px; font-size: 15.5px; }
   .panel-note { margin: -12px 0 24px; font-size: 15px; }
   .fam-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 24px; margin-bottom: 22px; }
   .plain { display: grid; gap: 12px; margin-top: 44px; max-width: 760px; }

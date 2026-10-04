@@ -83,7 +83,7 @@ const allergenName: Record<string, string> = { sesame: L('sesame', 'سمسم'), 
       </fieldset>
       {Object.entries(Q2).map(([k, opts]) => (
         <fieldset data-q="2" data-for={k} hidden>
-          <legend><span>2</span>{k === 'new' ? (ar ? 'ما الذي يناسبك؟' : 'What sounds good?') : (ar ? 'كيف يصنعها أهلك؟' : 'How does your family make it?')}</legend>
+          <legend><span>2</span>{k === 'new' ? (ar ? 'ما الذي يناسبك؟' : 'What sounds good?') : (ar ? 'كيف تشربها؟' : 'How do you take it?')}</legend>
           <div class="opts">{opts.map(o => <label><input type="radio" name={`q2-${k}`} value={o.v} /><span><b>{o.t}</b>{o.s && <small>{o.s}</small>}</span></label>)}</div>
         </fieldset>
       ))}

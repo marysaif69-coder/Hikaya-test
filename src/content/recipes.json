@@ -28,8 +28,8 @@
       },
       {
         "t": {
-          "en": "Making a style? Add its pack now: the Qassim or Hijazi blend. [TBD: amount and timing]",
-          "ar": "تصنع طريقة أهلك؟ أضف ظرفها الآن: الخلطة القصيمية أو الحجازية. [يُحدد لاحقاً: الكمية والتوقيت]"
+          "en": "Taking it Qassimi or Hijazi? Add its pack now: the Qassim or Hijazi blend. [TBD: amount and timing]",
+          "ar": "تشربها قصيمية أو حجازية؟ أضف ظرفها الآن: الخلطة القصيمية أو الحجازية. [يُحدد لاحقاً: الكمية والتوقيت]"
         }
       },
       {
@@ -74,7 +74,7 @@
       {
         "t": {
           "en": "Add the coffee ([TBD] g) and, for a style, its pack: Hadrami, Rada’i or Baydani ([TBD] g). Let it rise (mufawar).",
-          "ar": "أضف القهوة ([يُحدد لاحقاً] غ)، ومع طريقة أهلك ظرفها: حضرمية أو رداعية أو بيضانية ([يُحدد لاحقاً] غ). دعها تفور."
+          "ar": "أضف القهوة ([يُحدد لاحقاً] غ)، ومع الطريقة التي تختارها ظرفها: حضرمية أو رداعية أو بيضانية ([يُحدد لاحقاً] غ). دعها تفور."
         },
         "secs": 180
       },

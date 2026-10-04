@@ -96,9 +96,9 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
   <section class="sec story-sec" aria-labelledby="story-h">
     <div class="wrap story-grid">
       <div class="story-text">
-        <h2 id="story-h" class="h-l">{ar ? 'كيس واحد، على طريقة أهلك.' : 'One bag, made your family’s way.'}</h2>
+        <h2 id="story-h" class="h-l">{ar ? 'لكل منطقة طريقتها، ولكل بيت فنجان.' : 'Every region has its way, every home its cup.'}</h2>
         <p class="lead">{ar ? 'اسأل عشرة بيوت كيف يصنعون القهوة، تسمع عشر حكايات. في نجد شقراء بالزعفران، وفي القصيم أغنى، وفي الحجاز أعطر. وفي اليمن لكل بلدة إضافتها: السمسم واللوز في رداع، والذرة في البيضاء. وفي الشام ناعمة كالبودرة، برغوتها في الركوة.' : 'Ask ten homes how they make their coffee and you will hear ten stories. In Najd it is pale, with saffron; in Qassim, richer; in the Hijaz, more fragrant. In Yemen every town adds its own: sesame and almonds in Rada’a, sorghum in Al-Bayda. In the Levant it is powder-fine, with its foam, in the rakwa.'}</p>
-        <p>{ar ? 'لذلك نحمّص القهوة طازجة في كالغاري، ونترك إضافات كل بيت في ظروفها المختومة، فتصنعها أنت كما يصنعها أهلك.' : 'So we roast the coffee fresh in Calgary, keep each home’s additions in their own sealed packs, and you make it the way your family does.'}</p>
+        <p>{ar ? 'لذلك نحمّص القهوة طازجة في كالغاري، ونترك إضافات كل بيت في ظروفها المختومة، فتشربها كما تشربها في بيتك.' : 'So we roast the coffee fresh in Calgary, keep each home’s additions in their own sealed packs, and you make it the way you take it at home.'}</p>
         <div class="cta">
           <a class="btn primary" href={path(lang, 'find')}>{ar ? 'اعثر على قهوتك' : 'Find your coffee'}</a>
           <a class="btn ghost" href={path(lang, 'our-recipes')}>{ar ? 'كيف اخترنا وصفاتنا' : 'How we chose our recipes'}</a>
@@ -106,7 +106,7 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
       </div>
       <ol class="story-steps">
         <li><b>{ar ? '١ · الكيس' : '1 · The bag'}</b><span>{ar ? 'خليجية أو يمنية أو شامية: القهوة وبهارها الأساسي فقط.' : 'Gulf, Yemeni or Shami: the coffee and its everyday spice, nothing more.'}</span></li>
-        <li><b>{ar ? '٢ · طريقة أهلك' : '2 · Your family’s way'}</b><span>{ar ? 'نجدية، قصيمية، حجازية، حضرمية، رداعية، بيضانية: الكيس مع ظروفه في علبة واحدة.' : 'Najdi, Qassimi, Hijazi, Hadrami, Rada’i, Baydani: the bag with its packs, in one box.'}</span></li>
+        <li><b>{ar ? '٢ · كيف تشربها' : '2 · How you take it'}</b><span>{ar ? 'نجدية، قصيمية، حجازية، حضرمية، رداعية، بيضانية: الكيس مع ظروفه في علبة واحدة.' : 'Najdi, Qassimi, Hijazi, Hadrami, Rada’i, Baydani: the bag with its packs, in one box.'}</span></li>
         <li class="try"><b>{ar ? 'جديد عليها؟' : 'New to it?'}</b><span>{ar ? 'تذوّق الخليج وتذوّق اليمن: كيس مع ظرف صغير من كل طريقة، لتجد طريقتك.' : 'Taste the Gulf and Taste Yemen: one bag with a small pack of each style, so you find yours.'} <a href={path(lang, 'shop') + '#start'}>{ar ? 'ابدأ من هنا' : 'Start here'}</a></span></li>
         <li><b>{ar ? '٣ · الظرف وحده' : '3 · Just the pack'}</b><span>{ar ? 'حين ينقص عندك، الظرف يأتي وحده للكيس الذي في بيتك.' : 'When you run low, the pack comes on its own, for the bag already in your house.'}</span></li>
       </ol>
@@ -118,7 +118,7 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
     <div class="wrap">
       <div class="split-head">
         <h2 id="shelf-h" class="h-l">{ar ? 'ثلاث قهوات على الرف.' : 'Three coffees on the shelf.'}</h2>
-        <p class="lead">{ar ? 'كيس لكل قهوة، والظروف تجعلها على طريقة أهلك.' : 'A bag for each coffee, and the packs make it your family’s way.'}</p>
+        <p class="lead">{ar ? 'كيس لكل قهوة، والظروف تجعلها كما تشربها.' : 'A bag for each coffee, and the packs make it the way you take it.'}</p>
       </div>
       <ul class="shelf">
         {shelf.map(({ l, c, bags, styles }) => (
