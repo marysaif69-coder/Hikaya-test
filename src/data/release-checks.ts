@@ -10,7 +10,7 @@ export const RELEASES: Release[] = [
     checks: [
       { id: 'tabs-4', text: 'Shop: four tabs, القهوة · Coffee, التمر · Dates, علب الهدايا · Gift boxes and بن اليمن · Yemeni beans (shown for now so you can look; hide all three bean products in Admin → Shop → Products and the tab goes away).', links: [{ label: 'Shop (AR)', href: '/ar/shop/' }, { label: 'Shop (EN)', href: '/en/shop/' }] },
       { id: 'tabs-gifts', text: 'Gift boxes tab: Coffee & Dates, Two Coffees, Reserve, Stuffed, Four Palms. “A gift?” on the Dates tab opens it.', links: [{ label: 'Gift boxes (EN)', href: '/en/shop/#gifts' }] },
-      { id: 'tabs-beans', text: 'Yemeni beans tab: “بن اليمن”, the slogan “من مزارعنا · From our farms”, three black boxes (Haraz, Bani Matar, Yafa’i).', links: [{ label: 'Desk', href: '/admin/' }, { label: 'Haraz page', href: '/en/shop/yemen-haraz/' }] },
+      { id: 'tabs-beans', text: 'Yemeni beans tab: “بن اليمن”, the slogan “من مزارعنا · From our farms”, “where the story of coffee began”, three facts (cupped and scored, for pour-over, small lots) and three black boxes; each product page shows the cupping score and pour-over recipe as [TBD] for now.', links: [{ label: 'Desk', href: '/admin/' }, { label: 'Haraz page', href: '/en/shop/yemen-haraz/' }] },
     ],
   },
   {

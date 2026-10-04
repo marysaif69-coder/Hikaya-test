@@ -11,7 +11,7 @@ export type Spice = 'saffron' | 'cardamom' | 'ginger' | 'husk' | 'sesame' | 'cin
 export type DateId = 'sukkari' | 'khalas' | 'khudri' | 'ajwa' | 'medjool' | 'mufattal';
 /** What a stuffed date is filled or dipped with (the customer chooses one per box). */
 export type FillingId = 'pistachio' | 'pistachio-dipped' | 'biscuit' | 'cashew' | 'caramel-almond';
-export type Grind = 'dallah' | 'fine' | 'powder' | 'beans';
+export type Grind = 'dallah' | 'fine' | 'powder' | 'beans' | 'pourover';
 export type Allergen = 'milk' | 'sesame' | 'nuts' | 'grain' | 'pistachio' | 'cashew' | 'gluten' | 'soy';
 
 /** A base bag: the coffee itself, with only the spice that belongs in every cup of that line. */
@@ -22,6 +22,8 @@ export interface Coffee {
   line: CoffeeLine;
   /** Not on the site until the owners show it in Admin → Shop → Products (the Yemeni beans). */
   startHidden?: true;
+  /** Yemeni beans: our own cupping score (SCA, out of 100); unset until the lot is cupped. */
+  score?: number;
   name: L;
   /** null = the owners have not set a price yet: the site shows "price coming" and it can't be ordered. */
   price: number | null;
@@ -156,6 +158,7 @@ export const GRINDS: Record<Grind, L> = {
   fine: { en: 'Fine, for the pot', ar: 'طحنة ناعمة للإبريق' },
   powder: { en: 'Powder-fine, for the rakwa', ar: 'ناعمة كالبودرة للركوة' },
   beans: { en: 'Whole beans', ar: 'حبوب كاملة' },
+  pourover: { en: 'Medium, for pour-over', ar: 'طحنة متوسطة للتقطير' },
 };
 
 /** Allergens live only in the sealed packs. The coffee bags hold coffee and spices, nothing else. */
@@ -334,9 +337,9 @@ export const KITS: Kit[] = [
 // The lots and regions are placeholders until the supplier confirms them.
 const Y = (id: string, name: L, region: L, bunn: L): Coffee => ({
   kind: 'coffee', id, fam: 'origin', line: 'yemen', name, price: null,
-  size: { en: '100 g', ar: '١٠٠ غ' }, roast: 0, spices: [], grinds: ['beans', 'dallah'],
+  size: { en: '100 g', ar: '١٠٠ غ' }, roast: 0, spices: [], grinds: ['beans', 'pourover'],
   notes: { en: `Grown in ${region.en}, Yemen, and roasted in Calgary. 100 g in the black box. [TBD: the lot, from the supplier]`, ar: `زُرع في ${region.ar} باليمن، ونحمّصه في كالغاري. ١٠٠ غ في العلبة السوداء. [يُحدد لاحقاً: الدفعة، من المورّد]` },
-  story: { en: 'A small lot from where the story of coffee began, for a cup on its own: no cardamom, no spice.', ar: 'دفعة صغيرة من حيث بدأت حكاية القهوة، لفنجان وحده: بلا هيل ولا بهار.' },
+  story: { en: 'A small lot from where the story of coffee began, brewed by pour-over and drunk on its own: no cardamom, no spice. We cup and score every lot before it reaches you.', ar: 'دفعة صغيرة من حيث بدأت حكاية القهوة، تُحضَّر بالتقطير وتُشرب وحدها: بلا هيل ولا بهار. نتذوق كل دفعة ونقيّمها قبل أن تصل إليك.' },
   ingredients: ['Coffee (Yemen).', 'Café (Yémen).'],
   taste: { en: '[TBD: after the cupping]', ar: '[يُحدد لاحقاً: بعد التذوق]' },
   bunn, why: { en: '', ar: '' },

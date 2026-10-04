@@ -92,8 +92,8 @@ export const DECISIONS: Decision[] = [
   },
   {
     id: 'yemen-beans-details', kind: 'provide', topic: 'Yemeni beans · Lots and box', asked: '2026-10-04',
-    question: 'If we sell the Yemeni beans: the lots (regions, farms), their taste notes, the price, and the black box design',
-    context: 'Shown for now: Shop → “بن اليمن · Yemeni beans” tab, three placeholders (Haraz, Bani Matar, Yafa’i) at 100 g, drawn as a black box. Tell us the real lots and send the box artwork or photos.',
+    question: 'If we sell the Yemeni beans: the lots (regions, farms, altitude, process), their cupping scores, taste notes, prices, and the black box design',
+    context: 'Prices from a search on 4 Oct 2026 (approximate; check before you set them), per 100 g: Canadian roasters about $23 CAD (Terra, Bani Matar and Haraz); a Bani Matar scored 86 about $23 CAD; a Saudi roaster’s Haraz about $33 CAD; Port of Mokha, scored 96–97, about $39–55 CAD (2021 prices). So roughly $25–45 CAD per 100 g, by the lot and its score. Each card and page shows the score once you write it here. Shown for now: Shop → “بن اليمن · Yemeni beans” tab, three placeholders (Haraz, Bani Matar, Yafa’i) at 100 g, drawn as a black box. Tell us the real lots and send the box artwork or photos.',
     options: ['Given'],
   },
   // ---------- questions ----------
@@ -105,9 +105,9 @@ export const DECISIONS: Decision[] = [
   },
   {
     id: 'yemen-beans-grind', topic: 'Yemeni beans · Grind', asked: '2026-10-04',
-    question: 'Are the Yemeni beans sold as whole beans, ground, or both (and which grind)?',
-    context: 'Built with two choices: whole beans, or ground coarse for the dallah.',
-    options: ['Whole beans only', 'Both (as now)', 'Ground only (write the grind below)'],
+    question: 'Are the Yemeni beans sold as whole beans, ground for pour-over, or both? And the pour-over recipe?',
+    context: 'Built with two choices: whole beans, or a medium grind for pour-over. The product page shows the recipe as “[TBD] g coffee to [TBD] ml water” until you give it.',
+    options: ['Both (as now)', 'Whole beans only', 'Ground only'],
   },
   {
     id: 'story-timeline', topic: 'Story page · Timeline', asked: '2026-10-04',

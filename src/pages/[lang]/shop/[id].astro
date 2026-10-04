@@ -97,7 +97,14 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
       {cup ? (
         <>
           {pairDate && <Pair lang={lang} size="m" bunn={cup.bunn} tamr={{ ar: `خذ معها ${pairDate.name.ar}.`, en: `Take ${pairDate.name.en} with it.` }} />}
-          {p.kind === 'coffee' && (
+          {p.kind === 'coffee' && p.fam === 'origin' && (
+            <ul class="origin-facts">
+              <li><span class="label">{L('Cupping score', 'درجة التذوق')}</span> {p.score ? `${p.score} / 100 (SCA)` : L('[TBD: after our cupping] (SCA, out of 100)', '[يُحدد لاحقاً: بعد تذوقنا] (SCA، من ١٠٠)')}</li>
+              <li><span class="label">{L('Brew', 'التحضير')}</span> {L('Pour-over, on its own, no spice: [TBD] g coffee to [TBD] ml water.', 'بالتقطير، وحدها بلا بهار: [يُحدد لاحقاً] غ قهوة لـ[يُحدد لاحقاً] مل ماء.')}</li>
+              <li><span class="label">{L('Origin', 'المنشأ')}</span> {L('Yemen · [TBD: farm, altitude and process, from the supplier]', 'اليمن · [يُحدد لاحقاً: المزرعة والارتفاع والمعالجة، من المورّد]')}</li>
+            </ul>
+          )}
+          {p.kind === 'coffee' && p.fam !== 'origin' && (
             <div class="facts">
               {p.spices.length > 0 && <div class="spices">{p.spices.map(s => <span><i style={`background:${SPICES[s].c}`}></i>{SPICES[s].name[lang]}</span>)}</div>}
               {p.roast > 0 && <p class="roast"><span class="label">{UI.roast[lang]}</span> <span class="roastbar" role="img" aria-label={`${p.roast} / 4`}>{[1, 2, 3, 4].map(i => <i class={i <= p.roast ? 'on' : ''}></i>)}</span> <small class="muted">{L('working plan', 'خطة مبدئية')}</small></p>}
@@ -152,7 +159,12 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
             {discoveryFor && <p class="muted try">{L('Not sure which? ', 'لست متأكداً؟ ')}<a href={path(lang, `shop/${discoveryFor.id}`)}>{discoveryFor.name[lang]}</a>{L(' has a small pack of each.', ' فيها ظرف صغير من كل طريقة.')}</p>}
           </fieldset>
         )}
-        {grinds.length > 0 && (
+        {grinds.length > 1 && p.kind === 'coffee' && p.fam === 'origin' ? (
+          <fieldset class="choice">
+            <legend>{UI.grind[lang]}</legend>
+            {grinds.map((g, i) => <label><input type="radio" name="opt" value={g} checked={i === 0} /><span>{GRINDS[g][lang]}</span></label>)}
+          </fieldset>
+        ) : grinds.length > 0 && (
           <p class="grind-line"><span class="label">{UI.grind[lang]}</span> {GRINDS[grinds[0]][lang]}<input type="hidden" name="opt" value={grinds[0]} /></p>
         )}
         {p.kind === 'box' && p.fillings && (
@@ -400,6 +412,8 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
   .buy { display: grid; gap: 18px; padding-top: 6px; }
   .grind-line { font-weight: 600; }
   .grind-line .label { margin-inline-end: 8px; }
+  .origin-facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .origin-facts .label { display: block; }
   .pick-badge { justify-self: start; display: inline-block; margin: 0; font-size: 13px; font-weight: 700; color: var(--paper); background: var(--tamr); border-radius: 999px; padding: 2px 10px; }
   .also { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
   .also a { padding: 6px 14px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--line); text-decoration: none; font-weight: 600; font-size: 14.5px; color: var(--ink); }

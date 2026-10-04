@@ -269,7 +269,12 @@ const DATE_PICKS = [
       <div class="wrap">
         <div class="panel-head"><div><h2 id="h-beans" class="h-m">{ar ? 'بن اليمن' : 'Yemeni beans'}{!ar && <span lang="ar" class="h-ar">بن اليمن</span>}</h2><p class="slogan">{ar ? 'من مزارعنا' : <>From our farms <span lang="ar">· من مزارعنا</span></>}</p></div></div>
         <p class="beans-lead">{ar ? 'من مدرجات جبال اليمن، حيث بدأت حكاية القهوة.' : 'From the mountain terraces of Yemen, where the story of coffee began.'}</p>
-        <p class="muted panel-note">{ar ? 'دفعات صغيرة، نحمّصها في كالغاري، ١٠٠ غ في العلبة السوداء. لفنجان يُشرب وحده، بلا هيل ولا بهار، لتعرف طعم المكان الذي جاء منه.' : 'Small lots, roasted in Calgary, 100 g in the black box. For a cup taken on its own, no cardamom, no spice, so it tastes of where it was grown.'}</p>
+        <p class="muted panel-note">{ar ? 'دفعات صغيرة، نحمّصها في كالغاري، ١٠٠ غ في العلبة السوداء. تُحضَّر بالتقطير وتُشرب وحدها، بلا هيل ولا بهار، لتعرف طعم المكان الذي جاء منه.' : 'Small lots, roasted in Calgary, 100 g in the black box. Brewed by pour-over and drunk on its own, no cardamom, no spice, so it tastes of where it was grown.'}</p>
+        <ul class="beans-facts">
+          <li><b>{ar ? 'نتذوقها ونقيّمها' : 'Cupped and scored by us'}</b> <span>{ar ? 'درجة كل دفعة (من ١٠٠، على مقياس SCA) على علبتها.' : 'Each lot’s score (out of 100, on the SCA scale) is on its box.'}</span></li>
+          <li><b>{ar ? 'للتقطير' : 'For pour-over'}</b> <span>{ar ? 'حبوباً كاملة، أو طحنة متوسطة للتقطير.' : 'Whole beans, or a medium grind for pour-over.'}</span></li>
+          <li><b>{ar ? 'دفعات صغيرة' : 'Small lots'}</b> <span>{ar ? 'حين تنفد الدفعة، تأتي دفعة جديدة.' : 'When a lot runs out, a new one follows.'}</span></li>
+        </ul>
         <div class="grid">{SPECIALTY.map(p => <ProductCard p={p} lang={lang} />)}</div>
       </div>
     </section>
@@ -421,6 +426,10 @@ const DATE_PICKS = [
   .ed-buy { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
   .ed-buy .price { font-weight: 700; }
   .more { margin-top: 16px; }
+  .beans-facts { list-style: none; margin: -8px 0 26px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px 18px; }
+  .beans-facts li { display: grid; gap: 2px; padding: 12px 14px; border-radius: 16px; background: var(--sheet); box-shadow: inset 0 0 0 1.5px var(--line); font-size: 14.5px; }
+  .beans-facts b { font-family: var(--display); font-size: 17px; }
+  .beans-facts span { color: var(--ink-2); }
   .beans-lead { font-family: var(--display); font-size: clamp(22px, 3vw, 28px); line-height: 1.35; margin: -6px 0 14px; max-width: 760px; }
   .slogan { margin: 6px 0 0; font-family: var(--display); font-size: 20px; color: var(--tamr); }
   .h-ar { font-size: .6em; color: var(--ink-2); margin-inline-start: 10px; }

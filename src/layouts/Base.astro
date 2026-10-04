@@ -2,7 +2,7 @@
 import '../styles/fonts.css';
 import '../styles/global.css';
 import type { Lang } from '../data/products';
-import { PRODUCTS, GRINDS, COFFEES, GIFT_COFFEES, SLEEVES, kitInside, dateChoices, boxOptionLabel, takesSleeve } from '../data/products';
+import { PRODUCTS, GRINDS, COFFEES, SPECIALTY, GIFT_COFFEES, SLEEVES, kitInside, dateChoices, boxOptionLabel, takesSleeve } from '../data/products';
 import { UI, dir, other, path } from '../data/i18n';
 import AskHikaya from '../components/AskHikaya.astro';
 import TeamBar from '../components/TeamBar.astro';
@@ -21,7 +21,7 @@ const nav: [keyof typeof UI.nav, string][] = [['shop', 'shop'], ['ramadan', 'ram
 
 // Small catalog for the client cart (names, prices, options) — no secrets, all public.
 // Kits carry their base bag and packs, and packs the bag they are made for, so the cart can explain itself.
-const grindsOf = (id: string) => COFFEES.find(c => c.id === id)?.grinds ?? [];
+const grindsOf = (id: string) => [...COFFEES, ...SPECIALTY].find(c => c.id === id)?.grinds ?? [];
 const catalog = Object.fromEntries(PRODUCTS.map(p => [p.id, {
   n: p.name, price: p.price, kind: p.kind,
   // Boxes: no photo yet that shows the real box (the cart shows the logo).

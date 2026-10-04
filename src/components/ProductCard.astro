@@ -20,7 +20,7 @@ const line = p.kind === 'kit' ? '+ ' + p.parts.map(x => (x.mini ? (ar ? 'ظرف 
   : p.kind === 'pack' ? (ar ? `لـ${forBase?.name.ar}` : `For ${forBase?.name.en}`)
   : p.kind === 'coffee' && p.spices.includes('husk') && p.id !== 'qishr' ? (ar ? 'قهوة وقشر، معاً في الكيس' : 'Coffee and qishr, together in the bag')
   : p.kind === 'coffee' && row && p.spices.length ? (ar ? `بال${p.spices.map(x => SPICES[x].name.ar).join(' وال')} فقط` : `With ${p.spices.map(x => SPICES[x].name.en.toLowerCase()).join(' and ')} only`)
-  : p.kind === 'coffee' && p.fam === 'origin' ? `${p.size[lang]} · ${ar ? 'في العلبة السوداء' : 'in the black box'}`
+  : p.kind === 'coffee' && p.fam === 'origin' ? `${p.size[lang]} · ${ar ? 'الدرجة' : 'Score'} ${p.score ?? (ar ? '[يُحدد لاحقاً]' : '[TBD]')} · ${ar ? 'للتقطير' : 'pour-over'}`
   : p.kind === 'coffee' ? p.taste[lang]
   : `${FAMILIES[p.fam].name[lang]} · ${p.size[lang]}`;
 const defaultOpt = p.kind === 'coffee' ? (p.grinds[0] ?? '') : p.kind === 'kit' ? (baseOf(p).grinds[0] ?? '') : p.kind === 'box' ? defaultBoxOpt(p) : '';
