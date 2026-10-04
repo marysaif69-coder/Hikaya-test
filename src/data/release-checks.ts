@@ -6,6 +6,14 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: '2-6', title: 'Round 2 · batch 6: Ask Hikaya handbook, privacy', date: '2026-10-04',
+    checks: [
+      { id: 'ask-subscription', text: 'Ask Hikaya “Do you have a coffee subscription?”: it explains regular orders (every 2 or 4 weeks, paid each time), not “no subscriptions”.' },
+      { id: 'ask-running-low', text: 'Ask Hikaya “How do I stop the Running low email?”: it points to the unsubscribe link, or offers to send a request.' },
+      { id: 'privacy-decision', text: 'Settings → Decisions → “Approve the new privacy wording”: read the draft and answer; the site changes after you approve.', links: [{ label: 'Desk', href: '/admin/' }] },
+    ],
+  },
+  {
     id: '2-5', title: 'Round 2 · batch 5: Arabic error messages and My account', date: '2026-10-04',
     checks: [
       { id: 'ar-promo', text: 'Arabic checkout: type a code that doesn’t exist; the message is in Arabic (هذا الرمز غير صحيح.). Try a used-up gift card: Arabic too.', links: [{ label: 'Checkout (AR)', href: '/ar/checkout/' }] },

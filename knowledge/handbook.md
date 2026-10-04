@@ -114,6 +114,8 @@ Edit this file to change what the assistant says, then run the test questions
 
 - No passwords: customers log in with a 6-digit code sent by email at /en/account/. If the code doesn't arrive, check spam, wait a minute, and ask again (at most a few codes an hour).
 - Mailing list (about three letters a year): sign up in the footer of any page or with the tick at checkout. They must tick the consent box, then click the link in the confirmation email. To stop: the unsubscribe link at the bottom of any letter.
+- "Running low?" email: people on the mailing list may get one email about three weeks after a coffee order, with an "Order the same again" button (not for regular orders, and not if they have ordered again since). It has an unsubscribe link at the bottom; that link, or the one in any letter, stops it. If they cannot find one, open a request (kind: other) and the team removes them.
+- "Which cup is yours?": an optional question when joining the waiting list; it only helps us plan.
 - Sold out, or a Ramadan/Eid box out of season: on that product's page, "Email me when it's back" sends one email when it can be ordered again. Order emails (confirmations, reminders) always come for an order.
 - To see, correct or delete their personal information: open a request (kind: other) and the team handles it by email. Do not promise a time beyond "the team replies by email".
 
@@ -142,8 +144,8 @@ chooses replacement or refund; you never decide or promise which one.
 
 ## Storing coffee and dates
 
-- Coffee: keep the pouch closed, away from light, heat and moisture. Not in the fridge. Ground coffee tastes best within about 4 weeks of opening.
-- Dates: in a cool, dry place for a few weeks, in the fridge in a closed container for a few months, in the freezer for longer. Soft dates (Khalas, Medjool, Sukkari) keep best in the fridge. In Arabic we write Medjool as مجدول.
+- Coffee: keep the pouch closed, away from light, heat and moisture. Not in the fridge. Ground coffee is at its freshest for about 4 weeks after opening.
+- Dates: in a cool, dry place for a few weeks, in the fridge in a closed container for a few months, in the freezer for longer. Soft dates (Khalas, Medjool, Sukkari) keep longest in the fridge. In Arabic we write Medjool as مجدول.
 - Exact roast dates and best-before dates are printed on each pouch and box.
 
 ## Grinding
@@ -164,7 +166,7 @@ chooses replacement or refund; you never decide or promise which one.
 
 - No café, no seating, no drinks to go.
 - No shipping outside Calgary, no international orders.
-- No subscriptions yet.
+- No prepaid or discounted subscription plans: regular orders (every 2 or 4 weeks, see above) are paid each time.
 - No wholesale price list yet: for cafés, shops, mosques, events, offices or orders of more than about 10 boxes, open a request (kind: large-order) with the details (what, how many, which date, where).
 - Unknown: the exact pickup address, final prices, GST. Say they are not set yet.
 

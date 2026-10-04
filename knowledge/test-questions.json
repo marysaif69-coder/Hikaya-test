@@ -877,6 +877,16 @@
       "must_not": [
         "says saffron must be bought separately for Najdi"
       ]
+    },
+    {
+      "id": "subscription",
+      "lang": "en",
+      "q": "Do you have a coffee subscription?",
+      "must": [
+        "describes regular orders: at checkout choose the same again every 2 or every 4 weeks",
+        "says each one is paid the usual way each time (no prepaid or discounted plan)",
+        "does not say there are no subscriptions at all"
+      ]
     }
   ]
 }
