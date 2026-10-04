@@ -33,7 +33,8 @@ export const clear = () => write([]);
 
 export function totals(lines = read(), delivery = false) {
   const cat = catalog().items;
-  const sub = lines.reduce((s, l) => s + (cat[l.id]?.price ?? 0) * l.qty, 0);
+  // Prices arrive as dollars with cents: round once so sums never show as 15.399999…
+  const sub = Math.round(lines.reduce((s, l) => s + (cat[l.id]?.price ?? 0) * l.qty, 0) * 100) / 100;
   // An item whose price is not set yet can't be ordered; the server refuses it too.
   const unpriced = lines.filter(l => cat[l.id] && cat[l.id].price == null).length;
   const fee = delivery && sub > 0 && sub < 80 ? 9 : 0;
@@ -83,7 +84,8 @@ export function paintAdvice(list: HTMLElement, lang: 'en' | 'ar', after: () => v
     const li = document.createElement('li'); li.className = 'cart-note';
     const p = document.createElement('p'); p.textContent = n.text; li.append(p);
     const it = n.add ? catalog().items[n.add] : null;
-    if (n.add && it && it.price != null) {
+    // Only offer what can be ordered now (hidden or sold out: no button once live data is in).
+    if (n.add && it && it.price != null && (window as any).hikayaOrderable?.(n.add) !== false) {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'note-add'; b.textContent = n.label!;
       b.addEventListener('click', () => { add(n.add!, Object.keys(it.opts ?? {})[0] ?? ''); after(); });
       li.append(b);
@@ -100,7 +102,7 @@ function paintCount() {
   b?.classList.remove('bump'); void b?.offsetWidth; b?.classList.add('bump');
 }
 
-const money = (n: number, lang: 'en' | 'ar') => (lang === 'ar' ? `${n} $` : `$${n}`);
+const money = (n: number, lang: 'en' | 'ar') => { const v = Number.isInteger(n) ? String(n) : n.toFixed(2); return lang === 'ar' ? `${v} $` : `$${v}`; };
 
 /** Slide-in cart: opens on add, shows progress to free delivery. */
 function paintDrawer() {
@@ -129,10 +131,10 @@ function paintDrawer() {
   });
   paintAdvice(list, lang, paintDrawer);
   document.getElementById('drSub')!.textContent = money(sub, lang);
-  const left = Math.max(0, 80 - sub);
+  const left = Math.max(0, +(80 - sub).toFixed(2));
   document.getElementById('drFree')!.textContent = left === 0
     ? (lang === 'ar' ? 'التوصيل داخل كالغاري مجاني لهذا الطلب.' : 'Free Calgary delivery on this order.')
-    : (lang === 'ar' ? `أضف ${left} $ ليصبح التوصيل مجاناً.` : `Add $${left} for free Calgary delivery.`);
+    : (lang === 'ar' ? `أضف ${money(left, lang)} ليصبح التوصيل مجاناً.` : `Add ${money(left, lang)} for free Calgary delivery.`);
   (document.getElementById('drBar') as HTMLElement).style.width = `${Math.min(100, (sub / 80) * 100)}%`;
 }
 

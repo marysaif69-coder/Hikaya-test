@@ -1516,7 +1516,7 @@ import { DECISIONS } from '../../data/decisions';
   $('mgShow').addEventListener('click', loadMargins);
 
   // ---------- words: recipes and product text ----------
-  const W_LABEL: Record<string, string> = { points: 'Points', name: 'Name', taste: 'Taste line', notes: 'Description', story: 'Story', bunn: 'What Bunn says', why: 'Why this date', contents: "What's inside", size: 'Size', title: 'Title', vessel: 'You need', yields: 'Makes', steps: 'Steps', serve: 'How to serve', secs: 'Timer (seconds)' };
+  const W_LABEL: Record<string, string> = { points: 'Points', name: 'Name', origin: 'Where it comes from', taste: 'Taste line', notes: 'Description', story: 'Story', bunn: 'What Bunn says', why: 'Why this date', contents: "What's inside", size: 'Size', title: 'Title', vessel: 'You need', yields: 'Makes', steps: 'Steps', serve: 'How to serve', secs: 'Timer (seconds)' };
   let words: { file: string; data: any; sha: string | null } | null = null;
   const isPair = (v: any) => v && typeof v === 'object' && !Array.isArray(v) && typeof v.en === 'string' && typeof v.ar === 'string' && Object.keys(v).length === 2;
   function wField(v: any, path: (string | number)[], label: string): string {

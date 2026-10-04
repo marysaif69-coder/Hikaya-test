@@ -160,6 +160,10 @@
       "en": "Najdi",
       "ar": "نجدية"
     },
+    "origin": {
+      "en": "Najd’s way: pale and fragrant with saffron",
+      "ar": "على طريقة نجد: شقراء عطرة بالزعفران"
+    },
     "taste": {
       "en": "Golden · cardamom · saffron",
       "ar": "ذهبية · هيل · زعفران"
@@ -185,6 +189,10 @@
     "name": {
       "en": "Qassimi",
       "ar": "قصيمية"
+    },
+    "origin": {
+      "en": "The Qassim way: velvety with evaporated milk, warm with spice",
+      "ar": "على طريقة القصيم: قوام مخملي بالحليب المبخّر، ودفء البهار"
     },
     "taste": {
       "en": "Velvety · warm spice · saffron",
@@ -212,6 +220,10 @@
       "en": "Hijazi",
       "ar": "حجازية"
     },
+    "origin": {
+      "en": "The Hijaz way: fragrant and aromatic",
+      "ar": "على طريقة الحجاز: عطرة وزكية"
+    },
     "taste": {
       "en": "Fragrant · aromatic spice · saffron",
       "ar": "عطرة · بهار زكي · زعفران"
@@ -237,6 +249,10 @@
     "name": {
       "en": "Hadrami",
       "ar": "حضرمية"
+    },
+    "origin": {
+      "en": "The Hadramawt way: warm with ginger",
+      "ar": "على طريقة حضرموت: دافئة بالزنجبيل"
     },
     "taste": {
       "en": "Warm · ginger · spice",
@@ -264,6 +280,10 @@
       "en": "Rada’i",
       "ar": "رداعية"
     },
+    "origin": {
+      "en": "From Rada’a: nutty and toasty, warm with ginger",
+      "ar": "من رداع: بطعم المكسرات المحمّصة ودفء الزنجبيل"
+    },
     "taste": {
       "en": "Nutty · toasted sesame · ginger",
       "ar": "مكسرات · سمسم محمّص · زنجبيل"
@@ -289,6 +309,10 @@
     "name": {
       "en": "Baydani",
       "ar": "بيضانية"
+    },
+    "origin": {
+      "en": "From Al-Bayda: toasty and lightly sweet, warm with ginger",
+      "ar": "من البيضاء: محمّصة وحلوة قليلاً، بدفء الزنجبيل"
     },
     "taste": {
       "en": "Toasty · lightly sweet · ginger",

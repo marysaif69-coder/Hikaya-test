@@ -48,16 +48,16 @@ const others = [
           <span class="pick-txt">
             <b>{l.name[lang]}</b>
             <small>{l.sub[lang]}</small>
-            {l.ways.length + l.bases.length > 1 && <em>{l.ways.length + l.bases.length} {ar ? 'خيارات' : 'choices'}</em>}
+            {l.ways.length + l.bases.length > 1 && <em>{ar ? (l.ways.length + l.bases.length === 2 ? 'خياران' : `${l.ways.length + l.bases.length} خيارات`) : `${l.ways.length + l.bases.length} choices`}</em>}
           </span>
         </button>
       ))}
     </div>
-    <p class="pick-more">
+    <div class="pick-more" role="tablist" aria-label={ar ? 'خيارات أخرى' : 'More ways'}>
       <button type="button" role="tab" class="link" id="tab-start" aria-controls="start" aria-selected="false" data-pick="start">{ar ? 'جديد عليها؟ جرّب علبة التذوق' : 'New to it? Try a tasting box'}</button>
       <span aria-hidden="true">·</span>
-      <button type="button" role="tab" class="link" id="tab-packs" aria-controls="packs" aria-selected="false" data-pick="packs">{ar ? 'عندك كيس؟ الظرف وحده' : 'Have a bag? Just the pack'}</button>
-    </p>
+      <button type="button" role="tab" class="link" id="tab-packs" aria-controls="packs" aria-selected="false" data-pick="packs">{ar ? 'عندك كيس جديد؟ الظرف وحده' : 'Have a fresh bag? Just the pack'}</button>
+    </div>
   </section>
 
   <!-- Step 2: the chosen coffee. -->
@@ -76,7 +76,7 @@ const others = [
               ? <div class="plain">
                   <div><h3 class="sub-h">{ar ? 'بدون إضافات' : 'Nothing added'}</h3>{l.bases.map(p => <ProductCard p={p} lang={lang} row />)}</div>
                   <div class="by-itself"><h3 class="sub-h">{ar ? 'عندك الكيس؟ الظرف وحده' : 'Have the bag? The pack by itself'}</h3>
-                    <ul>{PACKS.filter(k => k.line === l.id).map(k => <li><a href={path(lang, `shop/${k.id}`)}>{k.name[lang]}</a></li>)}</ul>
+                    <ul>{PACKS.filter(k => k.line === l.id).map(k => <li data-product={k.id}><a href={path(lang, `shop/${k.id}`)}>{k.name[lang]}</a></li>)}</ul>
                   </div>
                 </div>
               : <>
@@ -138,6 +138,11 @@ const others = [
   const fromHash = () => { const h = location.hash.slice(1); if (ids.includes(h)) { choose(h, true); return true; } return false; };
   if (!fromHash()) { tabs.forEach(t => t.setAttribute('aria-selected', 'false')); panels.forEach(p => { p.hidden = p.dataset.panel !== 'gulf'; }); tabs[0].setAttribute('aria-selected', 'true'); }
   addEventListener('hashchange', fromHash);
+  // When the owners hide a product, live.ts hides a tab whose cards are all hidden: open another.
+  document.addEventListener('catalog:live', () => {
+    const cur = tabs.find(t => t.getAttribute('aria-selected') === 'true');
+    if (cur?.hidden) { const next = tabs.find(t => !t.hidden); if (next) choose(next.dataset.pick!, false); }
+  });
 </script>
 
 <style>

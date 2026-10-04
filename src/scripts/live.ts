@@ -70,6 +70,13 @@ function apply(live: Live) {
     el.hidden = !p.shown;
     el.classList.toggle('is-sold-out', p.shown && !p.available);
   });
+  // Shop tabs: a tab whose panel has only hidden cards goes too (checked on the cards themselves,
+  // since the tab script hides every panel but the open one).
+  document.querySelectorAll<HTMLElement>('[data-pick]').forEach(t => {
+    const panel = document.getElementById(t.dataset.pick!);
+    const cards = panel ? [...panel.querySelectorAll<HTMLElement>('[data-product]')] : [];
+    t.hidden = cards.length > 0 && cards.every(c => c.hidden);
+  });
   document.querySelectorAll<HTMLElement>('[data-group]').forEach(g => {
     if (g.hidden) return;
     const cards = [...g.querySelectorAll<HTMLElement>('[data-product]')];

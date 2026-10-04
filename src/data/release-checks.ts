@@ -6,6 +6,16 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: '2-3', title: 'Round 2 · batch 3: shop page behaviour', date: '2026-10-04',
+    checks: [
+      { id: 'sticky-style', text: 'On a phone, Gulf coffee page: scroll down; the bar at the bottom names the style that will be added (Najdi) and its price, and changes when you pick another.', links: [{ label: 'Gulf coffee (AR)', href: '/ar/shop/gulf/' }, { label: 'Gulf coffee (EN)', href: '/en/shop/gulf/' }] },
+      { id: 'hidden-tabs', text: 'Hide Qishr in Products: the Qishr tab disappears from the shop. Hide a pack: its “pack by itself” links disappear. Show them again after.', links: [{ label: 'Shop (AR)', href: '/ar/shop/' }, { label: 'Shop (EN)', href: '/en/shop/' }] },
+      { id: 'shami-dual', text: 'Arabic shop: the Shami card says “خياران”.', links: [{ label: 'Shop (AR)', href: '/ar/shop/' }] },
+      { id: 'cart-cents', text: 'Once a price has cents: the cart and the cart drawer show prices like $15.40, not long decimals.', links: [{ label: 'Cart (EN)', href: '/en/cart/' }] },
+      { id: 'words-origin', text: 'Admin → Shop → Words → Products: each style has “Where it comes from”, editable.', links: [{ label: 'Desk', href: '/admin/' }] },
+    ],
+  },
+  {
     id: 'decisions', title: 'Decisions page for the owners', date: '2026-10-04',
     checks: [
       { id: 'decisions-tab', text: 'Settings → Decisions: the open questions (Rada’i and Baydani, nuts, Yemeni styles at launch, Qassimi milk, delivery edges, mailing address, Running low email). Answer one and save: it shows who answered and when.', links: [{ label: 'Desk', href: '/admin/' }] },

@@ -62,7 +62,7 @@ const ar = lang === 'ar';
   import { read, setQty, totals, describe, paintAdvice } from '../../scripts/cart';
   const lang = document.documentElement.lang as 'en' | 'ar';
   const $ = (id: string) => document.getElementById(id)!;
-  const money = (n: number) => (lang === 'ar' ? `${n} $` : `$${n}`);
+  const money = (n: number) => { const v = Number.isInteger(n) ? String(n) : n.toFixed(2); return lang === 'ar' ? `${v} $` : `$${v}`; };
   function paint() {
     const lines = read();
     const { sub } = totals(lines);
@@ -86,7 +86,7 @@ const ar = lang === 'ar';
     $('unpriced').hidden = !t.unpriced;
     ($('go') as HTMLAnchorElement).toggleAttribute('aria-disabled', t.unpriced > 0);
     $('go').classList.toggle('off', t.unpriced > 0);
-    $('free').textContent = sub >= 80 ? (lang === 'ar' ? 'التوصيل مجاني لهذا الطلب.' : 'Delivery is free on this order.') : sub > 0 ? (lang === 'ar' ? `أضف ${80 - sub} $ ليصبح التوصيل مجاناً.` : `Add $${80 - sub} for free delivery.`) : '';
+    $('free').textContent = sub >= 80 ? (lang === 'ar' ? 'التوصيل مجاني لهذا الطلب.' : 'Delivery is free on this order.') : sub > 0 ? (lang === 'ar' ? `أضف ${money(+(80 - sub).toFixed(2))} ليصبح التوصيل مجاناً.` : `Add ${money(+(80 - sub).toFixed(2))} for free delivery.`) : '';
   }
   paint();
   document.addEventListener('catalog:live', () => paint());
