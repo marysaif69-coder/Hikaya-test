@@ -49,8 +49,9 @@ export async function createOrder(input: any, s: Session | null, cardEnabled: bo
   if (Object.keys(errors).length) throw Object.assign(new HttpError(400, 'invalid', 'Check the highlighted fields.'), { fields: errors });
 
   const lines = priceCart(input?.lines, await liveCatalog());
+  const giftBoxesPerDay = (await getSettings()).caps.giftBoxesPerDay;
   await assertBookable(str(input?.day, 10), str(input?.window, 20), method);
-  await assertDayLimits(str(input?.day, 10), lines, (await getSettings()).caps.giftBoxesPerDay);
+  await assertDayLimits(str(input?.day, 10), lines, giftBoxesPerDay);
   const sub = lines.reduce((n, l) => n + l.unit_cents * l.qty, 0);
   let promo: Applied | null = null;
   if (str(input?.promo, 32)) {
@@ -69,12 +70,12 @@ export async function createOrder(input: any, s: Session | null, cardEnabled: bo
   try { if (gcCode) gcCents = await takeFromGiftCard(gcCode, t.total_cents); }
   catch (e) { await giveStock(taken); await unredeem(promo?.code ?? null); throw Object.assign(e as HttpError, { fields: { giftcard: 'giftcard' } }); }
   const total = t.total_cents - gcCents;
+  let order: Row | null = null;
   try {
 
   const customer = await one`INSERT INTO customers (email, name, phone, lang) VALUES (${email}, ${name}, ${phone}, ${lang})
     ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, phone = EXCLUDED.phone, lang = EXCLUDED.lang RETURNING id`;
   const guestToken = token(18);
-  let order: Row | null = null;
   for (let i = 0; i < 5 && !order; i++) {
     try {
       order = await one`INSERT INTO orders (ref, customer_id, email, name, phone, lang, method, street, postal, slot_date, slot_window, payment,
@@ -91,9 +92,18 @@ export async function createOrder(input: any, s: Session | null, cardEnabled: bo
     await sql`INSERT INTO order_items (order_id, product_id, name_en, name_ar, option, option_en, option_ar, qty, unit_cents)
       VALUES (${order.id}, ${l.product_id}, ${l.name_en}, ${l.name_ar}, ${l.option}, ${l.option_en}, ${l.option_ar}, ${l.qty}, ${l.unit_cents})`;
   }
+  // Checked again now that it is saved, counting only orders saved before it: orders sent at the
+  // same moment all passed the first check, and only the first ones keep their place.
+  if (!isSample) {
+    await assertBookable(str(input.day, 10), str(input.window, 20), method, { beforeId: order.id });
+    await assertDayLimits(str(input.day, 10), lines, giftBoxesPerDay, 0, order.id);
+  }
   await event(order.id, 'created', `${method} · ${str(input.day, 10)} ${order.slot_window} · ${payment}${promo ? ` · code ${promo.code}` : ''}${gcCents ? ` · gift card ${gcCode} −${(gcCents / 100).toFixed(2)}` : ''}${opts.subscriptionId ? ' · regular order' : ''}`, s?.email ?? (opts.subscriptionId ? 'regular order' : 'guest'));
   return { lines, order, guestToken };
-  } catch (e) { await giveStock(taken); await unredeem(promo?.code ?? null); await giveBackToGiftCard(gcCode, gcCents); throw e; }
+  } catch (e) {
+    if (order) await sql`DELETE FROM orders WHERE id = ${order.id}`; // its items and events go with it
+    await giveStock(taken); await unredeem(promo?.code ?? null); await giveBackToGiftCard(gcCode, gcCents); throw e;
+  }
 }
 
 /** After an order is saved: the card payment page (if paying by card), the customer's email and the team alert. */
@@ -207,7 +217,7 @@ export async function moveOrder(ref: string, day: string, window: string, actor:
     // booked it can still be moved off.
     const c = calgaryNow(), cut = cutoffFor(cur, s.ordering);
     if (!(c.date < cut.date || (c.date === cut.date && c.hour < cut.hour))) throw new HttpError(409, 'too-late', 'It is too late to change this order online. Reply to your confirmation email and we will help.');
-    await assertBookable(day, window, o.method, o.id);
+    await assertBookable(day, window, o.method, { exceptOrder: o.id });
     await assertDayLimits(day, (await items(o.id)).map(i => ({ product_id: i.product_id, qty: i.qty })), s.caps.giftBoxesPerDay, o.id);
   } else if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !window) throw new HttpError(400, 'bad-slot', 'Choose a day and a time.');
   // A delivery moved to another day comes off its driver's list (they may not drive that day) and

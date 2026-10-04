@@ -88,19 +88,23 @@ export async function availability(days = 42, now = new Date()) {
   return { open: s.ordering.open, from, cutoffMode: s.ordering.cutoffMode, next, days: out };
 }
 
-/** `exceptOrder` leaves out an order being moved, so it doesn't count against its own day. */
-export async function assertBookable(date: string, window: string, method: 'pickup' | 'delivery', exceptOrder = 0, now = new Date()) {
+/** `exceptOrder` leaves out an order being moved, so it doesn't count against its own day.
+ * `beforeId` counts only orders saved before that one (the check again after saving, so when
+ * several orders arrive at once the first ones win). */
+export async function assertBookable(date: string, window: string, method: 'pickup' | 'delivery', opts: { exceptOrder?: number; beforeId?: number; now?: Date } = {}) {
+  const exceptOrder = opts.exceptOrder ?? 0, beforeId = opts.beforeId ?? 0, now = opts.now ?? new Date();
   const s = await getSettings();
   if (!s.ordering.open) throw new HttpError(409, 'closed', 'Orders are paused for the moment. Please try again soon.');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !WINDOWS.includes(window as any)) throw new HttpError(400, 'bad-slot', 'Choose a day and a time.');
   if (!SERVICE_DAYS.includes(weekday(date))) throw new HttpError(400, 'bad-day', 'We are open Thursday to Sunday.');
   if (s.ordering.closedDates.includes(date)) throw new HttpError(409, 'closed-day', 'We are closed that day. Choose another.');
   if (!bookable(date, s.ordering, now)) throw new HttpError(409, 'too-soon', 'Orders for that day have closed. Choose a later day.');
-  const row = await one`SELECT COUNT(*)::int AS n FROM orders WHERE status <> 'cancelled' AND NOT is_sample AND slot_date = ${date} AND slot_window = ${window} AND method = ${method}`;
+  const row = await one`SELECT COUNT(*)::int AS n FROM orders WHERE status <> 'cancelled' AND NOT is_sample AND slot_date = ${date} AND slot_window = ${window} AND method = ${method}
+    AND (${beforeId}::int = 0 OR id < ${beforeId})`;
   const cap = method === 'delivery' ? (await deliveryCapacity(s, date, date))(date, window) : s.capacity.pickup;
   if ((row?.n ?? 0) >= cap) throw new HttpError(409, 'slot-full', method === 'delivery' && cap === 0 ? 'No deliveries at that time. Please choose another time or pickup.' : 'That time is full. Please choose another.');
   if (s.caps.dailyOrders) {
-    const d = await one`SELECT COUNT(*)::int AS n FROM orders WHERE status <> 'cancelled' AND NOT is_sample AND slot_date = ${date} AND id <> ${exceptOrder}`;
+    const d = await one`SELECT COUNT(*)::int AS n FROM orders WHERE status <> 'cancelled' AND NOT is_sample AND slot_date = ${date} AND id <> ${exceptOrder} AND (${beforeId}::int = 0 OR id < ${beforeId})`;
     if ((d?.n ?? 0) >= s.caps.dailyOrders) throw new HttpError(409, 'slot-full', 'That day is full. Please choose another.');
   }
 }

@@ -1232,4 +1232,20 @@ assert.ok(!sent.slice(sunM).some(m => /couldn't place/i.test(m.subject))); ok('a
 assert.equal((await call(admin, '/api/admin/settings', { cookie: adm, body: { cutoffWeekday: 5 } })).data.ordering.cutoffWeekday, 0); ok('the weekly deadline can only be Sunday to Wednesday');
 await call(admin, '/api/admin/settings', { cookie: adm, body: { cutoffMode: 'day-before', cutoffWeekday: 2, cutoffHour: 20 } });
 
+// ---------- orders arriving at the same moment don't overbook ----------
+const capBefore = (await call(admin, '/api/admin/settings', { cookie: adm })).data.capacity;
+await call(admin, '/api/admin/settings', { cookie: adm, body: { capacity: { pickup: 1, delivery: capBefore.delivery } } });
+await call(admin, '/api/admin/promos', { cookie: adm, body: { code: 'RUSH', kind: 'amount', value: 100, max_uses: 10 } });
+await call(admin, '/api/admin/products/hadrami', { cookie: adm, body: { stock: 10 } });
+const rush = await Promise.all([1, 2, 3].map(i => order({ email: `rush${i}@example.com`, day: '2027-07-29', window: '14:00–17:00', promo: 'RUSH', lines: [{ id: 'hadrami', opt: 'dallah', qty: 1 }] })));
+assert.deepEqual(rush.map(r => r.status).sort(), [201, 409, 409]); assert.ok(rush.filter(r => r.status === 409).every(r => r.data.error === 'slot-full'));
+assert.equal((await pg.query(`SELECT COUNT(*)::int AS n FROM orders WHERE slot_date = '2027-07-29' AND slot_window = '14:00–17:00'`)).rows[0].n, 1);
+assert.equal((await pg.query(`SELECT uses FROM promo_codes WHERE code = 'RUSH'`)).rows[0].uses, 1); assert.equal(await stockOf('hadrami'), 9);
+ok('three orders for the last place at once: one gets it, the others are refused and their stock and code use go back');
+await call(admin, '/api/admin/settings', { cookie: adm, body: { capacity: capBefore } });
+await call(admin, '/api/admin/products/hadrami', { cookie: adm, body: { stock: null, daily_cap: 1 } });
+const rush2 = await Promise.all([1, 2].map(i => order({ email: `rushcap${i}@example.com`, day: '2027-07-30', lines: [{ id: 'hadrami', opt: 'dallah', qty: 1 }] })));
+assert.deepEqual(rush2.map(r => r.status).sort(), [201, 409]); ok('the same for a product\'s daily limit');
+await call(admin, '/api/admin/products/hadrami', { cookie: adm, body: { daily_cap: null } });
+
 console.log(`\n${pass} checks passed`);

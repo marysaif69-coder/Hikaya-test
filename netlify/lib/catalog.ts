@@ -114,15 +114,15 @@ export async function saveProduct(id: string, change: { price_cents?: number | n
 }
 
 /** Daily limits for one day: a product's own daily cap, and the gift boxes the team can pack in a
- * day. `exceptOrder` leaves out an order being moved. */
-export async function assertDayLimits(date: string, lines: { product_id: string; qty: number }[], giftBoxesPerDay: number | null, exceptOrder = 0) {
+ * day. `exceptOrder` leaves out an order being moved; `beforeId` counts only orders saved before it. */
+export async function assertDayLimits(date: string, lines: { product_id: string; qty: number }[], giftBoxesPerDay: number | null, exceptOrder = 0, beforeId = 0) {
   const caps = await sql`SELECT product_id, daily_cap FROM product_settings WHERE daily_cap IS NOT NULL`;
   // A bag's daily cap counts the bags inside styles and gift boxes too, on both sides.
   const want = expand(lines);
   const day = caps.length ? expand(await sql`SELECT i.product_id, i.qty FROM order_items i JOIN orders o ON o.id = i.order_id
-    WHERE o.slot_date = ${date} AND o.status <> 'cancelled' AND NOT o.is_sample AND o.id <> ${exceptOrder}` as any) : new Map<string, number>();
+    WHERE o.slot_date = ${date} AND o.status <> 'cancelled' AND NOT o.is_sample AND o.id <> ${exceptOrder} AND (${beforeId}::int = 0 OR o.id < ${beforeId})` as any) : new Map<string, number>();
   const taken = async (ids: string[]) => ids.length ? (await one`SELECT COALESCE(SUM(i.qty), 0)::int AS n FROM order_items i JOIN orders o ON o.id = i.order_id
-    WHERE o.slot_date = ${date} AND o.status <> 'cancelled' AND NOT o.is_sample AND o.id <> ${exceptOrder} AND i.product_id = ANY(${ids})`)!.n as number : 0;
+    WHERE o.slot_date = ${date} AND o.status <> 'cancelled' AND NOT o.is_sample AND o.id <> ${exceptOrder} AND (${beforeId}::int = 0 OR o.id < ${beforeId}) AND i.product_id = ANY(${ids})`)!.n as number : 0;
   for (const c of caps) {
     const n = want.get(c.product_id); if (!n) continue;
     const left = c.daily_cap - (day.get(c.product_id) ?? 0);
