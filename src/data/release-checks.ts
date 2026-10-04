@@ -6,6 +6,15 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: '2-1', title: 'Round 2 · batch 1: saffron, packs and tasting boxes', date: '2026-10-04',
+    checks: [
+      { id: 'brew-saffron', text: 'Brew guide, Gulf coffee: the saffron is soaked and put in the serving dallah at the end, never boiled; Qassimi milk says when it goes in is [TBD].', links: [{ label: 'Brew (AR)', href: '/ar/brew/' }, { label: 'Brew (EN)', href: '/en/brew/' }] },
+      { id: 'tasting-howto', text: 'Taste the Gulf and Taste Yemen: “one small pack per pot, one style at a time”.', links: [{ label: 'Taste the Gulf (AR)', href: '/ar/shop/taste-gulf/' }, { label: 'Taste Yemen (EN)', href: '/en/shop/taste-yemen/' }] },
+      { id: 'najdi-howto', text: 'Najdi, Qassimi, Hijazi: the how-to says the saffron stays sealed and goes in at the end of each pot.', links: [{ label: 'Najdi (AR)', href: '/ar/shop/najdi/' }, { label: 'Qassimi (EN)', href: '/en/shop/qassimi/' }] },
+      { id: 'just-the-pack', text: 'Homepage, “Just the pack”: “Have a fresh plain bag? Take its pack on its own.”', links: [{ label: 'Home (AR)', href: '/ar/' }, { label: 'Home (EN)', href: '/en/' }] },
+    ],
+  },
+  {
     id: '1b-6', title: 'Round 1b · batch 6: shared login rights', date: '2026-10-04',
     checks: [
       { id: 'shared-role', text: 'On hello@, pick a person who was added as Helper: Refunds, Settings, Gift cards and Numbers are not there. Pick an owner (their own email is an owner email): everything is there.', links: [{ label: 'Desk', href: '/admin/' }] },

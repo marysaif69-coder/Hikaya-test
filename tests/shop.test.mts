@@ -1126,7 +1126,7 @@ await pg.query(`UPDATE subscribers SET confirmed_at = NOW() WHERE email = 'refil
 await pg.query(`UPDATE orders SET refill_sent_at = NULL WHERE ref = $1`, [rfo.data.ref]);
 await sendRefills('2027-04-29');
 const rfMail = sent.slice(rfBefore).find(m => /Running low/.test(m.subject));
-assert.ok(rfMail); assert.match(rfMail.html, /Najdi/); assert.match(rfMail.html, /account/); assert.match(rfMail.html, /Just the pack/);
+assert.ok(rfMail); assert.match(rfMail.html, /Najdi/); assert.match(rfMail.html, /account/); assert.match(rfMail.html, /a bag running low already has its pack/); assert.doesNotMatch(rfMail.html, /Still have a bag/);
 const rfCount = sent.length; await sendRefills('2027-04-30'); assert.ok(!sent.slice(rfCount).some(m => /Running low/.test(m.subject)));
 ok('about three weeks after a coffee order, one "Running low?" email, only to people on the mailing list, never twice');
 assert.match(rfMail.html, /\/api\/list\/unsubscribe\?t=u-refill/); assert.match(rfMail.text, /\/api\/list\/unsubscribe\?t=u-refill/);

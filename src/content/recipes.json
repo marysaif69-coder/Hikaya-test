@@ -15,8 +15,8 @@
     "steps": [
       {
         "t": {
-          "en": "First pot from a new box? Pour its pack (and the saffron packet) into the bag, close it and shake well. Every pot after that is ready to go.",
-          "ar": "أول إبريق من علبة جديدة؟ اسكب ظرفها (وظرف الزعفران) في الكيس، وأغلقه ورجّه جيداً. وكل إبريق بعدها جاهز."
+          "en": "First pot from a new box? Pour its spice pack (Qassim or Hijazi) into the bag, close it and shake well. Keep the saffron packet apart: it goes in at the end. From a tasting box, keep the small packs sealed for now.",
+          "ar": "أول إبريق من علبة جديدة؟ اسكب ظرف الخلطة (القصيمية أو الحجازية) في الكيس، وأغلقه ورجّه جيداً. واحتفظ بظرف الزعفران جانباً: يُضاف في النهاية. ومن علبة التذوق، أبقِ الظروف الصغيرة مختومة الآن."
         }
       },
       {
@@ -27,8 +27,8 @@
       },
       {
         "t": {
-          "en": "Add the coffee: [TBD] g for this pot. For Qassimi, add your own milk now too ([TBD] ml). Simmer gently.",
-          "ar": "أضف القهوة: [يُحدد لاحقاً] غ لهذا الإبريق. وللقصيمية أضف حليبك الآن أيضاً ([يُحدد لاحقاً] مل). واتركها تغلي بهدوء."
+          "en": "Add the coffee: [TBD] g for this pot. From a tasting box, empty one small pack into the pot with the coffee and keep the others sealed. For Qassimi, add your own milk ([TBD] ml; when it goes in [TBD]). Simmer gently.",
+          "ar": "أضف القهوة: [يُحدد لاحقاً] غ لهذا الإبريق. ومن علبة التذوق، أفرغ ظرفاً صغيراً واحداً في الإبريق مع القهوة، وأبقِ الباقي مختوماً. وللقصيمية أضف حليبك ([يُحدد لاحقاً] مل، وموعد إضافته [يُحدد لاحقاً]). واتركها تغلي بهدوء."
         },
         "secs": 600
       },
@@ -41,14 +41,14 @@
       },
       {
         "t": {
-          "en": "Pour through a fine filter into the serving dallah.",
-          "ar": "صبّها عبر مصفاة ناعمة في دلّة التقديم."
+          "en": "With saffron, soak it first ([TBD] for this pot) in a spoonful of hot water and put it in the serving dallah. Pour the coffee through a fine filter into the serving dallah. Never boil the saffron.",
+          "ar": "إن كان معك زعفران، انقعه أولاً ([يُحدد لاحقاً] لهذا الإبريق) في ملعقة ماء ساخن وضعه في دلّة التقديم. ثم صبّ القهوة عبر مصفاة ناعمة في دلّة التقديم. لا تغلِ الزعفران أبداً."
         }
       }
     ],
     "serve": {
-      "en": "Pour a third of the small cup, never to the rim. Clear and golden, no foam. A date beside it. Shake the cup when you have had enough.",
-      "ar": "املأ ثلث الفنجان فقط، لا إلى الحافة. صافية وذهبية بلا رغوة. وبجانبها تمرة. هزّ الفنجان حين تكتفي."
+      "en": "Pour a third of the small cup, never to the rim. Clear and golden, no foam (Qassimi is velvety with the milk). A date beside it. Shake the cup when you have had enough.",
+      "ar": "املأ ثلث الفنجان فقط، لا إلى الحافة. صافية وذهبية بلا رغوة (والقصيمية مخملية بالحليب). وبجانبها تمرة. هزّ الفنجان حين تكتفي."
     }
   },
   "mountain": {
@@ -67,8 +67,8 @@
     "steps": [
       {
         "t": {
-          "en": "First pot from a new box? Pour its pack into the bag, close it and shake well. Every pot after that is ready to go.",
-          "ar": "أول إبريق من علبة جديدة؟ اسكب ظرفها في الكيس، وأغلقه ورجّه جيداً. وكل إبريق بعدها جاهز."
+          "en": "First pot from a new box? Pour its pack into the bag, close it and shake well. Every pot after that is ready to go. From a tasting box, keep the small packs sealed for now.",
+          "ar": "أول إبريق من علبة جديدة؟ اسكب ظرفها في الكيس، وأغلقه ورجّه جيداً. وكل إبريق بعدها جاهز. ومن علبة التذوق، أبقِ الظروف الصغيرة مختومة الآن."
         }
       },
       {
@@ -79,8 +79,8 @@
       },
       {
         "t": {
-          "en": "Add the coffee ([TBD] g) and let it rise (mufawar).",
-          "ar": "أضف القهوة ([يُحدد لاحقاً] غ) ودعها تفور."
+          "en": "Add the coffee ([TBD] g) and let it rise (mufawar). From a tasting box, empty one small pack in with the coffee and keep the others sealed.",
+          "ar": "أضف القهوة ([يُحدد لاحقاً] غ) ودعها تفور. ومن علبة التذوق، أفرغ ظرفاً صغيراً واحداً مع القهوة، وأبقِ الباقي مختوماً."
         },
         "secs": 180
       },

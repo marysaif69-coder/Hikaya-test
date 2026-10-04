@@ -258,7 +258,7 @@ export function refillEmail(o: OrderForMail, coffees: { en: string; ar: string; 
   const anyPack = coffees.some(c => c.pack);
   const body = `<p>${ar ? `مرّت ثلاثة أسابيع تقريباً على طلبك ${o.ref} (${names}). إن قارب الكيس على النفاد، تستطيع طلب الشيء نفسه بضغطة من حسابك.` : `It has been about three weeks since order ${o.ref} (${names}). If the bag is running low, you can order the same again in one tap from your account.`}</p>
 ${btn(`${siteUrl}/${L}/account/`, ar ? 'اطلب الشيء نفسه' : 'Order the same again')}
-${anyPack ? `<p>${ar ? 'وإن بقي عندك كيس، فالظرف وحده في المتجر.' : 'Still have a bag at home? The pack on its own is in the shop.'} <a href="${siteUrl}/${L}/shop/#packs" style="color:#A93B28">${ar ? 'الظرف وحده' : 'Just the pack'}</a></p>` : ''}`;
+${anyPack ? `<p>${ar ? 'الظرف يُخلط في الكيس مرة واحدة، فالكيس الذي قارب على النفاد فيه ظرفه أصلاً. اطلب الشيء نفسه مرة أخرى، أو كيساً جديداً مع ظرفه.' : 'The pack goes into the bag once, so a bag running low already has its pack. Order the same again, or a fresh bag with its pack.'}</p>` : ''}`;
   const f = marketingFooter(L, unsubUrl, ar ? 'تصلك هذه الرسالة لأنك اشتركت في رسائل حكاية.' : 'You get this because you signed up for Hikaya letters.');
   return { to: o.email, subject: s, html: layout(L, s, body + f.html, siteUrl), text: `${s}\n\n${siteUrl}/${L}/account/\n\n${f.text}`, kind: 'refill-reminder', orderId: o.id, headers: f.headers };
 }
