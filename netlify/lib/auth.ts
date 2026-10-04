@@ -22,29 +22,40 @@ export async function roleFor(email: string): Promise<Role> {
   return m ? (m.role === 'helper' ? 'staff' : m.role === 'packer' ? 'packer' : 'driver') : 'customer';
 }
 
-export async function issueCode(email: string) {
+/** The browser asking for a login code: a random cookie, so a code only works where it was asked for. */
+export const LOGIN_COOKIE = 'hk_login';
+export const loginCookie = (t: string) => `${LOGIN_COOKIE}=${t}; Path=/api/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=${DAYS * 86400}`;
+
+/** `requester` is the hash of the hk_login cookie (null for shared-login codes, which need a team session). */
+export async function issueCode(email: string, requester: string | null = null) {
   const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
   // Insert first, then count: requests sent at the same moment all see each other's rows, so a
-  // burst can't get past the limit the way a count-then-insert could.
-  const row = await one`INSERT INTO auth_codes (email, code_hash, expires_at) VALUES (${email}, ${hash(code)}, NOW() + INTERVAL '10 minutes') RETURNING id`;
+  // burst can't get past the limit the way a count-then-insert could. The per-browser limit is in
+  // api-auth; this email-wide ceiling only stops anyone flooding an inbox.
+  const row = await one`INSERT INTO auth_codes (email, code_hash, expires_at, requester_hash) VALUES (${email}, ${hash(code)}, NOW() + INTERVAL '10 minutes', ${requester}) RETURNING id`;
   const recent = await one`SELECT COUNT(*)::int AS n FROM auth_codes WHERE email = ${email} AND created_at > NOW() - INTERVAL '1 hour'`;
-  if ((recent?.n ?? 0) > 5) {
-    await sql`UPDATE auth_codes SET used = TRUE WHERE id = ${row!.id}`;
+  if ((recent?.n ?? 0) > 15) {
+    // Refused requests are removed, so they don't count against the next hour.
+    await sql`DELETE FROM auth_codes WHERE id = ${row!.id}`;
     throw new HttpError(429, 'too-many', 'Too many codes requested. Try again in an hour.');
   }
   return code;
 }
 
-/** Checks and uses up a login code (no session). */
-export async function checkCode(email: string, code: string) {
+/** Checks and uses up a login code (no session). With `requester`, only that browser's codes count,
+ *  so someone else's wrong guesses never use up the owner's code. */
+export async function checkCode(email: string, code: string, requester?: string) {
+  const mine = requester === undefined;
   // Take one of the five tries in the same statement that checks there is one left, so guesses
   // sent in parallel can't all be compared before the count goes up.
   const row = await one`UPDATE auth_codes SET attempts = attempts + 1
-    WHERE id = (SELECT id FROM auth_codes WHERE email = ${email} AND used = FALSE AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1)
+    WHERE id = (SELECT id FROM auth_codes WHERE email = ${email} AND used = FALSE AND expires_at > NOW()
+        AND (${mine} OR requester_hash = ${requester ?? ''}) ORDER BY created_at DESC LIMIT 1)
       AND attempts < 5
     RETURNING id, code_hash`;
   if (!row) {
-    const live = await one`SELECT 1 AS x FROM auth_codes WHERE email = ${email} AND used = FALSE AND expires_at > NOW() LIMIT 1`;
+    const live = await one`SELECT 1 AS x FROM auth_codes WHERE email = ${email} AND used = FALSE AND expires_at > NOW()
+      AND (${mine} OR requester_hash = ${requester ?? ''}) LIMIT 1`;
     if (live) throw new HttpError(429, 'too-many', 'Too many tries. Ask for a new code.');
     throw new HttpError(400, 'expired', 'That code has expired. Ask for a new one.');
   }
@@ -55,8 +66,8 @@ export async function checkCode(email: string, code: string) {
   if (!used) throw new HttpError(400, 'expired', 'That code has expired. Ask for a new one.');
 }
 
-export async function verifyCode(email: string, code: string) {
-  await checkCode(email, code);
+export async function verifyCode(email: string, code: string, requester: string) {
+  await checkCode(email, code, requester);
   const t = token();
   const role = await roleFor(email);
   await sql`INSERT INTO sessions (token_hash, email, role, expires_at) VALUES (${hash(t)}, ${email}, ${role}, NOW() + make_interval(days => ${DAYS}))`;

@@ -6,6 +6,16 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: '1b-3', title: 'Round 1b · batch 3: private gate, launch day, logins', date: '2026-10-04',
+    checks: [
+      { id: 'login-ar', text: 'My account in Arabic: ask for a code, type a wrong one. The error is in Arabic (الرمز غير صحيح.). Then log in with the right code from the same phone: it works.', links: [{ label: 'Account (AR)', href: '/ar/account/' }, { label: 'Account (EN)', href: '/en/account/' }] },
+      { id: 'login-other-device', text: 'Ask for a code on your phone, then type it on another device or browser: it is refused. Ask again on the second device and it works. (Codes now work only where they were asked for.)' },
+      { id: 'preview-code', text: 'In a private window on the preview, type a wrong preview code: “That code is not right”. The right code still lets you in.', links: [{ label: 'Preview', href: '/team' }] },
+      { id: 'team-bar', text: 'The dark TEAM VIEW bar still shows on the preview, and says what customers on hikayacoffee.ca see.', links: [{ label: 'Home (EN)', href: '/en/' }] },
+      { id: 'sachet-small', text: 'Shop: a small pack drawing reads “صغير · SMALL” (Arabic first).', links: [{ label: 'Shop (AR)', href: '/ar/shop/' }, { label: 'Shop (EN)', href: '/en/shop/' }] },
+    ],
+  },
+  {
     id: '1b-2', title: 'Round 1b · batch 2: emails and the mailing list', date: '2026-10-04',
     checks: [
       { id: 'edit-unpriced', text: 'Open a sample order → Change items. Products with no price yet say “(no price yet: $20 stand-in)”. On a real order they are greyed out. Saving no longer says “Gulf coffee is not open for orders yet”.', links: [{ label: 'All orders', href: '/admin/' }] },

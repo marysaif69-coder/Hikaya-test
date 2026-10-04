@@ -3,7 +3,7 @@
 Everything runs on Netlify: the website, the server code (Netlify Functions in `netlify/functions/`) and the database (Netlify Database, Postgres, created automatically on deploy from `netlify/database/migrations/`).
 
 ## What customers can do
-- Order as a guest with just an email, or log in with an emailed 6-digit code (no passwords).
+- Order as a guest with just an email, or log in with an emailed 6-digit code (no passwords). A code works only in the browser that asked for it (the `hk_login` cookie), so strangers' wrong guesses can't lock anyone out; 5 codes an hour per email and address, 15 per email in all.
 - See every order placed with their email (guest orders included) at `/en/account/` or `/ar/account/`: status, pickup/delivery day and window, items, payment.
 - Cancel an order themselves while it is still "Received" and unpaid.
 - Ask Hikaya (the chat button on every page): questions about coffee, dates, brewing, pickup and delivery; look up an order with its number and email; check a postal code or open days; add things to the cart; report a damaged, wrong, missing or late item with a photo; ask for a person.
@@ -102,7 +102,7 @@ All sent through Resend from the site itself; no n8n or Zapier needed. Admin →
 | `SITE_URL` | `https://hikayacoffee.ca` once the domain points here |
 | `ANTHROPIC_API_KEY` | From console.anthropic.com. Turns on Ask Hikaya. Until set, the chat button points people to the help form. |
 | `ASK_MODEL` | Optional. The Claude model for Ask Hikaya; default `claude-opus-5-5`. |
-| `PREVIEW_PASSWORD` | The code testers type on the "Coming soon" screen to get in. |
+| `PREVIEW_PASSWORD` | The code testers type on the "Coming soon" screen to get in (checked by `netlify/functions/preview-login.mts`: 10 tries per address per 15 minutes). |
 | `SITE_PUBLIC` | Leave unset while the site is private: everyone sees "Coming soon" and search engines are kept out. Set to `true` (and redeploy) to open the site at launch. |
 | `SQUARE_ACCESS_TOKEN`, `SQUARE_LOCATION_ID`, `SQUARE_ENV`, `SQUARE_WEBHOOK_SIGNATURE_KEY` | Optional: turns on card payment through Square. Webhook URL: `<SITE_URL>/api/square/webhook`, event `payment.updated`. |
 

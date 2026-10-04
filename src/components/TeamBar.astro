@@ -17,11 +17,13 @@
     const host = location.hostname;
     const preview = host.endsWith('.netlify.app') || host === 'localhost';
     const s = await fetch('/api/site-state').then(r => r.json()).catch(() => null);
-    if (!s || (!preview && s.live === 'open')) return;
+    // On hikayacoffee.ca the bar hides once customers can see the site: the switch says open, or
+    // SITE_PUBLIC=true in Netlify opened it (forcedOpen).
+    if (!s || (!preview && (s.live === 'open' || s.forcedOpen))) return;
     const LABEL: Record<string, string> = { brewing: 'Phase 0 · Something is brewing', hidden: 'Phase 1 · Coming soon + waitlist', open: 'the open shop' };
     const bar = document.getElementById('teamBar')!;
     document.getElementById('tbWhere')!.textContent = preview ? 'PREVIEW · team only, not the real website' : 'TEAM VIEW of hikayacoffee.ca · customers cannot see this';
-    document.getElementById('tbNow')!.textContent = `Customers on hikayacoffee.ca see: ${LABEL[s.live] ?? s.live}`;
+    document.getElementById('tbNow')!.textContent = `Customers on hikayacoffee.ca see: ${s.forcedOpen ? LABEL.open : LABEL[s.live] ?? s.live}`;
     // Intro links open the homepage in the language being viewed.
     const lang = location.pathname.startsWith('/ar') ? 'ar' : 'en';
     bar.querySelectorAll<HTMLAnchorElement>('[data-intro]').forEach(a => { a.href = a.href.replace('/en/', `/${lang}/`); });

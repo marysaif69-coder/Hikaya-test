@@ -1,9 +1,9 @@
 // /api/auth/* and /api/me — email-code login for customers and the team.
 import { loadOverrides } from '../lib/business';
 import type { Config } from '@netlify/functions';
-import { json, fail, body, str, isEmail, siteUrl, HttpError } from '../lib/http';
+import { json, fail, body, str, isEmail, siteUrl, HttpError, cookie } from '../lib/http';
 import { limit, ipKey } from '../lib/rate';
-import { issueCode, verifyCode, session, sessionCookie, clearCookie, endSession, sharedPeople, asCookie, startAs, finishAs, endAs } from '../lib/auth';
+import { issueCode, verifyCode, hash, token, LOGIN_COOKIE, loginCookie, session, sessionCookie, clearCookie, endSession, sharedPeople, asCookie, startAs, finishAs, endAs } from '../lib/auth';
 import { send, codeEmail } from '../lib/email';
 
 export default async (req: Request) => {
@@ -43,16 +43,20 @@ export default async (req: Request) => {
       const email = str(b.email, 254).toLowerCase();
       if (!isEmail(email)) throw new HttpError(400, 'email', 'Check the email address.');
       await limit(`login:${ipKey(req)}`, 20, 60);
-      const code = await issueCode(email);
+      await limit(`code:${email}:${ipKey(req)}`, 5, 60, 'Too many codes requested. Try again in an hour.');
+      // The code works only in this browser (the hk_login cookie), so strangers can't use it up.
+      const browser = cookie(req, LOGIN_COOKIE) || token(18);
+      const code = await issueCode(email, hash(browser));
       await send(codeEmail(email, code, b.lang === 'ar' ? 'ar' : 'en', siteUrl(req)));
-      return json({ ok: true });
+      return json({ ok: true }, 200, { 'set-cookie': loginCookie(browser) });
     }
     if (path === '/api/auth/verify') {
       const b = await body(req);
       const email = str(b.email, 254).toLowerCase();
       await limit(`verify:${ipKey(req)}`, 20, 10);
-      const { token, role } = await verifyCode(email, str(b.code, 6));
-      return json({ user: { email, role } }, 200, { 'set-cookie': sessionCookie(token) });
+      const browser = cookie(req, LOGIN_COOKIE);
+      const { token: t, role } = await verifyCode(email, str(b.code, 6), browser ? hash(browser) : '');
+      return json({ user: { email, role } }, 200, { 'set-cookie': sessionCookie(t) });
     }
     if (path === '/api/auth/logout') {
       await endAs(req);

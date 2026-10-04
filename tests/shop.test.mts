@@ -36,9 +36,10 @@ const call = async (fn: any, path: string, opts: { body?: any; cookie?: string }
   return { status: res.status, data };
 };
 const login = async (email: string) => {
-  await call(auth, '/api/auth/request', { body: { email, lang: 'en' } });
+  const rq: Response = await auth(new Request(H + '/api/auth/request', { method: 'POST', headers: { 'content-type': 'application/json', origin: H, 'x-nf-client-connection-ip': `10.1.0.${++ipN % 250}` }, body: JSON.stringify({ email, lang: 'en' }) }));
+  const lc = rq.headers.get('set-cookie')!.split(';')[0];
   const code = sent.at(-1).text.match(/\b\d{6}\b/)[0];
-  const res: Response = await auth(new Request(H + '/api/auth/verify', { method: 'POST', headers: { 'content-type': 'application/json', origin: H }, body: JSON.stringify({ email, code }) }));
+  const res: Response = await auth(new Request(H + '/api/auth/verify', { method: 'POST', headers: { 'content-type': 'application/json', origin: H, cookie: lc }, body: JSON.stringify({ email, code }) }));
   return res.headers.get('set-cookie')!.split(';')[0];
 };
 let pass = 0; const ok = (m: string) => { pass++; console.log('  ✓', m); };
@@ -994,7 +995,8 @@ assert.equal(new Set(relIds).size, relIds.length); assert.ok(relIds.every(i => /
 
 // ---------- who can see the website ----------
 const siteStateFn = (await import('../netlify/functions/site-state.mts')).default;
-assert.deepEqual(await (await siteStateFn()).json(), { live: 'brewing', preview: 'code' }); ok('the real website starts on Something is brewing, the preview with the team code');
+assert.deepEqual(await (await siteStateFn()).json(), { live: 'brewing', preview: 'code', forcedOpen: false });
+process.env.SITE_PUBLIC = 'true'; assert.equal((await (await siteStateFn()).json()).forcedOpen, true); delete process.env.SITE_PUBLIC; ok('site-state says when SITE_PUBLIC opened the website, so the team bar hides for customers'); ok('the real website starts on Something is brewing, the preview with the team code');
 assert.equal((await call(admin, '/api/admin/visibility', { cookie: helper, body: { preview: 'open' } })).status, 403);
 assert.equal((await call(admin, '/api/admin/visibility', { cookie: adm, body: { preview: 'open' } })).status, 200);
 assert.equal((await (await siteStateFn()).json()).preview, 'open'); ok('owners open the preview to anyone with the link in one click; helpers cannot');

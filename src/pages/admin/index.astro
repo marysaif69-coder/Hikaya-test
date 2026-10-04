@@ -833,8 +833,8 @@ import { RELEASES } from '../../data/release-checks';
     const real = location.hostname.endsWith('hikayacoffee.ca');
     const LABEL: Record<string, string> = { brewing: 'Phase 0 · Something is brewing', hidden: 'Phase 1 · Coming soon', open: 'OPEN to everyone' };
     const b = $('whereBadge') as HTMLAnchorElement;
-    b.innerHTML = `<b>${real ? 'hikayacoffee.ca' : 'PREVIEW address'}</b> · customers see: ${esc(LABEL[s.live] ?? s.live)}`;
-    b.classList.toggle('open', s.live === 'open'); b.hidden = false;
+    b.innerHTML = `<b>${real ? 'hikayacoffee.ca' : 'PREVIEW address'}</b> · customers see: ${esc(s.forcedOpen ? LABEL.open : LABEL[s.live] ?? s.live)}`;
+    b.classList.toggle('open', s.live === 'open' || s.forcedOpen); b.hidden = false;
     b.onclick = e => { e.preventDefault(); if (ROLE === 'admin') { tab('settings'); setTimeout(() => document.querySelector('.vis')?.scrollIntoView({ block: 'start' }), 300); } };
   }
   $('logout').addEventListener('click', async () => { await logout(); location.reload(); });

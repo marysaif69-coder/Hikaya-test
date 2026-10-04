@@ -1,9 +1,12 @@
 // Email-code login, shared by the account page and the admin desk.
 type Lang = 'en' | 'ar';
 const T = {
-  en: { email: 'Email', send: 'Email me a code', code: '6-digit code', verify: 'Log in', sent: (e: string) => `We sent a code to ${e}. It may take a minute; check spam too.`, again: 'Use a different email', busy: 'One moment…', fail: 'Something went wrong. Try again.' },
-  ar: { email: 'البريد الإلكتروني', send: 'أرسلوا لي رمزاً', code: 'الرمز من ٦ أرقام', verify: 'دخول', sent: (e: string) => `أرسلنا رمزاً إلى ${e}. قد يتأخر دقيقة؛ تحقق من البريد المزعج أيضاً.`, again: 'استخدم بريداً آخر', busy: 'لحظة…', fail: 'حدث خطأ. حاول مرة أخرى.' },
+  en: { email: 'Email', send: 'Email me a code', code: '6-digit code', verify: 'Log in', sent: (e: string) => `We sent a code to ${e}. It may take a minute; check spam too.`, again: 'Use a different email', busy: 'One moment…', fail: 'Something went wrong. Try again.',
+    errors: { email: 'Check the email address.', 'wrong-code': 'That code is not right.', expired: 'That code has expired. Ask for a new one.', 'too-many': 'Too many tries. Wait a little, then ask for a new code.' } as Record<string, string> },
+  ar: { email: 'البريد الإلكتروني', send: 'أرسلوا لي رمزاً', code: 'الرمز من ٦ أرقام', verify: 'دخول', sent: (e: string) => `أرسلنا رمزاً إلى ${e}. قد يتأخر دقيقة؛ تحقق من البريد المزعج أيضاً.`, again: 'استخدم بريداً آخر', busy: 'لحظة…', fail: 'حدث خطأ. حاول مرة أخرى.',
+    errors: { email: 'تحقق من البريد الإلكتروني.', 'wrong-code': 'الرمز غير صحيح.', expired: 'انتهت صلاحية الرمز. اطلب رمزاً جديداً.', 'too-many': 'محاولات كثيرة. انتظر قليلاً ثم اطلب رمزاً جديداً.' } as Record<string, string> },
 };
+// The server's messages are English only, so the page says them in its own language by error code.
 
 export function mountLogin(root: HTMLElement, lang: Lang, onDone: (user: { email: string; role: string }) => void) {
   const t = T[lang];
@@ -33,7 +36,7 @@ export function mountLogin(root: HTMLElement, lang: Lang, onDone: (user: { email
     try {
       if (stage === 'email') {
         const r = await post('/api/auth/request', { email: email.value, lang });
-        if (!r.ok) return show(r.data.message ?? t.fail);
+        if (!r.ok) return show(t.errors[r.data?.error] ?? t.fail);
         stage = 'code';
         root.querySelector<HTMLElement>('.lg-sent')!.textContent = t.sent(email.value.trim());
         root.querySelector<HTMLElement>('.lg-email')!.hidden = true; root.querySelector<HTMLElement>('.lg-code')!.hidden = false; back.hidden = false;
@@ -41,7 +44,7 @@ export function mountLogin(root: HTMLElement, lang: Lang, onDone: (user: { email
         btn.textContent = t.verify; return;
       }
       const r = await post('/api/auth/verify', { email: email.value, code: code.value.trim() });
-      if (!r.ok) { btn.textContent = label; return show(r.data.message ?? t.fail); }
+      if (!r.ok) { btn.textContent = label; return show(t.errors[r.data?.error] ?? t.fail); }
       onDone(r.data.user);
     } catch { show(t.fail); }
     finally { btn.disabled = false; if (btn.textContent === t.busy) btn.textContent = label; }

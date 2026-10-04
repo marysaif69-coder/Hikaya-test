@@ -1,6 +1,14 @@
 // The private-preview passcode screen (netlify/edge-functions/preview-gate.ts).
 // Run: npx tsx tests/preview-gate.test.mts
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { PGlite } from '@electric-sql/pglite';
+import { setSql } from '../netlify/lib/db';
+// The preview code is checked by a function that counts tries in the database.
+const pg = new PGlite();
+for (const dir of fs.readdirSync('netlify/database/migrations').sort()) await pg.exec(fs.readFileSync(`netlify/database/migrations/${dir}/migration.sql`, 'utf8'));
+setSql(((s: TemplateStringsArray, ...v: unknown[]) => pg.sql(s, ...v).then(r => r.rows)) as any);
+const previewLogin = (await import('../netlify/functions/preview-login.mts')).default;
 const gateMod = await import('../netlify/edge-functions/preview-gate.ts');
 const gate = gateMod.default;
 // The owners' switch, as /api/site-state would answer it.
@@ -10,13 +18,16 @@ globalThis.fetch = (async (u: any, i: any) => String(u).endsWith('/api/site-stat
 const setState = (v: any) => { siteState = v; gateMod.resetGateCache(); };
 const H = 'https://hikaya.test';
 const page = () => new Response('<h1>shop</h1>', { headers: { 'content-type': 'text/html' } });
-const run = (path: string, init: RequestInit = {}) => gate(new Request(H + path, init), { next: async () => page() });
+// Behind the gate: POST /__preview reaches the preview-login function, everything else the site.
+const run = (path: string, init: RequestInit = {}) => { const req = new Request(H + path, init); return gate(req, { next: async () => new URL(req.url).pathname === '/__preview' ? previewLogin(req) : page() }); };
+// The function answers with a redirect to /team?pv=…; follow it through the gate like a browser.
+const follow = async (res: Response) => { const loc = res.headers.get('location'); return loc?.startsWith('/team') ? run(loc) : res; };
 let pass = 0; const ok = (m: string) => { pass++; console.log('  ✓', m); };
 
 delete process.env.PREVIEW_PASSWORD; delete process.env.SITE_PUBLIC;
 const closed = await run('/en/');
 assert.ok((await closed.text()).includes('Coming soon')); ok('hidden by default: no settings means the Coming soon screen');
-const unset = await run('/__preview', { method: 'POST', body: new URLSearchParams({ code: 'anything' }) });
+const unset = await follow(await run('/__preview', { method: 'POST', body: new URLSearchParams({ code: 'anything' }) }));
 assert.equal(unset.status, 401); assert.ok((await unset.text()).includes('no preview code yet')); ok('without a passcode nobody gets in, and the screen says why');
 process.env.SITE_PUBLIC = 'true';
 assert.equal(await (await run('/en/')).text(), '<h1>shop</h1>'); ok('SITE_PUBLIC=true opens the site');
@@ -29,10 +40,11 @@ assert.ok(html.includes('Preview code') && html.includes('value="/en/shop/?x=1"'
 assert.equal((await run('/api/slots')).status, 401); ok('API is closed without the passcode');
 assert.equal(await (await run('/robots.txt')).text(), 'User-agent: *\nDisallow: /\n'); ok('robots.txt blocks all crawlers');
 
-const post = (code: string, next = '/en/shop/') => run('/__preview', { method: 'POST', body: new URLSearchParams({ code, next }) });
-const bad = await post('wrong');
+let ipN = 0;
+const post = (code: string, next = '/en/shop/', ip = `10.0.0.${++ipN}`) => run('/__preview', { method: 'POST', headers: { 'x-nf-client-connection-ip': ip }, body: new URLSearchParams({ code, next }) });
+const bad = await follow(await post('wrong'));
 assert.equal(bad.status, 401); assert.ok((await bad.text()).includes('not right')); ok('wrong code refused');
-assert.equal((await post('  Dates-2027 ')).status, 303); ok('spaces and capitals do not matter');
+assert.ok((await post('  Dates-2027 ')).headers.get('set-cookie')?.startsWith('hk_preview=')); ok('spaces and capitals do not matter');
 const good = await post('dates-2027');
 assert.equal(good.status, 303); assert.equal(good.headers.get('location'), '/en/shop/');
 const cookie = good.headers.get('set-cookie')!.split(';')[0];
@@ -40,6 +52,12 @@ assert.ok(good.headers.get('set-cookie')!.includes('HttpOnly')); ok('right code 
 const inside = await run('/en/', { headers: { cookie } });
 assert.equal(await inside.text(), '<h1>shop</h1>'); assert.match(inside.headers.get('x-robots-tag')!, /noindex/); ok('with the cookie the site works, still noindex');
 assert.equal((await post('dates-2027', '//evil.example')).headers.get('location'), '/'); ok('cannot redirect to another site');
+// Guessing: 10 tries per address per 15 minutes, then even the right code waits; other addresses are not affected.
+for (let i = 0; i < 10; i++) await post('guess' + i, '/', '10.9.9.9');
+const eleventh = await follow(await post('guess-11', '/', '10.9.9.9'));
+assert.ok((await eleventh.text()).includes('Too many tries'));
+assert.equal((await post('dates-2027', '/', '10.9.9.9')).headers.get('set-cookie'), null);
+assert.ok((await post('dates-2027', '/', '10.9.9.10')).headers.get('set-cookie')?.startsWith('hk_preview=')); ok('the preview code: 10 tries per address per 15 minutes, then "too many tries"; others still get in');
 
 // ---------- the waitlist on the Coming soon screen ----------
 const runWith = (path: string, init: RequestInit, res: Response) => gate(new Request(H + path, init), { next: async () => res });
@@ -55,7 +73,7 @@ assert.equal(un.headers.get('location'), '/?unsub=1'); assert.ok((await (await r
 const oneClick = await runWith('/api/list/unsubscribe?t=abc', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', origin: 'https://mail.google.com' }, body: 'List-Unsubscribe=One-Click' }, new Response(null, { status: 200 }));
 assert.equal(oneClick.status, 200); ok('one-click unsubscribe from a mail app (a POST) gets through while the site is hidden');
 assert.equal((await run('/api/list/confirm', { method: 'POST' })).status, 401); assert.equal((await run('/api/orders', { method: 'POST' })).status, 401); ok('everything else on the API stays closed');
-assert.ok(!(await (await run('/?list=1')).text()).includes('<details open>')); assert.ok((await (await post('wrong')).text()).includes('<details open>')); ok('a wrong code opens the Team box again');
+assert.ok(!(await (await run('/?list=1')).text()).includes('<details open>')); assert.ok((await (await follow(await post('wrong'))).text()).includes('<details open>')); ok('a wrong code opens the Team box again');
 
 // ---------- the owners' switch: real website and preview ----------
 const LIVE = 'https://hikayacoffee.ca';
@@ -66,6 +84,12 @@ assert.ok(brew.includes('Something is brewing') && brew.includes('hello@hikayaco
 assert.ok((await (await runAt(LIVE, '/en/shop/')).text()).includes('Something is brewing')); ok('phase 0: the real website shows Something is brewing on every page, no sign-up, own fonts');
 const teamDoor = await runAt(LIVE, '/team'); const teamHtml = await teamDoor.text();
 assert.equal(teamDoor.status, 200); assert.ok(teamHtml.includes('<details open>') && teamHtml.includes('Preview code')); ok('the team gets in at hikayacoffee.ca/team');
+assert.ok(!teamHtml.includes('id="wl"') && !teamHtml.includes('Coming soon')); ok('phase 0: /team has the code box but no waitlist');
+for (const q of ['/?list=1', '/?listexpired=1']) assert.ok((await (await runAt(LIVE, q)).text()).includes('Something is brewing'));
+const unsub0 = await (await runAt(LIVE, '/?unsub=1')).text();
+assert.ok(unsub0.includes('You are off the list') && !unsub0.includes('id="wl"')); ok('phase 0: ?list shows Something is brewing; an unsubscribe still says it worked');
+const join0 = await gate(new Request(LIVE + '/api/list', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }), { next: async () => page() });
+assert.equal(join0.status, 401); ok('phase 0: no sign-up on the real website');
 assert.ok((await (await run('/en/')).text()).includes('id="wl"')); ok('the preview keeps the Coming soon page');
 stateDown = true; gateMod.resetGateCache();
 assert.ok((await (await runAt(LIVE, '/')).text()).includes('Something is brewing')); stateDown = false; ok('if the switch cannot be read, the real website shows Something is brewing');

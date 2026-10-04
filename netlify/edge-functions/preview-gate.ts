@@ -10,7 +10,6 @@ import { CONSENT } from '../lib/consent.ts';
 import { BREWING_HTML } from '../lib/brewing-page.ts';
 
 const COOKIE = 'hk_preview';
-const DAYS = 30;
 
 const env = (k: string): string => {
   const g = globalThis as any;
@@ -86,20 +85,9 @@ export default async (req: Request, context: { next: () => Promise<Response> }) 
     return new Response('User-agent: *\nDisallow: /\n', { headers: { 'content-type': 'text/plain; charset=utf-8', 'x-robots-tag': NOINDEX } });
   }
 
-  if (url.pathname === '/__preview' && req.method === 'POST') {
-    const form = await req.formData().catch(() => null);
-    const given = norm(String(form?.get('code') ?? ''));
-    const next = safeNext(form?.get('next'));
-    if (password && sameText(await digest(`hikaya-preview:${given}`), token)) {
-      return new Response(null, { status: 303, headers: {
-        location: next,
-        'set-cookie': `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${DAYS * 86400}`,
-        'cache-control': 'no-store',
-      } });
-    }
-    await new Promise(r => setTimeout(r, 600)); // slow down guessing
-    return gate(next, password ? 'wrong' : 'unset');
-  }
+  // The code itself is checked by a function (netlify/functions/preview-login.mts), which can count
+  // tries per address in the database. It sets the cookie, or sends people back to /team with a note.
+  if (url.pathname === '/__preview' && req.method === 'POST') return context.next();
 
   if (password && sameText(readCookie(req), token)) {
     const view = phaseView(url); if (view) return view;
@@ -113,6 +101,10 @@ export default async (req: Request, context: { next: () => Promise<Response> }) 
   const listCall = (url.pathname === '/api/list' && req.method === 'POST') || (['/api/list/confirm', '/api/list/unsubscribe'].includes(url.pathname) && req.method === 'GET')
     || (url.pathname === '/api/list/unsubscribe' && req.method === 'POST'); // one-click unsubscribe from the mail app
   if (listCall) {
+    // Phase 0 has no sign-up; the confirm and unsubscribe links from earlier letters keep working.
+    if (live && state.live === 'brewing' && req.method === 'POST' && url.pathname === '/api/list') {
+      return new Response(JSON.stringify({ error: 'preview', message: 'This site is in private preview.' }), { status: 401, headers: { 'content-type': 'application/json', 'x-robots-tag': NOINDEX, 'cache-control': 'no-store' } });
+    }
     const res = await context.next();
     const loc = res.headers.get('location');
     // Their redirect goes to a thanks page that is still hidden: show the message here instead.
@@ -129,10 +121,18 @@ export default async (req: Request, context: { next: () => Promise<Response> }) 
     return new Response(JSON.stringify({ error: 'preview', message: 'This site is in private preview.' }), { status: 401, headers: { 'content-type': 'application/json', 'x-robots-tag': NOINDEX, 'cache-control': 'no-store' } });
   }
   const note = url.searchParams.has('list') ? 'list' : url.searchParams.has('listexpired') ? 'expired' : url.searchParams.has('unsub') ? 'unsub' : '';
-  // Team way in on the real website: /team shows the code box.
-  if (url.pathname === '/team') return gate('/', 'ask', '', true);
-  // Phase 0 on the real website: "Something is brewing" on every page.
-  if (live && state.live === 'brewing' && !note) {
+  const brewing = live && state.live === 'brewing';
+  // Team way in: /team shows the code box (no waitlist in phase 0). The code check sends people
+  // back here with ?pv=wrong, ?pv=many (too many tries) or ?pv=unset.
+  if (url.pathname === '/team') {
+    const pv = url.searchParams.get('pv');
+    const st = pv === 'wrong' || pv === 'many' || pv === 'unset' ? pv : 'ask';
+    return gate(safeNext(url.searchParams.get('next')), st, '', true, '', !brewing);
+  }
+  // Phase 0 on the real website: "Something is brewing" on every page. Someone who signed up in
+  // phase 1 and unsubscribes still sees that it worked.
+  if (brewing && note === 'unsub') return gate('/', 'ask', 'unsub', false, '', false);
+  if (brewing) {
     return new Response(BREWING_HTML, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': NOINDEX } });
   }
   return gate(note ? '/' : url.pathname + url.search, 'ask', note);
@@ -154,7 +154,8 @@ const NOTES: Record<string, [string, string]> = {
   unsub: ['ألغينا اشتراكك، ولن نراسلك بعد الآن.', 'You are off the list. We will not email you again.'],
 };
 
-function gate(next: string, state: 'ask' | 'wrong' | 'unset', note = '', team = false, strip = '') {
+/** The Coming soon screen with the Team code box. `waitlist` false (phase 0) leaves out the sign-up. */
+function gate(next: string, state: 'ask' | 'wrong' | 'many' | 'unset', note = '', team = false, strip = '', waitlist = true) {
   const wrong = state !== 'ask' || team;
   const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
   const html = `<!doctype html>
@@ -216,9 +217,9 @@ function gate(next: string, state: 'ask' | 'wrong' | 'unset', note = '', team = 
 <body>${strip}
 <main>
   <div class="lockup"><img src="/brand/lockup.svg" alt="حكاية · Hikaya" width="300" height="55"></div>
-  <p class="say">قريباً في كالغاري.<span>Coming soon to Calgary.</span></p>
+  ${waitlist ? '<p class="say">قريباً في كالغاري.<span>Coming soon to Calgary.</span></p>' : ''}
   ${note ? `<p class="msg" role="status">${NOTES[note][0]}<span>${NOTES[note][1]}</span></p>` : ''}
-  <p class="lead">قهوة وتمر للمائدة. اترك بريدك ونخبرك حين يفتح الطلب المسبق.<span>Coffee and dates for the table. Leave your email and we will tell you when pre-orders open.</span></p>
+  ${waitlist ? `<p class="lead">قهوة وتمر للمائدة. اترك بريدك ونخبرك حين يفتح الطلب المسبق.<span>Coffee and dates for the table. Leave your email and we will tell you when pre-orders open.</span></p>
   <form class="wl" id="wl" novalidate>
     <label for="wl-e">بريدك الإلكتروني · Your email</label>
     <input id="wl-e" name="email" type="email" inputmode="email" autocomplete="email" required>
@@ -229,20 +230,21 @@ function gate(next: string, state: 'ask' | 'wrong' | 'unset', note = '', team = 
     <label class="consent"><input type="checkbox" name="consent" required><span>${CONSENT.ar}<span>${CONSENT.en}</span></span></label>
     <button type="submit">أخبروني · Tell me</button>
     <p class="msg" id="wl-msg" role="status" hidden></p>
-  </form>
+  </form>` : ''}
   <details${wrong ? ' open' : ''}><summary>للفريق · Team</summary>
   <form method="post" action="/__preview">
     <label for="code">رمز المعاينة · Preview code</label>
     <input id="code" name="code" type="password" autocomplete="current-password" required${wrong ? ' autofocus' : ''}>
     <input type="hidden" name="next" value="${esc(next)}">
     ${state === 'wrong' ? '<p class="err" role="alert">الرمز غير صحيح · That code is not right.</p>' : ''}
+    ${state === 'many' ? '<p class="err" role="alert">محاولات كثيرة. انتظر ربع ساعة ثم حاول مرة أخرى. · Too many tries. Wait 15 minutes, then try again.</p>' : ''}
     ${state === 'unset' ? '<p class="err" role="alert">The site has no preview code yet. In Netlify, add PREVIEW_PASSWORD (scopes: All, or include Functions), then redeploy.</p>' : ''}
     <button type="submit">ادخل · Enter</button>
   </form>
   </details>
   <p class="foot">وللحكاية بقية · <a href="https://www.instagram.com/hikaya.yyc/" rel="noopener" dir="ltr">@hikaya.yyc</a></p>
 </main>
-<script>
+${waitlist ? `<script>
   (function () {
     var f = document.getElementById('wl'), m = document.getElementById('wl-msg');
     if (!/^ar/i.test(navigator.language || '')) { var en = f.querySelector('input[value=en]'); if (en) en.checked = true; }
@@ -264,7 +266,7 @@ function gate(next: string, state: 'ask' | 'wrong' | 'unset', note = '', team = 
         .finally(function () { b.disabled = false; });
     });
   })();
-</script>
+</script>` : ''}
 </body>
 </html>`;
   return new Response(html, { status: state !== 'ask' ? 401 : 200, headers: { 'content-type': 'text/html; charset=utf-8', 'x-robots-tag': NOINDEX, 'cache-control': 'no-store' } });
