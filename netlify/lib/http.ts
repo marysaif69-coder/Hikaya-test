@@ -8,7 +8,8 @@ export const json = (data: unknown, status = 200, headers: Record<string, string
   new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...headers } });
 
 export const fail = (e: unknown) => {
-  if (e instanceof HttpError) return json({ error: e.code, message: e.message, fields: (e as any).fields }, e.status);
+  // `extra` carries the numbers and names a page needs to say the message in Arabic.
+  if (e instanceof HttpError) return json({ error: e.code, message: e.message, fields: (e as any).fields, extra: (e as any).extra }, e.status);
   console.error(e);
   return json({ error: 'server', message: 'Something went wrong on our side.' }, 500);
 };

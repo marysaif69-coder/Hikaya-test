@@ -79,6 +79,7 @@ const ar = lang === 'ar';
 <script>
   import { mountLogin, logout } from '../../scripts/login';
   import { add, catalog, openDrawer } from '../../scripts/cart';
+  import { errorText } from '../../scripts/errors';
   const lang = document.documentElement.lang as 'en' | 'ar';
   const ar = lang === 'ar';
   const $ = (id: string) => document.getElementById(id)!;
@@ -193,7 +194,7 @@ const ar = lang === 'ar';
     if (!b) return;
     if (b.dataset.sub === 'stop' && !confirm(ar ? 'إنهاء هذا الطلب المنتظم؟' : 'Stop this regular order?')) return;
     const r = await fetch('/api/my/subscriptions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: Number(b.dataset.id), action: b.dataset.sub }) });
-    if (!r.ok) alert((await r.json()).message); else loadSubs();
+    if (!r.ok) alert(errorText(await r.json(), ar)); else loadSubs();
   });
   const setWho = (email: string) => { $('whoEmail').textContent = email; $('who').hidden = false; };
 
@@ -207,7 +208,7 @@ const ar = lang === 'ar';
       const day = (box.querySelector('select') as HTMLSelectElement).value, win = box.querySelector<HTMLInputElement>('input[type=radio]:checked')?.value;
       if (!day || !win) { alert(ar ? 'اختر يوماً ووقتاً.' : 'Choose a day and a time.'); return; }
       const r = await fetch('/api/my/orders/move', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ref: mvGo.dataset.moveGo, day, window: win }) });
-      const d = await r.json(); if (!r.ok) { alert(d.message); return; }
+      const d = await r.json(); if (!r.ok) { alert(errorText(d, ar)); return; }
       alert(ar ? 'تغيّر الموعد. أرسلنا لك بريداً.' : 'Done. We emailed you the new day.'); showMine(); return;
     }
     const again = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-again]');
@@ -216,7 +217,7 @@ const ar = lang === 'ar';
     if (!b || !confirm(ar ? 'هل تريد إلغاء هذا الطلب؟' : 'Cancel this order?')) return;
     const r = await fetch('/api/my/orders/cancel', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ref: b.dataset.cancel }) });
     const d = await r.json();
-    if (!r.ok) alert(d.message); else showMine();
+    if (!r.ok) alert(errorText(d, ar)); else showMine();
   });
 
   (async () => {

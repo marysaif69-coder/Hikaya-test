@@ -18,8 +18,8 @@ export function priceCart(lines: unknown, live?: Record<string, Live>): PricedLi
   return lines.map((raw: any) => {
     const p = PRODUCTS.find(x => x.id === raw?.id);
     if (!p) throw new HttpError(400, 'unknown-product', `Unknown product: ${String(raw?.id).slice(0, 40)}`);
-    if (live && !live[p.id]?.shown) throw new HttpError(409, 'not-offered', `${p.name.en} is not available at the moment.`);
-    if (live && !live[p.id]?.available) throw new HttpError(409, 'sold-out', `${p.name.en} is sold out for now.`);
+    if (live && !live[p.id]?.shown) throw Object.assign(new HttpError(409, 'not-offered', `${p.name.en} is not available at the moment.`), { extra: { name: p.name.ar } });
+    if (live && !live[p.id]?.available) throw Object.assign(new HttpError(409, 'sold-out', `${p.name.en} is sold out for now.`), { extra: { name: p.name.ar } });
     const qty = Number(raw.qty);
     if (!Number.isInteger(qty) || qty < 1 || qty > 20) throw new HttpError(400, 'bad-qty');
     let option: string | null = null, label: { en: string; ar: string } | null = null;
@@ -37,7 +37,7 @@ export function priceCart(lines: unknown, live?: Record<string, Live>): PricedLi
     }
     // Until the owners set a price in the desk, an item can't be ordered (never a $0 line).
     const unit = live ? live[p.id]?.price_cents ?? null : fileCents(p);
-    if (unit == null) throw new HttpError(409, 'no-price', `${p.name.en} is not open for orders yet.`);
+    if (unit == null) throw Object.assign(new HttpError(409, 'no-price', `${p.name.en} is not open for orders yet.`), { extra: { name: p.name.ar } });
     return { product_id: p.id, name_en: p.name.en, name_ar: p.name.ar, option, option_en: label?.en ?? null, option_ar: label?.ar ?? null, qty, unit_cents: unit };
   });
 }

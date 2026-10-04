@@ -1289,4 +1289,14 @@ await call(admin, `/api/admin/orders/${reh2.data.ref}`, { cookie: adm, body: { s
 assert.equal(await stockOf('hijazi'), 4); ok('unticking "sample" takes the stock again');
 await call(admin, '/api/admin/products/hijazi', { cookie: adm, body: { stock: null } });
 
+// ---------- Arabic error messages on the Arabic pages ----------
+const { errorText } = await import('../src/scripts/errors');
+await call(admin, '/api/admin/products/qishr', { cookie: adm, body: { stock: 1 } });
+const arStock = (await order({ email: 'ar-err@example.com', lang: 'ar', day: '2027-08-19', lines: [{ id: 'qishr', qty: 3 }] })).data;
+assert.equal(arStock.error, 'stock'); assert.equal(arStock.extra.left, 1); assert.match(errorText(arStock, true), /^بقي 1 فقط من .+\. قلّل الكمية\.$/);
+assert.equal(errorText({ error: 'slot-full', message: 'That time is full. Please choose another.' }, true), 'لا مكان في هذا الموعد. اختر وقتاً أو يوماً آخر.');
+assert.equal(errorText({ error: 'slot-full', message: 'That time is full. Please choose another.' }, false), 'That time is full. Please choose another.');
+ok('slot, deadline and stock errors read in Arabic on the Arabic pages');
+await call(admin, '/api/admin/products/qishr', { cookie: adm, body: { stock: null } });
+
 console.log(`\n${pass} checks passed`);

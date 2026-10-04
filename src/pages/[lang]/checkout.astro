@@ -176,6 +176,7 @@ const ar = lang === 'ar';
 
 <script>
   import { read, totals, describe, clear } from '../../scripts/cart';
+  import { errorText } from '../../scripts/errors';
   const lang = document.documentElement.lang as 'en' | 'ar';
   const ar = lang === 'ar';
   const money = (n: number) => { const v = Number.isInteger(n) ? String(n) : n.toFixed(2); return ar ? `${v} $` : `$${v}`; };
@@ -347,7 +348,7 @@ const ar = lang === 'ar';
         if (data.error === 'giftcard') { gift = null; $('gcMsg').className = 'promo-msg bad'; $('gcMsg').textContent = data.message; paint(); }
         if (data.error === 'promo') { promo = null; $('promoMsg').className = 'promo-msg bad'; $('promoMsg').textContent = data.message; paint(); }
         if (data.error === 'slot-full' || data.error === 'too-soon') { const s = await fetch('/api/slots').then(r => r.json()); days = s.days; paintDays(); paint(); }
-        fe.textContent = data.message ?? (ar ? 'تعذّر إرسال الطلب.' : 'We could not send your order.'); fe.hidden = false;
+        fe.textContent = errorText(data, ar, ar ? 'تعذّر إرسال الطلب.' : 'We could not send your order.'); fe.hidden = false;
         return;
       }
       clear();

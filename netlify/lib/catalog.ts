@@ -79,8 +79,8 @@ export async function takeStock(lines: { product_id: string; qty: number }[]) {
     const cur = await one`SELECT stock FROM product_settings WHERE product_id = ${id} AND stock IS NOT NULL`;
     if (!cur) continue; // no limit on this product
     await giveStock(taken);
-    const name = PRODUCTS.find(p => p.id === id)?.name.en ?? id;
-    throw new HttpError(409, 'stock', cur.stock > 0 ? `Only ${cur.stock} left of ${name}. Lower the quantity.` : `${name} just sold out.`);
+    const p = PRODUCTS.find(x => x.id === id), name = p?.name.en ?? id;
+    throw Object.assign(new HttpError(409, 'stock', cur.stock > 0 ? `Only ${cur.stock} left of ${name}. Lower the quantity.` : `${name} just sold out.`), { extra: { left: Math.max(cur.stock, 0), name: p?.name.ar ?? id } });
   }
   return taken;
 }
@@ -126,15 +126,15 @@ export async function assertDayLimits(date: string, lines: { product_id: string;
   for (const c of caps) {
     const n = want.get(c.product_id); if (!n) continue;
     const left = c.daily_cap - (day.get(c.product_id) ?? 0);
-    const name = PRODUCTS.find(p => p.id === c.product_id)?.name.en ?? c.product_id;
-    if (n > left) throw new HttpError(409, 'day-limit', left > 0 ? `Only ${left} more ${name} can be made for that day. Lower the quantity or choose another day.` : `${name} is fully booked for that day. Choose another day.`);
+    const p = PRODUCTS.find(x => x.id === c.product_id), name = p?.name.en ?? c.product_id;
+    if (n > left) throw Object.assign(new HttpError(409, 'day-limit', left > 0 ? `Only ${left} more ${name} can be made for that day. Lower the quantity or choose another day.` : `${name} is fully booked for that day. Choose another day.`), { extra: { left: Math.max(left, 0), name: p?.name.ar ?? c.product_id } });
   }
   if (giftBoxesPerDay) {
     const boxIds = PRODUCTS.filter(p => p.kind === 'box' && p.insert !== 'everyday').map(p => p.id);
     const n = lines.filter(l => boxIds.includes(l.product_id)).reduce((a, l) => a + l.qty, 0);
     if (n) {
       const left = giftBoxesPerDay - await taken(boxIds);
-      if (n > left) throw new HttpError(409, 'day-limit', left > 0 ? `We can pack ${left} more gift box${left === 1 ? '' : 'es'} for that day. Lower the quantity or choose another day.` : 'Gift boxes are fully booked for that day. Choose another day.');
+      if (n > left) throw Object.assign(new HttpError(409, 'day-limit', left > 0 ? `We can pack ${left} more gift box${left === 1 ? '' : 'es'} for that day. Lower the quantity or choose another day.` : 'Gift boxes are fully booked for that day. Choose another day.'), { extra: { left: Math.max(left, 0), box: true } });
     }
   }
 }
