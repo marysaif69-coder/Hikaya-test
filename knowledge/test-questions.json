@@ -488,7 +488,7 @@
       "q": "Can I send an Eid box to my mother's house in Bridgeland as a gift?",
       "must": [
         "yes, delivery to another Calgary address",
-        "put her name and phone (and a gift message) in the note at checkout"
+        "explains how to give her details: the \"This is a gift\" option at checkout or the order note (her name, phone and a gift message)"
       ],
       "must_not": [
         "promises a printed gift card"
@@ -737,7 +737,7 @@
       ],
       "must_not": [
         "replies only in Latin-letter Arabic",
-        "invents a delivery time not in the handbook"
+        "invents a delivery time not in the handbook (the 22 January 2027 start date and the Thursday-to-Sunday windows are in the handbook)"
       ]
     },
     {
