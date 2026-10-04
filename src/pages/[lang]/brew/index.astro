@@ -23,7 +23,7 @@ const FAMS = [
 const takes = (f: string) => {
   const kits = KITS.filter(k => k.fam === f && !k.discovery).map(k => ({
     id: k.id, name: k.name[lang],
-    adds: k.parts.map(x => packOf(x.id)!.name[lang]).join(' + ') + (k.id === 'qassimi' ? L(' + your own milk', ' + حليبك') : ''),
+    adds: k.parts.map(x => packOf(x.id)!.name[lang]).join(' + ') + (k.id === 'qassimi' ? L(' (and your own milk in each pot)', ' (وحليبك في كل إبريق)') : ''),
   }));
   const own = f === 'mountain' ? COFFEES.filter(c => c.id === 'jubani').map(c => ({ id: c.id, name: c.name[lang], adds: L('Its own bag: brew it like Yemeni qahwa, nothing to add', 'كيس قائم بذاته: حضّره كالقهوة اليمنية، بلا إضافات') })) : [];
   return kits.length ? [...kits, ...own, { id: 'plain', name: L('Nothing added', 'بدون إضافات'), adds: L('Just the coffee', 'القهوة وحدها') }] : [];
@@ -68,7 +68,7 @@ const takes = (f: string) => {
               <fieldset class="takes" data-takes>
                 <legend>{ar ? 'كيف تشربها؟' : 'How do you take it?'}</legend>
                 <div class="chips">{ways.map((w, i) => <label><input type="radio" name={`take-${x.f}`} value={w.id} checked={i === 0} data-adds={w.adds} /><span>{w.name}</span></label>)}</div>
-                <p class="adds"><span class="label">{ar ? 'في الإبريق' : 'In the pot'}</span> <b data-adds-out>{ways[0].adds}</b></p>
+                <p class="adds"><span class="label">{ar ? 'في الكيس' : 'Mixed into the bag'}</span> <b data-adds-out>{ways[0].adds}</b></p>
               </fieldset>
             )}
             <a class="shop-link" href={path(lang, 'shop') + `#${x.f === 'palm' ? 'gulf' : x.f === 'mountain' ? 'yemen' : x.f === 'house' ? 'shami' : 'qishr'}`}>{ar ? 'إلى المتجر' : 'In the shop'} <span aria-hidden="true">{ar ? '←' : '→'}</span></a>

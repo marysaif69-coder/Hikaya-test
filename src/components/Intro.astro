@@ -1,6 +1,8 @@
 ---
-// Opening: the logo tells its own story. Bunn speaks first (high right), Tamr answers (low left),
-// the khalal seed appears where they meet, the dots type, then the logo settles into the header.
+// Opening: the logo tells its own story. The words بُن (coffee) and تمر (date) appear where their
+// bubbles sit in the logo, then each turns into its bubble: Bunn high right, Tamr low left. The
+// khalal seed appears where they meet, the dots type, the name and one line follow, then the
+// logo settles into the header.
 // Once per visit, skippable, never under reduced motion. Built from the official logo paths.
 import fs from 'node:fs';
 const svg = fs.readFileSync('public/brand/logo.svg', 'utf8');
@@ -10,6 +12,9 @@ const g = svg.match(/<g transform="([^"]+)">/)![1];
 ---
 <div class="intro" id="intro" aria-hidden="true">
   <div class="intro-mark">
+    <div class="intro-art">
+    <p class="iw iw-bunn" lang="ar">بُن<small lang="en" dir="ltr">Bunn · coffee</small></p>
+    <p class="iw iw-tamr" lang="ar">تمر<small lang="en" dir="ltr">Tamr · date</small></p>
     <svg class="intro-logo" viewBox={vb}>
       <g transform={g}>
         <path class="i-tamr" fill="#A93B28" d={tamr} />
@@ -19,7 +24,9 @@ const g = svg.match(/<g transform="([^"]+)">/)![1];
         <path class="i-dots" fill="#F5EFE3" d={dots} />
       </g>
     </svg>
+    </div>
     <p class="intro-wm"><b>حكاية</b><small>HIKAYA</small></p>
+    <p class="intro-line"><span lang="ar">حين يلتقي البن بالتمر، تبدأ الحكاية.</span><small lang="en" dir="ltr">When coffee meets the date, the story begins.</small></p>
   </div>
 </div>
 
@@ -34,22 +41,36 @@ const g = svg.match(/<g transform="([^"]+)">/)![1];
   .intro-wm b { font-family: var(--display); font-weight: 700; font-size: clamp(40px, 5vw, 56px); }
   .intro-wm small { font: 600 12px/1 var(--body); letter-spacing: .5em; padding-inline-start: .5em; margin-top: 10px; color: var(--ink-2); }
 
-  /* the conversation, frame by frame */
+  /* the conversation, frame by frame: the words come first, then each becomes its bubble */
+  .intro-art { position: relative; }
+  .iw { position: absolute; margin: 0; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 4px; line-height: 1; opacity: 0; white-space: nowrap; font-family: var(--display); font-weight: 700; font-size: clamp(48px, 7vw, 76px); }
+  .iw small { font: 600 clamp(11px, 1.1vw, 13px)/1 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+  /* The words start apart, then drift to where their bubbles sit (70% 38% and 30% 62%) as they turn into them. */
+  .iw-bunn { left: 92%; top: 8%; color: #33211A; }
+  .iw-tamr { left: 8%; top: 92%; color: #A93B28; }
+  :global(html.intro-on) .iw-bunn { animation: w-in .5s cubic-bezier(.23, 1, .32, 1) .1s forwards, w-out-bunn .5s cubic-bezier(.6, 0, .4, 1) 1.2s forwards; }
+  :global(html.intro-on) .iw-tamr { animation: w-in .5s cubic-bezier(.23, 1, .32, 1) .55s forwards, w-out-tamr .5s cubic-bezier(.6, 0, .4, 1) 1.3s forwards; }
+  @keyframes w-in { from { opacity: 0; transform: translate(-50%, -40%); filter: blur(4px); } to { opacity: 1; transform: translate(-50%, -50%); filter: none; } }
+  @keyframes w-out-bunn { from { opacity: 1; left: 92%; top: 8%; transform: translate(-50%, -50%) scale(1); filter: none; } to { opacity: 0; left: 70%; top: 38%; transform: translate(-50%, -50%) scale(.35); filter: blur(6px); } }
+  @keyframes w-out-tamr { from { opacity: 1; left: 8%; top: 92%; transform: translate(-50%, -50%) scale(1); filter: none; } to { opacity: 0; left: 30%; top: 62%; transform: translate(-50%, -50%) scale(.35); filter: blur(6px); } }
   .i-bunn, .i-tamr, .i-seed, .i-groove, .i-dots { transform-box: fill-box; transform-origin: center; opacity: 0; }
-  :global(html.intro-on) .i-bunn { animation: i-bunn .62s cubic-bezier(.23, 1, .32, 1) .1s forwards; }
-  :global(html.intro-on) .i-tamr { animation: i-tamr .62s cubic-bezier(.23, 1, .32, 1) .38s forwards; }
-  :global(html.intro-on) .i-seed { animation: i-seed .45s cubic-bezier(.23, 1, .32, 1) .86s forwards; }
-  :global(html.intro-on) .i-groove { animation: i-groove .4s ease-out 1.02s forwards; }
-  :global(html.intro-on) .i-dots { animation: i-dots .5s steps(1, end) 1.14s forwards; }
-  :global(html.intro-on) .intro-wm { animation: i-wm .5s cubic-bezier(.23, 1, .32, 1) 1.38s forwards; }
-  @keyframes i-bunn { from { opacity: 0; transform: translate(26%, -30%) rotate(8deg) scale(.92); } to { opacity: 1; transform: none; } }
-  @keyframes i-tamr { from { opacity: 0; transform: translate(-26%, 30%) rotate(-8deg) scale(.92); } to { opacity: 1; transform: none; } }
+  :global(html.intro-on) .i-bunn { animation: i-grow .55s cubic-bezier(.23, 1, .32, 1) 1.38s forwards; }
+  :global(html.intro-on) .i-tamr { animation: i-grow .55s cubic-bezier(.23, 1, .32, 1) 1.48s forwards; }
+  :global(html.intro-on) .i-seed { animation: i-seed .45s cubic-bezier(.23, 1, .32, 1) 1.95s forwards; }
+  :global(html.intro-on) .i-groove { animation: i-groove .4s ease-out 2.1s forwards; }
+  :global(html.intro-on) .i-dots { animation: i-dots .5s steps(1, end) 2.2s forwards; }
+  :global(html.intro-on) .intro-wm { animation: i-wm .5s cubic-bezier(.23, 1, .32, 1) 2.45s forwards; }
+  :global(html.intro-on) .intro-line { animation: i-wm .5s cubic-bezier(.23, 1, .32, 1) 2.65s forwards; }
+  @keyframes i-grow { from { opacity: 0; transform: scale(.2); } 60% { opacity: 1; } to { opacity: 1; transform: none; } }
   @keyframes i-seed { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: none; } }
   @keyframes i-groove { from { opacity: 1; clip-path: inset(0 0 100% 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
   @keyframes i-dots { 0% { opacity: 1; clip-path: inset(0 100% 0 0); } 33% { opacity: 1; clip-path: inset(0 66% 0 0); } 66% { opacity: 1; clip-path: inset(0 33% 0 0); } 100% { opacity: 1; clip-path: inset(0 0 0 0); } }
   @keyframes i-wm { to { opacity: 1; transform: none; } }
+  .intro-line { display: grid; justify-items: center; gap: 4px; margin: 0; text-align: center; opacity: 0; transform: translateY(8px); padding-inline: 16px; }
+  .intro-line span { font-family: var(--display); font-size: clamp(18px, 2vw, 22px); color: var(--bunn); }
+  .intro-line small { font-size: 13.5px; color: var(--ink-2); }
   .intro.leaving { background: transparent; transition: background .5s ease .15s; }
-  .intro.leaving .intro-wm { opacity: 0 !important; transition: opacity .2s ease; animation: none; }
+  .intro.leaving .intro-wm, .intro.leaving .intro-line, .intro.leaving .iw { opacity: 0 !important; transition: opacity .2s ease; animation: none; }
 </style>
 
 <script>
@@ -73,7 +94,7 @@ const g = svg.match(/<g transform="([^"]+)">/)![1];
       mark.animate([{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${s})` }], { duration: 720, easing: 'cubic-bezier(.77, 0, .175, 1)', fill: 'forwards' })
         .onfinish = () => { target.style.opacity = ''; end(); };
     };
-    const t = setTimeout(() => finish(), 2150);
+    const t = setTimeout(() => finish(), 3900);
     const skip = () => { clearTimeout(t); finish(true); };
     intro.addEventListener('click', skip);
     addEventListener('keydown', skip, { once: true });

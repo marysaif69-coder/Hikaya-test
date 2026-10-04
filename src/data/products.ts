@@ -198,19 +198,19 @@ export const COFFEES: Coffee[] = [
     why: { en: 'Then take two dates.', ar: 'خذ تمرتين إذن.' } }),
 ];
 
-const P = (p: Omit<Pack, 'kind' | 'price' | 'size'> & { price?: number | null }): Pack => ({ kind: 'pack', price: null, size: { en: 'One pack for one 250 g bag [TBD: grams]', ar: 'ظرف واحد لكيس ٢٥٠ غ [يُحدد لاحقاً: الوزن]' }, ...p });
+const P = (p: Omit<Pack, 'kind' | 'price' | 'size'> & { price?: number | null }): Pack => ({ kind: 'pack', price: null, size: { en: 'One pack mixes into one 250 g bag [TBD: grams]', ar: 'ظرف واحد يُخلط في كيس ٢٥٠ غ [يُحدد لاحقاً: الوزن]' }, ...p });
 
 export const PACKS: Pack[] = [
   P({ id: 'pack-saffron', line: 'gulf', fam: 'palm', for: 'gulf', c: '#A93B28', name: { en: 'Saffron packet', ar: 'ظرف زعفران' },
-    notes: { en: 'What makes Gulf coffee Najdi. Kept in its own sealed packet so it stays bright until the pot.', ar: 'هو ما يجعل القهوة الخليجية نجدية. في ظرفه المختوم ليبقى زاهياً حتى الدلّة.' },
+    notes: { en: 'What makes Gulf coffee Najdi. Sealed until you open the bag, then poured in and shaken through.', ar: 'هو ما يجعل القهوة الخليجية نجدية. مختوم حتى تفتح الكيس، ثم تسكبه فيه وترجّه.' },
     contents: { en: 'Saffron, sealed.', ar: 'زعفران، مختوم.' }, ingredients: ['Saffron.', 'Safran.'], allergens: [] }),
   P({ id: 'pack-qassim', line: 'gulf', fam: 'palm', for: 'gulf', c: '#C98A3A', name: { en: 'Qassim blend pack', ar: 'خلطة قصيمية' },
-    notes: { en: 'The Qassimi spice blend for Gulf coffee. Use it with the saffron packet, and add your own milk as you make it.', ar: 'خلطة البهار القصيمية للقهوة الخليجية، تُستعمل مع ظرف الزعفران، وتضيف حليبك عند التحضير.' },
+    notes: { en: 'The Qassimi spice blend for Gulf coffee. Pour it into the bag with the saffron packet and shake; add your own milk when you make each pot.', ar: 'خلطة البهار القصيمية للقهوة الخليجية. اسكبها في الكيس مع ظرف الزعفران ورجّه، وأضف حليبك عند تحضير كل إبريق.' },
     contents: { en: 'Qassimi spices. No milk: you add your own. [TBD: full list]', ar: 'بهارات قصيمية. بلا حليب: تضيف حليبك بنفسك. [يُحدد لاحقاً: القائمة الكاملة]' },
     ingredients: ['Spices. [TBD: full list]', 'Épices. [TBD : liste complète]'], allergens: [],
     maybe: { en: 'May also contain barley [TBD]', ar: 'قد تحتوي على الشعير أيضاً [يُحدد لاحقاً]' } }),
   P({ id: 'pack-hijazi', line: 'gulf', fam: 'palm', for: 'gulf', c: '#5E7A2E', name: { en: 'Hijazi blend pack', ar: 'خلطة حجازية' },
-    notes: { en: 'The Hijazi blend for Gulf coffee. Use it with the saffron packet.', ar: 'الخلطة الحجازية للقهوة الخليجية، تُستعمل مع ظرف الزعفران.' },
+    notes: { en: 'The Hijazi blend for Gulf coffee. Pour it into the bag with the saffron packet and shake.', ar: 'الخلطة الحجازية للقهوة الخليجية. اسكبها في الكيس مع ظرف الزعفران ورجّه.' },
     contents: { en: 'Hijazi spices. [TBD: full list, with or without mastic]', ar: 'بهارات حجازية. [يُحدد لاحقاً: القائمة الكاملة، مع المستكة أو بدونها]' },
     ingredients: ['Spices. [TBD: full list]', 'Épices. [TBD : liste complète]'], allergens: [],
     maybe: { en: 'Allergens confirmed with the final recipe [TBD]', ar: 'مسببات الحساسية تُؤكد مع الوصفة النهائية [يُحدد لاحقاً]' } }),

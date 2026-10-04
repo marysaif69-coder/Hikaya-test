@@ -15,22 +15,22 @@
     "steps": [
       {
         "t": {
+          "en": "First pot from a new box? Pour its pack (and the saffron packet) into the bag, close it and shake well. Every pot after that is ready to go.",
+          "ar": "أول إبريق من علبة جديدة؟ اسكب ظرفها (وظرف الزعفران) في الكيس، وأغلقه ورجّه جيداً. وكل إبريق بعدها جاهز."
+        }
+      },
+      {
+        "t": {
           "en": "Boil 500 ml of water.",
           "ar": "اغلِ ٥٠٠ مل من الماء."
         }
       },
       {
         "t": {
-          "en": "Add the coffee: [TBD] g for this pot. Simmer gently.",
-          "ar": "أضف القهوة: [يُحدد لاحقاً] غ لهذا الإبريق، واتركها تغلي بهدوء."
+          "en": "Add the coffee: [TBD] g for this pot. For Qassimi, add your own milk now too ([TBD] ml). Simmer gently.",
+          "ar": "أضف القهوة: [يُحدد لاحقاً] غ لهذا الإبريق. وللقصيمية أضف حليبك الآن أيضاً ([يُحدد لاحقاً] مل). واتركها تغلي بهدوء."
         },
         "secs": 600
-      },
-      {
-        "t": {
-          "en": "Taking it Qassimi or Hijazi? Add its pack now: the Qassim or Hijazi blend. For Qassimi, add your own milk too. [TBD: amounts and timing]",
-          "ar": "تشربها قصيمية أو حجازية؟ أضف ظرفها الآن: الخلطة القصيمية أو الحجازية. وللقصيمية أضف حليبك أيضاً. [يُحدد لاحقاً: الكميات والتوقيت]"
-        }
       },
       {
         "t": {
@@ -41,8 +41,8 @@
       },
       {
         "t": {
-          "en": "Put the saffron in the serving dallah (Najdi, Qassimi and Hijazi), then pour through a fine filter onto it. [TBD: amount]",
-          "ar": "ضع الزعفران في دلّة التقديم (للنجدية والقصيمية والحجازية)، ثم صبّ القهوة عليه عبر مصفاة ناعمة. [يُحدد لاحقاً: الكمية]"
+          "en": "Pour through a fine filter into the serving dallah.",
+          "ar": "صبّها عبر مصفاة ناعمة في دلّة التقديم."
         }
       }
     ],
@@ -67,14 +67,20 @@
     "steps": [
       {
         "t": {
+          "en": "First pot from a new box? Pour its pack into the bag, close it and shake well. Every pot after that is ready to go.",
+          "ar": "أول إبريق من علبة جديدة؟ اسكب ظرفها في الكيس، وأغلقه ورجّه جيداً. وكل إبريق بعدها جاهز."
+        }
+      },
+      {
+        "t": {
           "en": "Bring 400 ml of water to a boil.",
           "ar": "اغلِ ٤٠٠ مل من الماء."
         }
       },
       {
         "t": {
-          "en": "Add the coffee ([TBD] g) and, for a style, its pack: Hadrami, Rada’i or Baydani ([TBD] g). Let it rise (mufawar).",
-          "ar": "أضف القهوة ([يُحدد لاحقاً] غ)، ومع الطريقة التي تختارها ظرفها: حضرمية أو رداعية أو بيضانية ([يُحدد لاحقاً] غ). دعها تفور."
+          "en": "Add the coffee ([TBD] g) and let it rise (mufawar).",
+          "ar": "أضف القهوة ([يُحدد لاحقاً] غ) ودعها تفور."
         },
         "secs": 180
       },

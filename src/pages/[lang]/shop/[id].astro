@@ -103,7 +103,8 @@ const sizeText = p.kind === 'coffee' ? p.size : p.kind === 'kit' ? kitInside(p, 
             <li><a href={path(lang, `shop/${p.base}`)}>{baseOf(p).name[lang]}</a> <span class="muted">{baseOf(p).size} · {L('coffee and spice only', 'قهوة وبهار فقط')}</span></li>
             {p.parts.map(x => { const k = packOf(x.id)!; return <li><a href={path(lang, `shop/${k.id}`)}>{x.mini ? L('Small ', 'ظرف صغير: ') : ''}{k.name[lang]}</a> <span class={`allergy ${allergyNote(k, lang).none ? 'none' : ''}`}>{allergyNote(k, lang).text}</span>{k.maybe && <small class="muted"> · {k.maybe[lang]}</small>}</li>; })}
           </ul>
-          {p.parts.some(x => x.id === 'pack-saffron') && <p class="muted">{L('The saffron is part of the recipe, so it is always in the box. It comes in its own packet so it stays bright until the pot.', 'الزعفران جزء من الوصفة، لذلك هو في العلبة دائماً. يأتي في ظرفه ليبقى زاهياً حتى الدلّة.')}</p>}
+          <p class="howto"><b>{L('How to use: ', 'طريقة الاستعمال: ')}</b>{L('pour the pack' + (p.parts.length > 1 ? 's' : '') + ' into the bag, close it and shake well. Every pot after that is ready.', 'اسكب ' + (p.parts.length > 1 ? 'الظروف' : 'الظرف') + ' في الكيس، وأغلقه ورجّه جيداً. وكل إبريق بعدها جاهز.')}{p.id === 'qassimi' && L(' Add your own milk when you make each pot.', ' وأضف حليبك عند تحضير كل إبريق.')}</p>
+          {p.parts.some(x => x.id === 'pack-saffron') && <p class="muted">{L('The saffron is part of the recipe, so it is always in the box.', 'الزعفران جزء من الوصفة، لذلك هو في العلبة دائماً.')}</p>}
         </div>
       )}
 
@@ -111,6 +112,7 @@ const sizeText = p.kind === 'coffee' ? p.size : p.kind === 'kit' ? kitInside(p, 
         <div class="inbox">
           <h2 class="h-s">{L('Made for', 'مصنوعة لـ')} <a href={path(lang, `shop/${bag.id}`)}>{bag.name[lang]}</a></h2>
           <p>{p.contents[lang]}</p>
+          <p class="howto"><b>{L('How to use: ', 'طريقة الاستعمال: ')}</b>{L('pour it into the bag, close it and shake well. One pack is for one 250 g bag.', 'اسكبه في الكيس، وأغلقه ورجّه جيداً. الظرف الواحد لكيس ٢٥٠ غ.')}</p>
           <p class={`allergy ${allergyNote(p, lang).none ? 'none' : ''}`}>{allergyNote(p, lang).text}</p>
           {p.maybe && <p class="muted">{p.maybe[lang]}</p>}
           <p class="muted">{L(`This is the pack on its own, for a bag you already have. New to it? ${kitsUsing.map(k => k.name.en).join(' and ')} come${kitsUsing.length === 1 ? 's' : ''} with the bag and the pack together.`, `هذا الظرف وحده، لكيس عندك من قبل. جديد عليها؟ ${kitsUsing.map(k => k.name.ar).join(' و')} تأتي مع الكيس والظرف معاً.`)}</p>
@@ -289,6 +291,7 @@ const sizeText = p.kind === 'coffee' ? p.size : p.kind === 'kit' ? kitInside(p, 
   .inbox li { display: grid; gap: 2px; }
   .inbox a { font-weight: 600; color: var(--bunn); }
   .inbox p { margin: 0; }
+  .howto { padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, var(--khalal) 16%, var(--sheet)); font-size: 15px; }
   .kit-links { display: flex; flex-wrap: wrap; gap: 8px; }
   .styles { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
   .styles legend { font-family: var(--display); font-weight: 700; font-size: 21px; margin-bottom: 10px; display: grid; gap: 2px; }
