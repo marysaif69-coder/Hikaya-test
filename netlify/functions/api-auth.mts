@@ -33,6 +33,7 @@ export default async (req: Request) => {
       const s = await session(req);
       if (!s || s.role === 'customer') throw new HttpError(401, 'login');
       const b = await body(req);
+      await limit(`verify:${ipKey(req)}`, 20, 10);
       const t = await finishAs(s.login, Number(b.id) || 0, str(b.code, 6));
       return json({ ok: true }, 200, { 'set-cookie': asCookie(t) });
     }
@@ -49,6 +50,7 @@ export default async (req: Request) => {
     if (path === '/api/auth/verify') {
       const b = await body(req);
       const email = str(b.email, 254).toLowerCase();
+      await limit(`verify:${ipKey(req)}`, 20, 10);
       const { token, role } = await verifyCode(email, str(b.code, 6));
       return json({ user: { email, role } }, 200, { 'set-cookie': sessionCookie(token) });
     }

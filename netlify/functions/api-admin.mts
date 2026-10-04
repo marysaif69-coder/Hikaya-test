@@ -92,7 +92,9 @@ async function handle(req: Request) {
     if (admin.role !== 'admin') {
       const write = req.method !== 'GET';
       const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write) || parts[0] === 'recall.csv' || parts[0] === 'hours.csv' || parts[0] === 'letters' || parts[0] === 'business' || parts[0] === 'visibility' || parts[0] === 'costs' || parts[0] === 'margins' || parts[0] === 'backup.json' || parts[0] === 'activity' || (parts[0] === 'checklists' && write)
-        || (write && ['products', 'settings', 'ask', 'connections', 'content', 'giftcards', 'report', 'pay'].includes(parts[0])) || (parts[0] === 'orders' && parts[2] === 'refund');
+        // Gift card codes work at checkout like money, so helpers can't list them either.
+        || parts[0] === 'giftcards'
+        || (write && ['products', 'settings', 'ask', 'connections', 'content', 'report', 'pay'].includes(parts[0])) || (parts[0] === 'orders' && parts[2] === 'refund');
       if (ownersOnly) throw new HttpError(403, 'owners-only', 'Only the owners can do this.');
     }
     const q = (k: string, max = 40) => str(url.searchParams.get(k), max);
@@ -127,7 +129,12 @@ async function handle(req: Request) {
         WHERE e.order_id = ${o.id} ORDER BY e.created_at DESC`;
       const emails = await sql`SELECT to_email, subject, status, created_at FROM email_log WHERE order_id = ${o.id} ORDER BY created_at DESC`;
       const cust = await one`SELECT id, team_note FROM customers WHERE email = ${o.email}`;
-      return json({ customer: cust ? { id: cust.id, note: cust.team_note } : null, order: { ...summary(o), giftCard: o.gift_card_cents ?? 0, giftCardCode: o.gift_card_code ?? null, regular: Boolean(o.subscription_id), sms: Boolean(o.sms_ok), subtotal: o.subtotal_cents, delivery: o.delivery_cents, items: await items(o.id), refundable: o.total_cents - o.refunded_cents, paidByCard: Boolean(o.square_payment_id) }, events, emails, refunds: await refundsFor(o.id) });
+      // Gift card and store-credit codes are spendable, so helpers only see that one was used.
+      const owner = admin.role === 'admin';
+      const hide = (t: string) => owner ? t : t.replace(/\b(GIFT|CREDIT)-[A-Z0-9]+/g, '$1-…');
+      const refunds = (await refundsFor(o.id)).map(r => owner ? r : { ...r, credit_code: r.credit_code ? hide(r.credit_code) : null });
+      const paid = o.payment_status === 'paid' || o.payment_status === 'partly-refunded';
+      return json({ customer: cust ? { id: cust.id, note: cust.team_note } : null, order: { ...summary(o), giftCard: o.gift_card_cents ?? 0, giftCardCode: o.gift_card_code ? hide(o.gift_card_code) : null, regular: Boolean(o.subscription_id), sms: Boolean(o.sms_ok), subtotal: o.subtotal_cents, delivery: o.delivery_cents, items: await items(o.id), refundable: paid ? o.total_cents - o.refunded_cents : 0, paidByCard: Boolean(o.square_payment_id) }, events: events.map(e => ({ ...e, detail: e.detail ? hide(e.detail) : e.detail })), emails, refunds });
     }
 
     // POST /api/admin/orders/:ref/move — another day or time; force skips the deadline and capacity checks
@@ -278,9 +285,12 @@ async function handle(req: Request) {
     if (parts[0] === 'team' && !parts[1] && req.method === 'POST') return json(await invite(await body(req), admin.email, siteUrl(req), admin.login));
     if (parts[0] === 'team' && parts[1] === 'cash' && req.method === 'POST') return json(await cashReceived(str((await body(req)).driver, 254), admin.email));
     if (parts[0] === 'team' && parts[1] && parts[2] === 'resend' && req.method === 'POST') {
-      const m = await one`SELECT email, role, name FROM team_members WHERE id = ${Number(parts[1]) || 0}`;
+      // Pass the stored flags too: invite() saves what it is given, so leaving them out would
+      // switch off "Also drives" and "Volunteer".
+      const m = await one`SELECT email, role, name, volunteer, drives, shared, login_email FROM team_members WHERE id = ${Number(parts[1]) || 0}`;
       if (!m) throw new HttpError(404, 'not-found');
-      return json(await invite(m, admin.email, siteUrl(req)));
+      // Someone on the shared login keeps that login (not the login of whoever presses resend).
+      return json(await invite(m, admin.email, siteUrl(req), m.shared ? m.login_email : admin.email));
     }
     if (parts[0] === 'team' && parts[1] && req.method === 'POST') return json(await setMember(Number(parts[1]) || 0, await body(req)));
     if (parts[0] === 'pay' && req.method === 'GET') return json(await payRates());

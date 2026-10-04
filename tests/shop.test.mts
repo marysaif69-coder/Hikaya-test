@@ -116,6 +116,9 @@ assert.equal((await call(orders, '/api/promo', { body: { code: 'FREEDEL', lines:
 
 // ---------- refunds ----------
 const r0 = await order({ lines: [{ id: 'najdi', opt: 'dallah', qty: 2 }] }); // $52
+const unpaidRefund = await call(admin, `/api/admin/orders/${r0.data.ref}/refund`, { cookie: adm, body: { amount_cents: 500, method: 'cash' } });
+assert.equal(unpaidRefund.data.error, 'not-paid'); assert.equal((await call(admin, `/api/admin/orders/${r0.data.ref}`, { cookie: adm })).data.order.refundable, 0); ok('an unpaid order cannot be refunded (the money would never be collected)');
+await call(admin, `/api/admin/orders/${r0.data.ref}`, { cookie: adm, body: { paymentStatus: 'paid' } });
 const before = sent.length;
 const part = await call(admin, `/api/admin/orders/${r0.data.ref}/refund`, { cookie: adm, body: { amount_cents: 2000, method: 'e-transfer', reason: 'pouch torn' } });
 assert.equal(part.status, 200, JSON.stringify(part.data));

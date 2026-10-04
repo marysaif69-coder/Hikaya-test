@@ -127,8 +127,12 @@ export async function currentRoute(s: Session, date: string) {
   const r = await openRoute(s.email, date) ?? await one`SELECT * FROM routes WHERE driver_email = ${s.email} AND day = ${date} ORDER BY id DESC LIMIT 1`;
   if (!r) return null;
   const order: string[] = typeof r.stops === 'string' ? JSON.parse(r.stops) : r.stops;
-  const rows = order.length ? await sql`SELECT ref, street, postal, status FROM orders WHERE ref = ANY(${order})` : [];
-  const left = order.map(ref => rows.find(x => x.ref === ref)).filter(x => x && x.status !== 'completed') as Row[];
+  // Stops still to do on this route: still this driver's, not delivered or cancelled, and not
+  // marked "Couldn't deliver" since the route started (the next customer was already told).
+  const rows = order.length ? await sql`SELECT ref, street, postal, status FROM orders o WHERE ref = ANY(${order}) AND driver_email = ${s.email}
+    AND status NOT IN ('completed', 'cancelled')
+    AND NOT EXISTS (SELECT 1 FROM order_events e WHERE e.order_id = o.id AND e.detail LIKE 'Couldn''t deliver%' AND e.created_at >= ${r.started_at})` : [];
+  const left = order.map(ref => rows.find(x => x.ref === ref)).filter(Boolean) as Row[];
   const next = left[0] ?? null;
   return { id: r.id, open: !r.ended_at, kmSoFar: await routeKm(r), next: next ? { ref: next.ref, address: addressOf(next), url: `https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${encodeURIComponent(addressOf(next))}` } : null, startOdometer: r.start_odometer, endOdometer: r.end_odometer, km: r.planned_meters === null ? null : Math.round(r.planned_meters / 100) / 10,
     minutes: r.planned_seconds === null ? null : Math.round(r.planned_seconds / 60), startedAt: r.started_at, endedAt: r.ended_at, links: navLinks(left.map(addressOf)) };

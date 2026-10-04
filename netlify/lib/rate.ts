@@ -9,8 +9,10 @@ export const ipKey = (req: Request) =>
 
 /** Allows `max` attempts per `minutes` for this key, then refuses with a 429. */
 export async function limit(key: string, max: number, minutes: number, message = 'Too many tries. Please wait a little and try again.') {
-  const r = await one`SELECT COUNT(*)::int AS n FROM rate_hits WHERE key = ${key} AND at > NOW() - make_interval(mins => ${minutes})`;
-  if ((r?.n ?? 0) >= max) throw new HttpError(429, 'too-many', message);
+  // Insert first, then count (this request included), so a burst of parallel requests can't all
+  // read the same count before any of them is recorded.
   await sql`INSERT INTO rate_hits (key) VALUES (${key})`;
+  const r = await one`SELECT COUNT(*)::int AS n FROM rate_hits WHERE key = ${key} AND at > NOW() - make_interval(mins => ${minutes})`;
+  if ((r?.n ?? 0) > max) throw new HttpError(429, 'too-many', message);
   if (Math.random() < 0.02) await sql`DELETE FROM rate_hits WHERE at < NOW() - INTERVAL '2 days'`;
 }

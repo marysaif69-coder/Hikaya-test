@@ -986,7 +986,7 @@ import '../../styles/global.css';
         <input id="rWhy" placeholder="Reason, e.g. box arrived crushed" />
         <label class="notify"><input type="checkbox" id="rNotify" checked /> Email the customer</label>
         <div class="acts"><button type="button" id="rGo" class="danger">Refund</button></div>
-        <p class="ev">Up to ${money(o.refundable)} can still be refunded. Full refund = the whole amount; partial = any smaller amount.</p></div>` : '<p class="ev">Nothing left to refund.</p>'}
+        <p class="ev">Up to ${money(o.refundable)} can still be refunded. Full refund = the whole amount; partial = any smaller amount.</p></div>` : o.paymentStatus === 'unpaid' ? '<p class="ev">Not paid yet, so there is nothing to refund. To take money off, change the items instead.</p>' : '<p class="ev">Nothing left to refund.</p>'}
       ${d.refunds.length ? `<ul>${d.refunds.map((x: any) => `<li class="ev">${new Date(x.created_at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })} · <b>${money(x.amount_cents)}</b> by ${esc(x.method)}${x.credit_code ? ` · code <b>${esc(x.credit_code)}</b>` : ''}${x.status !== 'done' ? ` · ${esc(x.status)}` : ''} ${x.reason ? '· ' + esc(x.reason) : ''} <small>${esc(x.actor)}</small></li>`).join('')}</ul>` : ''}
       <h3>Team note</h3><textarea id="pNote" rows="2" placeholder="Only the team sees this"></textarea><div class="acts"><button type="button" id="pAddNote">Add note</button></div>
       <label class="notify owner-only"><input type="checkbox" id="pSample" ${o.sample ? 'checked' : ''} /> This is a sample / test order (no emails, not counted, not in the CSV)</label>
@@ -1387,7 +1387,7 @@ import '../../styles/global.css';
       ${o.notes ? `<p class="note">Customer note: ${esc(o.notes)}</p>` : ''}${o.customerNote ? `<p class="note">Team note: ${esc(o.customerNote)}</p>` : ''}
       ${o.lots?.length ? `<p class="note">Lots: ${o.lots.map(esc).join(', ')}</p>` : ''}
       <p>${o.paymentStatus === 'paid' ? 'Paid' : o.payment === 'at-pickup' ? `Collect ${money(o.total)}` : 'Not paid yet'}${o.gift ? ' · GIFT: no prices in the bag' : ''}</p></section>
-      ${o.gift && o.gift.message ? `<section class="card"><p class="msg">${esc(o.gift.message)}</p><p class="from">— ${esc(o.name)}</p><p class="brand">حكاية · Hikaya</p></section>` : ''}`;
+      ${o.gift && o.gift.message ? `<section class="card"><p class="msg" dir="auto">${esc(o.gift.message)}</p><p class="from" dir="auto">— ${esc(o.name)}</p><p class="brand">حكاية · Hikaya</p></section>` : ''}`;
     const w = window.open('', '_blank'); if (!w) { alert('Allow pop-ups to print the slips.'); return; }
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Packing slips ${esc(d.date)}</title><style>
       body{font:15px/1.45 Arial,sans-serif;color:#33211A;margin:0} .slip,.card{page-break-after:always;padding:28px;max-width:640px;margin:0 auto}
@@ -1560,15 +1560,18 @@ import '../../styles/global.css';
   $('letterNew').addEventListener('click', () => { lf().reset(); lv('id').value = ''; });
 
   // ---------- gift cards ----------
+  let giftCards: any[] = [];
   async function loadGiftCards() {
-    const d = await api('/api/admin/giftcards');
+    const d = await api('/api/admin/giftcards'); giftCards = d.giftcards;
     $('gcTable').innerHTML = '<tr><th>Ref</th><th>Amount</th><th>Left</th><th>From → to</th><th>Paid</th><th></th></tr>' + (d.giftcards.map((g: any) => `<tr>
-      <td class="ref">${esc(g.ref)}${g.sent_at ? `<br><small>${esc(g.code)}</small>` : ''}</td><td>${money(g.amount_cents)}</td><td>${g.paid_at ? money(g.balance_cents) : '–'}</td>
+      <td class="ref">${esc(g.ref)}${g.paid_at ? `<br><small>${esc(g.code)}</small>` : ''}</td><td>${money(g.amount_cents)}</td><td>${g.paid_at ? money(g.balance_cents) : '–'}</td>
       <td>${esc(g.buyer_name)} → ${esc(g.to_name)}<br><small>${esc(g.to_email || g.buyer_email)}</small></td>
       <td>${g.paid_at ? `Yes, ${esc(GC_PAY[g.payment] ?? g.payment)}${g.sold_by ? `<br><small>in person, ${esc(g.sold_by)}</small>` : ''}` : `<b>Not yet</b> (${esc(GC_PAY[g.payment] ?? g.payment)})`}</td>
-      <td>${g.paid_at ? '' : `<button type="button" data-gcpaid="${esc(g.ref)}">Money received</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">None sold yet.</td></tr>');
+      <td>${g.paid_at ? `<button type="button" class="linkish" data-gcprint="${esc(g.ref)}">Print</button>` : `<button type="button" data-gcpaid="${esc(g.ref)}">Money received</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">None sold yet.</td></tr>');
   }
   $('gcTable').addEventListener('click', async e => {
+    const pr = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-gcprint]');
+    if (pr) { const g = giftCards.find(x => x.ref === pr.dataset.gcprint); if (g) printGiftCard({ code: g.code, amount_cents: g.amount_cents, to_name: g.to_name, message: null }); return; }
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-gcpaid]');
     if (!b || !confirm(`Mark ${b.dataset.gcpaid} as paid and email the gift card code?`)) return;
     const r = await api(`/api/admin/giftcards/${b.dataset.gcpaid}/paid`, {});
@@ -1584,7 +1587,7 @@ import '../../styles/global.css';
       .ar{direction:rtl;font-family:'Noto Naskh Arabic',serif}.code{font:700 20pt/1 Arial,sans-serif;letter-spacing:3px;color:#A93B28;direction:ltr}
       .amt{font:700 16pt/1 Arial,sans-serif}.m{font-style:italic}@media print{.c{border-color:#ccc}}</style></head><body><div class="c">
       <div class="ar">بطاقة هدية من حكاية</div><div>Hikaya gift card</div>
-      ${g.to_name ? `<div>${esc(g.to_name)}</div>` : ''}${g.message ? `<div class="m">“${esc(g.message)}”</div>` : ''}
+      ${g.to_name ? `<div dir="auto">${esc(g.to_name)}</div>` : ''}${g.message ? `<div class="m" dir="auto">“${esc(g.message)}”</div>` : ''}
       <div class="amt">${money(g.amount_cents)}</div><div class="code">${esc(g.code)}</div>
       <div class="ar">اكتب الرمز في خانة «بطاقة هدية» عند الطلب على hikayacoffee.ca. ما يتبقى من الرصيد يبقى للمرة القادمة.</div>
       <div>Type the code in the "Gift card" box at checkout on hikayacoffee.ca. Whatever is left stays on the card for next time.</div>
@@ -1604,7 +1607,7 @@ import '../../styles/global.css';
 
   // ---------- promotions ----------
   async function loadPromos() {
-    loadGiftCards(); if (ROLE === 'admin') loadLetters();
+    if (ROLE === 'admin') { loadGiftCards(); loadLetters(); }
     api('/api/admin/list').then(l => {
       $('listBox').innerHTML = `<h2 class="h-s">Mailing list</h2><p><b>${l.confirmed}</b> confirmed (${l.from_soon ?? 0} from the Coming soon page) · ${l.waiting} waiting to confirm · ${l.left} unsubscribed</p>${l.cups && Object.keys(l.cups).length ? `<p><b>Which cup is yours?</b> ${[['gulf', 'Gulf'], ['yemen', 'Yemeni'], ['shami', 'Shami'], ['qishr', 'Qishr'], ['unsure', 'Not sure'], ['none', 'No answer']].filter(([k]) => l.cups[k]).map(([k, n]) => `${n} <b>${l.cups[k]}</b>`).join(' · ')}</p>` : ''}
         <p class="muted">People sign up at the bottom of every page or at checkout, tick the consent box, and confirm by email (Canada's anti-spam law). Download the confirmed list to send your letters from Mailchimp, Buttondown or Resend; every letter must include an unsubscribe link.</p>

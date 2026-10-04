@@ -23,24 +23,36 @@ export async function roleFor(email: string): Promise<Role> {
 }
 
 export async function issueCode(email: string) {
-  const recent = await one`SELECT COUNT(*)::int AS n FROM auth_codes WHERE email = ${email} AND created_at > NOW() - INTERVAL '1 hour'`;
-  if ((recent?.n ?? 0) >= 5) throw new HttpError(429, 'too-many', 'Too many codes requested. Try again in an hour.');
   const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
-  await sql`INSERT INTO auth_codes (email, code_hash, expires_at) VALUES (${email}, ${hash(code)}, NOW() + INTERVAL '10 minutes')`;
+  // Insert first, then count: requests sent at the same moment all see each other's rows, so a
+  // burst can't get past the limit the way a count-then-insert could.
+  const row = await one`INSERT INTO auth_codes (email, code_hash, expires_at) VALUES (${email}, ${hash(code)}, NOW() + INTERVAL '10 minutes') RETURNING id`;
+  const recent = await one`SELECT COUNT(*)::int AS n FROM auth_codes WHERE email = ${email} AND created_at > NOW() - INTERVAL '1 hour'`;
+  if ((recent?.n ?? 0) > 5) {
+    await sql`UPDATE auth_codes SET used = TRUE WHERE id = ${row!.id}`;
+    throw new HttpError(429, 'too-many', 'Too many codes requested. Try again in an hour.');
+  }
   return code;
 }
 
 /** Checks and uses up a login code (no session). */
 export async function checkCode(email: string, code: string) {
-  const row = await one`SELECT id, code_hash, attempts FROM auth_codes WHERE email = ${email} AND used = FALSE AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1`;
-  if (!row) throw new HttpError(400, 'expired', 'That code has expired. Ask for a new one.');
-  if (row.attempts >= 5) throw new HttpError(429, 'too-many', 'Too many tries. Ask for a new code.');
-  const ok = /^\d{6}$/.test(code) && timingSafeEqual(Buffer.from(hash(code)), Buffer.from(row.code_hash));
-  if (!ok) {
-    await sql`UPDATE auth_codes SET attempts = attempts + 1 WHERE id = ${row.id}`;
-    throw new HttpError(400, 'wrong-code', 'That code is not right.');
+  // Take one of the five tries in the same statement that checks there is one left, so guesses
+  // sent in parallel can't all be compared before the count goes up.
+  const row = await one`UPDATE auth_codes SET attempts = attempts + 1
+    WHERE id = (SELECT id FROM auth_codes WHERE email = ${email} AND used = FALSE AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1)
+      AND attempts < 5
+    RETURNING id, code_hash`;
+  if (!row) {
+    const live = await one`SELECT 1 AS x FROM auth_codes WHERE email = ${email} AND used = FALSE AND expires_at > NOW() LIMIT 1`;
+    if (live) throw new HttpError(429, 'too-many', 'Too many tries. Ask for a new code.');
+    throw new HttpError(400, 'expired', 'That code has expired. Ask for a new one.');
   }
-  await sql`UPDATE auth_codes SET used = TRUE WHERE id = ${row.id}`;
+  const ok = /^\d{6}$/.test(code) && timingSafeEqual(Buffer.from(hash(code)), Buffer.from(row.code_hash));
+  if (!ok) throw new HttpError(400, 'wrong-code', 'That code is not right.');
+  // One code, one login: if two right answers race, only the first uses it up.
+  const used = await one`UPDATE auth_codes SET used = TRUE WHERE id = ${row.id} AND used = FALSE RETURNING id`;
+  if (!used) throw new HttpError(400, 'expired', 'That code has expired. Ask for a new one.');
 }
 
 export async function verifyCode(email: string, code: string) {
