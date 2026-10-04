@@ -11,6 +11,8 @@ const alt = `${coffee.name[lang]} · ${coffee.size}`;
 const uid = `p${coffee.id.replace(/[^a-z]/g, '')}${Math.random().toString(36).slice(2, 6)}`;
 const BAND: Record<Coffee['fam'], string> = { palm: '#F3CF7E', mountain: '#8C5B33', house: '#3A2620', husk: '#A93B28' };
 const band = BAND[coffee.fam];
+// Long names shrink so they always stay inside the sticker.
+const arSize = Math.min(25, Math.round(25 * 10 / Math.max(10, coffee.name.ar.length)));
 const dots = coffee.spices.length ? coffee.spices.slice(0, 3).map(s => SPICES[s].c) : ['#33211A', '#33211A', '#33211A'];
 const ringFirst = coffee.spices.length === 0 || coffee.spices.length < 3;
 const desc = { palm: ['Gulf-style ground coffee with spices', 'Café moulu à la façon du Golfe, aux épices'], mountain: ['Yemeni-style ground coffee with spices', 'Café moulu à la yéménite, aux épices'], house: ['Shami-style ground coffee', 'Café moulu à la façon du Levant'], husk: ['Dried coffee cherry husk with ginger', 'Cascara séchée au gingembre'] }[coffee.fam];
@@ -56,7 +58,7 @@ for (let r = 0; r < 17; r++) for (let c = 0; c < 8; c++) {
       <path fill="#FFFDF9" d="M1 -16a16 16 0 1 1 -10.5 28.2l-8.5 4 2.6-8.7A16 16 0 0 1 1 -16z" />
       {dots.map((c, i) => <circle cx={-6 + i * 6.5} cy="1" r="2.3" fill={ringFirst && i === 0 ? 'none' : c} stroke={c} stroke-width="1" />)}
     </g>
-    <text x="90" y="98" text-anchor="middle" font-family="El Messiri, serif" font-weight="700" font-size="25" fill="#33211A">{coffee.name.ar}</text>
+    <text x="90" y="98" text-anchor="middle" font-family="El Messiri, serif" font-weight="700" font-size={arSize} fill="#33211A">{coffee.name.ar}</text>
     <text x="90" y="112" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="600" font-size="7.2" letter-spacing="2.6" fill="#33211A">{coffee.name.en.toUpperCase()}</text>
     <text x="90" y="125" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="5.6" fill="#66503F">{desc[0]}</text>
     <text x="90" y="132" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-style="italic" font-size="5.6" fill="#66503F">{desc[1]}</text>

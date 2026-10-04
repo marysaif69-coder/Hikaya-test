@@ -4,6 +4,7 @@ import ProductCard from '../../../components/ProductCard.astro';
 import Pair from '../../../components/Pair.astro';
 import { COFFEES, KITS, PACKS, BOXES, FAMILIES, LINES, type Lang, type CoffeeLine } from '../../../data/products';
 import { path } from '../../../data/i18n';
+import Pouch from '../../../components/Pouch.astro';
 
 export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
 const lang = Astro.params.lang as Lang;
@@ -18,6 +19,12 @@ const others = [
   { id: 'ramadan', items: BOXES.filter(b => b.fam === 'ramadan') },
   { id: 'eid', items: BOXES.filter(b => b.fam === 'eid') },
 ] as const;
+// Step 1 cards: each names everything inside it, so the smaller types are never hidden.
+const PICK_LINE: Record<CoffeeLine, { en: string; ar: string }> = {
+  gulf: { en: 'Pale and golden, from the dallah', ar: 'شقراء وذهبية، من الدلّة' },
+  yemen: { en: 'From the pot, warm with hawaij', ar: 'من الإبريق، دافئة بالحوائج' },
+  shami: { en: 'Powder-fine, with foam, from the rakwa', ar: 'ناعمة برغوتها، من الركوة' },
+};
 const T = {
   bag: { en: 'The bag', ar: 'الكيس' },
   styles: { en: 'Make it the way your family does', ar: 'اصنعها على طريقة أهلك' },
@@ -33,65 +40,70 @@ const T = {
     <Pair lang={lang} size="s" bunn={{ ar: 'من أين نبدأ؟', en: 'Where do we start?' }} tamr={{ ar: 'من الكيس، ثم طريقة أهلك.', en: 'With the bag, then your family’s way.' }} />
   </section>
 
-  <section class="wrap how" aria-labelledby="how-h">
-    <h2 id="how-h" class="sr">{ar ? 'كيف يعمل' : 'How it works'}</h2>
-    <ol>
-      <li><b>{ar ? 'اختر قهوتك' : 'Choose your coffee'}</b><span>{ar ? 'خليجية أو يمنية أو شامية. كل كيس فيه القهوة وبهارها الأساسي فقط.' : 'Gulf, Yemeni or Shami. Each bag holds the coffee and its everyday spice, nothing more.'}</span></li>
-      <li><b>{ar ? 'اصنعها على طريقة أهلك' : 'Make it your family’s way'}</b><span>{ar ? 'نجدية أو قصيمية أو حجازية، حضرمية أو رداعية أو بيضانية: الكيس مع ظروفه، جاهزة معاً.' : 'Najdi, Qassimi or Hijazi; Hadrami, Rada’i or Baydani: the bag with its packs, ready together.'}</span></li>
-      <li><b>{ar ? 'ظرف لوحده حين ينقص' : 'Just the pack, for refills'}</b><span>{ar ? 'عندك كيس في البيت؟ خذ الظرف وحده.' : 'Have a bag at home? Take the pack on its own.'}</span></li>
-    </ol>
-    <a class="btn tamr" href={path(lang, 'find')}>{ar ? 'لست متأكداً؟ ثلاثة أسئلة' : 'Not sure? Three questions'}</a>
+  <!-- Step 1: choose the coffee. Without JavaScript every panel below simply shows. -->
+  <section class="wrap picker" aria-labelledby="pick-h">
+    <h2 id="pick-h" class="step"><span>1</span>{ar ? 'اختر قهوتك' : 'Choose your coffee'}</h2>
+    <div class="pick-cards" role="tablist" aria-labelledby="pick-h">
+      {lines.map(l => (
+        <button type="button" role="tab" class="pick" id={`tab-${l.id}`} aria-controls={l.id} aria-selected="false" data-pick={l.id}>
+          <span class="pick-bag"><Pouch coffee={l.bases[0]} lang={lang} label={false} /></span>
+          <span class="pick-txt">
+            <b>{LINES[l.id].name[lang]}</b>
+            <small>{PICK_LINE[l.id][lang]}</small>
+            <em>{[...l.bases, ...l.styles].map(p => p.name[lang]).join(' · ')}</em>
+          </span>
+        </button>
+      ))}
+    </div>
+    <div class="pick-more" role="tablist" aria-label={ar ? 'خيارات أخرى' : 'More ways in'}>
+      <button type="button" role="tab" class="pill" id="tab-start" aria-controls="start" aria-selected="false" data-pick="start">{ar ? 'جديد عليها؟ ابدأ من هنا' : 'New to it? Start here'}</button>
+      <button type="button" role="tab" class="pill" id="tab-packs" aria-controls="packs" aria-selected="false" data-pick="packs">{ar ? 'عندي كيس: الظرف وحده' : 'I have a bag: just the pack'}</button>
+      <a class="pill ghost" href={path(lang, 'find')}>{ar ? 'لست متأكداً؟ ثلاثة أسئلة' : 'Not sure? Three questions'}</a>
+      <a class="pill ghost" href="#dates">{ar ? 'التمر والصناديق' : 'Dates & boxes'}</a>
+    </div>
   </section>
 
-  <nav class="wrap fam-nav" aria-label={ar ? 'الأقسام' : 'Sections'}>
-    {lines.map(l => <a href={`#${l.id}`}>{FAMILIES[LINES[l.id].fam].name[lang]}</a>)}
-    <a href="#start">{ar ? 'ابدأ من هنا' : 'Start here'}</a>
-    <a href="#packs">{ar ? 'الظرف وحده' : 'Just the pack'}</a>
-    {others.map(g => <a href={`#${g.id}`} data-season={g.id === 'ramadan' || g.id === 'eid' ? g.id : undefined}>{FAMILIES[g.id].name[lang]}</a>)}
-  </nav>
+  <!-- Step 2: the chosen coffee. -->
+  <div class="panels" id="panels">
+    {lines.map(l => (
+      <section class="fam panel" id={l.id} role="tabpanel" aria-labelledby={`tab-${l.id}`} data-panel={l.id}>
+        <div class="wrap">
+          <div class="fam-head">
+            <h2 class="h-m">{LINES[l.id].name[lang]}</h2>
+            <p class="muted">{LINES[l.id].line[lang]}</p>
+          </div>
+          <h3 class="step"><span>2</span>{l.styles.length ? T.styles[lang] : (ar ? 'اختر كيسك' : 'Choose your bag')}</h3>
+          {l.styles.length > 0 && <p class="muted step-note">{T.stylesNote[lang]}</p>}
+          {l.styles.length > 0 && <div class="grid">{l.styles.map(p => <ProductCard p={p} lang={lang} />)}</div>}
+          {l.styles.length > 0 && <h4 class="sub-h">{ar ? 'أو الكيس وحده' : 'Or the bag on its own'}</h4>}
+          <div class="grid">{l.bases.map(p => <ProductCard p={p} lang={lang} />)}</div>
+        </div>
+      </section>
+    ))}
 
-  {lines.map((l, i) => (
-    <section class={`fam ${i % 2 ? 'alt' : ''}`} id={l.id} aria-labelledby={`h-${l.id}`} data-group>
+    <section class="fam panel start" id="start" role="tabpanel" aria-labelledby="tab-start" data-panel="start">
       <div class="wrap">
         <div class="fam-head">
-          <h2 id={`h-${l.id}`} class="h-m">{LINES[l.id].name[lang]}</h2>
-          <p class="muted">{LINES[l.id].line[lang]}</p>
+          <h2 class="h-m">{ar ? 'جديد عليها؟ ابدأ من هنا' : 'New to it? Start here'}</h2>
+          <p class="muted">{ar ? 'كيس واحد مع ظروف صغيرة: جرّب كل طريقة في بيتك، ثم اختر طريقتك.' : 'One bag with small packs: try each style at home, then choose yours.'}</p>
         </div>
-        <h3 class="step"><span>1</span>{T.bag[lang]}</h3>
-        <div class="grid">{l.bases.map(p => <ProductCard p={p} lang={lang} />)}</div>
-        {l.styles.length > 0 && (
-          <>
-            <h3 class="step"><span>2</span>{T.styles[lang]}</h3>
-            <p class="muted step-note">{T.stylesNote[lang]}</p>
-            <div class="grid">{l.styles.map(p => <ProductCard p={p} lang={lang} />)}</div>
-          </>
-        )}
+        <div class="grid">{discovery.map(p => <ProductCard p={p} lang={lang} />)}</div>
       </div>
     </section>
-  ))}
 
-  <section class="fam start" id="start" aria-labelledby="h-start" data-group>
-    <div class="wrap">
-      <div class="fam-head">
-        <h2 id="h-start" class="h-m">{ar ? 'جديد عليها؟ ابدأ من هنا' : 'New to it? Start here'}</h2>
-        <p class="muted">{ar ? 'كيس واحد مع ظروف صغيرة: جرّب كل طريقة في بيتك، ثم اختر طريقتك.' : 'One bag with small packs: try each style at home, then choose yours.'}</p>
+    <section class="fam panel" id="packs" role="tabpanel" aria-labelledby="tab-packs" data-panel="packs">
+      <div class="wrap">
+        <div class="fam-head">
+          <h2 class="h-m">{ar ? 'الظرف وحده' : 'Just the pack'}</h2>
+          <p class="muted">{ar ? 'للبيت الذي عنده كيس. كل ظرف مكتوب عليه الكيس الذي صُنع له.' : 'For the house that already has a bag. Each pack says which bag it is made for.'}</p>
+        </div>
+        <div class="grid">{PACKS.map(p => <ProductCard p={p} lang={lang} />)}</div>
       </div>
-      <div class="grid">{discovery.map(p => <ProductCard p={p} lang={lang} />)}</div>
-    </div>
-  </section>
-
-  <section class="fam alt" id="packs" aria-labelledby="h-packs" data-group>
-    <div class="wrap">
-      <div class="fam-head">
-        <h2 id="h-packs" class="h-m">{ar ? 'الظرف وحده' : 'Just the pack'}</h2>
-        <p class="muted">{ar ? 'للبيت الذي عنده كيس. كل ظرف مكتوب عليه الكيس الذي صُنع له.' : 'For the house that already has a bag. Each pack says which bag it is made for.'}</p>
-      </div>
-      <div class="grid">{PACKS.map(p => <ProductCard p={p} lang={lang} />)}</div>
-    </div>
-  </section>
+    </section>
+  </div>
 
   {others.map((g, gi) => (
-    <section class={`fam ${gi % 2 ? 'alt' : ''}`} id={g.id} aria-labelledby={`h-${g.id}`} data-group data-season={g.id === 'ramadan' || g.id === 'eid' ? g.id : undefined}>
+    <section class={`fam ${gi % 2 ? '' : 'alt'}`} id={g.id} aria-labelledby={`h-${g.id}`} data-group data-season={g.id === 'ramadan' || g.id === 'eid' ? g.id : undefined}>
       <div class="wrap">
         <div class="fam-head">
           <h2 id={`h-${g.id}`} class="h-m">{FAMILIES[g.id].name[lang]}</h2>
@@ -103,27 +115,55 @@ const T = {
   ))}
 </Base>
 
+<script>
+  // One coffee at a time: the chosen card opens its panel. The address keeps the choice (#yemen),
+  // so links from the homepage, the brew guide and product pages open the right one.
+  const tabs = [...document.querySelectorAll<HTMLButtonElement>('[data-pick]')];
+  const panels = [...document.querySelectorAll<HTMLElement>('[data-panel]')];
+  const ids = tabs.map(t => t.dataset.pick!);
+  document.getElementById('panels')!.classList.add('js');
+  function choose(id: string, scroll: boolean) {
+    tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.pick === id)));
+    panels.forEach(p => { p.hidden = p.dataset.panel !== id; });
+    history.replaceState(null, '', `#${id}`);
+    if (scroll) document.getElementById(id)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  }
+  tabs.forEach(t => t.addEventListener('click', () => choose(t.dataset.pick!, true)));
+  const fromHash = () => { const h = location.hash.slice(1); if (ids.includes(h)) { choose(h, true); return true; } return false; };
+  if (!fromHash()) { tabs.forEach(t => t.setAttribute('aria-selected', 'false')); panels.forEach(p => { p.hidden = p.dataset.panel !== 'gulf'; }); tabs[0].setAttribute('aria-selected', 'true'); }
+  addEventListener('hashchange', fromHash);
+</script>
+
 <style>
   .shop-head { display: grid; grid-template-columns: 1.3fr .7fr; gap: 24px 64px; align-items: end; padding-block: clamp(40px, 6vw, 80px) 28px; }
   .shop-head > div { display: grid; gap: 14px; }
   @media (max-width: 860px) { .shop-head { grid-template-columns: 1fr; } }
-  .how { display: grid; gap: 18px; padding-bottom: 28px; }
-  .how ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; counter-reset: s; }
-  @media (max-width: 760px) { .how ol { grid-template-columns: 1fr; } }
-  .how li { counter-increment: s; display: grid; gap: 4px; padding: 16px 18px; border-radius: 22px; border-bottom-left-radius: 6px; background: var(--sheet); }
-  .how li b::before { content: counter(s) '  '; color: var(--tamr); }
-  .how li span { font-size: 15px; color: var(--ink-2); }
-  .how .btn { justify-self: start; }
-  .fam-nav { display: flex; gap: 8px; flex-wrap: wrap; padding-bottom: 28px; position: sticky; top: 72px; z-index: 5; background: var(--paper); padding-top: 12px; }
-  .fam-nav a { text-decoration: none; font-weight: 500; font-size: 15px; padding: 8px 14px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--line); }
-  .fam-nav a:hover { box-shadow: inset 0 0 0 1.5px var(--bunn); }
-  @media (max-width: 760px) { .fam-nav { top: 64px; flex-wrap: nowrap; overflow-x: auto; } .fam-nav a { white-space: nowrap; } }
-  .fam { padding-block: 48px 64px; scroll-margin-top: 140px; }
+  .picker { display: grid; gap: 16px; padding-bottom: 36px; }
+  .pick-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 760px) { .pick-cards { grid-template-columns: 1fr; gap: 10px; } }
+  .pick { display: grid; grid-template-columns: 74px 1fr; gap: 14px; align-items: center; text-align: start; border: 0; padding: 14px 16px; border-radius: 26px; border-bottom-left-radius: 6px; background: var(--sheet); box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink); cursor: pointer; transition: box-shadow .15s, transform .15s var(--ease); }
+  .pick:hover { box-shadow: inset 0 0 0 1.5px var(--bunn); }
+  .pick:active { transform: scale(.98); }
+  .pick[aria-selected='true'] { box-shadow: inset 0 0 0 2.5px var(--bunn); background: color-mix(in srgb, var(--khalal) 14%, var(--sheet)); }
+  .pick:focus-visible { outline: 2.5px solid var(--tamr); outline-offset: 3px; }
+  .pick-bag { width: 74px; }
+  .pick-txt { display: grid; gap: 3px; }
+  .pick-txt b { font-family: var(--display); font-size: 21px; }
+  .pick-txt small { color: var(--ink-2); font-size: 14px; }
+  .pick-txt em { font-style: normal; font-size: 13px; font-weight: 600; color: var(--tamr); }
+  @media (max-width: 760px) { .pick { grid-template-columns: 52px 1fr; padding: 10px 14px; } .pick-bag { width: 52px; } }
+  .pick-more { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill { border: 0; background: var(--paper); color: var(--ink); font: inherit; font-weight: 600; font-size: 15px; padding: 9px 15px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--line); text-decoration: none; cursor: pointer; }
+  .pill:hover { box-shadow: inset 0 0 0 1.5px var(--bunn); }
+  .pill[aria-selected='true'] { background: var(--bunn); color: var(--paper); box-shadow: none; }
+  .pill.ghost { font-weight: 500; color: var(--ink-2); }
+  .fam { padding-block: 40px 64px; scroll-margin-top: 90px; }
+  .panel { background: var(--paper-2); }
   .fam.alt { background: var(--paper-2); }
-  .fam-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 24px; margin-bottom: 26px; }
-  .step { display: flex; align-items: center; gap: 10px; font-size: 19px; margin: 8px 0 16px; }
-  .step span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--bunn); color: var(--paper); font-size: 15px; }
-  .grid + .step { margin-top: 44px; }
+  .fam-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 24px; margin-bottom: 22px; }
+  .step { display: flex; align-items: center; gap: 10px; font-size: 21px; margin: 8px 0 16px; }
+  .step span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--bunn); color: var(--paper); font-size: 15px; flex: none; }
+  .sub-h { font-size: 17px; margin: 40px 0 16px; color: var(--ink-2); }
   .step-note { margin: -8px 0 18px; max-width: 70ch; font-size: 15px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 36px 24px; }
 </style>
