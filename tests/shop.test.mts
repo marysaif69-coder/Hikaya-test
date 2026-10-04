@@ -775,7 +775,10 @@ const asRes: Response = await auth(new Request(`${H}/api/auth/as/verify`, { meth
 const asCk = asRes.headers.get('set-cookie')!.split(';')[0];
 const admAs = `${adm}; ${asCk}`;
 const meAs = (await call(auth, '/api/me', { cookie: admAs })).data.user;
-assert.equal(meAs.as.name, 'Maryam S'); assert.equal(meAs.role, 'admin'); assert.equal(meAs.login, 'maryam@hikayacoffee.ca'); ok('"Who\'s working?": confirmed with the code, the person acts with the login\'s rights');
+assert.equal(meAs.as.name, 'Maryam S'); assert.equal(meAs.role, 'staff'); assert.equal(meAs.login, 'maryam@hikayacoffee.ca'); ok('"Who\'s working?": confirmed with the code, the person acts with their own role (a helper is a helper)');
+assert.equal((await call(admin, '/api/admin/giftcards', { cookie: admAs })).status, 403); assert.equal((await call(admin, '/api/admin/giftcards', { cookie: adm })).status, 200);
+const adminsWas = process.env.ADMIN_EMAILS; process.env.ADMIN_EMAILS = `${adminsWas},maryam.s@example.com`;
+assert.equal((await call(auth, '/api/me', { cookie: admAs })).data.user.role, 'admin'); process.env.ADMIN_EMAILS = adminsWas; ok('a helper picked on the owners\' login gets no owner rights (gift cards, refunds, settings)');
 assert.equal((await call(auth, '/api/me', { cookie: `${adm}; hk_as=forged-token` })).data.user.as, undefined); ok('a made-up token does nothing');
 const bad = await call(auth, '/api/auth/as', { cookie: ahmed, body: { id: maryamS.id } });
 assert.equal(bad.status, 404); ok("nobody can pick a person from another login");

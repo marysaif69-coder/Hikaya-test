@@ -56,3 +56,7 @@ the server refuses the order until a price is set:
   T3A–T3S; list in `CALGARY_FSAS`, `netlify/lib/orders.ts`). Before this, any T1/T2/T3 code passed,
   including Lethbridge, Medicine Hat, Okotoks and Canmore. Waiting on the owners: should T1X
   (Chestermere) or T3Z (Springbank) be added? Both are refused until then.
+- Shared login, later (round 1b item 2): hello@ is for the owners only (4 Oct 2026); helpers, packers
+  and drivers use their own email. A shared invite is tied to the login the owner is using when they
+  add someone, so add shared people while logged in as hello@. Revisit (one configured shared
+  address, finer permissions) when the team grows.

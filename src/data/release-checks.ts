@@ -6,6 +6,12 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: '1b-6', title: 'Round 1b · batch 6: shared login rights', date: '2026-10-04',
+    checks: [
+      { id: 'shared-role', text: 'On hello@, pick a person who was added as Helper: Refunds, Settings, Gift cards and Numbers are not there. Pick an owner (their own email is an owner email): everything is there.', links: [{ label: 'Desk', href: '/admin/' }] },
+    ],
+  },
+  {
     id: '1b-5', title: 'Round 1b · batch 5: desk fixes, packers who drive (end of round 1b)', date: '2026-10-04',
     checks: [
       { id: 'packer-drives', text: 'Team: add a test Packer with “Also drives”. In the team app they fill in licence and insurance, then see the packing list and their own deliveries only.', links: [{ label: 'Desk', href: '/admin/' }, { label: 'Team app', href: '/admin/driver/' }] },

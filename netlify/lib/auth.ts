@@ -99,9 +99,15 @@ export async function session(req: Request): Promise<Session | null> {
   const role = await roleFor(row.email);
   const asT = cookie(req, AS_COOKIE);
   if (asT && role !== 'customer') {
-    const m = await one`SELECT m.id, m.email, m.name FROM as_tokens a JOIN team_members m ON m.id = a.member_id
+    const m = await one`SELECT m.id, m.email, m.name, m.role FROM as_tokens a JOIN team_members m ON m.id = a.member_id
       WHERE a.token_hash = ${hash(asT)} AND a.expires_at > NOW() AND a.login = ${row.email} AND m.shared AND m.login_email = ${row.email} AND m.status <> 'off'`;
-    if (m) return { email: m.email, role, login: row.email, as: { id: m.id, name: m.name ?? 'Team' } };
+    if (m) {
+      // The person picked gets their own role, never more than the login has: an owner if their own
+      // email is an owner's (ADMIN_EMAILS), otherwise what they were added as (helper, packer, driver).
+      const own: Role = isAdminEmail(m.email) ? 'admin' : m.role === 'helper' ? 'staff' : m.role === 'packer' ? 'packer' : 'driver';
+      const RANK: Record<Role, number> = { customer: 0, driver: 1, packer: 1, staff: 2, admin: 3 };
+      return { email: m.email, role: RANK[own] <= RANK[role] ? own : role, login: row.email, as: { id: m.id, name: m.name ?? 'Team' } };
+    }
   }
   return { email: row.email, role, login: row.email };
 }
