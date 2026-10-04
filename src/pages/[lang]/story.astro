@@ -17,12 +17,6 @@ const LOGO = fs.readFileSync('public/brand/logo.svg', 'utf8');
 const [lTamr, lSeed, lBunn, lGroove, lDots] = [...LOGO.matchAll(/<path fill="(#[0-9A-F]+)" d="([^"]+)"\/>/g)].map(m => m[2]);
 const lVb = LOGO.match(/viewBox="([^"]+)"/)![1];
 const lG = LOGO.match(/<g transform="([^"]+)">/)![1];
-const PARTS = [
-  { n: 1, c: '#33211A', at: [76, 22], name: { ar: 'بُن · القهوة', en: 'Bunn · the coffee' }, d: { ar: 'الفقاعة الداكنة، عالية إلى اليمين. بلون البن المحمّص. يتكلم أولاً، كما تُصبّ القهوة أولاً للضيف.', en: 'The dark bubble, high on the right, the colour of roasted coffee. He speaks first, the way coffee is poured first for a guest.' } },
-  { n: 2, c: '#A93B28', at: [20, 80], name: { ar: 'تمر · التمرة', en: 'Tamr · the date' }, d: { ar: 'الفقاعة الحمراء، منخفضة إلى اليسار. بلون التمر الناضج. تردّ دائماً، كما تكون التمرة بجانب الفنجان.', en: 'The red bubble, low on the left, the colour of a ripe date. She always answers, the way a date sits beside the cup.' } },
-  { n: 3, c: '#CF9C0C', at: [50, 38], name: { ar: 'الحبّة الذهبية · الخلال', en: 'The gold bean · khalal' }, d: { ar: 'حيث تلتقي الفقاعتان: حبّة بن بلون الخلال، أي التمر في مرحلته الذهبية الأولى. هي الحكاية التي بينهما.', en: 'Where the bubbles meet: a coffee bean in the colour of khalal, the date at its first golden stage. It is the story they share.' } },
-  { n: 4, c: '#F5EFE3', at: [27, 52], name: { ar: 'النقاط الثلاث', en: 'The three dots' }, d: { ar: 'تمر ما زالت تكتب. الحديث لم ينتهِ: وللحكاية بقية.', en: 'Tamr is still typing. The conversation goes on: وللحكاية بقية, and the story continues.' } },
-];
 const STAGES = [
   { t: { en: 'Now', ar: 'الآن' }, d: { en: 'Setting up in Calgary: roasting, tasting, packaging.', ar: 'نؤسس في كالغاري: تحميص وتذوق وتغليف.' }, on: true },
   { t: { en: 'December 2026', ar: 'ديسمبر ٢٠٢٦' }, d: { en: 'Coming soon: the waiting list opens, and the coffee story with it.', ar: 'قريباً: تفتح قائمة الانتظار، ومعها حكاية القهوة.' }, on: false },
@@ -32,31 +26,30 @@ const STAGES = [
 ];
 ---
 <Base lang={lang} title={ar ? 'حكايتنا' : 'Our story'} current="story">
-  <section class="wrap s-head">
-    <div class="stack" style="--gap:18px">
-      <h1 class="h-xl">{ar ? 'حكاية' : 'Hikaya means “a story”.'}</h1>
-      <p class="lead">{ar ? 'شعارنا حوار. بُن، القهوة، يتكلم أولاً. تمر تردّ. وحيث تلتقي فقاعتاهما بذرة بلون الخلال: الحكاية التي بينهما.' : 'Our logo is a conversation. Bunn, the coffee, speaks first. Tamr, the date, answers. Where their bubbles meet sits a seed the colour of khalal: the story they share.'}</p>
-    </div>
-  </section>
-
-  <!-- Reading the logo: what each piece means. -->
-  <section class="sec wrap read" aria-labelledby="read-h">
-    <h2 id="read-h" class="h-l">{ar ? 'قراءة الشعار' : 'Reading the logo'}</h2>
-    <div class="read-grid">
-      <div class="read-art">
-        <svg viewBox={lVb} role="img" aria-label={ar ? 'شعار حكاية' : 'The Hikaya logo'}><g transform={lG}><path fill="#A93B28" d={lTamr} /><path fill="#CF9C0C" d={lSeed} /><path fill="#33211A" d={lBunn} /><path fill="#33211A" d={lGroove} /><path fill="#F5EFE3" d={lDots} /></g></svg>
-        {PARTS.map(p => <span class="pin" style={`left:${p.at[0]}%;top:${p.at[1]}%`} aria-hidden="true">{ar ? ['١', '٢', '٣', '٤'][p.n - 1] : p.n}</span>)}
-      </div>
-      <ol class="read-list">
-        {PARTS.map(p => (
-          <li>
-            <span class="pin static" aria-hidden="true">{ar ? ['١', '٢', '٣', '٤'][p.n - 1] : p.n}</span>
-            <div><h3><i style={`background:${p.c}`}></i>{p.name[lang]}</h3><p>{p.d[lang]}</p></div>
-          </li>
-        ))}
+  <!-- The logo tells the story itself: Bunn speaks, Tamr answers, the hikaya happens where they meet. -->
+  <section class="wrap s-hero" aria-labelledby="s-h">
+    <div class="s-copy">
+      <h1 id="s-h" class="h-xl">{ar ? 'حكاية' : 'Hikaya means “a story”.'}</h1>
+      <p class="lead">{ar ? 'وكل حكاية تحتاج اثنين.' : 'And every story needs two.'}</p>
+      <ol class="beats">
+        <li class="b-bunn"><b>{ar ? 'بُن يتكلم أولاً.' : 'Bunn speaks first.'}</b> {ar ? 'القهوة، تُصبّ أولاً للضيف.' : 'The coffee, poured first for a guest.'}</li>
+        <li class="b-tamr"><b>{ar ? 'تمر تردّ.' : 'Tamr answers.'}</b> {ar ? 'التمرة، دائماً بجانب الفنجان.' : 'The date, always beside the cup.'}</li>
+        <li class="b-seed"><b>{ar ? 'وحيث يلتقيان، تحدث الحكاية.' : 'Where they meet, the hikaya happens.'}</b> {ar ? 'حبّة بن بلون الخلال، أول ذهب التمر.' : 'A coffee bean in the gold of khalal, the date’s first colour.'}</li>
+        <li class="b-dots"><b>{ar ? 'وتمر ما زالت تكتب…' : 'And Tamr is still typing…'}</b> <span lang="ar" dir="rtl">وللحكاية بقية</span>{!ar && ', the story goes on.'}</li>
       </ol>
     </div>
-    <p class="muted read-colours">{ar ? 'الألوان من الفاكهة والمشروب نفسه: البن المحمّص، والتمر الناضج، والخلال الذهبي، وورق كريمي كالحليب في القهوة.' : 'The colours come from the fruit and the drink themselves: roasted coffee, ripe date, golden khalal, and a cream paper like milk in coffee.'}</p>
+    <div class="s-logo" role="img" aria-label={ar ? 'شعار حكاية: فقاعة بُن الداكنة وفقاعة تمر الحمراء، وبينهما حبّة ذهبية' : 'The Hikaya logo: Bunn’s dark bubble and Tamr’s red bubble, with a gold bean where they meet'}>
+      <svg viewBox={lVb} aria-hidden="true"><g transform={lG}>
+        <path class="p-tamr" fill="#A93B28" d={lTamr} />
+        <path class="p-bunn" fill="#33211A" d={lBunn} />
+        <path class="p-seed" fill="#CF9C0C" d={lSeed} />
+        <path class="p-seed" fill="#33211A" d={lGroove} />
+        <path class="p-dots" fill="#F5EFE3" d={lDots} />
+      </g></svg>
+      <p class="say say-bunn" aria-hidden="true"><span lang="ar">بُن</span><small>{ar ? 'القهوة' : 'the coffee'}</small></p>
+      <p class="say say-tamr" aria-hidden="true"><span lang="ar">تمر</span><small>{ar ? 'التمرة' : 'the date'}</small></p>
+      <p class="here" dir="ltr" aria-hidden="true"><span dir="auto">{ar ? 'هنا تحدث الحكاية' : 'The hikaya happens here'}</span></p>
+    </div>
   </section>
 
   <section class="chars">
@@ -122,28 +115,42 @@ const STAGES = [
 </Base>
 
 <style>
-  .read { display: grid; gap: 24px; }
-  .read-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: clamp(24px, 5vw, 64px); align-items: center; }
-  @media (max-width: 760px) { .read-grid { grid-template-columns: 1fr; } }
-  .read-art { position: relative; max-width: 420px; width: 100%; justify-self: center; }
-  .read-art svg { width: 100%; height: auto; display: block; }
-  .pin { position: absolute; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--paper); color: var(--bunn); font-weight: 700; font-size: 15px; box-shadow: 0 0 0 2px var(--bunn); }
-  .pin.static { position: static; transform: none; flex: none; }
-  .read-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
-  .read-list li { display: flex; gap: 14px; align-items: flex-start; }
-  .read-list h3 { display: flex; align-items: center; gap: 8px; font-size: 19px; margin: 2px 0 4px; }
-  .read-list h3 i { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(51, 33, 26, .25); }
-  .read-list p { margin: 0; color: var(--ink-2); }
-  .read-colours { max-width: 70ch; }
   .why { display: grid; gap: 18px; }
   .bt-link { margin-top: 20px; }
   .why-note { max-width: 680px; display: grid; gap: 14px; padding: 24px 26px; border-radius: 28px; border-bottom-right-radius: 6px; background: var(--sheet); font-size: 18px; }
   .why-note p { margin: 0; }
   .why-note .sign { font-family: var(--display); font-weight: 700; color: var(--tamr); }
-  .s-head > * { max-width: 900px; }
-  .s-head { display: grid; grid-template-columns: 1fr; gap: clamp(24px, 5vw, 80px); align-items: center; padding-block: clamp(48px, 7vw, 104px); }
-  .s-logo { width: 100%; max-width: 300px; }
-  @media (max-width: 760px) { .s-head { grid-template-columns: 1fr; } .s-logo { max-width: 160px; } }
+  .s-hero { display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(28px, 5vw, 72px); align-items: center; padding-block: clamp(32px, 5vw, 72px); }
+  @media (max-width: 820px) { .s-hero { grid-template-columns: 1fr; } .s-logo { order: -1; max-width: 460px; } }
+  .s-copy { display: grid; gap: 14px; }
+  .s-copy h1 { font-size: clamp(44px, 5.4vw, 80px); }
+  .beats { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 14px; font-size: 18px; color: var(--ink-2); }
+  .beats li { padding-inline-start: 18px; border-inline-start: 4px solid; }
+  .beats b { display: block; font-family: var(--display); font-size: 22px; color: var(--ink); }
+  .beats .b-bunn { border-color: #33211A; } .beats .b-tamr { border-color: #A93B28; } .beats .b-seed { border-color: #CF9C0C; } .beats .b-dots { border-color: var(--line); }
+  .s-logo { position: relative; width: 100%; justify-self: center; container-type: inline-size; }
+  .s-logo svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .say { position: absolute; margin: 0; transform: translate(-50%, -50%); display: grid; justify-items: center; color: #F5EFE3; line-height: 1.1; text-align: center; }
+  .say span { font-family: var(--display); font-weight: 700; font-size: 12cqi; }
+  .say small { font: 600 3.6cqi/1.2 var(--body); opacity: .85; }
+  .say-bunn { left: 70%; top: 38%; }
+  .say-tamr { left: 25%; top: 77%; }
+  .say-tamr span { font-size: 10cqi; } .say-tamr small { font-size: 3.2cqi; }
+  .here { position: absolute; margin: 0; left: 6%; top: 2%; display: grid; justify-items: start; gap: 0; }
+  .here span { font: 700 3.6cqi/1.2 var(--body); background: #CF9C0C; color: #33211A; padding: .5em .9em; border-radius: 999px; border-bottom-right-radius: 4px; white-space: nowrap; }
+  .here::after { content: ''; width: 2px; height: 14cqi; margin-inline-start: 28cqi; background: #CF9C0C; transform-origin: top; transform: rotate(-38deg); }
+  @media (prefers-reduced-motion: no-preference) {
+    .p-tamr, .p-bunn { transform-box: fill-box; transform-origin: center; animation: pop .7s cubic-bezier(.2, .9, .3, 1.2) both; }
+    .p-bunn { animation-delay: .15s; } .p-tamr { animation-delay: .9s; }
+    .p-seed { animation: rise .6s ease-out 1.7s both; }
+    .p-dots { animation: rise .4s ease-out 2.6s both; }
+    .say-bunn { animation: rise .5s ease-out .5s both; } .say-tamr { animation: rise .5s ease-out 1.2s both; }
+    .here { animation: rise .6s ease-out 2.1s both; }
+    .beats li { animation: rise .6s ease-out both; }
+    .b-bunn { animation-delay: .5s; } .b-tamr { animation-delay: 1.2s; } .b-seed { animation-delay: 2.1s; } .b-dots { animation-delay: 2.7s; }
+  }
+  @keyframes pop { from { opacity: 0; transform: scale(.6); } }
+  @keyframes rise { from { opacity: 0; translate: 0 8px; } }
   .chars { padding-bottom: 24px; }
   .c-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   @media (max-width: 760px) { .c-grid { grid-template-columns: 1fr; } }
