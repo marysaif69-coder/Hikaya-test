@@ -191,16 +191,16 @@
       "ar": "مخملية · بهار دافئ · زعفران"
     },
     "notes": {
-      "en": "Gulf coffee with the Qassim spice blend and the saffron packet. Add your own milk as you make it.",
-      "ar": "قهوة خليجية مع خلطة البهار القصيمية وظرف الزعفران. وتضيف حليبك عند التحضير."
+      "en": "Gulf coffee with the Qassim spice blend and the saffron packet. Add evaporated milk as you make it (we tell you how much).",
+      "ar": "قهوة خليجية مع خلطة البهار القصيمية وظرف الزعفران. وتضيف الحليب المبخّر عند التحضير (ونخبرك بالمقدار)."
     },
     "story": {
-      "en": "The Qassim way: the same pale coffee with warm spice, and milk added at home for a velvety cup.",
-      "ar": "على طريقة القصيم: القهوة الشقراء نفسها بدفء البهار، ويُضاف الحليب في البيت لقوام مخملي."
+      "en": "The Qassim way: the same pale coffee with warm spice, and evaporated milk added at home for a velvety cup.",
+      "ar": "على طريقة القصيم: القهوة الشقراء نفسها بدفء البهار، ويُضاف الحليب المبخّر في البيت لقوام مخملي."
     },
     "bunn": {
-      "en": "Add your milk. I’ll do the rest.",
-      "ar": "أضف حليبك، وأنا أكمل الباقي."
+      "en": "Add the evaporated milk. I’ll do the rest.",
+      "ar": "أضف الحليب المبخّر، وأنا أكمل الباقي."
     },
     "why": {
       "en": "Sukkari, from Qassim too.",
@@ -383,12 +383,12 @@
       "ar": "خلطة قصيمية"
     },
     "notes": {
-      "en": "The Qassimi spice blend for Gulf coffee. Pour it into the bag and shake; the saffron goes in the serving dallah at the end, and you add your own milk when you make each pot.",
-      "ar": "خلطة البهار القصيمية للقهوة الخليجية. اسكبها في الكيس ورجّه؛ والزعفران يوضع في دلّة التقديم في النهاية، وتضيف حليبك عند تحضير كل إبريق."
+      "en": "The Qassimi spice blend for Gulf coffee. Pour it into the bag and shake; the saffron goes in the serving dallah at the end, and you add evaporated milk when you make each pot.",
+      "ar": "خلطة البهار القصيمية للقهوة الخليجية. اسكبها في الكيس ورجّه؛ والزعفران يوضع في دلّة التقديم في النهاية، وتضيف الحليب المبخّر عند تحضير كل إبريق."
     },
     "contents": {
-      "en": "Qassimi spices. No milk: you add your own. [TBD: full list]",
-      "ar": "بهارات قصيمية. بلا حليب: تضيف حليبك بنفسك. [يُحدد لاحقاً: القائمة الكاملة]"
+      "en": "Qassimi spices. No milk: you add evaporated milk. [TBD: full list]",
+      "ar": "بهارات قصيمية. بلا حليب: تضيف الحليب المبخّر بنفسك. [يُحدد لاحقاً: القائمة الكاملة]"
     }
   },
   "pack-hijazi": {

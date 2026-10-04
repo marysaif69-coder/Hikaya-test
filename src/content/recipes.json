@@ -1,12 +1,12 @@
 {
   "palm": {
     "title": {
-      "en": "Gulf coffee in the dallah",
-      "ar": "القهوة الخليجية في الدلّة"
+      "en": "Gulf coffee, served from the dallah",
+      "ar": "القهوة الخليجية، تُقدَّم من الدلّة"
     },
     "vessel": {
-      "en": "Dallah or small pot",
-      "ar": "دلّة أو إبريق صغير"
+      "en": "A small pot to brew; a dallah (or a thermos) to serve",
+      "ar": "إبريق صغير للتحضير، ودلّة (أو ترمس) للتقديم"
     },
     "yields": {
       "en": "About 8 small cups",
@@ -21,14 +21,14 @@
       },
       {
         "t": {
-          "en": "Boil 500 ml of water.",
-          "ar": "اغلِ ٥٠٠ مل من الماء."
+          "en": "Boil 500 ml of water in a small pot.",
+          "ar": "اغلِ ٥٠٠ مل من الماء في إبريق صغير."
         }
       },
       {
         "t": {
-          "en": "Add the coffee: [TBD] g for this pot. From a tasting box, empty one small pack into the pot with the coffee and keep the others sealed. For Qassimi, add your own milk ([TBD] ml; when it goes in [TBD]). Simmer gently.",
-          "ar": "أضف القهوة: [يُحدد لاحقاً] غ لهذا الإبريق. ومن علبة التذوق، أفرغ ظرفاً صغيراً واحداً في الإبريق مع القهوة، وأبقِ الباقي مختوماً. وللقصيمية أضف حليبك ([يُحدد لاحقاً] مل، وموعد إضافته [يُحدد لاحقاً]). واتركها تغلي بهدوء."
+          "en": "Add the coffee: [TBD] g for this pot. From a tasting box, empty one small pack into the pot with the coffee and keep the others sealed. For Qassimi, add evaporated milk ([TBD] ml; when it goes in [TBD]). Simmer gently.",
+          "ar": "أضف القهوة: [يُحدد لاحقاً] غ لهذا الإبريق. ومن علبة التذوق، أفرغ ظرفاً صغيراً واحداً في الإبريق مع القهوة، وأبقِ الباقي مختوماً. وللقصيمية أضف الحليب المبخّر ([يُحدد لاحقاً] مل، وموعد إضافته [يُحدد لاحقاً]). واتركها تغلي بهدوء."
         },
         "secs": 600
       },
@@ -47,8 +47,8 @@
       }
     ],
     "serve": {
-      "en": "Pour a third of the small cup, never to the rim. Clear and golden, no foam (Qassimi is velvety with the milk). A date beside it. Shake the cup when you have had enough.",
-      "ar": "املأ ثلث الفنجان فقط، لا إلى الحافة. صافية وذهبية بلا رغوة (والقصيمية مخملية بالحليب). وبجانبها تمرة. هزّ الفنجان حين تكتفي."
+      "en": "Pour a third of the small cup, never to the rim. Clear and golden, no foam (Qassimi is velvety with the evaporated milk). A date beside it. Shake the cup when you have had enough.",
+      "ar": "املأ ثلث الفنجان فقط، لا إلى الحافة. صافية وذهبية بلا رغوة (والقصيمية مخملية بالحليب المبخّر). وبجانبها تمرة. هزّ الفنجان حين تكتفي."
     }
   },
   "mountain": {

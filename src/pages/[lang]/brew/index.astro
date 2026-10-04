@@ -23,13 +23,13 @@ const FAMS = [
 const takes = (f: string) => {
   const kits = KITS.filter(k => k.fam === f && !k.discovery).map(k => ({
     id: k.id, name: k.name[lang],
-    adds: k.parts.map(x => packOf(x.id)!.name[lang]).join(' + ') + (k.id === 'qassimi' ? L(' (and your own milk in each pot)', ' (وحليبك في كل إبريق)') : ''),
+    adds: k.parts.map(x => packOf(x.id)!.name[lang]).join(' + ') + (k.id === 'qassimi' ? L(' (and evaporated milk in each pot)', ' (والحليب المبخّر في كل إبريق)') : ''),
   }));
   const own = f === 'mountain' ? COFFEES.filter(c => c.id === 'jubani').map(c => ({ id: c.id, name: c.name[lang], adds: L('Its own bag: brew it like Yemeni qahwa, nothing to add', 'كيس قائم بذاته: حضّره كالقهوة اليمنية، بلا إضافات') })) : [];
   return kits.length ? [...kits, ...own, { id: 'plain', name: L('Nothing added', 'بدون إضافات'), adds: L('Just the coffee', 'القهوة وحدها') }] : [];
 };
 ---
-<Base lang={lang} title={ar ? 'طريقة التحضير' : 'How to brew'} current="brew" description={ar ? 'كيف تحضّر قهوة حكاية: الدلّة، الإبريق اليمني، الركوة، والقشر.' : 'How to brew Hikaya coffee: Gulf coffee in the dallah, Yemeni qahwa in the pot, Shami coffee in the rakwa, and qishr.'}>
+<Base lang={lang} title={ar ? 'طريقة التحضير' : 'How to brew'} current="brew" description={ar ? 'كيف تحضّر قهوة حكاية: الخليجية من الدلّة، الإبريق اليمني، الركوة، والقشر.' : 'How to brew Hikaya coffee: Gulf coffee served from the dallah, Yemeni qahwa in the pot, Shami coffee in the rakwa, and qishr.'}>
   <section class="wrap brew-head">
     <h1 class="h-l">{ar ? 'من الكيس إلى الفنجان.' : 'From the bag to the cup.'}</h1>
     <p class="lead">{ar ? 'اختر قهوتك، ثم اتبع الخطوات. كل خطوة لها مؤقّت إن احتجته.' : 'Choose your coffee, then follow the steps. Every timed step has a timer.'}</p>

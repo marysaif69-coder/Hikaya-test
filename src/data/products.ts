@@ -127,7 +127,7 @@ export const SPICES: Record<Spice, { c: string; name: L }> = {
 };
 
 export const GRINDS: Record<Grind, L> = {
-  dallah: { en: 'Coarse, for the dallah', ar: 'طحنة خشنة للدلّة' },
+  dallah: { en: 'Coarse, for Gulf coffee', ar: 'طحنة خشنة للقهوة الخليجية' }, // id kept: saved carts and orders use it
   fine: { en: 'Fine, for the pot', ar: 'طحنة ناعمة للإبريق' },
   powder: { en: 'Powder-fine, for the rakwa', ar: 'ناعمة كالبودرة للركوة' },
 };
@@ -205,8 +205,8 @@ export const PACKS: Pack[] = [
     notes: { en: 'What makes Gulf coffee Najdi. Keep it sealed until you make a pot: soak a little in hot water, put it in the serving dallah and pour the coffee over it. Never boiled.', ar: 'هو ما يجعل القهوة الخليجية نجدية. أبقِه مختوماً حتى تحضّر الإبريق: انقع قليلاً منه في ماء ساخن، وضعه في دلّة التقديم وصبّ القهوة فوقه. لا يُغلى أبداً.' },
     contents: { en: 'Saffron, sealed.', ar: 'زعفران، مختوم.' }, ingredients: ['Saffron.', 'Safran.'], allergens: [] }),
   P({ id: 'pack-qassim', line: 'gulf', fam: 'palm', for: 'gulf', c: '#C98A3A', name: { en: 'Qassim blend pack', ar: 'خلطة قصيمية' },
-    notes: { en: 'The Qassimi spice blend for Gulf coffee. Pour it into the bag and shake; the saffron goes in the serving dallah at the end, and you add your own milk when you make each pot.', ar: 'خلطة البهار القصيمية للقهوة الخليجية. اسكبها في الكيس ورجّه؛ والزعفران يوضع في دلّة التقديم في النهاية، وتضيف حليبك عند تحضير كل إبريق.' },
-    contents: { en: 'Qassimi spices. No milk: you add your own. [TBD: full list]', ar: 'بهارات قصيمية. بلا حليب: تضيف حليبك بنفسك. [يُحدد لاحقاً: القائمة الكاملة]' },
+    notes: { en: 'The Qassimi spice blend for Gulf coffee. Pour it into the bag and shake; the saffron goes in the serving dallah at the end, and you add evaporated milk when you make each pot.', ar: 'خلطة البهار القصيمية للقهوة الخليجية. اسكبها في الكيس ورجّه؛ والزعفران يوضع في دلّة التقديم في النهاية، وتضيف الحليب المبخّر عند تحضير كل إبريق.' },
+    contents: { en: 'Qassimi spices. No milk: you add evaporated milk. [TBD: full list]', ar: 'بهارات قصيمية. بلا حليب: تضيف الحليب المبخّر بنفسك. [يُحدد لاحقاً: القائمة الكاملة]' },
     ingredients: ['Spices. [TBD: full list]', 'Épices. [TBD : liste complète]'], allergens: [],
     maybe: { en: 'May also contain barley [TBD]', ar: 'قد تحتوي على الشعير أيضاً [يُحدد لاحقاً]' } }),
   P({ id: 'pack-hijazi', line: 'gulf', fam: 'palm', for: 'gulf', c: '#5E7A2E', name: { en: 'Hijazi blend pack', ar: 'خلطة حجازية' },
@@ -238,11 +238,11 @@ export const KITS: Kit[] = [
     notes: { en: 'Gulf coffee and its saffron packet. Cardamom and saffron, golden and light.', ar: 'قهوة خليجية مع ظرف الزعفران. هيل وزعفران، ذهبية وخفيفة.' },
     story: { en: "Najd's way: roasted pale, poured from the dallah into a small cup, always with a date. The saffron is what makes it Najdi, so it is always in the box.", ar: 'على طريقة نجد: تحميص أشقر، تُصبّ من الدلّة في فنجان صغير، ومعها تمرة دائماً. الزعفران هو ما يجعلها نجدية، لذلك هو في العلبة دائماً.' },
     bunn: { en: 'Cardamom and saffron.', ar: 'هيل وزعفران.' }, date: 'khalas', why: { en: 'Toffee-soft Khalas rounds the saffron.', ar: 'خلاص الطرية تُليّن الزعفران.' } }),
-  K({ id: 'qassimi', origin: { en: 'The Qassim way: velvety with your milk, warm with spice', ar: 'على طريقة القصيم: قوام مخملي بحليبك، ودفء البهار' }, line: 'gulf', fam: 'palm', base: 'gulf', parts: [{ id: 'pack-qassim' }, { id: 'pack-saffron' }], name: { en: 'Qassimi', ar: 'قصيمية' },
+  K({ id: 'qassimi', origin: { en: 'The Qassim way: velvety with evaporated milk, warm with spice', ar: 'على طريقة القصيم: قوام مخملي بالحليب المبخّر، ودفء البهار' }, line: 'gulf', fam: 'palm', base: 'gulf', parts: [{ id: 'pack-qassim' }, { id: 'pack-saffron' }], name: { en: 'Qassimi', ar: 'قصيمية' },
     taste: { en: 'Velvety · warm spice · saffron', ar: 'مخملية · بهار دافئ · زعفران' },
-    notes: { en: 'Gulf coffee with the Qassim spice blend and the saffron packet. Add your own milk as you make it.', ar: 'قهوة خليجية مع خلطة البهار القصيمية وظرف الزعفران. وتضيف حليبك عند التحضير.' },
-    story: { en: 'The Qassim way: the same pale coffee with warm spice, and milk added at home for a velvety cup.', ar: 'على طريقة القصيم: القهوة الشقراء نفسها بدفء البهار، ويُضاف الحليب في البيت لقوام مخملي.' },
-    bunn: { en: 'Add your milk. I’ll do the rest.', ar: 'أضف حليبك، وأنا أكمل الباقي.' }, date: 'sukkari', why: { en: 'Sukkari, from Qassim too.', ar: 'السكري، من القصيم أيضاً.' } }),
+    notes: { en: 'Gulf coffee with the Qassim spice blend and the saffron packet. Add evaporated milk as you make it (we tell you how much).', ar: 'قهوة خليجية مع خلطة البهار القصيمية وظرف الزعفران. وتضيف الحليب المبخّر عند التحضير (ونخبرك بالمقدار).' },
+    story: { en: 'The Qassim way: the same pale coffee with warm spice, and evaporated milk added at home for a velvety cup.', ar: 'على طريقة القصيم: القهوة الشقراء نفسها بدفء البهار، ويُضاف الحليب المبخّر في البيت لقوام مخملي.' },
+    bunn: { en: 'Add the evaporated milk. I’ll do the rest.', ar: 'أضف الحليب المبخّر، وأنا أكمل الباقي.' }, date: 'sukkari', why: { en: 'Sukkari, from Qassim too.', ar: 'السكري، من القصيم أيضاً.' } }),
   K({ id: 'hijazi', origin: { en: 'The Hijaz way: fragrant and aromatic', ar: 'على طريقة الحجاز: عطرة وزكية' }, line: 'gulf', fam: 'palm', base: 'gulf', parts: [{ id: 'pack-hijazi' }, { id: 'pack-saffron' }], name: { en: 'Hijazi', ar: 'حجازية' },
     taste: { en: 'Fragrant · aromatic spice · saffron', ar: 'عطرة · بهار زكي · زعفران' },
     notes: { en: 'Gulf coffee with the Hijazi blend pack and the saffron packet.', ar: 'قهوة خليجية مع الخلطة الحجازية وظرف الزعفران.' },
