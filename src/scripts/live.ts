@@ -56,6 +56,13 @@ function apply(live: Live) {
     const ids = el.dataset.priceFor!.split(',');
     if (ids.every(id => P[id])) el.textContent = ids.some(id => P[id].price == null) ? priceOr(null) : money(ids.reduce((n, id) => n + P[id].price!, 0));
   });
+  // Styles: what they save against the bag and packs bought apart (only when every price is set).
+  document.querySelectorAll<HTMLElement>('[data-saves]').forEach(el => {
+    const kit = P[el.dataset.saves!], parts = el.dataset.parts!.split(',').map(id => P[id]);
+    const diff = kit?.price != null && parts.every(x => x?.price != null) ? parts.reduce((n, x) => n + x!.price!, 0) - kit.price : 0;
+    el.hidden = !(diff > 0);
+    if (diff > 0) el.textContent = lang() === 'ar' ? `توفّر ${money(diff)} مقارنة بشرائها منفصلة` : `Saves ${money(diff)} compared with buying them apart`;
+  });
   // Product cards: hidden products disappear, sold-out ones say so.
   document.querySelectorAll<HTMLElement>('[data-product]').forEach(el => {
     const p = P[el.dataset.product!];

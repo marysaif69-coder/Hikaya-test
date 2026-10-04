@@ -47,8 +47,8 @@
       "ar": "فيّ الهيل، والزنجبيل ينتظر في الظرف."
     },
     "why": {
-      "en": "Honeyed Medjool meets the ginger.",
-      "ar": "مجهول العسلية تلاقي الزنجبيل."
+      "en": "Honeyed Medjool with a cardamom cup.",
+      "ar": "المجدول العسلي مع فنجان الهيل."
     }
   },
   "jubani": {
@@ -113,8 +113,8 @@
       "ar": "كثيفة · مُرّة حلوة · هيل"
     },
     "notes": {
-      "en": "Brazilian beans, medium roast, ground to powder, with cardamom. The one most of our Shami customers choose.",
-      "ar": "حبوب برازيلية، تحميص متوسط، مطحونة كالبودرة، بالهيل. التي يختارها أكثر من يشرب الشامية."
+      "en": "Brazilian beans, medium roast, ground to powder, with cardamom. The everyday Shami cup.",
+      "ar": "حبوب برازيلية، تحميص متوسط، مطحونة كالبودرة، بالهيل. فنجان الشامية لكل يوم."
     },
     "story": {
       "en": "The Shami rakwa: powder-fine coffee boiled slowly, with cardamom, the way homes in the Levant make it.",
@@ -126,7 +126,7 @@
     },
     "why": {
       "en": "A soft Medjool after a thick cup.",
-      "ar": "مجهولة طرية بعد فنجان كثيف."
+      "ar": "مجدول طري بعد فنجان كثيف."
     }
   },
   "shami-sada": {
@@ -282,7 +282,7 @@
     },
     "why": {
       "en": "Big, honeyed Medjool with the almonds.",
-      "ar": "مجهول العسلية مع اللوز."
+      "ar": "المجدول العسلي مع اللوز."
     }
   },
   "baydani": {
@@ -360,7 +360,7 @@
     },
     "why": {
       "en": "Medjool sits well with all three.",
-      "ar": "المجهول يناسب الثلاث."
+      "ar": "المجدول يناسب الثلاث."
     }
   },
   "pack-saffron": {

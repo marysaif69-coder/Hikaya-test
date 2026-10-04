@@ -30,6 +30,8 @@ export interface Coffee {
   story: L;
   ingredients: [string, string]; // EN, FR — as printed on the label
   taste: L;
+  /** Shown as a small label on the shop card, e.g. the one most customers choose. */
+  popular?: boolean;
   /** Flat front/back artwork from the packaging mockups, when one exists. */
   art?: { front: string; back: string };
   /** Bunn speaks first; Tamr answers with the date that goes with this cup. */
@@ -67,6 +69,8 @@ export interface Kit {
   base: string;
   parts: { id: string; mini?: boolean }[];
   discovery?: boolean;
+  /** One short line on where the style comes from, for the shop card. */
+  origin?: L;
   name: L;
   price: number | null;
   notes: L;
@@ -139,7 +143,7 @@ export const ALLERGENS: Record<Allergen, L> = {
 export const DATES: Record<DateId, { name: L; region: L; c: string; sweet: number; notes: L }> = {
   sukkari: { name: { en: 'Sukkari', ar: 'سكري' }, region: { en: 'Qassim', ar: 'القصيم' }, c: '#C98A3A', sweet: 95, notes: { en: 'Very sweet, soft to crisp, caramel.', ar: 'حلو جداً، طري إلى مقرمش، كراميل.' } },
   khalas: { name: { en: 'Khalas', ar: 'خلاص' }, region: { en: 'Al-Ahsa', ar: 'الأحساء' }, c: '#8E4A22', sweet: 80, notes: { en: 'Toffee and caramel, soft and moist.', ar: 'توفي وكراميل، طري ورطب.' } },
-  medjool: { name: { en: 'Medjool', ar: 'مجهول' }, region: { en: 'Jordan Valley', ar: 'وادي الأردن' }, c: '#6E3420', sweet: 85, notes: { en: 'Large and fleshy, honey-caramel.', ar: 'كبيرة ولحمية، عسل وكراميل.' } },
+  medjool: { name: { en: 'Medjool', ar: 'مجدول' }, region: { en: 'Jordan Valley', ar: 'وادي الأردن' }, c: '#6E3420', sweet: 85, notes: { en: 'Large and fleshy, honey-caramel.', ar: 'كبيرة ولحمية، عسل وكراميل.' } },
   khudri: { name: { en: 'Khudri', ar: 'خضري' }, region: { en: 'Arabia', ar: 'الجزيرة العربية' }, c: '#5B2E17', sweet: 55, notes: { en: 'Firmer and darker, less sweet.', ar: 'أصلب وأغمق، أقل حلاوة.' } },
   ajwa: { name: { en: 'Ajwa', ar: 'عجوة' }, region: { en: 'Madinah', ar: 'المدينة' }, c: '#2B1710', sweet: 50, notes: { en: 'Small and near-black, gentle fruit.', ar: 'صغيرة شبه سوداء، فاكهية رقيقة.' } },
 };
@@ -163,7 +167,7 @@ export const COFFEES: Coffee[] = [
     story: { en: 'Coffee the way Yemeni homes make it, in the pot. On its own it is a clean cardamom cup. With a pack, ginger and all, it becomes Hadrami, Rada’i or Baydani.', ar: 'القهوة كما تصنعها البيوت اليمنية، في الإبريق. وحدها فنجان صافٍ بالهيل، ومع ظرف، بزنجبيله وكل ما فيه، تصير حضرمية أو رداعية أو بيضانية.' },
     ingredients: ['Coffee, cardamom.', 'Café, cardamome.'],
     bunn: { en: 'Cardamom in me. The ginger waits in the pack.', ar: 'فيّ الهيل، والزنجبيل ينتظر في الظرف.' }, date: 'medjool',
-    why: { en: 'Honeyed Medjool meets the ginger.', ar: 'مجهول العسلية تلاقي الزنجبيل.' } }),
+    why: { en: 'Honeyed Medjool with a cardamom cup.', ar: 'المجدول العسلي مع فنجان الهيل.' } }),
   C({ id: 'jubani', line: 'yemen', fam: 'mountain', name: { en: 'Jubani', ar: 'جُبَني' }, roast: 2, spices: ['husk'], grinds: ['fine'],
     taste: { en: 'Dried cherry · round', ar: 'كرز مجفف · مستديرة' },
     notes: { en: 'Yemeni-style coffee and its own dried husk, ground together. [TBD: with ginger or plain]', ar: 'قهوة على الطريقة اليمنية مع قشرها المجفف، مطحونان معاً. [يُحدد لاحقاً: بالزنجبيل أو سادة]' },
@@ -178,13 +182,13 @@ export const COFFEES: Coffee[] = [
     ingredients: ['Coffee cherry husk, ginger.', 'Cascara, gingembre.'],
     bunn: { en: 'I was a husk before the bean.', ar: 'كنتُ قشراً قبل البُن.' }, date: 'sukkari',
     why: { en: 'Cherry and caramel.', ar: 'كرز وكراميل.' } }),
-  C({ id: 'shami', line: 'shami', fam: 'house', name: { en: 'Shami coffee with cardamom', ar: 'شامية بالهيل' }, roast: 3, spices: ['cardamom'], grinds: ['powder'],
+  C({ id: 'shami', popular: true, line: 'shami', fam: 'house', name: { en: 'Shami coffee with cardamom', ar: 'شامية بالهيل' }, roast: 3, spices: ['cardamom'], grinds: ['powder'],
     taste: { en: 'Thick · bittersweet · cardamom', ar: 'كثيفة · مُرّة حلوة · هيل' },
-    notes: { en: 'Brazilian beans, medium roast, ground to powder, with cardamom. The one most of our Shami customers choose.', ar: 'حبوب برازيلية، تحميص متوسط، مطحونة كالبودرة، بالهيل. التي يختارها أكثر من يشرب الشامية.' },
+    notes: { en: 'Brazilian beans, medium roast, ground to powder, with cardamom. The everyday Shami cup.', ar: 'حبوب برازيلية، تحميص متوسط، مطحونة كالبودرة، بالهيل. فنجان الشامية لكل يوم.' },
     story: { en: 'The Shami rakwa: powder-fine coffee boiled slowly, with cardamom, the way homes in the Levant make it.', ar: 'الركوة الشامية: قهوة ناعمة كالبودرة تُغلى على مهل، بالهيل، كما في بيوت الشام.' },
     ingredients: ['Coffee, cardamom.', 'Café, cardamome.'],
     bunn: { en: 'Fine, for the rakwa.', ar: 'ناعمة، للركوة.' }, date: 'medjool',
-    why: { en: 'A soft Medjool after a thick cup.', ar: 'مجهولة طرية بعد فنجان كثيف.' } }),
+    why: { en: 'A soft Medjool after a thick cup.', ar: 'مجدول طري بعد فنجان كثيف.' } }),
   C({ id: 'shami-sada', line: 'shami', fam: 'house', name: { en: 'Shami sada', ar: 'شامية سادة' }, roast: 3, spices: [], grinds: ['powder'],
     taste: { en: 'Thick · bittersweet · plain', ar: 'كثيفة · مُرّة حلوة · سادة' },
     notes: { en: 'The same Shami coffee, nothing added.', ar: 'القهوة الشامية نفسها، بلا إضافات.' },
@@ -229,32 +233,32 @@ export const PACKS: Pack[] = [
 const K = (k: Omit<Kit, 'kind' | 'price'> & { price?: number | null }): Kit => ({ kind: 'kit', price: null, ...k });
 
 export const KITS: Kit[] = [
-  K({ id: 'najdi', line: 'gulf', fam: 'palm', base: 'gulf', parts: [{ id: 'pack-saffron' }], name: { en: 'Najdi', ar: 'نجدية' },
+  K({ id: 'najdi', origin: { en: 'Najd’s way: pale, with saffron', ar: 'على طريقة نجد: شقراء بالزعفران' }, line: 'gulf', fam: 'palm', base: 'gulf', parts: [{ id: 'pack-saffron' }], name: { en: 'Najdi', ar: 'نجدية' },
     taste: { en: 'Golden · cardamom · saffron', ar: 'ذهبية · هيل · زعفران' },
     notes: { en: 'Gulf coffee and its saffron packet. Cardamom and saffron, golden and light.', ar: 'قهوة خليجية مع ظرف الزعفران. هيل وزعفران، ذهبية وخفيفة.' },
     story: { en: "Najd's way: roasted pale, poured from the dallah into a small cup, always with a date. The saffron is what makes it Najdi, so it is always in the box.", ar: 'على طريقة نجد: تحميص أشقر، تُصبّ من الدلّة في فنجان صغير، ومعها تمرة دائماً. الزعفران هو ما يجعلها نجدية، لذلك هو في العلبة دائماً.' },
     bunn: { en: 'Cardamom and saffron.', ar: 'هيل وزعفران.' }, date: 'khalas', why: { en: 'Toffee-soft Khalas rounds the saffron.', ar: 'خلاص الطرية تُليّن الزعفران.' } }),
-  K({ id: 'qassimi', line: 'gulf', fam: 'palm', base: 'gulf', parts: [{ id: 'pack-qassim' }, { id: 'pack-saffron' }], name: { en: 'Qassimi', ar: 'قصيمية' },
+  K({ id: 'qassimi', origin: { en: 'The Qassim way: richer in the cup', ar: 'على طريقة القصيم: أغنى في الفنجان' }, line: 'gulf', fam: 'palm', base: 'gulf', parts: [{ id: 'pack-qassim' }, { id: 'pack-saffron' }], name: { en: 'Qassimi', ar: 'قصيمية' },
     taste: { en: 'Rich · saffron · warm spice', ar: 'غنية · زعفران · بهار دافئ' },
     notes: { en: 'Gulf coffee with the Qassim blend pack and the saffron packet.', ar: 'قهوة خليجية مع الخلطة القصيمية وظرف الزعفران.' },
     story: { en: 'The Qassim way: the same pale coffee, richer in the cup.', ar: 'على طريقة القصيم: القهوة الشقراء نفسها، أغنى في الفنجان.' },
     bunn: { en: 'Richer than my brothers.', ar: 'أغنى من إخوتي.' }, date: 'sukkari', why: { en: 'Sukkari, from Qassim too.', ar: 'السكري، من القصيم أيضاً.' } }),
-  K({ id: 'hijazi', line: 'gulf', fam: 'palm', base: 'gulf', parts: [{ id: 'pack-hijazi' }, { id: 'pack-saffron' }], name: { en: 'Hijazi', ar: 'حجازية' },
+  K({ id: 'hijazi', origin: { en: 'The Hijaz way: more fragrant', ar: 'على طريقة الحجاز: أعطر' }, line: 'gulf', fam: 'palm', base: 'gulf', parts: [{ id: 'pack-hijazi' }, { id: 'pack-saffron' }], name: { en: 'Hijazi', ar: 'حجازية' },
     taste: { en: 'Fragrant · saffron · spice', ar: 'عطرة · زعفران · بهار' },
     notes: { en: 'Gulf coffee with the Hijazi blend pack and the saffron packet.', ar: 'قهوة خليجية مع الخلطة الحجازية وظرف الزعفران.' },
     story: { en: 'The Hijaz way: the same pale coffee, more fragrant in the cup.', ar: 'على طريقة الحجاز: القهوة الشقراء نفسها، أعطر في الفنجان.' },
     bunn: { en: 'From the west of Arabia.', ar: 'من غرب الجزيرة.' }, date: 'ajwa', why: { en: 'Ajwa, from Madinah.', ar: 'العجوة، من المدينة.' } }),
-  K({ id: 'hadrami', line: 'yemen', fam: 'mountain', base: 'yemeni', parts: [{ id: 'pack-hadrami' }], name: { en: 'Hadrami', ar: 'حضرمية' },
+  K({ id: 'hadrami', origin: { en: 'The Hadramawt way', ar: 'على طريقة حضرموت' }, line: 'yemen', fam: 'mountain', base: 'yemeni', parts: [{ id: 'pack-hadrami' }], name: { en: 'Hadrami', ar: 'حضرمية' },
     taste: { en: '[TBD]', ar: '[يُحدد لاحقاً]' },
     notes: { en: 'Yemeni qahwa with the Hadrami pack: ginger and the Hadrami additions.', ar: 'قهوة يمنية مع الخلطة الحضرمية: الزنجبيل وإضافات حضرموت.' },
     story: { en: 'The Hadramawt way, made in the pot.', ar: 'على طريقة حضرموت، تُصنع في الإبريق.' },
     bunn: { en: 'From Hadramawt.', ar: 'من حضرموت.' }, date: 'khalas', why: { en: 'Soft Khalas for a warm cup.', ar: 'خلاص الطرية لفنجان دافئ.' } }),
-  K({ id: 'radai', line: 'yemen', fam: 'mountain', base: 'yemeni', parts: [{ id: 'pack-radai' }], name: { en: 'Rada’i', ar: 'رداعية' },
+  K({ id: 'radai', origin: { en: 'From Rada’a: sesame and almonds in the pot', ar: 'من رداع: السمسم واللوز في الإبريق' }, line: 'yemen', fam: 'mountain', base: 'yemeni', parts: [{ id: 'pack-radai' }], name: { en: 'Rada’i', ar: 'رداعية' },
     taste: { en: 'Nutty · sesame · warm', ar: 'مكسرات · سمسم · دافئة' },
     notes: { en: 'Yemeni qahwa with the Rada’i pack: ginger, roasted sesame and almonds.', ar: 'قهوة يمنية مع الخلطة الرداعية: زنجبيل وسمسم محمّص ولوز.' },
     story: { en: 'From Rada’a: sesame and almonds in the pot with the coffee.', ar: 'من رداع: السمسم واللوز في الإبريق مع القهوة.' },
-    bunn: { en: 'Sesame and almonds, for the cold.', ar: 'سمسم ولوز، للبرد.' }, date: 'medjool', why: { en: 'Big, honeyed Medjool with the almonds.', ar: 'مجهول العسلية مع اللوز.' } }),
-  K({ id: 'baydani', line: 'yemen', fam: 'mountain', base: 'yemeni', parts: [{ id: 'pack-baydani' }], name: { en: 'Baydani', ar: 'بيضانية' },
+    bunn: { en: 'Sesame and almonds, for the cold.', ar: 'سمسم ولوز، للبرد.' }, date: 'medjool', why: { en: 'Big, honeyed Medjool with the almonds.', ar: 'المجدول العسلي مع اللوز.' } }),
+  K({ id: 'baydani', origin: { en: 'From Al-Bayda: grain in the pot', ar: 'من البيضاء: الحبوب في الإبريق' }, line: 'yemen', fam: 'mountain', base: 'yemeni', parts: [{ id: 'pack-baydani' }], name: { en: 'Baydani', ar: 'بيضانية' },
     taste: { en: 'Toasty · grain · warm', ar: 'محمّصة · حبوب · دافئة' },
     notes: { en: 'Yemeni qahwa with the Baydani pack: ginger and roasted sorghum.', ar: 'قهوة يمنية مع الخلطة البيضانية: زنجبيل وذرة رفيعة محمّصة.' },
     story: { en: "Al-Bayda's way: grain in the pot with the coffee.", ar: 'على طريقة البيضاء: الحبوب في الإبريق مع القهوة.' },
@@ -268,7 +272,7 @@ export const KITS: Kit[] = [
     taste: { en: 'Hadrami · Rada’i · Baydani', ar: 'حضرمية · رداعية · بيضانية' },
     notes: { en: 'One 250 g bag of Yemeni qahwa with a small Hadrami, Rada’i and Baydani pack. Try each style, then choose yours.', ar: 'كيس قهوة يمنية ٢٥٠ غ مع ظرف صغير حضرمي ورداعي وبيضاني. جرّب كل طريقة، ثم اختر طريقتك.' },
     story: { en: 'Three towns, one pot at a time.', ar: 'ثلاث بلدات، إبريق بعد إبريق.' },
-    bunn: { en: 'Three towns in one box.', ar: 'ثلاث بلدات في علبة واحدة.' }, date: 'medjool', why: { en: 'Medjool sits well with all three.', ar: 'المجهول يناسب الثلاث.' } }),
+    bunn: { en: 'Three towns in one box.', ar: 'ثلاث بلدات في علبة واحدة.' }, date: 'medjool', why: { en: 'Medjool sits well with all three.', ar: 'المجدول يناسب الثلاث.' } }),
 ];
 
 export const BOXES: Box[] = [

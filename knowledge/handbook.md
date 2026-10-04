@@ -140,7 +140,7 @@ chooses replacement or refund; you never decide or promise which one.
 ## Storing coffee and dates
 
 - Coffee: keep the pouch closed, away from light, heat and moisture. Not in the fridge. Ground coffee tastes best within about 4 weeks of opening.
-- Dates: in a cool, dry place for a few weeks, in the fridge in a closed container for a few months, in the freezer for longer. Soft dates (Khalas, Medjool, Sukkari) keep best in the fridge.
+- Dates: in a cool, dry place for a few weeks, in the fridge in a closed container for a few months, in the freezer for longer. Soft dates (Khalas, Medjool, Sukkari) keep best in the fridge. In Arabic we write Medjool as مجدول.
 - Exact roast dates and best-before dates are printed on each pouch and box.
 
 ## Grinding

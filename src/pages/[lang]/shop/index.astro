@@ -8,26 +8,29 @@ import Pouch from '../../../components/Pouch.astro';
 export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
 const lang = Astro.params.lang as Lang;
 const ar = lang === 'ar';
-// Three lines. Each starts with the bag; the family styles are the bag plus its packs.
+// Step 1 cards. Each coffee line starts with its bag; the family styles are the bag plus its packs.
+// Qishr is a drink of its own (the husk, brewed like tea), so it gets its own card.
+const SUB: Record<string, { en: string; ar: string }> = {
+  gulf: { en: 'Pale and golden, from the dallah', ar: 'شقراء وذهبية، من الدلّة' },
+  yemen: { en: 'From the pot, ginger in the packs', ar: 'من الإبريق، والزنجبيل في الظروف' },
+  shami: { en: 'Powder-fine, with foam, from the rakwa', ar: 'ناعمة برغوتها، من الركوة' },
+  qishr: { en: 'From Yemen: the coffee cherry, brewed like tea', ar: 'من اليمن: ثمرة البن، تُغلى مثل الشاي' },
+};
 const lines = (['gulf', 'yemen', 'shami'] as CoffeeLine[]).map(l => ({
-  id: l, bases: COFFEES.filter(c => c.line === l), styles: KITS.filter(k => k.line === l && !k.discovery),
+  id: l as string, name: LINES[l].name, sub: SUB[l],
+  bases: COFFEES.filter(c => c.line === l && c.id !== 'qishr'), styles: KITS.filter(k => k.line === l && !k.discovery),
 })).map(l => l.styles.length
   // Where a line has styles, its other bags (Jubani, Qishr) are ways of their own and stand with
   // the styles; only the main bag stays under "Or the bag on its own".
   ? { ...l, bases: l.bases.slice(0, 1), ways: [...l.styles, ...l.bases.slice(1)] }
   : { ...l, ways: [] as typeof l.bases });
+lines.push({ id: 'qishr', name: { en: 'Qishr', ar: 'القشر' }, sub: SUB.qishr, bases: COFFEES.filter(c => c.id === 'qishr'), styles: [], ways: [] });
 const discovery = KITS.filter(k => k.discovery);
 const others = [
   { id: 'dates', items: BOXES.filter(b => b.fam === 'dates') },
   { id: 'ramadan', items: BOXES.filter(b => b.fam === 'ramadan') },
   { id: 'eid', items: BOXES.filter(b => b.fam === 'eid') },
 ] as const;
-// Step 1 cards: each names everything inside it, so the smaller types are never hidden.
-const PICK_LINE: Record<CoffeeLine, { en: string; ar: string }> = {
-  gulf: { en: 'Pale and golden, from the dallah', ar: 'شقراء وذهبية، من الدلّة' },
-  yemen: { en: 'From the pot, ginger in the packs', ar: 'من الإبريق، والزنجبيل في الظروف' },
-  shami: { en: 'Powder-fine, with foam, from the rakwa', ar: 'ناعمة برغوتها، من الركوة' },
-};
 ---
 <Base lang={lang} title={ar ? 'المتجر' : 'Shop'} current="shop">
   <section class="wrap shop-head">
@@ -43,9 +46,9 @@ const PICK_LINE: Record<CoffeeLine, { en: string; ar: string }> = {
         <button type="button" role="tab" class="pick" id={`tab-${l.id}`} aria-controls={l.id} aria-selected="false" data-pick={l.id}>
           <span class="pick-bag"><Pouch coffee={l.bases[0]} lang={lang} label={false} /></span>
           <span class="pick-txt">
-            <b>{LINES[l.id].name[lang]}</b>
-            <small>{PICK_LINE[l.id][lang]}</small>
-            <em>{[...l.ways, ...l.bases].length} {ar ? 'خيارات' : 'choices'}</em>
+            <b>{l.name[lang]}</b>
+            <small>{l.sub[lang]}</small>
+            {l.ways.length + l.bases.length > 1 && <em>{l.ways.length + l.bases.length} {ar ? 'خيارات' : 'choices'}</em>}
           </span>
         </button>
       ))}
@@ -65,7 +68,7 @@ const PICK_LINE: Record<CoffeeLine, { en: string; ar: string }> = {
         <section class="fam panel" id={l.id} role="tabpanel" aria-labelledby={`tab-${l.id}`} data-panel={l.id}>
           <div class="wrap">
             <div class="panel-head">
-              <div><h2 class="h-m">{l.ways.length ? (ar ? 'كيف تشربها؟' : 'How do you take it?') : LINES[l.id].name[lang]}</h2>{l.ways.length > 0 && <p class="muted tagline">{ar ? 'لكل منطقة طريقتها، ولكل بيت فنجان.' : 'Every region has its way, every home its cup.'}</p>}</div>
+              <div><h2 class="h-m">{l.ways.length ? (ar ? 'كيف تشربها؟' : 'How do you take it?') : l.name[lang]}</h2>{l.ways.length > 0 && <p class="muted tagline">{ar ? 'لكل منطقة طريقتها، ولكل بيت فنجان.' : 'Every region has its way, every home its cup.'}</p>}</div>
               {tasting && <a class="link" href={path(lang, `shop/${tasting.id}`)}>{ar ? `لست متأكداً؟ ${tasting.name.ar}، فيها قليل من كل طريقة` : `Not sure? ${tasting.name.en} has a little of each`} <span aria-hidden="true">{ar ? '←' : '→'}</span></a>}
             </div>
             {l.ways.length > 0 && <div class="grid">{l.ways.map(p => <ProductCard p={p} lang={lang} />)}</div>}
@@ -76,7 +79,10 @@ const PICK_LINE: Record<CoffeeLine, { en: string; ar: string }> = {
                     <ul>{PACKS.filter(k => k.line === l.id).map(k => <li><a href={path(lang, `shop/${k.id}`)}>{k.name[lang]}</a></li>)}</ul>
                   </div>
                 </div>
-              : <div class="grid">{l.bases.map(p => <ProductCard p={p} lang={lang} />)}</div>}
+              : <>
+                  {l.id === 'qishr' && <p class="muted panel-note">{ar ? 'أقدم مشروبات البن في اليمن: قشر الثمرة المجفف مع الزنجبيل، يُغلى في الإبريق. قليل الكافيين.' : 'Yemen’s oldest coffee drink: the dried cherry husk with ginger, brewed in the pot. Light on caffeine.'}</p>}
+                  <div class="grid">{l.bases.map(p => <ProductCard p={p} lang={lang} />)}</div>
+                </>}
           </div>
         </section>
       );
@@ -139,7 +145,8 @@ const PICK_LINE: Record<CoffeeLine, { en: string; ar: string }> = {
   .shop-head > * { max-width: 760px; }
   .small { font-size: 15px; }
   .picker { display: grid; gap: 14px; padding-bottom: 32px; }
-  .pick-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .pick-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 1100px) { .pick-cards { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 760px) { .pick-cards { grid-template-columns: 1fr; gap: 8px; } }
   .pick { display: grid; grid-template-columns: 60px 1fr; gap: 14px; align-items: center; text-align: start; border: 0; padding: 14px 16px; border-radius: 22px; background: var(--sheet); box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink); cursor: pointer; transition: box-shadow .15s, background .15s, transform .15s var(--ease); }
   .pick:hover { box-shadow: inset 0 0 0 1.5px var(--bunn); }

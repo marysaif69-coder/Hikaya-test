@@ -30,7 +30,7 @@ const dateBox = PRODUCTS.find(o => o.id === 'date-box')!;
 // "Make it the way your family does": on a bag's page, the bag alone or one of its styles.
 const styles = p.kind === 'coffee' ? stylesFor(p.id) : [];
 // Other bags of the same line that are ways of their own (Jubani, Qishr on the Yemeni page).
-const ownWays = styles.length ? COFFEES.filter(c => c.line === (p as Coffee).line && c.id !== p.id) : [];
+const ownWays = styles.length ? COFFEES.filter(c => c.line === (p as Coffee).line && c.id !== p.id && c.id !== 'qishr') : [];
 // The style ticked when the page opens: the classic one where we know it (Najdi for Gulf coffee),
 // otherwise the bag with nothing added.
 const DEFAULT_STYLE: Record<string, string> = { gulf: 'najdi' };
@@ -56,7 +56,7 @@ const sizeText = p.kind === 'coffee' ? p.size : p.kind === 'kit' ? kitInside(p, 
 <Base season={p.fam === 'ramadan' || p.fam === 'eid' ? p.fam : undefined} alertFor={p.id} lang={lang} title={p.name[lang]} current="shop" description={p.notes[lang]} jsonld={jsonld} image={img}>
   <nav class="wrap crumbs" aria-label={ar ? 'المسار' : 'Breadcrumb'}>
     <a href={path(lang, 'shop')}>{UI.nav.shop[lang]}</a><span aria-hidden="true">/</span>
-    <a href={path(lang, 'shop') + `#${p.kind === 'pack' ? 'packs' : p.kind === 'kit' && p.discovery ? 'start' : p.kind === 'box' ? p.fam : p.line}`}>{p.kind === 'pack' ? L('Just the pack', 'الظرف وحده') : p.kind === 'kit' && p.discovery ? L('Start here', 'ابدأ من هنا') : FAMILIES[p.fam].name[lang]}</a><span aria-hidden="true">/</span>
+    <a href={path(lang, 'shop') + `#${p.kind === 'pack' ? 'packs' : p.kind === 'kit' && p.discovery ? 'start' : p.kind === 'box' ? p.fam : p.id === 'qishr' ? 'qishr' : p.line}`}>{p.kind === 'pack' ? L('Just the pack', 'الظرف وحده') : p.kind === 'kit' && p.discovery ? L('Start here', 'ابدأ من هنا') : FAMILIES[p.fam].name[lang]}</a><span aria-hidden="true">/</span>
     <span aria-current="page">{p.name[lang]}</span>
   </nav>
 

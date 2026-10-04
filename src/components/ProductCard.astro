@@ -21,6 +21,8 @@ const defaultOpt = p.kind === 'coffee' ? (p.grinds[0] ?? '') : p.kind === 'kit' 
 // Only what a pack or style is known to contain; anything still unconfirmed is on its own page.
 const contains = p.kind === 'pack' ? p.allergens : p.kind === 'kit' ? [...new Set(p.parts.flatMap(x => packOf(x.id)?.allergens ?? []))] : [];
 const unpriced = p.price == null;
+// A style costs less than its bag and packs bought apart: the saving shows once prices are set.
+const saves = p.kind === 'kit' && !p.discovery ? [p.base, ...p.parts.map(x => x.id)].join(',') : '';
 ---
 <article class={`pc pc-${p.kind} ${row ? 'pc-row-card' : ''}`} data-product={p.id}>
   <a href={href} class="pc-media" tabindex="-1" aria-hidden="true">
@@ -34,7 +36,10 @@ const unpriced = p.price == null;
   </a>
   <div class="pc-body">
     <h3><a href={href}>{p.name[lang]}</a>{lang === 'en' && <span lang="ar">{p.name.ar}</span>}</h3>
+    {p.kind === 'kit' && p.origin && <p class="pc-origin">{p.origin[lang]}</p>}
+    {p.kind === 'coffee' && p.popular && <p class="badge">{ar ? 'فنجان كل يوم' : 'The everyday cup'}</p>}
     <p class="pc-line">{line}</p>
+    {saves && <p class="saves" data-saves={p.id} data-parts={saves} hidden></p>}
     {contains.length > 0 && <p class="allergy">{ar ? 'يحتوي على ' : 'Contains '}{contains.map(a => ALLERGENS[a][lang].replace(/ \(.*\)/, '')).join(ar ? '، ' : ', ').toLowerCase()}</p>}
     <div class="pc-row">
       <span class="price" data-price-for={p.id}>{priceText(p.price, lang)}</span>
@@ -67,6 +72,10 @@ const unpriced = p.price == null;
   .pc h3 a:hover { text-decoration: underline; }
   .pc h3 span { font-size: 19px; color: var(--tamr); }
   .pc-line { font-size: 14.5px; color: var(--ink-2); }
+  .pc-origin { font-size: 14.5px; font-style: italic; color: var(--bunn); }
+  html[lang='ar'] .pc-origin { font-style: normal; }
+  .badge { justify-self: start; margin: 2px 0; padding: 3px 10px; border-radius: 999px; background: var(--khalal); color: var(--bunn); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+  .saves { font-size: 13.5px; font-weight: 600; color: var(--tamr); }
   .allergy { font-size: 13px; }
   .pc-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
   .pc-row .price { font-size: 17px; }
