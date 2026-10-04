@@ -4,12 +4,13 @@ import Pouch from '../../../components/Pouch.astro';
 import Sachet from '../../../components/Sachet.astro';
 import Pair from '../../../components/Pair.astro';
 import ProductCard from '../../../components/ProductCard.astro';
-import { PRODUCTS, COFFEES, KITS, PACKS, FAMILIES, SPICES, GRINDS, DATES, FILLINGS, ALLERGENS, BOXES, varietiesOf, priceText, baseOf, packOf, stylesFor, allergyNote, kitInside, type Lang, type Product, type Coffee } from '../../../data/products';
+import { PRODUCTS, COFFEES, KITS, PACKS, FAMILIES, SPICES, GRINDS, DATES, FILLINGS, ALLERGENS, BOXES, ON_SALE, GIFT_COFFEES, SLEEVES, MIXED, varietiesOf, mixedOk, mixSplit, defaultBoxOpt, takesSleeve, priceText, baseOf, packOf, stylesFor, allergyNote, kitInside, type Lang, type Product, type Coffee } from '../../../data/products';
 import { BREW } from '../../../data/brew';
 import { UI, path } from '../../../data/i18n';
 
 export function getStaticPaths() {
-  return (['en', 'ar'] as const).flatMap(lang => PRODUCTS.map(p => ({ params: { lang, id: p.id }, props: { p } })));
+  // Retired boxes have no page (public/_redirects sends old links to the gift box with its sleeve).
+  return (['en', 'ar'] as const).flatMap(lang => ON_SALE.map(p => ({ params: { lang, id: p.id }, props: { p } })));
 }
 const lang = Astro.params.lang as Lang;
 const { p } = Astro.props as { p: Product };
@@ -44,9 +45,13 @@ const discoveryFor = p.kind === 'coffee' ? KITS.find(k => k.discovery && k.base 
 const grinds = bag && p.kind !== 'pack' ? bag.grinds : [];
 const lineKey = p.kind === 'box' ? null : p.line;
 const related = p.kind === 'box'
-  ? PRODUCTS.filter(o => o.fam === p.fam && o.id !== p.id).slice(0, 4)
+  ? ON_SALE.filter(o => o.kind === 'box' && o.tier === p.tier && o.id !== p.id).slice(0, 4)
   : PRODUCTS.filter(o => o.kind !== 'box' && o.line === lineKey && o.id !== p.id && (o.kind !== 'pack' || p.kind === 'pack')).slice(0, 4);
-const fill = related.length < 3 ? PRODUCTS.filter(o => o.kind === 'box' && o.fam === 'dates' && !related.includes(o)).slice(0, 3 - related.length) : [];
+const fill = related.length < 3 ? ON_SALE.filter(o => o.kind === 'box' && o.fam === 'dates' && o.id !== p.id && !related.includes(o)).slice(0, 3 - related.length) : [];
+// Gift boxes: the choices on the page. Two-choice boxes keep them in one "opt" (e.g. "najdi|mixed").
+const giftCoffees = GIFT_COFFEES.map(id => PRODUCTS.find(x => x.id === id)!);
+const boxDefault = p.kind === 'box' ? defaultBoxOpt(p) : '';
+const mixLine = (kinds: string[], count: number, names: (k: string) => string) => { const m = mixSplit(kinds, count); return m ? L(`${count / kinds.length} of each: `, `${String(count / kinds.length).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[+d])} من كل نوع: `) + kinds.map(names).join(L(', ', '، ')) : ''; };
 const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { ar: string; en: string } }> = {
   dates: { bunn: { ar: 'علبة لكل بيت.', en: 'A box for every house.' }, tamr: { ar: 'وتمرة لكل جار.', en: 'And a date for every neighbour.' } },
   ramadan: { bunn: { ar: 'أنا لما بعد المغرب.', en: "I'm for after sunset." }, tamr: { ar: 'وأنا أوّل المائدة.', en: "I'm first on the table." } },
@@ -59,7 +64,7 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
 <Base season={p.fam === 'ramadan' || p.fam === 'eid' ? p.fam : undefined} alertFor={p.id} lang={lang} title={p.name[lang]} current="shop" description={p.notes[lang]} jsonld={jsonld} image={img}>
   <nav class="wrap crumbs" aria-label={ar ? 'المسار' : 'Breadcrumb'}>
     <a href={path(lang, 'shop')}>{UI.nav.shop[lang]}</a><span aria-hidden="true">/</span>
-    <a href={path(lang, 'shop') + `#${p.kind === 'pack' ? 'packs' : p.kind === 'kit' && p.discovery ? 'start' : p.kind === 'box' ? p.fam : p.id === 'qishr' ? 'qishr' : p.line}`}>{p.kind === 'pack' ? L('Just the pack', 'الظرف وحده') : p.kind === 'kit' && p.discovery ? L('Tasting boxes', 'علب التذوق') : FAMILIES[p.fam].name[lang]}</a><span aria-hidden="true">/</span>
+    <a href={path(lang, 'shop') + `#${p.kind === 'pack' ? 'packs' : p.kind === 'kit' && p.discovery ? 'start' : p.kind === 'box' ? (p.tier === 'gift' ? 'gifts' : p.tier ?? 'dates') : p.id === 'qishr' ? 'qishr' : p.line}`}>{p.kind === 'pack' ? L('Just the pack', 'الظرف وحده') : p.kind === 'kit' && p.discovery ? L('Tasting boxes', 'علب التذوق') : FAMILIES[p.fam].name[lang]}</a><span aria-hidden="true">/</span>
     <span aria-current="page">{p.name[lang]}</span>
   </nav>
 
@@ -151,12 +156,38 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
           <fieldset class="choice">
             <legend>{L('Filling', 'الحشوة')}</legend>
             {p.fillings.map((k, i) => { const f = FILLINGS[k]; return <label><input type="radio" name="opt" value={k} checked={i === 0} /><span>{f.name[lang]} <small class="allergy">{L('Contains: ', 'يحتوي على: ')}{f.allergens.map(a => ALLERGENS[a][lang]).join(L(', ', '، '))}{f.maybe && ` ${f.maybe[lang]}`}</small></span></label>; })}
+            {mixedOk(p) && <label><input type="radio" name="opt" value="mixed" /><span>{MIXED[lang]} <small class="muted">{mixLine(p.fillings, p.count ?? 0, k => FILLINGS[k as keyof typeof FILLINGS].name[lang])}</small> <small class="allergy">{L('Contains: ', 'يحتوي على: ')}{[...new Set(p.fillings.flatMap(k => FILLINGS[k].allergens))].map(a => ALLERGENS[a][lang]).join(L(', ', '، '))}</small></span></label>}
           </fieldset>
         )}
-        {p.kind === 'box' && !p.fillings && varietiesOf(p).length > 0 && (
+        {p.kind === 'box' && !p.fillings && !p.picks && varietiesOf(p).length > 0 && (
           <fieldset class="choice">
             <legend>{UI.date[lang]}</legend>
             {varietiesOf(p).map((k, i) => { const d = DATES[k]; return <label><input type="radio" name="opt" value={k} checked={i === 0} /><span><i class="dot" style={`background:${d.c}`}></i>{d.name[lang]}{p.tier === 'reserve' && <small class="muted"> · {d.region[lang]}</small>}</span></label>; })}
+            {mixedOk(p) && <label><input type="radio" name="opt" value="mixed" /><span>{MIXED[lang]} <small class="muted">{mixLine(varietiesOf(p), p.count ?? 0, k => DATES[k as keyof typeof DATES].name[lang])}</small></span></label>}
+          </fieldset>
+        )}
+        {p.kind === 'box' && p.picks && (
+          <div class="picks" id="picks">
+            <input type="hidden" name="opt" value={boxDefault} />
+            {p.picks.map((kind, i) => kind === 'coffee' ? (
+              <label class="pick-coffee">{p.picks!.length > 1 && p.picks!.every(x => x === 'coffee') ? L(i === 0 ? 'First coffee' : 'Second coffee', i === 0 ? 'القهوة الأولى' : 'القهوة الثانية') : L('Coffee', 'القهوة')}
+                <select data-part={i}>{giftCoffees.map(c => <option value={c.id} selected={boxDefault.split('|')[i] === c.id} data-product={c.id}>{c.name[lang]}</option>)}</select>
+              </label>
+            ) : (
+              <fieldset class="choice">
+                <legend>{L('Dates (12 Reserve)', 'التمر (١٢ من النخبة)')}</legend>
+                {varietiesOf(p).map(k => { const d = DATES[k]; return <label><input type="radio" name={`part${i}`} value={k} data-part={i} /><span><i class="dot" style={`background:${d.c}`}></i>{d.name[lang]} <small class="muted">· {d.region[lang]}</small></span></label>; })}
+                {mixedOk(p) && <label><input type="radio" name={`part${i}`} value="mixed" data-part={i} checked /><span>{MIXED[lang]} <small class="muted">{mixLine(varietiesOf(p), p.count ?? 0, k => DATES[k as keyof typeof DATES].name[lang])}</small></span></label>}
+              </fieldset>
+            ))}
+          </div>
+        )}
+        {p.kind === 'box' && takesSleeve(p) && (
+          <fieldset class="choice" id="sleeves">
+            <legend>{L('Sleeve', 'الحزام')}</legend>
+            <label><input type="radio" name="sleeve" value="regular" checked /><span>{SLEEVES.regular[lang]}</span></label>
+            <label data-season="ramadan"><input type="radio" name="sleeve" value="ramadan" /><span>{SLEEVES.ramadan[lang]}</span></label>
+            <label data-season="eid"><input type="radio" name="sleeve" value="eid" /><span>{SLEEVES.eid[lang]}</span></label>
           </fieldset>
         )}
         {otherSizes.length > 0 && (
@@ -258,6 +289,29 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
     sync();
     document.addEventListener('catalog:live', sync);
   }
+  // Coffee & Dates and Two Coffees: the two choices go in one option, "najdi|mixed".
+  const picks = document.getElementById('picks');
+  if (picks) {
+    const hidden = picks.querySelector<HTMLInputElement>('input[name=opt]')!;
+    const n = hidden.value.split('|').length;
+    const syncPicks = () => {
+      hidden.value = Array.from({ length: n }, (_, i) => picks.querySelector<HTMLSelectElement>(`select[data-part="${i}"]`)?.value ?? picks.querySelector<HTMLInputElement>(`input[data-part="${i}"]:checked`)?.value ?? '').join('|');
+    };
+    picks.addEventListener('change', syncPicks); syncPicks();
+  }
+  // Sleeve: ?sleeve=ramadan (from the Ramadan and Eid pages) picks it while that season is on;
+  // when a season is off its choice hides, and a hidden choice falls back to the gold sleeve.
+  const sleeves = document.getElementById('sleeves');
+  if (sleeves) {
+    const want = new URLSearchParams(location.search).get('sleeve');
+    const fix = () => {
+      const cur = sleeves.querySelector<HTMLInputElement>('input[name=sleeve]:checked');
+      if (cur?.closest('label')?.hidden) sleeves.querySelector<HTMLInputElement>('input[value=regular]')!.checked = true;
+    };
+    const pick = () => { const r = want && sleeves.querySelector<HTMLInputElement>(`input[value="${want.replace(/[^a-z]/g, '')}"]`); if (r && !r.closest('label')?.hidden) r.checked = true; fix(); };
+    pick();
+    document.addEventListener('catalog:live', pick);
+  }
   // Sticky add-to-cart on phones once the main button scrolls away.
   const bar = document.getElementById('stickyBuy');
   if (main && bar) {
@@ -346,8 +400,13 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
   .choice { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
   .choice legend { font-weight: 600; font-size: 15px; margin-bottom: 10px; }
   .choice input { position: absolute; opacity: 0; }
+  .picks { display: grid; gap: 14px; }
+  .pick-coffee { display: grid; gap: 6px; font-weight: 600; font-size: 15px; }
+  .pick-coffee select { font: inherit; font-weight: 500; padding: 10px 14px; border-radius: 14px; border: 0; box-shadow: inset 0 0 0 1.5px var(--line); background: var(--sheet); color: var(--ink); max-width: 360px; }
+  .pick-coffee select:focus-visible { outline: 2.5px solid var(--tamr); outline-offset: 3px; }
   .choice span { display: inline-flex; align-items: center; gap: 8px; padding: 10px 15px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--line); cursor: pointer; font-weight: 500; }
   .choice input:checked + span { background: var(--bunn); color: var(--paper); box-shadow: none; border-bottom-right-radius: 5px; }
+  .choice input:checked + span small { color: inherit; opacity: .85; }
   .choice input:focus-visible + span { outline: 2.5px solid var(--tamr); outline-offset: 3px; }
   .dot { width: 11px; height: 11px; border-radius: 50%; }
   .buy-row { display: flex; gap: 10px; }

@@ -2,14 +2,16 @@
 // A product in a grid. Kept short on purpose: name, one line, price. Everything else is on the
 // product page. `row` is the slim version for "the bag on its own".
 import type { Product, Lang } from '../data/products';
-import { FAMILIES, SPICES, priceText, baseOf, packOf, COFFEES, allergyNote, boxOptions } from '../data/products';
+import { FAMILIES, SPICES, priceText, baseOf, packOf, COFFEES, allergyNote, defaultBoxOpt, takesSleeve } from '../data/products';
 import { UI, path } from '../data/i18n';
 import Pouch from './Pouch.astro';
 import Sachet from './Sachet.astro';
-interface Props { p: Product; lang: Lang; row?: boolean }
-const { p, lang, row = false } = Astro.props;
+// sleeve: on the Ramadan and Eid pages, gift boxes open (and add) with that sleeve.
+interface Props { p: Product; lang: Lang; row?: boolean; sleeve?: 'ramadan' | 'eid' }
+const { p, lang, row = false, sleeve } = Astro.props;
 const ar = lang === 'ar';
-const href = path(lang, `shop/${p.id}`);
+const withSleeve = sleeve && p.kind === 'box' && takesSleeve(p) ? sleeve : undefined;
+const href = path(lang, `shop/${p.id}`) + (withSleeve ? `?sleeve=${withSleeve}` : '');
 const forBase = p.kind === 'pack' ? COFFEES.find(c => c.id === p.for) : null;
 // One line under the name: what a style adds, what a pack is for, or how a coffee tastes.
 const line = p.kind === 'kit' ? '+ ' + p.parts.map(x => (x.mini ? (ar ? 'ظرف صغير: ' : 'small ') : '') + packOf(x.id)!.name[lang]).join(' + ')
@@ -18,7 +20,7 @@ const line = p.kind === 'kit' ? '+ ' + p.parts.map(x => (x.mini ? (ar ? 'ظرف 
   : p.kind === 'coffee' && row && p.spices.length ? (ar ? `بال${p.spices.map(x => SPICES[x].name.ar).join(' وال')} فقط` : `With ${p.spices.map(x => SPICES[x].name.en.toLowerCase()).join(' and ')} only`)
   : p.kind === 'coffee' ? p.taste[lang]
   : `${FAMILIES[p.fam].name[lang]} · ${p.size[lang]}`;
-const defaultOpt = p.kind === 'coffee' ? (p.grinds[0] ?? '') : p.kind === 'kit' ? (baseOf(p).grinds[0] ?? '') : p.kind === 'box' ? (boxOptions(p)[0] ?? '') : '';
+const defaultOpt = p.kind === 'coffee' ? (p.grinds[0] ?? '') : p.kind === 'kit' ? (baseOf(p).grinds[0] ?? '') : p.kind === 'box' ? defaultBoxOpt(p) : '';
 // Packs and styles always say what they contain, including "to be confirmed": a card with no line
 // must mean no known allergens, not "not checked yet".
 const note = p.kind === 'pack' || p.kind === 'kit' ? allergyNote(p, lang) : null;
@@ -45,7 +47,7 @@ const saves = p.kind === 'kit' && !p.discovery ? [p.base, ...p.parts.map(x => x.
     {note && !note.none && <p class="allergy">{note.text}</p>}
     <div class="pc-row">
       <span class="price" data-price-for={p.id}>{priceText(p.price, lang)}</span>
-      <button class="pc-add" type="button" data-add={p.id} data-opt={defaultOpt} disabled={unpriced} aria-label={`${UI.add[lang]}: ${p.name[lang]}`}>
+      <button class="pc-add" type="button" data-add={p.id} data-opt={defaultOpt} data-sleeve={withSleeve} disabled={unpriced} aria-label={`${UI.add[lang]}: ${p.name[lang]}`}>
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
         <span>{UI.add[lang]}</span>
       </button>

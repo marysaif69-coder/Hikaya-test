@@ -617,16 +617,16 @@
   },
   "guest-box": {
     "name": {
-      "en": "The Guest Box",
-      "ar": "صندوق الضيف"
+      "en": "Coffee & Dates",
+      "ar": "قهوة وتمر"
     },
     "notes": {
-      "en": "One coffee and twelve dates in the gold sleeve, for any visit, any time of year.",
-      "ar": "قهوة واثنتا عشرة تمرة بالحزام الذهبي، لأي زيارة في أي وقت من السنة."
+      "en": "A coffee of your choosing and twelve Reserve dates, in the gold sleeve: Ramadan or Eid in their season.",
+      "ar": "قهوة تختارها واثنتا عشرة تمرة من النخبة، بالحزام الذهبي، أو بحزام رمضان والعيد في موسمهما."
     },
     "contents": {
-      "en": "Gift box with Najdi coffee (Gulf coffee and its saffron packet) and 12 Khalas dates.",
-      "ar": "صندوق هدية فيه قهوة نجدية (قهوة خليجية وظرف زعفرانها) و١٢ تمرة خلاص."
+      "en": "Gift box: one coffee (250 g, a style or a bag) and 12 Reserve dates, one kind or Mixed.",
+      "ar": "صندوق هدية: قهوة واحدة (٢٥٠ غ، طريقة أو كيس) و١٢ تمرة من النخبة، صنف واحد أو مشكّلة."
     },
     "size": {
       "en": "250 g + 12 dates",
@@ -635,16 +635,16 @@
   },
   "coffee-duo": {
     "name": {
-      "en": "The Coffee Duo",
-      "ar": "ثنائي القهوة"
+      "en": "Two Coffees",
+      "ar": "قهوتان"
     },
     "notes": {
-      "en": "Najdi and Yemeni qahwa side by side, for the house that pours all year.",
-      "ar": "نجدية ويمنية جنباً إلى جنب، للبيت الذي يصبّ طوال السنة."
+      "en": "Two coffees of your choosing side by side, for the house that pours all year.",
+      "ar": "قهوتان تختارهما جنباً إلى جنب، للبيت الذي يصبّ طوال السنة."
     },
     "contents": {
-      "en": "Gift box, gold sleeve, two coffees: Najdi (Gulf coffee with its saffron packet) and Yemeni qahwa.",
-      "ar": "صندوق هدية بالحزام الذهبي، قهوتان: نجدية (قهوة خليجية مع ظرف الزعفران) ويمنية."
+      "en": "Gift box, gold sleeve (Ramadan or Eid in their season), two coffees of 250 g, styles or bags.",
+      "ar": "صندوق هدية بالحزام الذهبي (أو حزام رمضان والعيد في موسمهما)، قهوتان ٢٥٠ غ، طرق أو أكياس."
     },
     "size": {
       "en": "2 × 250 g",

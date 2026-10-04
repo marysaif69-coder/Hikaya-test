@@ -5,3 +5,9 @@
 /brew    /ar/brew/  302  Language=ar
 /brew    /en/brew/  302
 /brew/*  /en/brew/  302
+# Round 3: the seasonal copies are retired; a season is now a sleeve on the gift boxes
+/:lang/shop/iftar-pair/        /:lang/shop/guest-box/?sleeve=ramadan   301
+/:lang/shop/eid-coffee-dates/  /:lang/shop/guest-box/?sleeve=eid       301
+/:lang/shop/eid-dates/         /:lang/shop/four-palms/?sleeve=eid      301
+/:lang/shop/eid-duo/           /:lang/shop/coffee-duo/?sleeve=eid      301
+/:lang/shop/ramadan-box/       /:lang/shop/date-box/                   301

@@ -11,7 +11,8 @@ export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lan
 const lang = Astro.params.lang as Lang;
 const ar = lang === 'ar';
 const rows = ramadanTable();
-const picks = [...BOXES.filter(b => b.fam === 'ramadan'), PRODUCTS.find(p => p.id === 'four-palms')!, PRODUCTS.find(p => p.id === 'najdi')!];
+// The gift boxes in their Ramadan sleeve, everyday dates for the house, and a coffee.
+const picks = [...['guest-box', 'coffee-duo', 'reserve-12', 'four-palms', 'date-box'].map(id => BOXES.find(b => b.id === id)!), PRODUCTS.find(p => p.id === 'najdi')!];
 const toAr = (n: number | string) => (ar ? String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]) : String(n));
 ---
 <Base season="ramadan" lang={lang} title={ar ? 'رمضان' : 'Ramadan'} current="ramadan" sleeve="ramadan" description={ar ? 'صناديق تمر وقهوة لرمضان ٢٠٢٧ في كالغاري، وجدول أوقات الإفطار.' : 'Ramadan 2027 dates and coffee in Calgary, with the iftar timetable.'}>
@@ -30,7 +31,7 @@ const toAr = (n: number | string) => (ar ? String(n).replace(/\d/g, d => '٠١٢
   <section class="sec" id="boxes" aria-labelledby="boxes-h">
     <div class="wrap">
       <h2 id="boxes-h" class="h-l">{ar ? 'للمائدة عند الغروب' : 'For the table at sunset'}</h2>
-      <div class="grid">{picks.map(p => <ProductCard p={p} lang={lang} />)}</div>
+      <div class="grid">{picks.map(p => <ProductCard p={p} lang={lang} sleeve="ramadan" />)}</div>
     </div>
   </section>
 

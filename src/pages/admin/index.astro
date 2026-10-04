@@ -798,8 +798,8 @@ import { DECISIONS } from '../../data/decisions';
   import { mountLogin, logout } from '../../scripts/login';
   import { askWho, whoLabel } from '../../scripts/whois';
   import { calgaryToIso, isoToCalgary } from '../../scripts/calgary-time';
-  import { PRODUCTS, DATES, FILLINGS, ALLERGENS, GRINDS, boxOptions, optionName } from '../../data/products';
-  const PRODUCT_LIST = PRODUCTS.map(p => ({ id: p.id, kind: p.kind, name: p.name.en }));
+  import { PRODUCTS, DATES, FILLINGS, ALLERGENS, GRINDS, SLEEVES, dateChoices, defaultBoxOpt, optionName } from '../../data/products';
+  const PRODUCT_LIST = PRODUCTS.filter(p => !(p.kind === 'box' && p.retired)).map(p => ({ id: p.id, kind: p.kind, name: p.name.en }));
   const DATE_LIST = Object.entries(DATES).map(([id, d]) => ({ id, name: d.name.en }));
   const FILLING_LIST = Object.entries(FILLINGS).map(([id, f]) => ({ id, name: `Stuffed · ${f.name.en}${f.hold ? ' (on hold)' : ''}` }));
   // French for the label's allergen line (CFIA: "Contains" in English and French).
@@ -1030,11 +1030,11 @@ import { DECISIONS } from '../../data/decisions';
       ${o.giftCard ? `<p>Gift card used: ${money(o.giftCard)}${o.giftCardCode ? ` (${esc(o.giftCardCode)})` : ''}</p>` : ''}${o.regular ? '<p><span class="pill">Regular order</span></p>' : ''}
       ${o.collected ? `<p>Collected at the door: <b>${money(o.collected.cents)}</b> by ${esc(o.collected.method)} (${esc(o.collected.by)})</p>` : ''}
       ${o.gift ? `<p class="gift-note">Gift for <b>${esc(o.gift.to)}</b>${o.gift.phone ? ` · <a href="tel:${esc(o.gift.phone)}">${esc(o.gift.phone)}</a>` : ''}${o.gift.message ? `<br>Card: <i>“${esc(o.gift.message)}”</i>` : ''}</p>` : ''}
-      <h3>Items</h3><ul class="its">${o.items.map((i: any) => `<li><span>${i.qty} × ${esc(i.name_en)}${i.option_en ? ` <small>(${esc(i.option_en)})</small>` : ''}</span><span>${money(i.unit_cents * i.qty)}</span></li>`).join('')}
+      <h3>Items</h3><ul class="its">${o.items.map((i: any) => `<li><span>${i.qty} × ${esc(i.name_en)}${i.option_en ? ` <small>(${esc(i.option_en)})</small>` : ''}${i.sleeve ? ` <b class="sl">· ${esc(SLEEVES[i.sleeve as keyof typeof SLEEVES]?.en ?? i.sleeve)}</b>` : ''}</span><span>${money(i.unit_cents * i.qty)}</span></li>`).join('')}
         ${o.delivery ? `<li><span>Delivery</span><span>${money(o.delivery)}</span></li>` : ''}${o.discount ? `<li><span>Discount ${esc(o.promo ?? '')}</span><span>−${money(o.discount)}</span></li>` : ''}<li><b>Total</b><b>${money(o.total)}</b></li>${o.refunded ? `<li><span>Refunded</span><span>−${money(o.refunded)}</span></li>` : ''}</ul>
       ${['received', 'confirmed'].includes(o.status) ? `<details class="edit-items"><summary>Change items</summary>
         <div id="eiList">${o.items.map((i: any) => itemRow(i.product_id, i.option, i.qty)).join('')}</div>
-        <div class="acts"><select id="eiAdd"><option value="">Add a product…</option>${PRODUCTS.map(p => `<option value="${p.id}"${unpriced(p.id) && !o.sample ? ' disabled' : ''}>${esc(p.name.en)}${unpriced(p.id) ? (o.sample ? ' (no price yet: $20 stand-in)' : ' (no price yet)') : ''}</option>`).join('')}</select></div>
+        <div class="acts"><select id="eiAdd"><option value="">Add a product…</option>${PRODUCTS.filter(p => !(p.kind === 'box' && p.retired)).map(p => `<option value="${p.id}"${unpriced(p.id) && !o.sample ? ' disabled' : ''}>${esc(p.name.en)}${unpriced(p.id) ? (o.sample ? ' (no price yet: $20 stand-in)' : ' (no price yet)') : ''}</option>`).join('')}</select></div>
         <label class="notify"><input type="checkbox" id="eiNotify" checked /> Email the customer the new order</label>
         <div class="acts"><button type="button" id="eiSave">Save changes</button></div>
         <p class="ev">Prices are today's. Quantity 0 removes a line. If it was paid and the total goes up, it shows what is still to pay; if it goes down, use Refund.</p></details>` : ''}
@@ -1104,7 +1104,7 @@ import { DECISIONS } from '../../data/decisions';
   function itemRow(pid: string, opt: string | null, qty: number) {
     const p = PRODUCTS.find(x => x.id === pid); if (!p) return '';
     const g = p.kind === 'coffee' ? p.grinds : p.kind === 'kit' ? (PRODUCTS.find(x => x.id === p.base) as any)?.grinds ?? [] : [];
-    const opts = g.length ? g.map((x: keyof typeof GRINDS) => [x, GRINDS[x].en]) : p.kind === 'box' ? boxOptions(p).map(id => [id, optionName(p, id, 'en')]) : [];
+    const opts = g.length ? g.map((x: keyof typeof GRINDS) => [x, GRINDS[x].en]) : p.kind === 'box' ? (p.picks ? [defaultBoxOpt(p)] : dateChoices(p)).map(id => [id, optionName(p, id, 'en')]) : [];
     // An old order may hold an option no longer offered (khudri, medjool in the Everyday box): keep it listed.
     if (opt && opts.length && !opts.some(([v]: string[]) => v === opt)) opts.push([opt, p.kind === 'box' ? optionName(p, opt, 'en') : opt]);
     return `<div class="ei acts" data-pid="${p.id}"><span>${esc(p.name.en)}</span>${opts.length ? `<select>${opts.map(([v, l]) => `<option value="${v}" ${v === opt ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>` : ''}<input type="number" min="0" max="20" value="${qty}" style="width:70px" aria-label="Quantity" /></div>`;
@@ -1466,7 +1466,7 @@ import { DECISIONS } from '../../data/decisions';
     if (!all.length) { alert('No orders this day.'); return; }
     const slip = (o: any) => `<section class="slip"><header><b>${esc(o.ref)}</b><span>${fmtDay(o.day)} · ${esc(o.window)}</span></header>
       <h2>${esc(o.gift ? o.gift.to : o.name)}</h2><p>${o.method === 'delivery' ? `Delivery · ${esc(o.street)}, ${esc(o.postal)}` : 'Pickup'}${o.gift ? ` · gift from ${esc(o.name)}` : ''}</p>
-      <table>${o.items.map((i: any) => `<tr><td class="q">${i.qty} ×</td><td>${esc(i.name_en)}${i.option_en ? ` <small>(${esc(i.option_en)})</small>` : ''}</td><td class="box">☐</td></tr>`).join('')}</table>
+      <table>${o.items.map((i: any) => `<tr><td class="q">${i.qty} ×</td><td>${esc(i.name_en)}${i.option_en ? ` <small>(${esc(i.option_en)})</small>` : ''}${i.sleeve ? ` <b class="sl">· ${esc(SLEEVES[i.sleeve as keyof typeof SLEEVES]?.en ?? i.sleeve)}</b>` : ''}</td><td class="box">☐</td></tr>`).join('')}</table>
       ${o.notes ? `<p class="note">Customer note: ${esc(o.notes)}</p>` : ''}${o.customerNote ? `<p class="note">Team note: ${esc(o.customerNote)}</p>` : ''}
       ${o.lots?.length ? `<p class="note">Lots: ${o.lots.map(esc).join(', ')}</p>` : ''}
       <p>${o.paymentStatus === 'paid' ? 'Paid' : o.payment === 'at-pickup' ? `Collect ${money(o.total - (o.paid ?? 0))}` : o.paid ? `${money(o.total - o.paid)} still to pay` : 'Not paid yet'}${o.gift ? ' · GIFT: no prices in the bag' : ''}</p></section>

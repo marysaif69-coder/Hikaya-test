@@ -34,7 +34,6 @@ const SIZES = ['dates-250', 'date-box', 'dates-1kg'].map(id => BY_ID[id]);
 const reserve = BOXES.filter(b => b.tier === 'reserve');
 const stuffed = BOXES.filter(b => b.tier === 'stuffed');
 const gifts = ['guest-box', 'coffee-duo', 'four-palms'].map(id => BY_ID[id]);
-const seasons = (['ramadan', 'eid'] as const).map(id => ({ id, items: BOXES.filter(b => b.fam === id) }));
 const DATE_PICKS = [
   { id: 'everyday', name: { ar: 'تمر كل يوم', en: 'Everyday' }, sub: { ar: 'خلاص وسكري قصيمي، بالوزن', en: 'Khalas and Sukkari Qassimi, by weight' }, c: DATES.khalas.c },
   { id: 'reserve', name: { ar: 'تمر النخبة', en: 'Reserve' }, sub: { ar: 'سكري ملكي مفتّل، عجوة، مجدول', en: 'Royal Sukkari Mufattal, Ajwa, Medjool' }, c: DATES.ajwa.c, badge: true },
@@ -185,27 +184,14 @@ const dateArt = (c: string) => `<svg viewBox="-26 -46 52 92" aria-hidden="true">
       </div>
     </section>
 
-    <section class="fam dsec alt" id="gifts" aria-labelledby="h-gifts" data-group>
+    <section class="fam dsec alt" id="gifts" aria-labelledby="h-gifts">
       <div class="wrap">
         <div class="panel-head"><h2 id="h-gifts" class="h-m">{ar ? 'علب الهدايا' : 'Gift boxes'}</h2><p class="muted">{ar ? 'قهوة وتمر بالحزام الذهبي، لأي زيارة.' : 'Coffee and dates in the gold sleeve, for any visit.'}</p></div>
+        <p class="muted panel-note" data-season="ramadan eid">{ar ? 'في رمضان والعيد: اختر حزام رمضان أو العيد في صفحة العلبة.' : 'In Ramadan and Eid: choose the Ramadan or Eid sleeve on the box’s page.'}</p>
         <div class="grid">{gifts.map(p => <ProductCard p={p} lang={lang} />)}</div>
       </div>
     </section>
 
-    <!-- Ramadan and Eid last, so they don't push the dates down. -->
-    <div id="season" data-season="ramadan eid">
-      {seasons.map(g => (
-        <section class="fam dsec" id={g.id} aria-labelledby={`h-${g.id}`} data-group data-season={g.id}>
-          <div class="wrap">
-            <div class="fam-head">
-              <h2 id={`h-${g.id}`} class="h-m">{FAMILIES[g.id].name[lang]}</h2>
-              <p class="muted">{FAMILIES[g.id].line[lang]}</p>
-            </div>
-            <div class="grid">{g.items.map(p => <ProductCard p={p} lang={lang} />)}</div>
-          </div>
-        </section>
-      ))}
-    </div>
   </div>
 </Base>
 
@@ -224,7 +210,8 @@ const dateArt = (c: string) => `<svg viewBox="-26 -46 52 92" aria-hidden="true">
   }
   tabs.forEach(t => t.addEventListener('click', () => choose(t.dataset.pick!, true)));
   // Coffee | Dates: one view at a time. Coffee opens first; #dates and its sections open Dates.
-  const DATE_IDS = ['dates', 'everyday', 'reserve', 'stuffed', 'gifts', 'season', 'ramadan', 'eid'];
+  // Ramadan and Eid are now a sleeve on the gift boxes: their old links open the gift boxes.
+  const DATE_IDS = ['dates', 'everyday', 'reserve', 'stuffed', 'gifts', 'ramadan', 'eid'];
   const viewTabs = [...document.querySelectorAll<HTMLButtonElement>('[data-view]')];
   const views = [...document.querySelectorAll<HTMLElement>('[data-view-panel]')];
   document.getElementById('topTabs')!.hidden = false;
@@ -249,7 +236,7 @@ const dateArt = (c: string) => `<svg viewBox="-26 -46 52 92" aria-hidden="true">
     if (ids.includes(h)) { setView('coffee'); choose(h, true); return true; }
     if (DATE_IDS.includes(h)) {
       setView('dates');
-      const el = h === 'dates' ? document.getElementById('topTabs') : document.getElementById(h);
+      const el = h === 'dates' ? document.getElementById('topTabs') : document.getElementById(h === 'ramadan' || h === 'eid' ? 'gifts' : h);
       requestAnimationFrame(() => el?.scrollIntoView({ behavior: motion(), block: 'start' }));
       return true;
     }

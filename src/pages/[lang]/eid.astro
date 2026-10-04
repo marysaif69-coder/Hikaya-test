@@ -8,7 +8,8 @@ import { path } from '../../data/i18n';
 export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
 const lang = Astro.params.lang as Lang;
 const ar = lang === 'ar';
-const eid = BOXES.filter(b => b.fam === 'eid');
+// One set of gift boxes all year; in Eid they come in the Eid sleeve.
+const eid = ['guest-box', 'coffee-duo', 'four-palms', 'reserve-24'].map(id => BOXES.find(b => b.id === id)!);
 ---
 <Base season="eid" lang={lang} title={ar ? 'العيد' : 'Eid'} current="eid" sleeve="eid" description={ar ? 'إصدار العيد من حكاية: قهوة وتمر للزيارات، في كالغاري.' : 'The Hikaya Eid edition: coffee and dates for the visits, in Calgary.'}>
   <section class="e-hero">
@@ -39,8 +40,8 @@ const eid = BOXES.filter(b => b.fam === 'eid');
   <section class="sec" id="eid-boxes" aria-labelledby="eb-h">
     <div class="wrap">
       <h2 id="eb-h" class="h-l">{ar ? 'إصدار العيد' : 'The Eid edition'}</h2>
-      <p class="lead" style="margin-top:12px">{ar ? 'ثلاثة صناديق بحزام خلال الذهبي. بلا معمول: نترك المعمول لبيوتكم.' : 'Three boxes with the gold khalal band. No maamoul: we leave that to your kitchens.'}</p>
-      <div class="grid">{eid.map(p => <ProductCard p={p} lang={lang} />)}</div>
+      <p class="lead" style="margin-top:12px">{ar ? 'علب الهدايا نفسها، بحزام العيد. بلا معمول: نترك المعمول لبيوتكم.' : 'Our gift boxes, in the Eid sleeve. No maamoul: we leave that to your kitchens.'}</p>
+      <div class="grid">{eid.map(p => <ProductCard p={p} lang={lang} sleeve="eid" />)}</div>
       <p class="muted when">{ar ? 'العيد متوقع نحو ٩ مارس ٢٠٢٧. طلبات العيد تصل قبل صباح العيد.' : 'Eid is expected around 9 March 2027. Eid orders arrive before Eid morning.'} <a href={path(lang, 'visit')}>{ar ? 'الاستلام والتوصيل' : 'Pickup & delivery'}</a></p>
     </div>
   </section>

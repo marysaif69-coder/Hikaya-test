@@ -6,7 +6,7 @@ import { randomInt } from 'node:crypto';
 import { sql, one } from './db';
 import { hash, token } from './auth';
 import { calgaryNow, addDays, weekday, WINDOWS } from './slots';
-import { PRODUCTS, GRINDS, fileCents, boxOptions, optionName } from '../../src/data/products';
+import { PRODUCTS, ON_SALE, GRINDS, GIFT_COFFEES, fileCents, dateChoices, optionName } from '../../src/data/products';
 import { calgaryPostal, SAMPLE_CENTS } from './orders';
 
 const PEOPLE: [string, 'en' | 'ar'][] = [
@@ -33,9 +33,9 @@ export async function createSamples(actor: string) {
         const method = randomInt(10) < 4 ? 'delivery' : 'pickup';
         const k = randomInt(STREETS.length);
         const lines = Array.from({ length: 1 + randomInt(3) }, () => {
-          const p = pick(PRODUCTS);
+          const p = pick(ON_SALE);
           const base = p.kind === 'kit' ? PRODUCTS.find(x => x.id === p.base) : p;
-          const opt = base?.kind === 'coffee' ? base.grinds[0] ?? null : p.kind === 'box' && boxOptions(p).length ? pick(boxOptions(p)) : null;
+          const opt = base?.kind === 'coffee' ? base.grinds[0] ?? null : p.kind === 'box' && p.picks ? p.picks.map(k => (k === 'coffee' ? pick(GIFT_COFFEES) : pick(dateChoices(p)))).join('|') : p.kind === 'box' && dateChoices(p).length ? pick(dateChoices(p)) : null;
           const label = base?.kind === 'coffee' && opt ? GRINDS[opt as keyof typeof GRINDS] : p.kind === 'box' && opt ? { en: optionName(p, opt, 'en'), ar: optionName(p, opt, 'ar') } : null;
           // Prices not set yet: samples use a stand-in so the desk has numbers to show.
           return { id: p.id, en: p.name.en, ar: p.name.ar, opt, label, qty: 1 + (randomInt(4) === 0 ? 1 : 0), cents: fileCents(p) ?? SAMPLE_CENTS };

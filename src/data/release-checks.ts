@@ -6,6 +6,18 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: '3-3', title: 'Round 3 · batch 3: four gift boxes with Mixed, and seasonal sleeves', date: '2026-10-04',
+    checks: [
+      { id: '3-3-coffee-dates', text: 'Coffee & Dates: choose the coffee (Najdi, Hadrami…) and the Reserve dates (one kind or Mixed, 4 of each); add it: the cart says e.g. “Najdi · Mixed Reserve”.', links: [{ label: 'Coffee & Dates (AR)', href: '/ar/shop/guest-box/' }, { label: 'Coffee & Dates (EN)', href: '/en/shop/guest-box/' }] },
+      { id: '3-3-two-coffees', text: 'Two Coffees: two coffee choices, first and second.', links: [{ label: 'Two Coffees (EN)', href: '/en/shop/coffee-duo/' }] },
+      { id: '3-3-mixed', text: 'Reserve 24 and Stuffed 12 offer Mixed (8 of each; 3 of each with its allergens).', links: [{ label: 'Reserve 24 (AR)', href: '/ar/shop/reserve-24/' }, { label: 'Stuffed 12 (EN)', href: '/en/shop/stuffed-12/' }] },
+      { id: '3-3-sleeves', text: 'Gift boxes have a Sleeve choice. Ramadan and Eid show only while that season is on (Admin → Shop → Products, top). From the Ramadan page, a box opens with the Ramadan sleeve picked.', links: [{ label: 'Ramadan (AR)', href: '/ar/ramadan/' }, { label: 'Eid (EN)', href: '/en/eid/' }] },
+      { id: '3-3-retired', text: 'The old seasonal boxes are gone from the shop and the Products list (Iftar Pair, Ramadan Date Box, Eid Coffee & Dates, Eid Dates, Eid Coffee Duo). An old link such as /en/shop/iftar-pair/ goes to Coffee & Dates with the Ramadan sleeve.', links: [{ label: 'Old Iftar Pair link', href: '/en/shop/iftar-pair/' }] },
+      { id: '3-3-desk', text: 'Desk: an order with a Ramadan sleeve shows “· Ramadan sleeve” on the order and on the packing slip; the week sheet counts it under Ramadan sleeves.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: '3-3-prices', text: 'Admin → Shop → Products: Coffee & Dates and Two Coffees now say “no price” (their old draft prices were for fixed contents). Set them when you are ready.', links: [{ label: 'Desk', href: '/admin/' }] },
+    ],
+  },
+  {
     id: '3-2', title: 'Round 3 · batch 2: Shop: Coffee | Dates tabs', date: '2026-10-04',
     checks: [
       { id: '3-2-tabs', text: 'Shop opens on Coffee. Tap “Dates · التمر”: three cards (Everyday, Reserve with “Our pick”, Stuffed), then the sections below.', links: [{ label: 'Shop (AR)', href: '/ar/shop/' }, { label: 'Shop (EN)', href: '/en/shop/' }] },

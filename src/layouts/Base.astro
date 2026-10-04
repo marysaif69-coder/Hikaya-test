@@ -2,7 +2,7 @@
 import '../styles/fonts.css';
 import '../styles/global.css';
 import type { Lang } from '../data/products';
-import { PRODUCTS, GRINDS, COFFEES, kitInside, boxOptions, optionName } from '../data/products';
+import { PRODUCTS, GRINDS, COFFEES, GIFT_COFFEES, SLEEVES, kitInside, dateChoices, boxOptionLabel, takesSleeve } from '../data/products';
 import { UI, dir, other, path } from '../data/i18n';
 import AskHikaya from '../components/AskHikaya.astro';
 import TeamBar from '../components/TeamBar.astro';
@@ -25,7 +25,12 @@ const grindsOf = (id: string) => COFFEES.find(c => c.id === id)?.grinds ?? [];
 const catalog = Object.fromEntries(PRODUCTS.map(p => [p.id, {
   n: p.name, price: p.price, kind: p.kind,
   img: p.kind === 'box' ? p.img : p.kind === 'coffee' ? p.art?.front ?? null : null,
-  opts: p.kind === 'coffee' || p.kind === 'kit' ? Object.fromEntries(grindsOf(p.kind === 'kit' ? p.base : p.id).map(g => [g, GRINDS[g]])) : p.kind === 'box' && boxOptions(p).length ? Object.fromEntries(boxOptions(p).map(k => [k, { en: optionName(p, k, 'en'), ar: optionName(p, k, 'ar') }])) : null,
+  opts: p.kind === 'coffee' || p.kind === 'kit' ? Object.fromEntries(grindsOf(p.kind === 'kit' ? p.base : p.id).map(g => [g, GRINDS[g]])) : p.kind === 'box' && p.picks
+    // Two-choice boxes: a label for each part (the cart joins "najdi|mixed" as "Najdi · Mixed Reserve").
+    ? Object.fromEntries([...GIFT_COFFEES.map(k => [k, PRODUCTS.find(x => x.id === k)!.name]), ...dateChoices(p).map(k => [k, { en: boxOptionLabel({ ...p, picks: ['reserve'] }, k, 'en'), ar: boxOptionLabel({ ...p, picks: ['reserve'] }, k, 'ar') }])])
+    : p.kind === 'box' && dateChoices(p).length ? Object.fromEntries(dateChoices(p).map(k => [k, { en: boxOptionLabel(p, k, 'en'), ar: boxOptionLabel(p, k, 'ar') }])) : null,
+  ...(p.kind === 'box' && p.picks ? { picks: true } : {}),
+  ...(p.kind === 'box' && takesSleeve(p) ? { sleeves: SLEEVES } : {}),
   ...(p.kind === 'kit' ? { base: p.base, inside: { en: kitInside(p, 'en'), ar: kitInside(p, 'ar') } } : {}),
   ...(p.kind === 'pack' ? { for: p.for } : {}),
   ...(p.kind === 'box' && p.packs?.coffee ? { bases: Object.keys(p.packs.coffee) } : {}),

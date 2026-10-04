@@ -6,7 +6,7 @@ import { liveCatalog } from './catalog';
 import { send, backInStockEmail } from './email';
 
 export async function addAlert(productId: string, email: string, lang: 'en' | 'ar') {
-  if (!PRODUCTS.some(p => p.id === productId)) throw new HttpError(404, 'not-found');
+  if (!PRODUCTS.some(p => p.id === productId && !(p.kind === 'box' && p.retired))) throw new HttpError(404, 'not-found');
   const e = email.trim().toLowerCase();
   if (!isEmail(e)) throw Object.assign(new HttpError(400, 'invalid', 'Check the email.'), { fields: { email: 'email' } });
   await sql`INSERT INTO stock_alerts (product_id, email, lang) VALUES (${productId}, ${e}, ${lang})

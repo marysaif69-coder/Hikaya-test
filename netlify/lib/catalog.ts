@@ -30,17 +30,22 @@ export async function saveSeasons(next: Partial<Seasons>) {
 /** What one product uses up: itself, plus for a style or discovery pack its base bag and its
  * full-size packs (small tasting packs are a separate item), and for a gift box the bags and
  * packs inside. Stock, sold out and daily limits on a bag or pack then reach everything it is in. */
-export function componentsOf(id: string, qty: number): [string, number][] {
+export function componentsOf(id: string, qty: number, option: string | null = null): [string, number][] {
   const p = PRODUCTS.find(x => x.id === id);
   const out: [string, number][] = [[id, qty]];
   if (p?.kind === 'kit') { out.push([p.base, qty]); for (const x of p.parts) if (!x.mini) out.push([x.id, qty]); }
-  if (p?.kind === 'box') for (const group of [p.packs?.coffee, p.packs?.sachets]) for (const [c, n] of Object.entries(group ?? {})) out.push([c, n * qty]);
+  // A gift box with choices uses the coffees chosen (a style also counts as itself, so its stock
+  // and daily limit reach the box); without an option, what the box holds by default.
+  if (p?.kind === 'box') {
+    if (p.picks && option) for (const part of option.split('|')) if (PRODUCTS.some(x => x.id === part && (x.kind === 'kit' || x.kind === 'coffee'))) out.push(...componentsOf(part, qty));
+    if (!p.picks || !option) for (const group of [p.packs?.coffee, p.packs?.sachets]) for (const [c, n] of Object.entries(group ?? {})) out.push([c, n * qty]);
+  }
   return out;
 }
 /** Lines expanded into everything they use, added up per product. */
-export function expand(lines: { product_id: string; qty: number }[]) {
+export function expand(lines: { product_id: string; qty: number; option?: string | null }[]) {
   const m = new Map<string, number>();
-  for (const l of lines) for (const [id, n] of componentsOf(l.product_id, l.qty)) m.set(id, (m.get(id) ?? 0) + n);
+  for (const l of lines) for (const [id, n] of componentsOf(l.product_id, l.qty, l.option ?? null)) m.set(id, (m.get(id) ?? 0) + n);
   return m;
 }
 
@@ -53,7 +58,8 @@ export async function liveCatalog(): Promise<Record<string, Live>> {
     const r = by.get(p.id);
     const season = seasonOf(p.id);
     const visible = r ? r.visible : true;
-    const shown = visible && (!season || seasons[season]);
+    // Retired boxes (the old seasonal copies) are never shown or sold.
+    const shown = visible && (!season || seasons[season]) && !(p.kind === 'box' && p.retired);
     const partsOk = componentsOf(p.id, 1).slice(1).every(([id]) => !out(id));
     return [p.id, { price_cents: r?.price_cents ?? fileCents(p), visible, available: (r ? r.available : true) && shown && partsOk, stock: r?.stock ?? null, dailyCap: r?.daily_cap ?? null, season, shown, changed: Boolean(r) }];
   }));
@@ -70,7 +76,7 @@ async function lowStockAlert(id: string, left: number) {
     await send({ to, subject: left === 0 ? `Sold out: ${name}` : `Running low: ${name} (${left} left)`, text, html: `<p style="font:15px Arial,sans-serif">${text.replace(/\n/g, '<br>')}</p>`, kind: 'team-low-stock' });
 }
 
-export async function takeStock(lines: { product_id: string; qty: number }[]) {
+export async function takeStock(lines: { product_id: string; qty: number; option?: string | null }[]) {
   const want = expand(lines);
   const taken: [string, number][] = [];
   for (const [id, qty] of want) {
@@ -91,8 +97,8 @@ export async function giveStock(taken: [string, number][]) {
 
 /** Puts a cancelled order's items back into stock. */
 export async function restock(orderId: number) {
-  const its = await sql`SELECT product_id, SUM(qty)::int AS qty FROM order_items WHERE order_id = ${orderId} GROUP BY product_id`;
-  await giveStock([...expand(its.map(i => ({ product_id: i.product_id, qty: i.qty })))]);
+  const its = await sql`SELECT product_id, option, SUM(qty)::int AS qty FROM order_items WHERE order_id = ${orderId} GROUP BY product_id, option`;
+  await giveStock([...expand(its.map(i => ({ product_id: i.product_id, qty: i.qty, option: i.option })))]);
 }
 
 export async function saveProduct(id: string, change: { price_cents?: number | null; visible?: boolean; available?: boolean; stock?: number | null; daily_cap?: number | null }, actor: string) {
@@ -115,11 +121,11 @@ export async function saveProduct(id: string, change: { price_cents?: number | n
 
 /** Daily limits for one day: a product's own daily cap, and the gift boxes the team can pack in a
  * day. `exceptOrder` leaves out an order being moved; `beforeId` counts only orders saved before it. */
-export async function assertDayLimits(date: string, lines: { product_id: string; qty: number }[], giftBoxesPerDay: number | null, exceptOrder = 0, beforeId = 0) {
+export async function assertDayLimits(date: string, lines: { product_id: string; qty: number; option?: string | null }[], giftBoxesPerDay: number | null, exceptOrder = 0, beforeId = 0) {
   const caps = await sql`SELECT product_id, daily_cap FROM product_settings WHERE daily_cap IS NOT NULL`;
   // A bag's daily cap counts the bags inside styles and gift boxes too, on both sides.
   const want = expand(lines);
-  const day = caps.length ? expand(await sql`SELECT i.product_id, i.qty FROM order_items i JOIN orders o ON o.id = i.order_id
+  const day = caps.length ? expand(await sql`SELECT i.product_id, i.qty, i.option FROM order_items i JOIN orders o ON o.id = i.order_id
     WHERE o.slot_date = ${date} AND o.status <> 'cancelled' AND NOT o.is_sample AND o.id <> ${exceptOrder} AND (${beforeId}::int = 0 OR o.id < ${beforeId})` as any) : new Map<string, number>();
   const taken = async (ids: string[]) => ids.length ? (await one`SELECT COALESCE(SUM(i.qty), 0)::int AS n FROM order_items i JOIN orders o ON o.id = i.order_id
     WHERE o.slot_date = ${date} AND o.status <> 'cancelled' AND NOT o.is_sample AND o.id <> ${exceptOrder} AND (${beforeId}::int = 0 OR o.id < ${beforeId}) AND i.product_id = ANY(${ids})`)!.n as number : 0;

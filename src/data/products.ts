@@ -110,11 +110,18 @@ export interface Box {
   fillings?: FillingId[];
   allergens?: Allergen[];
   tier?: 'everyday' | 'reserve' | 'stuffed' | 'gift';
+  /** Offers "Mixed · مشكّل": the dates (or fillings) split evenly across the kinds on offer. */
+  mixed?: boolean;
+  /** Boxes with two choices in one option string, e.g. "najdi|mixed" (Coffee & Dates) or "najdi|hadrami" (Two Coffees). */
+  picks?: ('coffee' | 'reserve')[];
+  /** No longer sold (a season now changes the sleeve, not the product). Kept so old orders, lots and labels still read. */
+  retired?: true;
   /** What goes inside, for the weekly roast and pack sheet: 250 g base bags, sealed packs, dates by variety (pieces). */
   packs?: { coffee?: Record<string, number>; sachets?: Record<string, number>; dates?: Partial<Record<DateId, number>> };
 }
 
 export type Product = Coffee | Pack | Kit | Box;
+export type Sleeve = 'regular' | 'ramadan' | 'eid';
 
 export const FAMILIES: Record<Family, { name: L; line: L }> = {
   palm: { name: { en: 'Gulf', ar: 'الخليج' }, line: { en: 'Pale and golden, poured from the dallah. One bag, taken your way.', ar: 'شقراء وذهبية، تُصبّ من الدلّة. كيس واحد، تشربه بطريقتك.' } },
@@ -188,6 +195,7 @@ export const FILLINGS: Record<FillingId, { name: L; allergens: Allergen[]; maybe
 export const FILLINGS_ON_SALE = (Object.keys(FILLINGS) as FillingId[]).filter(f => !FILLINGS[f].hold);
 /** What the customer chooses for a box: a filling (stuffed) or a variety (chooseDate); empty when nothing. */
 export const boxOptions = (b: Box): string[] => b.fillings ?? (b.chooseDate ? varietiesOf(b) : []);
+// (Mixed and the two-choice boxes: see dateChoices and boxOptionLabel below BOXES.)
 
 const C = (c: Omit<Coffee, 'kind' | 'size' | 'price'> & { size?: L; price?: number | null }): Coffee => ({ kind: 'coffee', size: { en: '250 g', ar: '٢٥٠ غ' }, price: null, ...c });
 
@@ -331,14 +339,14 @@ export const BOXES: Box[] = [
   ...([12, 24] as const).map((n): Box => ({ kind: 'box', id: `reserve-${n}`, fam: 'dates', tier: 'reserve',
     name: { en: `Reserve box, ${n} dates`, ar: `علبة النخبة، ${n === 12 ? '١٢' : '٢٤'} تمرة` }, price: null,
     size: { en: `${n} dates`, ar: `${n === 12 ? '١٢' : '٢٤'} تمرة` }, img: '/media/img/ramadan-date.webp',
-    insert: n === 12 ? 'C12' : 'D24', sleeve: 'regular', chooseDate: true, count: n, varieties: RESERVE,
+    insert: n === 12 ? 'C12' : 'D24', sleeve: 'regular', chooseDate: true, count: n, varieties: RESERVE, mixed: true,
     notes: { en: 'Royal Sukkari Mufattal, Ajwa or Medjool. Larger, hand-picked, each date in its own cup [TBD: confirm with the supplier]. The ones we recommend.', ar: 'سكري ملكي مفتّل أو عجوة أو مجدول. أكبر حجماً، منتقاة باليد، كل تمرة في كوبها [TBD: confirm with the supplier]. وهي ما ننصح به.' },
     contents: { en: `Gift box, ${n} dates of one variety in paper cups.`, ar: `صندوق هدية، ${n === 12 ? '١٢' : '٢٤'} تمرة من صنف واحد في أكواب ورقية.` }, preorder: true })),
   // Stuffed: one filling per box; each date sealed on its own. Allergens follow the filling (FILLINGS).
   ...([12, 24] as const).map((n): Box => ({ kind: 'box', id: `stuffed-${n}`, fam: 'dates', tier: 'stuffed',
     name: { en: `Stuffed dates, ${n}`, ar: `تمر محشي، ${n === 12 ? '١٢' : '٢٤'} تمرة` }, price: null,
     size: { en: `${n} dates`, ar: `${n === 12 ? '١٢' : '٢٤'} تمرة` }, img: '/media/img/eid-dates.webp',
-    insert: n === 12 ? 'C12' : 'D24', sleeve: 'regular', count: n, fillings: FILLINGS_ON_SALE,
+    insert: n === 12 ? 'C12' : 'D24', sleeve: 'regular', count: n, fillings: FILLINGS_ON_SALE, mixed: true,
     notes: { en: 'Each date sealed on its own, with its allergen label.', ar: 'كل تمرة مغلّفة وحدها، مع ملصق مسببات الحساسية.' },
     contents: { en: `Gift box, ${n} stuffed dates, one filling, each sealed.`, ar: `صندوق هدية، ${n === 12 ? '١٢' : '٢٤'} تمرة محشية بحشوة واحدة، كل تمرة مغلّفة.` }, preorder: true })),
   { kind: 'box', id: 'four-palms', tier: 'gift', fam: 'dates', name: { en: 'Four Palms', ar: 'أربع نخلات' }, price: 44, size: { en: '24 dates', ar: '٢٤ تمرة' }, img: '/media/img/ramadan-date.webp',
@@ -346,31 +354,35 @@ export const BOXES: Box[] = [
     notes: { en: 'Sukkari, Khalas, Khudri and Ajwa, six of each, side by side.', ar: 'سكري وخلاص وخضري وعجوة، ست من كل صنف، جنباً إلى جنب.' },
     contents: { en: 'Gift box, 24 dates in paper cups, four varieties.', ar: 'صندوق هدية، ٢٤ تمرة في أكواب ورقية، أربعة أصناف.' }, preorder: true },
   // Year-round gift boxes in the regular gold sleeve: they stay when Ramadan and Eid are switched off.
-  { kind: 'box', id: 'guest-box', tier: 'gift', fam: 'dates', name: { en: 'The Guest Box', ar: 'صندوق الضيف' }, price: 54, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/giftbox.webp',
+  // Coffee & Dates (id kept for order history): one coffee style + 12 Reserve dates, both chosen.
+  // `packs` is what boxes held before the choices (old orders without an option).
+  { kind: 'box', id: 'guest-box', tier: 'gift', fam: 'dates', name: { en: 'Coffee & Dates', ar: 'قهوة وتمر' }, price: null, picks: ['coffee', 'reserve'], count: 12, varieties: RESERVE, mixed: true, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/giftbox.webp',
     insert: 'C12', sleeve: 'regular', packs: { coffee: { gulf: 1 }, sachets: { 'pack-saffron': 1 }, dates: { khalas: 12 } },
     notes: { en: 'One coffee and twelve dates in the gold sleeve, for any visit, any time of year.', ar: 'قهوة واثنتا عشرة تمرة بالحزام الذهبي، لأي زيارة في أي وقت من السنة.' },
     contents: { en: 'Gift box with Najdi coffee (Gulf coffee and its saffron packet) and 12 Khalas dates.', ar: 'صندوق هدية فيه قهوة نجدية (قهوة خليجية وظرف زعفرانها) و١٢ تمرة خلاص.' }, preorder: true },
-  { kind: 'box', id: 'coffee-duo', tier: 'gift', fam: 'dates', name: { en: 'The Coffee Duo', ar: 'ثنائي القهوة' }, price: 46, size: { en: '2 × 250 g', ar: '٢ × ٢٥٠ غ' }, img: '/media/img/giftbox.webp',
+  // Two Coffees (id kept): two styles, both chosen.
+  { kind: 'box', id: 'coffee-duo', tier: 'gift', fam: 'dates', name: { en: 'Two Coffees', ar: 'قهوتان' }, price: null, picks: ['coffee', 'coffee'], size: { en: '2 × 250 g', ar: '٢ × ٢٥٠ غ' }, img: '/media/img/giftbox.webp',
     insert: 'C2', sleeve: 'regular', packs: { coffee: { gulf: 1, yemeni: 1 }, sachets: { 'pack-saffron': 1 } },
     notes: { en: 'Najdi and Yemeni qahwa side by side, for the house that pours all year.', ar: 'نجدية ويمنية جنباً إلى جنب، للبيت الذي يصبّ طوال السنة.' },
     contents: { en: 'Gift box, gold sleeve, two coffees: Najdi (Gulf coffee with its saffron packet) and Yemeni qahwa.', ar: 'صندوق هدية بالحزام الذهبي، قهوتان: نجدية (قهوة خليجية مع ظرف الزعفران) ويمنية.' }, preorder: true },
-  { kind: 'box', id: 'iftar-pair', tier: 'gift', fam: 'ramadan', name: { en: 'The Iftar Pair', ar: 'ثنائي الإفطار' }, price: 54, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/iftar-pair.webp',
+  // Retired: the seasonal copies. Ramadan and Eid are now a sleeve on the gift boxes above.
+  { kind: 'box', id: 'iftar-pair', retired: true, tier: 'gift', fam: 'ramadan', name: { en: 'The Iftar Pair', ar: 'ثنائي الإفطار' }, price: 54, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/iftar-pair.webp',
     insert: 'C12', sleeve: 'ramadan', packs: { coffee: { gulf: 1 }, sachets: { 'pack-saffron': 1 }, dates: { khalas: 12 } },
     notes: { en: 'One coffee and twelve dates, for the first cup after sunset.', ar: 'قهوة واثنتا عشرة تمرة، لأول فنجان بعد الغروب.' },
     contents: { en: 'Gift box with Najdi coffee (Gulf coffee and its saffron packet) and 12 Khalas dates.', ar: 'صندوق هدية فيه قهوة نجدية (قهوة خليجية وظرف زعفرانها) و١٢ تمرة خلاص.' }, preorder: true },
-  { kind: 'box', id: 'ramadan-box', tier: 'everyday', fam: 'ramadan', name: { en: 'Ramadan Date Box', ar: 'صندوق تمر رمضان' }, price: 34, size: { en: '500 g', ar: '٥٠٠ غ' }, img: '/media/img/giftbox.webp',
+  { kind: 'box', id: 'ramadan-box', retired: true, tier: 'everyday', fam: 'ramadan', name: { en: 'Ramadan Date Box', ar: 'صندوق تمر رمضان' }, price: 34, size: { en: '500 g', ar: '٥٠٠ غ' }, img: '/media/img/giftbox.webp',
     insert: 'everyday', sleeve: 'ramadan', chooseDate: true, grams: 500, varieties: EVERYDAY,
     notes: { en: 'The everyday box in its Ramadan sleeve.', ar: 'العلبة اليومية بحزام رمضان.' },
     contents: { en: '500 g of one variety, Ramadan sleeve.', ar: '٥٠٠ غ من صنف واحد، بحزام رمضان.' }, preorder: true },
-  { kind: 'box', id: 'eid-coffee-dates', tier: 'gift', fam: 'eid', name: { en: 'Eid Coffee & Dates', ar: 'قهوة وتمر العيد' }, price: 56, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/eid-coffee-dates.webp',
+  { kind: 'box', id: 'eid-coffee-dates', retired: true, tier: 'gift', fam: 'eid', name: { en: 'Eid Coffee & Dates', ar: 'قهوة وتمر العيد' }, price: 56, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/eid-coffee-dates.webp',
     insert: 'C12', sleeve: 'eid', packs: { coffee: { gulf: 1 }, sachets: { 'pack-saffron': 1 }, dates: { khalas: 12 } },
     notes: { en: 'For the first house you visit. The elders, always.', ar: 'لأول بيت تزورونه. الكبار دائماً.' },
     contents: { en: 'Gold Eid band, Najdi coffee and 12 dates.', ar: 'حزام العيد الذهبي، قهوة نجدية و١٢ تمرة.' }, preorder: true },
-  { kind: 'box', id: 'eid-dates', tier: 'gift', fam: 'eid', name: { en: 'Eid Dates', ar: 'تمر العيد' }, price: 58, size: { en: '24 dates', ar: '٢٤ تمرة' }, img: '/media/img/eid-dates.webp',
+  { kind: 'box', id: 'eid-dates', retired: true, tier: 'gift', fam: 'eid', name: { en: 'Eid Dates', ar: 'تمر العيد' }, price: 58, size: { en: '24 dates', ar: '٢٤ تمرة' }, img: '/media/img/eid-dates.webp',
     insert: 'D24', sleeve: 'eid', packs: { dates: { sukkari: 6, khalas: 6, ajwa: 6 } },
     notes: { en: 'Four varieties for the table that fills all day.', ar: 'أربعة أصناف لمائدة تمتلئ طوال اليوم.' },
     contents: { en: 'Gold Eid band, 24 dates, four varieties.', ar: 'حزام العيد الذهبي، ٢٤ تمرة، أربعة أصناف.' }, preorder: true },
-  { kind: 'box', id: 'eid-duo', tier: 'gift', fam: 'eid', name: { en: 'Eid Coffee Duo', ar: 'ثنائي قهوة العيد' }, price: 46, size: { en: '2 × 250 g', ar: '٢ × ٢٥٠ غ' }, img: '/media/img/eid-coffee.webp',
+  { kind: 'box', id: 'eid-duo', retired: true, tier: 'gift', fam: 'eid', name: { en: 'Eid Coffee Duo', ar: 'ثنائي قهوة العيد' }, price: 46, size: { en: '2 × 250 g', ar: '٢ × ٢٥٠ غ' }, img: '/media/img/eid-coffee.webp',
     insert: 'C2', sleeve: 'eid', packs: { coffee: { gulf: 1, yemeni: 1 }, sachets: { 'pack-saffron': 1 } },
     notes: { en: 'Najdi and Yemeni qahwa, for the house that pours all day.', ar: 'نجدية ويمنية، للبيت الذي يصبّ طوال اليوم.' },
     contents: { en: 'Gold Eid band, two coffees.', ar: 'حزام العيد الذهبي، قهوتان.' }, preorder: true },
@@ -383,10 +395,73 @@ for (const p of PRODUCTS) Object.assign(p, (TEXT as Record<string, Partial<Recor
 export const byId = (id: string) => PRODUCTS.find(p => p.id === id);
 /** Dates sold by weight (Everyday sizes, the Ramadan box). */
 export const BY_WEIGHT = BOXES.filter(b => b.grams);
+/** Everything on sale (retired boxes stay in PRODUCTS only so old orders still read). */
+export const ON_SALE = PRODUCTS.filter(p => !(p.kind === 'box' && p.retired));
+
+// ---------- gift boxes: choices, Mixed and sleeves ----------
+export const SLEEVES: Record<Sleeve, L> = {
+  regular: { en: 'Everyday gold sleeve', ar: 'الحزام الذهبي' },
+  ramadan: { en: 'Ramadan sleeve', ar: 'حزام رمضان' },
+  eid: { en: 'Eid sleeve', ar: 'حزام العيد' },
+};
+/** A box takes a sleeve choice when it is a gift box (inserts C2, C12, D24). */
+export const takesSleeve = (b: Box) => b.insert !== 'everyday' && !b.retired;
+export const MIXED: L = { en: 'Mixed', ar: 'مشكّل' };
+/** The coffees a gift box can hold: the family styles, then the bags on their own (qishr is 100 g, so not). */
+export const GIFT_COFFEES: string[] = [...KITS.filter(k => !k.discovery).map(k => k.id), ...COFFEES.filter(c => c.id !== 'qishr').map(c => c.id)];
+/** One 250 g bag of a style: its base bag and its full-size packs. */
+export function styleParts(id: string): { coffee: Record<string, number>; sachets: Record<string, number> } {
+  const k = KITS.find(x => x.id === id);
+  if (k) return { coffee: { [k.base]: 1 }, sachets: Object.fromEntries(k.parts.filter(x => !x.mini).map(x => [x.id, 1])) };
+  return { coffee: { [id]: 1 }, sachets: {} };
+}
+/** Mixed split evenly; null when the count doesn't divide (the owners choose the counts first). */
+export function mixSplit<K extends string>(kinds: K[], count: number): Partial<Record<K, number>> | null {
+  if (!kinds.length || !count || count % kinds.length) return null;
+  return Object.fromEntries(kinds.map(k => [k, count / kinds.length])) as Partial<Record<K, number>>;
+}
+/** The kinds a box's Mixed splits across: its fillings (stuffed) or its varieties. */
+const mixKinds = (b: Box): string[] => b.fillings ?? varietiesOf(b);
+/** Does this box offer Mixed right now (its count divides evenly across the kinds)? */
+export const mixedOk = (b: Box) => Boolean(b.mixed && mixSplit(mixKinds(b), b.count ?? 0));
+/** The choices for a box's (second, for Coffee & Dates) date pick, with Mixed when it divides. */
+export const dateChoices = (b: Box): string[] => [...(b.fillings ?? varietiesOf(b)), ...(mixedOk(b) ? ['mixed'] : [])];
+/** The first option a box starts with (cards, the cart's suggestions). */
+export const defaultBoxOpt = (b: Box) => b.picks ? b.picks.map((k, i) => (k === 'coffee' ? (i === 0 ? 'najdi' : 'yemeni') : 'mixed')).join('|') : (dateChoices(b)[0] ?? '');
+const optLabel = (b: Box, part: string, kind: 'coffee' | 'reserve' | 'date', lang: Lang) =>
+  kind === 'coffee' ? PRODUCTS.find(p => p.id === part)?.name[lang] ?? part
+  : part === 'mixed' ? (kind === 'reserve' ? (lang === 'ar' ? 'نخبة مشكّلة' : 'Mixed Reserve') : MIXED[lang])
+  : b.fillings ? FILLINGS[part as FillingId]?.name[lang] ?? part : DATES[part as DateId]?.name[lang] ?? part;
+/** Readable option, e.g. "Najdi · Mixed Reserve" or "Pistachio stuffed". */
+export const boxOptionLabel = (b: Box, opt: string, lang: Lang) => b.picks
+  ? opt.split('|').map((x, i) => optLabel(b, x, b.picks![i] === 'coffee' ? 'coffee' : 'reserve', lang)).join(' · ')
+  : optLabel(b, opt, 'date', lang);
+
+export type BoxContents = { coffee: Record<string, number>; sachets: Record<string, number>; dates: Partial<Record<DateId, number>>; stuffed: Partial<Record<FillingId, number>> };
+/** What one box holds for an option: bags and packs, dates and stuffed dates in pieces (Mixed
+ * split per kind). Dates sold by weight are not pieces; the week sheet reads their grams. */
+export function boxContents(b: Box, opt: string | null): BoxContents {
+  const out: BoxContents = { coffee: {}, sachets: {}, dates: {}, stuffed: {} };
+  const add = (m: Record<string, number>, from: Record<string, number | undefined>, times = 1) => { for (const [k, n] of Object.entries(from)) m[k] = (m[k] ?? 0) + (n ?? 0) * times; };
+  const datesFor = (part: string, count: number, kinds: string[]) => (part === 'mixed' ? mixSplit(kinds, count) ?? {} : { [part]: count });
+  if (b.picks && opt) {
+    opt.split('|').forEach((part, i) => {
+      if (b.picks![i] === 'coffee') { const s = styleParts(part); add(out.coffee, s.coffee); add(out.sachets, s.sachets); }
+      else add(out.dates, datesFor(part, b.count ?? 12, varietiesOf(b)));
+    });
+    return out;
+  }
+  // Fixed contents (and what the two-choice boxes held before their choices).
+  add(out.coffee, b.packs?.coffee ?? {}); add(out.sachets, b.packs?.sachets ?? {}); add(out.dates, b.packs?.dates ?? {});
+  if (!opt || b.grams) return out;
+  if (b.fillings) add(out.stuffed, datesFor(opt, b.count ?? 0, b.fillings));
+  else if (b.chooseDate && b.count) add(out.dates, datesFor(opt, b.count, varietiesOf(b)));
+  return out;
+}
 /** A box's allergens: its own, or the chosen filling's for stuffed boxes. */
 export const boxAllergens = (b: Box, filling?: string) => [...new Set([...(b.allergens ?? []), ...(filling && FILLINGS[filling as FillingId] ? FILLINGS[filling as FillingId].allergens : [])])];
 /** The readable name of a box option: a date variety or a filling. */
-export const optionName = (b: Box, opt: string, lang: Lang) => (b.fillings ? FILLINGS[opt as FillingId]?.name[lang] : DATES[opt as DateId]?.name[lang]) ?? opt;
+export const optionName = (b: Box, opt: string, lang: Lang) => boxOptionLabel(b, opt, lang);
 
 export const money = (n: number, lang: Lang) => (lang === 'ar' ? `${n} $` : `$${n}`);
 /** A price, or "price coming" while the owners have not set it. */

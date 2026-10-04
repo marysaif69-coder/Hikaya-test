@@ -6,6 +6,17 @@ export type Decision = { id: string; topic: string; question: string; context: s
 
 export const DECISIONS: Decision[] = [
   {
+    id: 'coffee-dates-price', topic: 'Gift boxes · Coffee & Dates', asked: '2026-10-04',
+    question: 'Does Coffee & Dates have one price whatever coffee is chosen, or does a style (Najdi, Hadrami…) cost more than a plain bag?',
+    context: 'Built with one price per box (set it in Admin → Shop → Products), whatever the customer picks. A price per coffee would mean a different price for each style inside the box.',
+    options: ['One price for the box', 'The price follows the coffee chosen'],
+  },
+  {
+    id: 'stuffed-mixed-counts', topic: 'Dates · Stuffed Mixed', asked: '2026-10-04',
+    question: 'If caramel with almonds goes on sale (five fillings), how many of each go in a Mixed stuffed box of 12 and of 24?',
+    context: 'Mixed splits evenly: with four fillings, 3 of each in a 12 and 6 of each in a 24. Five fillings don’t divide 12 or 24, so the site stops offering Mixed until you choose the counts.',
+  },
+  {
     id: 'lotus-name', topic: 'Dates · Stuffed', asked: '2026-10-04',
     question: 'Do we call the biscuit filling “Lotus cream / كريمة اللوتس” (the brand name) or “Biscuit cream / كريمة البسكويت”?',
     context: 'Lotus is a trademark. Using it says exactly what is inside, but the brand owner may object. Until you answer the site says “Biscuit cream / كريمة البسكويت”. Its allergens (wheat, soy) come from the jar’s label [TBD].',

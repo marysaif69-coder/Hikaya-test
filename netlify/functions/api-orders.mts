@@ -37,7 +37,7 @@ export default async (req: Request) => {
     if (path === '/api/promo' && req.method === 'POST') {
       await limit(`promo:${ipKey(req)}`, 30, 60);
       const b = await body(req);
-      const lines = priceCart(b.lines, await liveCatalog());
+      const lines = priceCart(b.lines, await liveCatalog(), await getSeasons());
       const sub = lines.reduce((n, l) => n + l.unit_cents * l.qty, 0);
       const p = await checkPromo(b.code, sub, str(b.email, 254));
       return json({ code: p.code, discount: p.discount_cents, freeDelivery: p.free_delivery, label: p.label });

@@ -8,7 +8,7 @@ import { sql, one, type Row } from './db';
 import { HttpError, env } from './http';
 import { hash, token, type Session } from './auth';
 import { HANDBOOK } from './handbook.gen';
-import { COFFEES, KITS, PACKS, BOXES, DATES, GRINDS, FAMILIES, FILLINGS, ALLERGENS, PRODUCTS, LINES, fileCents, kitInside, allergyNote, varietiesOf } from '../../src/data/products';
+import { COFFEES, KITS, PACKS, BOXES, DATES, GRINDS, FAMILIES, FILLINGS, ALLERGENS, PRODUCTS, LINES, GIFT_COFFEES, fileCents, kitInside, allergyNote, varietiesOf, mixedOk, takesSleeve, defaultBoxOpt } from '../../src/data/products';
 import { BREW } from '../../src/data/brew';
 import { RAMADAN_START, EID } from '../../src/data/calendar';
 import { availability, calgaryNow } from './slots';
@@ -67,17 +67,20 @@ function catalog() {
     `بالعربية: ${p.notes.ar} ${p.contents.ar}`,
     `Allergens: ${allergyNote(p, 'en').text}.${p.maybe ? ` ${p.maybe.en}.` : ''}`,
   ].join('\n')).join('\n\n');
-  const boxes = BOXES.map(b => [
+  const boxes = BOXES.filter(b => !b.retired).map(b => [
     `### ${b.name.en} (${b.name.ar}) · id: ${b.id}`,
     `${FAMILIES[b.fam].name.en} · ${usd(b.price)} · ${b.size.en} · pre-order`,
     `${b.notes.en} ${b.contents.en}`,
     `بالعربية: ${b.notes.ar} ${b.contents.ar}`,
     b.tier ? `Tier: ${b.tier === 'everyday' ? 'Everyday (تمر كل يوم), sold by weight' : b.tier === 'reserve' ? 'Reserve (تمر النخبة), our pick' : b.tier === 'stuffed' ? 'Stuffed (تمر محشي), each date sealed on its own' : 'gift box'}.` : '',
     b.fillings ? `The customer chooses one filling (option): ${b.fillings.map(f => `"${f}" ${FILLINGS[f].name.en} (${FILLINGS[f].name.ar}), contains ${FILLINGS[f].allergens.map(a => ALLERGENS[a].en).join(', ')}${FILLINGS[f].maybe ? ` ${FILLINGS[f].maybe!.en}` : ''}`).join('; ')}.` : '',
-    b.chooseDate ? `The customer chooses one date variety (option): ${varietiesOf(b).map(k => `"${k}" ${DATES[k].name.en}`).join(', ')}.` : '',
+    b.picks ? `The customer chooses ${b.picks.map(k => (k === 'coffee' ? 'a coffee' : 'a Reserve kind or "mixed"')).join(' and ')}; option is one string joined by "|" (e.g. "${defaultBoxOpt(b)}"). Coffees: ${GIFT_COFFEES.map(id => `"${id}"`).join(', ')}.${b.picks.includes('reserve') ? ` Reserve kinds: ${varietiesOf(b).map(k => `"${k}" ${DATES[k].name.en}`).join(', ')}, or "mixed" (4 of each).` : ''}` : '',
+    !b.picks && b.chooseDate ? `The customer chooses one date variety (option): ${varietiesOf(b).map(k => `"${k}" ${DATES[k].name.en}`).join(', ')}${mixedOk(b) ? `, or "mixed" (${(b.count ?? 0) / varietiesOf(b).length} of each)` : ''}.` : '',
+    b.fillings && mixedOk(b) ? `Or "mixed": ${(b.count ?? 0) / b.fillings.length} of each filling, with all their allergens.` : '',
+    takesSleeve(b) ? 'Sleeve: the gold everyday sleeve; in Ramadan and Eid also the Ramadan or Eid sleeve (sleeve "ramadan" / "eid"). A season changes the sleeve, not the box.' : '',
   ].filter(Boolean).join('\n')).join('\n\n');
   // Only the varieties a product offers (khudri stays in DATES for old orders but is not sold).
-  const sold = new Set(BOXES.flatMap(b => [...varietiesOf(b), ...Object.keys(b.packs?.dates ?? {})]));
+  const sold = new Set(BOXES.filter(b => !b.retired).flatMap(b => [...varietiesOf(b), ...Object.keys(b.packs?.dates ?? {})]));
   const dates = Object.entries(DATES).filter(([k]) => sold.has(k as keyof typeof DATES)).map(([k, d]) => `- ${d.name.en} (${d.name.ar}), from ${d.region.en}: ${d.notes.en}`).join('\n');
   const onHold = Object.values(FILLINGS).filter(f => f.hold).map(f => `${f.name.en} (${f.name.ar})`).join(', ');
   const brew = Object.entries(BREW).map(([fam, b]) => [
@@ -149,8 +152,8 @@ export const TOOLS: BetaTool[] = [
     description: 'Check whether a postal code is inside our Calgary delivery area. The first three characters (e.g. T3A) are enough.',
     input_schema: S({ postal_code: { type: 'string' } }) },
   { name: 'add_to_cart', strict: true,
-    description: "Put products in the visitor's cart on this website. Use the product ids from the product list. option is the grind for coffees and styles (\"dallah\", \"fine\" or \"powder\") or the date variety for boxes where the customer chooses one; null otherwise. Only use after the customer asked for it.",
-    input_schema: S({ items: { type: 'array', items: S({ product_id: { type: 'string' }, option: nullable({ type: 'string' }), qty: { type: 'integer' } }) } }) },
+    description: "Put products in the visitor's cart on this website. Use the product ids from the product list. option is the grind for coffees and styles (\"dallah\", \"fine\" or \"powder\"); the date variety or filling (or \"mixed\") for date boxes; for Coffee & Dates (guest-box) \"<style>|<reserve kind or mixed>\", e.g. \"najdi|mixed\"; for Two Coffees (coffee-duo) \"<style>|<style>\", e.g. \"najdi|hadrami\"; null otherwise. sleeve (gift boxes only): \"regular\", or \"ramadan\" / \"eid\" while that season is on. Only use after the customer asked for it.",
+    input_schema: S({ items: { type: 'array', items: S({ product_id: { type: 'string' }, option: nullable({ type: 'string' }), qty: { type: 'integer' }, sleeve: nullable({ type: 'string' }) }) } }) },
   { name: 'open_request', strict: true,
     description: 'Send a request to the Hikaya team, who reply by email. Use for damaged, wrong, missing or late items, order changes and cancellations, large or event orders, complaints, a request for a person, and questions you cannot answer. The customer gets an email with the request number. For damaged, wrong or missing items, a photo upload button appears for the customer after it is opened.',
     input_schema: S({
@@ -203,10 +206,10 @@ async function runTool(name: string, input: any, c: ToolCtx): Promise<unknown> {
       return p ? { delivers: true, postal_code: p, fee: `$${DELIVERY_CENTS / 100}, free from $${FREE_DELIVERY_FROM / 100}` } : { delivers: false, note: 'Outside our Calgary delivery area (Calgary postal codes only, not nearby towns), or not a valid postal code. Pickup is free.' };
     }
     case 'add_to_cart': {
-      const lines = (Array.isArray(input.items) ? input.items : []).map((i: any) => ({ id: String(i.product_id), opt: i.option ? String(i.option) : '', qty: Number(i.qty) }));
+      const lines = (Array.isArray(input.items) ? input.items : []).map((i: any) => ({ id: String(i.product_id), opt: i.option ? String(i.option) : '', qty: Number(i.qty), ...(i.sleeve ? { sleeve: String(i.sleeve) } : {}) }));
       try {
-        const priced = priceCart(lines, await liveCatalog());
-        c.actions.push({ type: 'cart', lines: priced.map(l => ({ id: l.product_id, opt: l.option ?? '', qty: l.qty })) });
+        const priced = priceCart(lines, await liveCatalog(), await getSeasons());
+        c.actions.push({ type: 'cart', lines: priced.map(l => ({ id: l.product_id, opt: l.option ?? '', qty: l.qty, ...(l.sleeve ? { sleeve: l.sleeve } : {}) })) });
         return { added: priced.map(l => `${l.qty} × ${l.name_en}${l.option_en ? ` (${l.option_en})` : ''} at $${l.unit_cents / 100}`) };
       } catch (e) { return { error: e instanceof HttpError ? e.message : 'Could not add those items.' }; }
     }

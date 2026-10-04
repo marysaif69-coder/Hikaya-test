@@ -3,7 +3,7 @@ import { HttpError, str, isEmail, siteUrl } from './http';
 import { hash, token, isAdminEmail, type Session } from './auth';
 import { priceCart, totals, dollars, type PricedLine } from './pricing';
 import { assertBookable, getSettings, calgaryNow, cutoffFor } from './slots';
-import { liveCatalog, takeStock, giveStock, restock, assertDayLimits } from './catalog';
+import { liveCatalog, getSeasons, takeStock, giveStock, restock, assertDayLimits } from './catalog';
 import { checkPromo, redeem, unredeem, shape, type Applied } from './promos';
 import { send, orderEmail, teamAlert, type OrderMailKind } from './email';
 import { pushOwners, pushTo } from './push';
@@ -61,7 +61,7 @@ export async function createOrder(input: any, s: Session | null, cardEnabled: bo
   if (payment === 'card' && !cardEnabled) errors.payment = 'card-off';
   if (Object.keys(errors).length) throw Object.assign(new HttpError(400, 'invalid', 'Check the highlighted fields.'), { fields: errors });
 
-  const lines = priceCart(input?.lines, await liveCatalog());
+  const lines = priceCart(input?.lines, await liveCatalog(), await getSeasons());
   const giftBoxesPerDay = (await getSettings()).caps.giftBoxesPerDay;
   await assertBookable(str(input?.day, 10), str(input?.window, 20), method);
   await assertDayLimits(str(input?.day, 10), lines, giftBoxesPerDay);
@@ -102,8 +102,8 @@ export async function createOrder(input: any, s: Session | null, cardEnabled: bo
   }
   if (!order) throw new HttpError(500, 'ref');
   for (const l of lines) {
-    await sql`INSERT INTO order_items (order_id, product_id, name_en, name_ar, option, option_en, option_ar, qty, unit_cents)
-      VALUES (${order.id}, ${l.product_id}, ${l.name_en}, ${l.name_ar}, ${l.option}, ${l.option_en}, ${l.option_ar}, ${l.qty}, ${l.unit_cents})`;
+    await sql`INSERT INTO order_items (order_id, product_id, name_en, name_ar, option, option_en, option_ar, qty, unit_cents, sleeve)
+      VALUES (${order.id}, ${l.product_id}, ${l.name_en}, ${l.name_ar}, ${l.option}, ${l.option_en}, ${l.option_ar}, ${l.qty}, ${l.unit_cents}, ${l.sleeve})`;
   }
   // Checked again now that it is saved, counting only orders saved before it: orders sent at the
   // same moment all passed the first check, and only the first ones keep their place.
@@ -150,7 +150,7 @@ export async function event(orderId: number, kind: string, detail: string | null
   await sql`INSERT INTO order_events (order_id, kind, detail, actor) VALUES (${orderId}, ${kind}, ${detail}, ${actor})`;
 }
 
-export const items = (orderId: number) => sql`SELECT product_id, name_en, name_ar, option, option_en, option_ar, qty, unit_cents FROM order_items WHERE order_id = ${orderId} ORDER BY id`;
+export const items = (orderId: number) => sql`SELECT product_id, name_en, name_ar, option, option_en, option_ar, qty, unit_cents, sleeve FROM order_items WHERE order_id = ${orderId} ORDER BY id`;
 
 export const viewUrl = (o: Row, req?: Request, guestToken?: string) =>
   guestToken ? `${siteUrl(req)}/${o.lang}/account/?order=${o.ref}&t=${guestToken}` : `${siteUrl(req)}/${o.lang}/account/?order=${o.ref}`;
@@ -263,7 +263,12 @@ export async function editOrder(ref: string, rawLines: unknown, actor: string, r
     const price_cents = l.price_cents ?? was.get(id) ?? (o.is_sample ? SAMPLE_CENTS : null);
     return [id, was.has(id) ? { ...l, shown: true, available: true, price_cents } : { ...l, price_cents }];
   }));
-  const lines = priceCart(rawLines, relaxed as any);
+  // A sleeve already on the order stays, even if its season has ended since.
+  const seasons = await getSeasons();
+  for (const i of before) if (i.sleeve === 'ramadan' || i.sleeve === 'eid') seasons[i.sleeve as 'ramadan' | 'eid'] = true;
+  // Lines edited in the desk come without a sleeve: they keep the one they had.
+  const withSleeve = Array.isArray(rawLines) ? rawLines.map((l: any) => (l && l.sleeve === undefined ? { ...l, sleeve: before.find(i => i.product_id === l.id && (i.option ?? '') === (l.opt ?? ''))?.sleeve ?? undefined } : l)) : rawLines;
+  const lines = priceCart(withSleeve, relaxed as any, seasons);
   // The order's code is applied again; a code with a minimum only stays while the order meets it.
   const sub = lines.reduce((n, l) => n + l.unit_cents * l.qty, 0);
   const p = o.promo_code ? await one`SELECT * FROM promo_codes WHERE code = ${o.promo_code}` : null;
@@ -274,7 +279,7 @@ export async function editOrder(ref: string, rawLines: unknown, actor: string, r
   if (!o.is_sample) await restock(o.id);
   let taken: [string, number][] = [];
   try { if (!o.is_sample) taken = await takeStock(lines); }
-  catch (e) { if (!o.is_sample) await takeStock(before.map(i => ({ product_id: i.product_id, qty: i.qty }))).catch(() => null); throw e; }
+  catch (e) { if (!o.is_sample) await takeStock(before.map(i => ({ product_id: i.product_id, qty: i.qty, option: i.option }))).catch(() => null); throw e; }
   const t = totals(lines, o.method, p ? shape(p, sub) : null);
   // The gift card can only cover up to the new total; anything above goes back on the card.
   const gc = Math.min(o.gift_card_cents ?? 0, t.total_cents);
@@ -288,8 +293,8 @@ export async function editOrder(ref: string, rawLines: unknown, actor: string, r
   const balance = settled ? due : 0;
   const payStatus = total === 0 ? 'paid' : !settled ? o.payment_status : due > 0 ? 'unpaid' : o.payment_status === 'unpaid' ? 'paid' : o.payment_status;
   await sql`DELETE FROM order_items WHERE order_id = ${o.id}`;
-  for (const l of lines) await sql`INSERT INTO order_items (order_id, product_id, name_en, name_ar, option, option_en, option_ar, qty, unit_cents)
-    VALUES (${o.id}, ${l.product_id}, ${l.name_en}, ${l.name_ar}, ${l.option}, ${l.option_en}, ${l.option_ar}, ${l.qty}, ${l.unit_cents})`;
+  for (const l of lines) await sql`INSERT INTO order_items (order_id, product_id, name_en, name_ar, option, option_en, option_ar, qty, unit_cents, sleeve)
+    VALUES (${o.id}, ${l.product_id}, ${l.name_en}, ${l.name_ar}, ${l.option}, ${l.option_en}, ${l.option_ar}, ${l.qty}, ${l.unit_cents}, ${l.sleeve})`;
   const upd = await one`UPDATE orders SET subtotal_cents = ${t.subtotal_cents}, delivery_cents = ${t.delivery_cents}, discount_cents = ${t.discount_cents}, gift_card_cents = ${gc},
       total_cents = ${total}, payment_status = ${payStatus}, square_link_url = ${o.payment === 'card' ? null : o.square_link_url}, updated_at = NOW()
     WHERE id = ${o.id} RETURNING *`;

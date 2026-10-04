@@ -87,8 +87,12 @@ await call(admin, '/api/admin/products/hijazi', { cookie: adm, body: { visible: 
 assert.equal((await order({ lines: [{ id: 'hijazi', qty: 1 }] })).data.error, 'not-offered'); ok('a hidden product cannot be ordered');
 await call(admin, '/api/admin/seasons', { cookie: adm, body: { ramadan: false } });
 const cat = (await call(orders, '/api/catalog')).data;
-assert.equal(cat.seasons.ramadan, false); assert.equal(cat.products['iftar-pair'].shown, false); assert.equal(cat.products['eid-duo'].shown, true); ok('Ramadan off hides the Ramadan boxes only');
-assert.equal((await order({ lines: [{ id: 'iftar-pair', qty: 1 }] })).data.error, 'not-offered'); ok('Ramadan boxes cannot be ordered while the season is off');
+assert.equal(cat.seasons.ramadan, false); assert.equal(cat.products['guest-box'].shown, true); ok('Ramadan off: the gift boxes stay (only their Ramadan sleeve goes)');
+for (const id of ['iftar-pair', 'eid-coffee-dates', 'eid-dates', 'eid-duo', 'ramadan-box']) {
+  assert.equal(cat.products[id].shown, false, id);
+  const r = await order({ lines: [{ id, opt: 'khalas', qty: 1 }] }); assert.equal(r.status, 409, id); assert.equal(r.data.error, 'retired', id);
+}
+ok('the retired seasonal boxes are hidden and refused politely (409)');
 await call(admin, '/api/admin/seasons', { cookie: adm, body: { ramadan: true } });
 await call(admin, '/api/admin/products/jubani', { cookie: adm, body: { available: false } });
 assert.equal((await order({ lines: [{ id: 'jubani', qty: 1 }] })).data.error, 'sold-out'); ok('sold out stops orders');
@@ -227,7 +231,7 @@ const sheet = async () => (await call(admin, '/api/admin/week?from=2027-01-21', 
 const najdiPouches = (s: any) => s.coffee.filter((r: any) => r.id === 'gulf').reduce((a: number, r: any) => a + r.pouches, 0);
 const saffronPacks = (s: any) => s.packs.filter((r: any) => r.id === 'pack-saffron').reduce((a: number, r: any) => a + r.full, 0);
 const w0 = await sheet();
-assert.equal((await order({ lines: [{ id: 'guest-box', qty: 1 }, { id: 'najdi', opt: 'dallah', qty: 2 }] })).status, 201);
+assert.equal((await order({ lines: [{ id: 'guest-box', opt: 'najdi|ajwa', qty: 1 }, { id: 'najdi', opt: 'dallah', qty: 2 }] })).status, 201);
 const w1 = await sheet();
 assert.equal(najdiPouches(w1) - najdiPouches(w0), 3); assert.equal(saffronPacks(w1) - saffronPacks(w0), 3); assert.equal(w1.packaging.giftBoxes.C12 - w0.packaging.giftBoxes.C12, 1);
 const packRow = (s: any, id: string) => s.packs.find((r: any) => r.id === id) ?? { full: 0, mini: 0 };
@@ -238,7 +242,7 @@ assert.equal(saffronPacks(w2) - saffronPacks(w1), 1); assert.equal(packRow(w2, '
 ok('styles and discovery packs count their bag and packs (small ones apart); a pack on its own counts as a pack');
 const kitLine = (await order({ day: '2027-01-24', lines: [{ id: 'radai', opt: 'powder', qty: 1 }] })).data.ref;
 assert.equal((await pg.query('SELECT i.option FROM order_items i JOIN orders o ON o.id = i.order_id WHERE o.ref = $1', [kitLine])).rows[0].option, 'fine'); ok('a style takes the grind of its bag');
-assert.equal((w1.dates.find((d: any) => d.id === 'khalas')?.pieces ?? 0) - (w0.dates.find((d: any) => d.id === 'khalas')?.pieces ?? 0), 12);
+assert.equal((w1.dates.find((d: any) => d.id === 'ajwa')?.pieces ?? 0) - (w0.dates.find((d: any) => d.id === 'ajwa')?.pieces ?? 0), 12);
 assert.equal(w1.packaging.sleeves.regular - w0.packaging.sleeves.regular, 1); ok('week sheet counts coffee inside gift boxes, dates to portion, boxes and sleeves');
 
 // ---------- gift orders ----------
@@ -267,9 +271,7 @@ await call(orders, '/api/notify-me', { body: { product: 'qishr', email: 'noprice
 assert.equal((await call(admin, '/api/admin/products/qishr', { cookie: adm, body: { available: true } })).data.told, 0);
 assert.equal((await call(admin, '/api/admin/products/qishr', { cookie: adm, body: { price_cents: 1200 } })).data.told, 1); ok('no "it\'s back" email until the product has a price');
 await call(admin, '/api/admin/products/qishr', { cookie: adm, body: { price_cents: qishrPrice } });
-await call(admin, '/api/admin/seasons', { cookie: adm, body: { ramadan: false } });
-await call(orders, '/api/notify-me', { body: { product: 'iftar-pair', email: 'ramadan@example.com', lang: 'en' } });
-assert.equal((await call(admin, '/api/admin/seasons', { cookie: adm, body: { ramadan: true } })).data.told, 1); ok('switching Ramadan on tells people waiting for Ramadan boxes');
+assert.equal((await call(orders, '/api/notify-me', { body: { product: 'iftar-pair', email: 'ramadan@example.com', lang: 'en' } })).status, 404); ok('no "email me" for a retired box');
 
 // ---------- mailing list (CASL) ----------
 const noTick = await call(orders, '/api/list', { body: { email: 'news@example.com', lang: 'en' } });
@@ -713,9 +715,9 @@ const capShift = (await call(admin, `/api/admin/shifts?from=${capDay}`, { cookie
 await call(driverApi, `/api/driver/shifts/${capShift.id}/signup`, { cookie: eve, body: {} });
 const slotsCap2 = (await call(orders, '/api/slots')).data.days.find((d: any) => d.date === capDay);
 assert.equal(slotsCap2.windows[0].delivery, 2); assert.equal(slotsCap2.windows[1].delivery, 0); ok('one driver on the 11–2 shift: 2 delivery places in that window only');
-assert.equal((await order({ day: capDay, lines: [{ id: 'guest-box', qty: 2 }] })).data.error, 'day-limit');
-assert.equal((await order({ day: capDay, lines: [{ id: 'guest-box', qty: 1 }] })).status, 201);
-assert.equal((await order({ day: capDay, lines: [{ id: 'coffee-duo', qty: 1 }] })).data.error, 'day-limit'); ok('gift boxes per day (packing time) are limited');
+assert.equal((await order({ day: capDay, lines: [{ id: 'guest-box', opt: 'hadrami|ajwa', qty: 2 }] })).data.error, 'day-limit');
+assert.equal((await order({ day: capDay, lines: [{ id: 'guest-box', opt: 'hadrami|ajwa', qty: 1 }] })).status, 201);
+assert.equal((await order({ day: capDay, lines: [{ id: 'coffee-duo', opt: 'najdi|yemeni', qty: 1 }] })).data.error, 'day-limit'); ok('gift boxes per day (packing time) are limited');
 await call(admin, '/api/admin/products/najdi', { cookie: adm, body: { daily_cap: 1 } });
 assert.equal((await order({ day: capDay, lines: [{ id: 'najdi', opt: 'dallah', qty: 2 }] })).data.error, 'day-limit');
 assert.equal((await order({ day: capDay, lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] })).status, 201); ok('a product can have its own daily limit');
@@ -727,9 +729,9 @@ await call(admin, '/api/admin/settings', { cookie: adm, body: { caps: { dailyOrd
 // ---------- lots, recall, supplies ----------
 assert.equal((await call(admin, '/api/admin/lots', { cookie: adm, body: { item_kind: 'coffee', item_id: 'nope' } })).status, 400);
 const lot1 = (await call(admin, '/api/admin/lots', { cookie: adm, body: { item_kind: 'coffee', item_id: 'gulf', made_on: '2027-02-01', best_before: '2027-08-01', quantity: '10 kg' } })).data.code;
-const lot2 = (await call(admin, '/api/admin/lots', { cookie: helper, body: { item_kind: 'dates', item_id: 'khalas', made_on: '2027-02-01' } })).data.code;
-assert.equal(lot1, 'GULF-270201-1'); assert.equal(lot2, 'KHALAS-270201-1'); ok('production lots get a code (product, date, number)');
-const lo1 = await order({ day: '2027-02-13', lines: [{ id: 'guest-box', qty: 1 }], email: 'lot1@example.com' });
+const lot2 = (await call(admin, '/api/admin/lots', { cookie: helper, body: { item_kind: 'dates', item_id: 'ajwa', made_on: '2027-02-01' } })).data.code;
+assert.equal(lot1, 'GULF-270201-1'); assert.equal(lot2, 'AJWA-270201-1'); ok('production lots get a code (product, date, number)');
+const lo1 = await order({ day: '2027-02-13', lines: [{ id: 'guest-box', opt: 'najdi|ajwa', qty: 1 }], email: 'lot1@example.com' });
 const lo2 = await order({ day: '2027-02-13', lines: [{ id: 'jubani', opt: 'dallah', qty: 1 }], email: 'lot2@example.com' }).catch(() => null);
 const dayLots = (await call(admin, '/api/admin/day?date=2027-02-13', { cookie: adm })).data;
 const lotOrder = dayLots.pickups.flatMap((w: any) => w.orders).find((o: any) => o.ref === lo1.data.ref);
@@ -1329,7 +1331,7 @@ assert.equal(sk.status, 201, JSON.stringify(sk.data)); assert.equal(await stockO
 await call(admin, `/api/admin/orders/${sk.data.ref}`, { cookie: adm, body: { status: 'cancelled', notify: false } });
 assert.equal(await stockOf('gulf'), 3); ok('Najdi orders count down the Gulf bag, and a cancel gives it back');
 await call(admin, '/api/admin/products/gulf', { cookie: adm, body: { stock: null, available: false } });
-assert.equal((await order({ email: 'stock-box@example.com', day: '2027-06-17', lines: [{ id: 'guest-box', opt: 'khalas', qty: 1 }] })).data.error, 'sold-out');
+assert.equal((await order({ email: 'stock-box@example.com', day: '2027-06-17', lines: [{ id: 'guest-box', opt: 'najdi|mixed', qty: 1 }] })).data.error, 'sold-out');
 assert.equal((await call(orders, '/api/catalog')).data.products.najdi.available, false); ok('Gulf coffee sold out: Najdi and the Guest Box show sold out too');
 await call(admin, '/api/admin/products/gulf', { cookie: adm, body: { available: true } });
 await call(admin, '/api/admin/products/pack-qassim', { cookie: adm, body: { stock: 1 } });
@@ -1524,7 +1526,7 @@ assert.equal((await pg.query('SELECT i.option_en FROM order_items i JOIN orders 
 }
 // The gift-box limit counts Reserve and stuffed boxes (C12, D24), not Everyday packs.
 await call(admin, '/api/admin/settings', { cookie: adm, body: { caps: { dailyOrders: null, giftBoxesPerDay: 1, stopsPerDriver: null, deliveryFromShifts: false } } });
-assert.equal((await order({ day: '2027-09-11', email: 'g1@example.com', lines: [{ id: 'guest-box', qty: 1 }] })).status, 201);
+assert.equal((await order({ day: '2027-09-11', email: 'g1@example.com', lines: [{ id: 'guest-box', opt: 'najdi|ajwa', qty: 1 }] })).status, 201);
 assert.equal((await order({ day: '2027-09-11', email: 'g2@example.com', lines: [{ id: 'dates-1kg', opt: 'khalas', qty: 2 }] })).status, 201);
 assert.equal((await order({ day: '2027-09-11', email: 'g3@example.com', lines: [{ id: 'reserve-24', opt: 'ajwa', qty: 1 }] })).data.error, 'day-limit');
 ok('gift-box limit: Everyday dates do not count, a Reserve box does');
@@ -1544,5 +1546,68 @@ for (const i of [0, 1]) {
   assert.ok(sent.slice(mailsB).some(m => m.to?.includes(`old-date-${i}@example.com`) && /no longer offered/.test(m.html + m.text)));
 }
 ok('a regular order with Medjool or khudri in the Everyday box is not placed; the customer gets an email');
+
+// ---------- gift boxes with choices, Mixed, and sleeves (round 3, batch 3) ----------
+{
+  const day = '2027-10-08', wk = '2027-10-07';
+  const opt = async (ref: string) => (await pg.query('SELECT i.product_id, i.option, i.option_en, i.option_ar, i.sleeve FROM order_items i JOIN orders o ON o.id = i.order_id WHERE o.ref = $1 ORDER BY i.id', [ref])).rows as any[];
+  const w0 = (await call(admin, `/api/admin/week?from=${wk}`, { cookie: adm })).data;
+  const cd = await order({ day, email: 'cd@example.com', lines: [{ id: 'guest-box', opt: 'najdi|mixed', qty: 1, price: 1 }] });
+  assert.equal(cd.status, 201, JSON.stringify(cd.data));
+  const cdRow = (await opt(cd.data.ref))[0];
+  assert.equal(cdRow.option, 'najdi|mixed'); assert.equal(cdRow.option_en, 'Najdi · Mixed Reserve'); assert.equal(cdRow.option_ar, 'نجدية · نخبة مشكّلة'); assert.equal(cdRow.sleeve, 'regular');
+  ok('Coffee & Dates: a style and Mixed Reserve in one option, saved readable, gold sleeve by default');
+  for (const [o, err] of [['najdi|khalas', 'choose-date'], ['qishr|ajwa', 'choose-coffee'], ['najdi', 'choose-date'], ['taste-gulf|ajwa', 'choose-coffee']] as const)
+    assert.equal((await order({ day, lines: [{ id: 'guest-box', opt: o, qty: 1 }] })).data.error, err, o);
+  ok('Coffee & Dates refuses an Everyday date, qishr, a tasting box or a missing part');
+  const two = await order({ day, email: 'two@example.com', lines: [{ id: 'coffee-duo', opt: 'najdi|hadrami', qty: 1 }] });
+  assert.equal(two.status, 201); assert.equal((await opt(two.data.ref))[0].option_en, 'Najdi · Hadrami');
+  assert.equal((await order({ day, lines: [{ id: 'coffee-duo', opt: 'najdi|mixed', qty: 1 }] })).data.error, 'choose-coffee'); ok('Two Coffees: two styles');
+  const rm = await order({ day, email: 'rm@example.com', lines: [{ id: 'reserve-24', opt: 'mixed', qty: 1 }, { id: 'stuffed-12', opt: 'mixed', qty: 1 }] });
+  assert.equal(rm.status, 201, JSON.stringify(rm.data)); ok('Reserve and stuffed boxes offer Mixed');
+  const w1 = (await call(admin, `/api/admin/week?from=${wk}`, { cookie: adm })).data;
+  const pcs = (w: any, id: string) => w.dates.find((d: any) => d.id === id)?.pieces ?? 0;
+  const st = (w: any, id: string) => w.stuffed.find((d: any) => d.id === id)?.pieces ?? 0;
+  // Mixed Reserve in Coffee & Dates: 4 each; Reserve 24 Mixed: 8 each.
+  for (const id of ['mufattal', 'ajwa', 'medjool']) assert.equal(pcs(w1, id) - pcs(w0, id), 12, id);
+  for (const id of ['pistachio', 'pistachio-dipped', 'biscuit', 'cashew']) assert.equal(st(w1, id) - st(w0, id), 3, id);
+  const pouch = (w: any, id: string) => w.coffee.filter((r: any) => r.id === id).reduce((n: number, r: any) => n + r.pouches, 0);
+  const pk = (w: any, id: string) => w.packs.find((r: any) => r.id === id)?.full ?? 0;
+  assert.equal(pouch(w1, 'gulf') - pouch(w0, 'gulf'), 2); assert.equal(pouch(w1, 'yemeni') - pouch(w0, 'yemeni'), 1);
+  assert.equal(pk(w1, 'pack-saffron') - pk(w0, 'pack-saffron'), 2); assert.equal(pk(w1, 'pack-hadrami') - pk(w0, 'pack-hadrami'), 1);
+  ok('week sheet: Mixed split per kind (4, 8, 3 each); each chosen coffee is a 250 g bag of that style with its pack');
+  // Mixed must divide evenly: with five fillings (caramel added) a 12 can't be split.
+  const P = await import('../src/data/products');
+  const { priceCart } = await import('../netlify/lib/pricing');
+  const s12 = P.BOXES.find(b => b.id === 'stuffed-12')!, keep = s12.fillings;
+  s12.fillings = [...keep!, 'caramel-almond'];
+  assert.equal(P.mixedOk(s12), false); assert.throws(() => priceCart([{ id: 'stuffed-12', opt: 'mixed', qty: 1 }]), (e: any) => e.code === 'choose-filling');
+  s12.fillings = keep; assert.equal(P.mixedOk(s12), true);
+  ok('Mixed is refused when the fillings don\'t divide evenly (five fillings in a 12)');
+  // Sleeves: Ramadan on, Eid off.
+  await call(admin, '/api/admin/seasons', { cookie: adm, body: { ramadan: true, eid: false } });
+  const sr = await order({ day, email: 'sr@example.com', lines: [{ id: 'guest-box', opt: 'hadrami|ajwa', qty: 1, sleeve: 'ramadan' }, { id: 'coffee-duo', opt: 'najdi|yemeni', qty: 1, sleeve: 'eid' }, { id: 'dates-1kg', opt: 'khalas', qty: 1, sleeve: 'eid' }] });
+  assert.equal(sr.status, 201, JSON.stringify(sr.data));
+  const srRows = await opt(sr.data.ref);
+  assert.deepEqual(srRows.map(r => r.sleeve), ['ramadan', 'regular', null]); ok('a Ramadan sleeve is kept in Ramadan; an Eid sleeve while Eid is off is not (gold sleeve); Everyday dates take no sleeve');
+  assert.equal((await order({ day, lines: [{ id: 'guest-box', opt: 'hadrami|ajwa', qty: 1, sleeve: 'gold-foil' }] })).status, 201); ok('an unknown sleeve falls back to the gold sleeve');
+  const w2 = (await call(admin, `/api/admin/week?from=${wk}`, { cookie: adm })).data;
+  assert.equal(w2.packaging.sleeves.ramadan - w1.packaging.sleeves.ramadan, 1); assert.equal(w2.packaging.sleeves.regular - w1.packaging.sleeves.regular, 2);
+  ok('the week sheet counts the Ramadan sleeve from the order line');
+  const slip = (await call(admin, `/api/admin/day?date=${day}`, { cookie: adm })).data.pickups.flatMap((w: any) => w.orders).find((o: any) => o.ref === sr.data.ref);
+  assert.equal(slip.items[0].sleeve, 'ramadan'); ok('packing slips get the sleeve');
+  // Editing the order in the desk keeps the sleeve.
+  await call(admin, `/api/admin/orders/${sr.data.ref}/items`, { cookie: adm, body: { lines: srRows.map(r => ({ id: r.product_id, opt: r.option, qty: 1 })) } });
+  assert.equal((await opt(sr.data.ref))[0].sleeve, 'ramadan'); ok('changing the items keeps each box\'s sleeve');
+  await call(admin, '/api/admin/seasons', { cookie: adm, body: { ramadan: true, eid: true } });
+  // A regular order holding a retired box: not placed, with the email.
+  assert.equal((await order({ repeat: 2, email: 'old-box@example.com', day: '2027-10-14', lines: [{ id: 'dates-250', opt: 'khalas', qty: 1 }] })).status, 201);
+  await pg.query(`UPDATE subscriptions SET lines = $1::jsonb WHERE email = 'old-box@example.com'`, [JSON.stringify([{ id: 'iftar-pair', opt: '', qty: 1 }])]);
+  const mb = sent.length;
+  await daily('2027-10-21');
+  const ob = (await pg.query(`SELECT * FROM subscriptions WHERE email = 'old-box@example.com'`)).rows[0] as any;
+  assert.match(ob.last_note, /^Not placed/); assert.ok(sent.slice(mb).some(m => m.to?.includes('old-box@example.com') && /Ramadan or Eid sleeve/.test(m.html + m.text)));
+  ok('a regular order with a retired box is not placed; the customer gets the email');
+}
 
 console.log(`\n${pass} checks passed`);

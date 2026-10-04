@@ -3,7 +3,7 @@
 // got a lot. Supplies (packaging) on hand are compared with what the week needs.
 import { sql, one, type Row } from './db';
 import { HttpError } from './http';
-import { PRODUCTS, DATES, FILLINGS, type DateId, type FillingId } from '../../src/data/products';
+import { PRODUCTS, DATES, FILLINGS, boxContents, type DateId, type FillingId } from '../../src/data/products';
 import { addDays, calgaryNow } from './slots';
 import { weekSheet } from './week';
 import { randomUUID } from 'node:crypto';
@@ -47,10 +47,10 @@ function contents(productId: string, option: string | null): { coffee: string[];
   if (!p) return { coffee: [], dates: [], stuffed: [] };
   if (p.kind === 'coffee' || p.kind === 'pack') return { coffee: [p.id], dates: [], stuffed: [] };
   if (p.kind === 'kit') return { coffee: [p.base, ...p.parts.map(x => x.id)], dates: [], stuffed: [] };
-  const dates = Object.keys(p.packs?.dates ?? {});
-  const stuffed = p.fillings && option ? [option] : [];
-  if (p.chooseDate && option) dates.push(option);
-  return { coffee: [...Object.keys(p.packs?.coffee ?? {}), ...Object.keys(p.packs?.sachets ?? {})], dates, stuffed };
+  const c = boxContents(p, option);
+  // Dates sold by weight: the chosen variety (not in pieces).
+  const dates = [...Object.keys(c.dates), ...(p.grams && option ? [option] : [])];
+  return { coffee: [...Object.keys(c.coffee), ...Object.keys(c.sachets)], dates, stuffed: Object.keys(c.stuffed) };
 }
 
 /** The lot in use for each coffee and date variety on a day (the newest made on or before it, not used up). */

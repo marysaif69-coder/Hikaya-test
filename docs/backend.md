@@ -81,7 +81,7 @@ All sent through Resend from the site itself; no n8n or Zapier needed. Admin →
 - **Activity log** (Settings): every change made through the desk (who, what, when, the details sent).
 
 ## The desk at a glance
-- **Orders, Inbox, Day sheet** as before. **Week sheet**: coffee to roast and grind (kg, pouches, how many go in gift boxes), dates to portion, boxes, sleeves and cups for Thursday–Wednesday; printable.
+- **Orders, Inbox, Day sheet** as before. **Week sheet**: coffee to roast and grind (kg, pouches, how many go in gift boxes), dates to portion (by weight in grams; Reserve, Mixed and stuffed in pieces per kind), boxes, sleeves (from each gift box line's `order_items.sleeve`: gold, Ramadan or Eid) and cups for Thursday–Wednesday; printable. Two-choice gift boxes keep both choices in one option (`najdi|mixed`, `najdi|hadrami`); `boxContents()` in `src/data/products.ts` turns any box option into bags, packs and dates for the sheet, lots and stock.
 - **Driver** (`/admin/driver/`, made for a phone): the day's deliveries in postal-code order, Map and Call buttons, gift recipient and card message, "Collect $X" when paying on delivery, On my way / Delivered (emails the customer) / Couldn't deliver (note for the team).
 - **Products**: also shows how many people wait for a sold-out product; switching it back on emails them.
 - **Promotions**: mailing list numbers, the count of "Which cup is yours?" answers, and a CSV of confirmed subscribers with when and what they agreed to (CASL).

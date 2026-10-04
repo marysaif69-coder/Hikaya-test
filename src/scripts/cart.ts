@@ -1,8 +1,8 @@
 // A small client cart kept in localStorage. Pre-orders only: the checkout form sends it to Netlify Forms.
 
-export type Line = { id: string; opt: string; qty: number };
+export type Line = { id: string; opt: string; qty: number; sleeve?: string };
 type T = { en: string; ar: string };
-type Item = { n: T; price: number | null; kind: string; img: string | null; opts: Record<string, T> | null; base?: string; inside?: T; for?: string; bases?: string[]; dates?: boolean };
+type Item = { n: T; price: number | null; kind: string; img: string | null; opts: Record<string, T> | null; base?: string; inside?: T; for?: string; bases?: string[]; dates?: boolean; picks?: boolean; sleeves?: Record<string, T> };
 type Catalog = { lang: 'en' | 'ar'; cart: string; added: string; add: string; items: Record<string, Item> };
 
 const KEY = 'hikaya-cart-v1';
@@ -17,10 +17,12 @@ export function write(lines: Line[]) {
   document.dispatchEvent(new CustomEvent('cart:change', { detail: lines }));
   paintCount();
 }
-export function add(id: string, opt = '', qty = 1) {
+export function add(id: string, opt = '', qty = 1, sleeve = '') {
   const lines = read();
-  const hit = lines.find(l => l.id === id && l.opt === opt);
-  if (hit) hit.qty = Math.min(20, hit.qty + qty); else lines.push({ id, opt, qty });
+  // Gift boxes keep their sleeve: the same box in two sleeves is two lines.
+  const sl = catalog().items[id]?.sleeves ? (sleeve || 'regular') : '';
+  const hit = lines.find(l => l.id === id && l.opt === opt && (l.sleeve ?? '') === sl);
+  if (hit) hit.qty = Math.min(20, hit.qty + qty); else lines.push(sl ? { id, opt, qty, sleeve: sl } : { id, opt, qty });
   write(lines);
 }
 export function setQty(i: number, qty: number) {
@@ -44,9 +46,11 @@ export function totals(lines = read(), delivery = false) {
 export function describe(l: Line, lang: 'en' | 'ar') {
   const it = catalog().items[l.id];
   if (!it) return { name: l.id, opt: '', price: 0, priced: false };
-  const grind = l.opt && it.opts?.[l.opt] ? it.opts[l.opt][lang] : '';
+  // Two-choice boxes keep "najdi|mixed": each part has its own label.
+  const grind = !l.opt ? '' : it.picks ? l.opt.split('|').map(x => it.opts?.[x]?.[lang] ?? x).join(' · ') : it.opts?.[l.opt]?.[lang] ?? '';
+  const sleeve = l.sleeve && l.sleeve !== 'regular' ? it.sleeves?.[l.sleeve]?.[lang] ?? '' : '';
   // A style says what is in it: "Gulf coffee 250 g + Saffron packet".
-  const opt = [it.inside?.[lang], grind].filter(Boolean).join(' · ');
+  const opt = [it.inside?.[lang], grind, sleeve].filter(Boolean).join(' · ');
   return { name: it.n[lang], opt, price: it.price ?? 0, priced: it.price != null };
 }
 
@@ -172,7 +176,8 @@ export function initCart() {
     const opts = (btn.dataset.opt ?? '').split(',');
     const formOpt = btn.form ? new FormData(btn.form).get('opt') : null;
     const qty = btn.form ? Number(new FormData(btn.form).get('qty') || 1) : 1;
-    ids.forEach((id, i) => add(id, (i === 0 && formOpt ? String(formOpt) : opts[i]) || '', qty));
+    const sleeve = String((btn.form ? new FormData(btn.form).get('sleeve') : null) ?? btn.dataset.sleeve ?? '');
+    ids.forEach((id, i) => add(id, (i === 0 && formOpt ? String(formOpt) : opts[i]) || '', qty, i === 0 ? sleeve : ''));
     openDrawer();
   });
   document.getElementById('drClose')?.addEventListener('click', closeDrawer);

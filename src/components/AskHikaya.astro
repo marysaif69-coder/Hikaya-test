@@ -67,7 +67,7 @@ const T = {
   import { errorText } from '../scripts/errors';
   const isAr = document.documentElement.lang === 'ar';
 
-  type Action = { type: 'cart'; lines: { id: string; opt: string; qty: number }[] } | { type: 'photo'; ref: string; token: string } | { type: 'request'; ref: string };
+  type Action = { type: 'cart'; lines: { id: string; opt: string; qty: number; sleeve?: string }[] } | { type: 'photo'; ref: string; token: string } | { type: 'request'; ref: string };
   type Entry = { who: 'me' | 'hk'; text: string; actions?: Action[] };
   const panel = document.getElementById('askPanel') as HTMLElement;
   const fab = document.getElementById('askFab') as HTMLButtonElement;
@@ -203,7 +203,7 @@ const T = {
       if (!r.ok) throw Object.assign(new Error(), { d });
       st.chat = d.chat;
       const actions: Action[] = d.actions ?? [];
-      for (const a of actions) if (a.type === 'cart') a.lines.forEach(l => add(l.id, l.opt, l.qty));
+      for (const a of actions) if (a.type === 'cart') a.lines.forEach(l => add(l.id, l.opt, l.qty, l.sleeve ?? ''));
       st.log.push({ who: 'hk', text: d.reply, actions });
     } catch (e) {
       st.log.push({ who: 'hk', text: (e as any).d ? errorText((e as any).d, isAr, T.error) : T.error });

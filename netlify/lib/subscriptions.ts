@@ -18,7 +18,7 @@ const lang = (r: Row) => (r.lang === 'ar' ? 'ar' : 'en') as 'en' | 'ar';
 const nextFrom = (start: string, every: number, after: string) => { let d = start; while (d <= after) d = addDays(d, every * 7); return d; };
 
 export async function startSubscription(order: Row, input: any, every: number, req?: Request) {
-  const lines = (Array.isArray(input?.lines) ? input.lines : []).slice(0, 30).map((l: any) => ({ id: String(l?.id ?? '').slice(0, 40), opt: String(l?.opt ?? '').slice(0, 40), qty: Math.max(1, Math.min(20, Math.round(Number(l?.qty)) || 1)) }));
+  const lines = (Array.isArray(input?.lines) ? input.lines : []).slice(0, 30).map((l: any) => ({ id: String(l?.id ?? '').slice(0, 40), opt: String(l?.opt ?? '').slice(0, 40), qty: Math.max(1, Math.min(20, Math.round(Number(l?.qty)) || 1)), ...(typeof l?.sleeve === 'string' ? { sleeve: l.sleeve.slice(0, 10) } : {}) }));
   const next = addDays(iso(order.slot_date), every * 7);
   const sub = await one`INSERT INTO subscriptions (email, name, phone, lang, method, street, postal, slot_window, payment, lines, every_weeks, next_date, sms_ok, created_from)
     VALUES (${order.email}, ${order.name}, ${order.phone}, ${order.lang}, ${order.method}, ${order.street}, ${order.postal}, ${order.slot_window}, ${order.payment},
@@ -50,7 +50,9 @@ export async function runSubscriptions(req?: Request, today = calgaryNow().date)
     } catch (e: any) {
       // A date variety or filling we no longer sell (khudri, Medjool in the Everyday box): say so plainly.
       const gone = e?.code === 'choose-date' || e?.code === 'choose-filling';
-      const why = gone
+      const why = e?.code === 'retired'
+        ? (lang(sub) === 'ar' ? 'هذه العلبة صارت علبة هدية واحدة بحزام رمضان أو العيد. ردّ على هذه الرسالة لنرتّبها معك.' : 'That box is now one gift box with a Ramadan or Eid sleeve. Reply to this email and we will set it up with you.')
+        : gone
         ? (lang(sub) === 'ar' ? 'صنف التمر في طلبك لم يعد متوفراً. ردّ على هذه الرسالة لنختار معك صنفاً آخر.' : 'The date in it is no longer offered. Reply to this email and we will choose another with you.')
         : lang(sub) === 'ar' ? 'أحد المنتجات غير متوفر أو الموعد ممتلئ.' : (e?.message ?? 'Something in it is not available.');
       await sql`UPDATE subscriptions SET next_date = ${after}, last_note = ${`Not placed for ${day}: ${String(e?.message ?? e).slice(0, 200)}`}, updated_at = NOW() WHERE id = ${sub.id}`;

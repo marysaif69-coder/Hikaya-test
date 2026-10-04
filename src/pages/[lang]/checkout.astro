@@ -278,7 +278,7 @@ const ar = lang === 'ar';
     paintDays(); paint();
   }
   document.addEventListener('catalog:live', () => paint());
-  const cartLines = () => read().map(l => ({ id: l.id, opt: l.opt, qty: l.qty }));
+  const cartLines = () => read().map(l => ({ id: l.id, opt: l.opt, qty: l.qty, ...(l.sleeve ? { sleeve: l.sleeve } : {}) }));
   async function applyPromo(code: string, quiet = false) {
     const msg = $('promoMsg');
     if (!code) { promo = null; msg.textContent = ''; paint(); return; }
@@ -334,7 +334,7 @@ const ar = lang === 'ar';
         body: JSON.stringify({
           lang, name: val('name'), phone: val('phone'), email: val('email'), method: val('method'), street: val('street'), postal: val('postal'),
           day: val('day'), window: val('window'), payment: val('payment'), notes: val('notes'),
-          lines: lines.map(l => ({ id: l.id, opt: l.opt, qty: l.qty })), promo: promo?.code ?? '',
+          lines: lines.map(l => ({ id: l.id, opt: l.opt, qty: l.qty, ...(l.sleeve ? { sleeve: l.sleeve } : {}) })), promo: promo?.code ?? '',
           gift: ($('f-gift') as HTMLInputElement).checked, gift_to: val('gift_to'), gift_phone: val('gift_phone'), gift_message: val('gift_message'),
           newsletter: ($('f-news') as HTMLInputElement).checked,
           giftcard: gift?.code ?? '', sms: ($('f-sms') as HTMLInputElement).checked, repeat: Number(val('repeat')),

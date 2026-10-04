@@ -33,7 +33,7 @@ import { weekSheet, weekStart } from '../lib/week';
 import { sendBackInStock, waitingByProduct } from '../lib/alerts';
 import { listStats, cupStats } from '../lib/list';
 import { numbers } from '../lib/visits';
-import { PRODUCTS, FAMILIES, fileCents } from '../../src/data/products';
+import { PRODUCTS, ON_SALE, FAMILIES, fileCents } from '../../src/data/products';
 import { send, ticketReply } from '../lib/email';
 
 const day = (v: unknown) => (v instanceof Date ? v.toISOString() : String(v ?? '')).slice(0, 10);
@@ -167,7 +167,7 @@ async function handle(req: Request) {
         if (!was) throw new HttpError(404, 'not-found');
         if (was.is_sample !== b.sample) {
           const live = was.status !== 'cancelled';
-          if (live && !b.sample) await takeStock((await sql`SELECT product_id, qty FROM order_items WHERE order_id = ${was.id}`).map(i => ({ product_id: i.product_id, qty: i.qty })));
+          if (live && !b.sample) await takeStock((await sql`SELECT product_id, qty, option FROM order_items WHERE order_id = ${was.id}`).map(i => ({ product_id: i.product_id, qty: i.qty, option: i.option })));
           o = await one`UPDATE orders SET is_sample = ${b.sample} WHERE id = ${was.id} RETURNING *`;
           if (live && b.sample) await restock(was.id);
           await event(o.id, 'note', b.sample ? 'Marked as a sample order' : 'Marked as a real order', admin.email);
@@ -262,7 +262,7 @@ async function handle(req: Request) {
     // ---------- products: prices, shown on the site, sold out, stock ----------
     if (parts[0] === 'products' && !parts[1] && req.method === 'GET') {
       const [live, waiting] = await Promise.all([liveCatalog(), waitingByProduct()]);
-      return json({ seasons: await getSeasons(), products: PRODUCTS.map(p => ({
+      return json({ seasons: await getSeasons(), products: ON_SALE.map(p => ({
         id: p.id, name: p.name, kind: p.kind, family: FAMILIES[p.fam].name.en + (p.kind === 'coffee' ? ' · base bag' : p.kind === 'pack' ? ' · pack' : p.kind === 'kit' ? (p.discovery ? ' · discovery pack' : ' · style: bag + packs') : ''), defaultPrice: fileCents(p), ...live[p.id], waiting: waiting[p.id] ?? 0,
       })) });
     }

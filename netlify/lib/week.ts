@@ -2,7 +2,7 @@
 // orders (Thursday to Wednesday by default, so a whole Thursday–Sunday service week is one sheet).
 import { sql } from './db';
 import { addDays, calgaryNow, weekday } from './slots';
-import { PRODUCTS, DATES, GRINDS, FILLINGS, type DateId, type FillingId } from '../../src/data/products';
+import { PRODUCTS, DATES, GRINDS, FILLINGS, boxContents, boxOptionLabel, type DateId, type FillingId, type Sleeve } from '../../src/data/products';
 
 type PackRow = { id: string; name: string; full: number; mini: number; inKits: number };
 
@@ -18,7 +18,7 @@ type CoffeeRow = { id: string; name: string; grind: string; pouches: number; gra
 
 export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hide') {
   const to = addDays(from, 6);
-  const rows = await sql`SELECT o.slot_date::text AS day, o.method, o.ref, i.product_id, i.option, i.qty
+  const rows = await sql`SELECT o.slot_date::text AS day, o.method, o.ref, i.product_id, i.option, i.qty, i.sleeve
     FROM order_items i JOIN orders o ON o.id = i.order_id
     WHERE o.slot_date BETWEEN ${from} AND ${to} AND o.status <> 'cancelled'
       AND (${sample} = '' OR (${sample} = 'hide' AND NOT o.is_sample) OR (${sample} = 'only' AND o.is_sample))`;
@@ -57,7 +57,7 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
     if (!p) continue;
     const d = days.get(r.day) ?? { day: r.day, pickup: new Set(), delivery: new Set() };
     d[r.method === 'delivery' ? 'delivery' : 'pickup'].add(r.ref); days.set(r.day, d);
-    const optName = !r.option ? '' : p.kind === 'coffee' || p.kind === 'kit' ? GRINDS[r.option as keyof typeof GRINDS]?.en ?? r.option : p.kind === 'box' && p.fillings ? FILLINGS[r.option as FillingId]?.name.en ?? r.option : DATES[r.option as DateId]?.name.en ?? r.option;
+    const optName = !r.option ? '' : p.kind === 'coffee' || p.kind === 'kit' ? GRINDS[r.option as keyof typeof GRINDS]?.en ?? r.option : p.kind === 'box' ? boxOptionLabel(p, r.option, 'en') : r.option;
     const pk = `${p.id}|${r.option ?? ''}`;
     const pr = products.get(pk) ?? { name: p.name.en, option: optName, qty: 0 }; pr.qty += r.qty; products.set(pk, pr);
     if (p.kind === 'coffee') { addCoffee(p.id, r.option, r.qty, false); continue; }
@@ -68,14 +68,16 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
       continue;
     }
     boxes[p.insert] += r.qty;
-    if (p.insert !== 'everyday') sleeves[p.sleeve] += r.qty;
-    for (const [cid, n] of Object.entries(p.packs?.coffee ?? {})) addCoffee(cid, null, n * r.qty, true);
-    for (const [sid, n] of Object.entries(p.packs?.sachets ?? {})) addPack(sid, n * r.qty, false, true);
-    for (const [did, n] of Object.entries(p.packs?.dates ?? {})) datePieces[did as DateId] = (datePieces[did as DateId] ?? 0) + (n ?? 0) * r.qty;
-    // By weight: grams of the chosen variety. Reserve: pieces of the chosen variety. Stuffed: pieces per filling.
-    if (p.fillings && r.option) stuffed[r.option as FillingId] = (stuffed[r.option as FillingId] ?? 0) + (p.count ?? 0) * r.qty;
-    else if (p.chooseDate && r.option && p.count) datePieces[r.option as DateId] = (datePieces[r.option as DateId] ?? 0) + p.count * r.qty;
-    else if (p.chooseDate && r.option) dateGrams[r.option as DateId] = (dateGrams[r.option as DateId] ?? 0) + (p.grams ?? 500) * r.qty;
+    // The sleeve chosen on the order line (Ramadan, Eid), else the box's own.
+    if (p.insert !== 'everyday') sleeves[(['regular', 'ramadan', 'eid'].includes(r.sleeve) ? r.sleeve : p.sleeve) as Sleeve] += r.qty;
+    // Bags, packs and dates in pieces (Mixed split per kind; each chosen coffee is a 250 g bag of that style).
+    const c = boxContents(p, r.option);
+    for (const [cid, n] of Object.entries(c.coffee)) addCoffee(cid, null, n * r.qty, true);
+    for (const [sid, n] of Object.entries(c.sachets)) addPack(sid, n * r.qty, false, true);
+    for (const [did, n] of Object.entries(c.dates)) datePieces[did as DateId] = (datePieces[did as DateId] ?? 0) + (n ?? 0) * r.qty;
+    for (const [fid, n] of Object.entries(c.stuffed)) stuffed[fid as FillingId] = (stuffed[fid as FillingId] ?? 0) + (n ?? 0) * r.qty;
+    // By weight: grams of the chosen variety.
+    if (p.grams && r.option) dateGrams[r.option as DateId] = (dateGrams[r.option as DateId] ?? 0) + p.grams * r.qty;
     if (p.grams === 250) datePacks.g250 += r.qty; else if (p.grams === 500) datePacks.g500 += r.qty; else if (p.grams === 1000) datePacks.g1000 += r.qty;
   }
 
