@@ -269,11 +269,11 @@ const DATE_PICKS = [
       <div class="wrap">
         <div class="panel-head"><div><h2 id="h-beans" class="h-m">{ar ? 'بن اليمن' : 'Yemeni beans'}{!ar && <span lang="ar" class="h-ar">بن اليمن</span>}</h2><p class="slogan">{ar ? 'من مزارعنا' : <>From our farms <span lang="ar">· من مزارعنا</span></>}</p></div></div>
         <p class="beans-lead">{ar ? 'من مدرجات جبال اليمن، حيث بدأت حكاية القهوة.' : 'From the mountain terraces of Yemen, where the story of coffee began.'}</p>
-        <p class="muted panel-note">{ar ? 'دفعات صغيرة، نحمّصها في كالغاري، ١٠٠ غ في العلبة السوداء. تُحضَّر بالتقطير وتُشرب وحدها، بلا هيل ولا بهار، لتعرف طعم المكان الذي جاء منه.' : 'Small lots, roasted in Calgary, 100 g in the black box. Brewed by pour-over and drunk on its own, no cardamom, no spice, so it tastes of where it was grown.'}</p>
+        <p class="muted panel-note">{ar ? 'من ميناء المخا خرجت القهوة إلى العالم أول مرة. وما زال البن اليمني يُزرع على مدرجات حجرية عالية، ويُجفَّف بثمرته تحت الشمس، فيحمل حلاوة الفاكهة المجففة والتمر والشوكولاتة. نختار منه دفعات صغيرة، ونحمّصها في كالغاري، ونبيعها حبوباً محمّصة كاملة في العلبة السوداء، ١٠٠ غ. تُحضَّر بالتقطير وتُشرب وحدها، بلا هيل ولا بهار.' : 'Coffee first left for the world from the port of Mokha. Yemeni coffee is still grown on high stone terraces and dried whole in its fruit under the sun, which gives it the sweetness of dried fruit, dates and chocolate. We choose small lots, roast them in Calgary and sell them as whole roasted beans in the black box, 100 g. Brew by pour-over and drink it on its own, no cardamom, no spice.'}</p>
         <ul class="beans-facts">
           <li><b>{ar ? 'نتذوقها ونقيّمها' : 'Cupped and scored by us'}</b> <span>{ar ? 'درجة كل دفعة (من ١٠٠، على مقياس SCA) على علبتها.' : 'Each lot’s score (out of 100, on the SCA scale) is on its box.'}</span></li>
-          <li><b>{ar ? 'للتقطير' : 'For pour-over'}</b> <span>{ar ? 'حبوباً كاملة، أو طحنة متوسطة للتقطير.' : 'Whole beans, or a medium grind for pour-over.'}</span></li>
-          <li><b>{ar ? 'دفعات صغيرة' : 'Small lots'}</b> <span>{ar ? 'حين تنفد الدفعة، تأتي دفعة جديدة.' : 'When a lot runs out, a new one follows.'}</span></li>
+          <li><b>{ar ? 'حبوب كاملة' : 'Whole beans'}</b> <span>{ar ? 'محمّصة وغير مطحونة: اطحنها قبل التحضير مباشرة، للتقطير.' : 'Roasted, not ground: grind just before you brew, for pour-over.'}</span></li>
+          <li><b>{ar ? 'دفعات صغيرة' : 'Small lots'}</b> <span>{ar ? 'لكل دفعة مزرعتها وارتفاعها وطريقة تجفيفها، مكتوبة على علبتها.' : 'Each lot has its farm, altitude and drying written on its box.'}</span></li>
         </ul>
         <div class="grid">{SPECIALTY.map(p => <ProductCard p={p} lang={lang} />)}</div>
       </div>

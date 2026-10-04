@@ -11,7 +11,7 @@ export type Spice = 'saffron' | 'cardamom' | 'ginger' | 'husk' | 'sesame' | 'cin
 export type DateId = 'sukkari' | 'khalas' | 'khudri' | 'ajwa' | 'medjool' | 'mufattal';
 /** What a stuffed date is filled or dipped with (the customer chooses one per box). */
 export type FillingId = 'pistachio' | 'pistachio-dipped' | 'biscuit' | 'cashew' | 'caramel-almond';
-export type Grind = 'dallah' | 'fine' | 'powder' | 'beans' | 'pourover';
+export type Grind = 'dallah' | 'fine' | 'powder' | 'beans';
 export type Allergen = 'milk' | 'sesame' | 'nuts' | 'grain' | 'pistachio' | 'cashew' | 'gluten' | 'soy';
 
 /** A base bag: the coffee itself, with only the spice that belongs in every cup of that line. */
@@ -157,8 +157,7 @@ export const GRINDS: Record<Grind, L> = {
   dallah: { en: 'Coarse, for Gulf coffee', ar: 'طحنة خشنة للقهوة الخليجية' }, // id kept: saved carts and orders use it
   fine: { en: 'Fine, for the pot', ar: 'طحنة ناعمة للإبريق' },
   powder: { en: 'Powder-fine, for the rakwa', ar: 'ناعمة كالبودرة للركوة' },
-  beans: { en: 'Whole beans', ar: 'حبوب كاملة' },
-  pourover: { en: 'Medium, for pour-over', ar: 'طحنة متوسطة للتقطير' },
+  beans: { en: 'Whole roasted beans', ar: 'حبوب محمّصة كاملة' },
 };
 
 /** Allergens live only in the sealed packs. The coffee bags hold coffee and spices, nothing else. */
@@ -335,19 +334,22 @@ export const KITS: Kit[] = [
 // beans), 100 g in a black box. Not decided yet: shown for now so the owners can look at them; they
 // hide them in Admin → Shop → Products (or set `startHidden: true` here so new sites start hidden).
 // The lots and regions are placeholders until the supplier confirms them.
+// Sold as whole roasted beans only (graded and roasted by us, not ground). The region lines are
+// general facts about each district; the lot's farm, altitude, process and score come from the
+// supplier and our cupping.
 const Y = (id: string, name: L, region: L, bunn: L): Coffee => ({
   kind: 'coffee', id, fam: 'origin', line: 'yemen', name, price: null,
-  size: { en: '100 g', ar: '١٠٠ غ' }, roast: 0, spices: [], grinds: ['beans', 'pourover'],
-  notes: { en: `Grown in ${region.en}, Yemen, and roasted in Calgary. 100 g in the black box. [TBD: the lot, from the supplier]`, ar: `زُرع في ${region.ar} باليمن، ونحمّصه في كالغاري. ١٠٠ غ في العلبة السوداء. [يُحدد لاحقاً: الدفعة، من المورّد]` },
-  story: { en: 'A small lot from where the story of coffee began, brewed by pour-over and drunk on its own: no cardamom, no spice. We cup and score every lot before it reaches you.', ar: 'دفعة صغيرة من حيث بدأت حكاية القهوة، تُحضَّر بالتقطير وتُشرب وحدها: بلا هيل ولا بهار. نتذوق كل دفعة ونقيّمها قبل أن تصل إليك.' },
+  size: { en: '100 g', ar: '١٠٠ غ' }, roast: 0, spices: [], grinds: ['beans'],
+  notes: { en: `${region.en} Whole roasted beans, 100 g in the black box. [TBD: the lot, from the supplier]`, ar: `${region.ar} حبوب محمّصة كاملة، ١٠٠ غ في العلبة السوداء. [يُحدد لاحقاً: الدفعة، من المورّد]` },
+  story: { en: 'Yemeni coffee is traditionally dried whole in its fruit under the mountain sun, and often tastes of dried fruit, dates and dark chocolate. A small lot, cupped and scored by us, roasted in Calgary; grind it just before you brew, for pour-over, and drink it on its own: no cardamom, no spice.', ar: 'يُجفَّف البن اليمني عادةً بثمرته تحت شمس الجبال، وكثيراً ما يحمل طعم الفاكهة المجففة والتمر والشوكولاتة الداكنة. دفعة صغيرة نتذوقها ونقيّمها ونحمّصها في كالغاري؛ اطحنها قبل التحضير مباشرة، بالتقطير، واشربها وحدها: بلا هيل ولا بهار.' },
   ingredients: ['Coffee (Yemen).', 'Café (Yémen).'],
   taste: { en: '[TBD: after the cupping]', ar: '[يُحدد لاحقاً: بعد التذوق]' },
   bunn, why: { en: '', ar: '' },
 });
 export const SPECIALTY: Coffee[] = [
-  Y('yemen-haraz', { en: 'Haraz', ar: 'حراز' }, { en: 'the Haraz mountains', ar: 'جبال حراز' }, { en: 'Where I learned my ways.', ar: 'هنا تعلّمت طرقي.' }),
-  Y('yemen-matari', { en: 'Bani Matar', ar: 'بني مطر' }, { en: 'Bani Matar', ar: 'بني مطر' }, { en: 'From the terraces west of Sana’a.', ar: 'من مدرجات غرب صنعاء.' }),
-  Y('yemen-yafai', { en: 'Yafa’i', ar: 'يافعي' }, { en: 'Yafa’', ar: 'يافع' }, { en: 'High, slow and patient.', ar: 'عالٍ وبطيء وصبور.' }),
+  Y('yemen-haraz', { en: 'Haraz', ar: 'حراز' }, { en: 'From the Haraz mountains west of Sana’a, where coffee grows on stone terraces up to about 2,500 m.', ar: 'من جبال حراز غرب صنعاء، حيث يُزرع البن على مدرجات حجرية تبلغ نحو ٢٥٠٠ م.' }, { en: 'Where I learned my ways.', ar: 'هنا تعلّمت طرقي.' }),
+  Y('yemen-matari', { en: 'Bani Matar', ar: 'بني مطر' }, { en: 'From Bani Matar, south-west of Sana’a, among Yemen’s highest coffee districts: “Matari” coffee takes its name from here.', ar: 'من بني مطر جنوب غرب صنعاء، من أعلى مناطق البن في اليمن، ومنها جاء اسم البن «المطري».' }, { en: 'They named a coffee after us.', ar: 'سمّوا قهوةً باسمنا.' }),
+  Y('yemen-yafai', { en: 'Yafa’i', ar: 'يافعي' }, { en: 'From Yafa’ in the south of Yemen, where Yafa’i coffee takes its name.', ar: 'من يافع في جنوب اليمن، ومنها اسم البن اليافعي.' }, { en: 'High, slow and patient.', ar: 'عالٍ وبطيء وصبور.' }),
 ];
 
 export const BOXES: Box[] = [

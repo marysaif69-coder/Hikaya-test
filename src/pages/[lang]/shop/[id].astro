@@ -100,7 +100,7 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
           {p.kind === 'coffee' && p.fam === 'origin' && (
             <ul class="origin-facts">
               <li><span class="label">{L('Cupping score', 'درجة التذوق')}</span> {p.score ? `${p.score} / 100 (SCA)` : L('[TBD: after our cupping] (SCA, out of 100)', '[يُحدد لاحقاً: بعد تذوقنا] (SCA، من ١٠٠)')}</li>
-              <li><span class="label">{L('Brew', 'التحضير')}</span> {L('Pour-over, on its own, no spice: [TBD] g coffee to [TBD] ml water.', 'بالتقطير، وحدها بلا بهار: [يُحدد لاحقاً] غ قهوة لـ[يُحدد لاحقاً] مل ماء.')}</li>
+              <li><span class="label">{L('Brew', 'التحضير')}</span> {L('Grind just before you brew. Pour-over, on its own, no spice: [TBD] g coffee to [TBD] ml water.', 'اطحنها قبل التحضير مباشرة. بالتقطير، وحدها بلا بهار: [يُحدد لاحقاً] غ قهوة لـ[يُحدد لاحقاً] مل ماء.')}</li>
               <li><span class="label">{L('Origin', 'المنشأ')}</span> {L('Yemen · [TBD: farm, altitude and process, from the supplier]', 'اليمن · [يُحدد لاحقاً: المزرعة والارتفاع والمعالجة، من المورّد]')}</li>
             </ul>
           )}
