@@ -13,6 +13,12 @@ export const groupOf = (d: Decision) => { const first = d.topic.split(' · ')[0]
 export const DECISIONS: Decision[] = [
   // ---------- what we need from you ----------
   {
+    id: 'green-samples', kind: 'provide', topic: 'Green coffee · Samples', asked: '2026-10-04',
+    question: 'Order the 6 green coffee samples from United Beans (1 lb each, code “sampling”)',
+    context: 'All 6 were in stock on unitedbeans.ca on 4 Oct. Steps: (1) open each coffee and choose the 1 LB size; (2) add all 6 to the cart; (3) enter the code sampling at checkout (40% off); (4) check the total is about $65 and shipping is free (over $49); (5) save the order confirmation: the sample cost is credited back on our first bulk order, so remind Ibrahim then. Order by 5 Oct so they arrive for the mid-October cupping. The 6, and what each is for: Ethiopia Harrar G3 Natural (≈ $9.75; Gulf and Yemeni-style, main candidate) · Ethiopia Sidamo Hube G1 Natural (≈ $11.35; Gulf and Yemeni-style, the G1 upgrade) · Ethiopia Yirgacheffe Aricha G1 Natural (≈ $12.48; benchmark: does G1 quality survive the spices?) · Brazil Campos Altos (≈ $10.78; Shami sada) · Brazil Caldas (≈ $10.53; Shami) · Brazil Peaberry, Alta Mogiana (≈ $10.13; Shami with cardamom, cheapest Brazil). If Hube is sold out, do not take “Sidama G2”: it is washed. Use Harrar G3 alone, or Guji G4 Natural. At the cupping, roast the Ethiopians light and the Brazils medium, as we will sell them. Tick Given when ordered and write the order number.',
+    options: ['Given'],
+  },
+  {
     id: 'box-photos', kind: 'provide', topic: 'Photos · Date and gift boxes', asked: '2026-10-04',
     question: 'Photos of the real boxes, when the samples arrive',
     context: 'Until then the site draws each box. Shot list, all 4:5 portrait, same angle, on the cream background: Coffee & Dates open (a pouch and 12 dates); Two Coffees open; Reserve 12 and 24 (one variety, and Mixed); Stuffed 12 (showing the seals and the fillings); Four Palms; the closed box with the gold band, then with the Ramadan sticker and with the Eid sticker; the Everyday clear tray in 250 g, 500 g and 1 kg. Send them to the website session; a box with a photo shows it, the rest keep the drawing.',
@@ -97,6 +103,12 @@ export const DECISIONS: Decision[] = [
     options: ['Given'],
   },
   // ---------- questions ----------
+  {
+    id: 'green-first-order', topic: 'Green coffee · First order', asked: '2026-10-04',
+    question: 'After the cupping (about 20 Oct): which green coffees, and how much, for the first United Beans order?',
+    context: 'Rules: Gulf (Najdi, Qassimi, Hijazi) and Yemeni-style coffee use natural (sun-dried) Ethiopian beans only, never washed: light roasts show the process most and washed tastes sour there. Shami is a medium roast with Brazilian beans, where the process matters less. Grade (G1, G2, G3) is defects per 300 g and cup quality, not acidity or picking order. Prices go by total order weight across coffees: 180–239 lb is Tier 3, 240 lb or more is Tier 4. Examples (OTC list, Sep 2026; shipping ≈ $116 by Canpar for 7 boxes): 180 lb, Harrar 90 + Peaberry 90 ≈ $1,508 delivered ($8.38/lb); 180 lb, Harrar 90 + Campos Altos 90 ≈ $1,603 ($8.90/lb); 240 lb, Harrar 120 + Hube 30 + Peaberry 90 ≈ $1,976 ($8.23/lb): the extra 30 lb bag costs only about $180. The price lists expire after 15 days, so ask Ibrahim for a fresh one before ordering, and remind him of the sample credit. Details on the team site: T79 and the United Beans follow-up.',
+    options: ['180 lb: one Ethiopian + one Brazil', '240 lb (Tier 4): two Ethiopians + one Brazil', 'Something else (write it below)'],
+  },
   {
     id: 'yemen-beans-launch', topic: 'Yemeni beans · Launch', asked: '2026-10-04',
     question: 'Do we sell the Yemeni beans (coffee grown in Yemen, 100 g in a black box), and when?',
