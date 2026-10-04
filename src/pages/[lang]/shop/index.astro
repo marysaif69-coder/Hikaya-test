@@ -1,7 +1,7 @@
 ---
 import Base from '../../../layouts/Base.astro';
 import ProductCard from '../../../components/ProductCard.astro';
-import { COFFEES, KITS, PACKS, BOXES, FAMILIES, LINES, type Lang, type CoffeeLine } from '../../../data/products';
+import { COFFEES, KITS, PACKS, BOXES, FAMILIES, LINES, DATES, EVERYDAY, priceText, type Lang, type CoffeeLine } from '../../../data/products';
 import { path } from '../../../data/i18n';
 import Pouch from '../../../components/Pouch.astro';
 
@@ -26,19 +26,36 @@ const lines = (['gulf', 'yemen', 'shami'] as CoffeeLine[]).map(l => ({
   : { ...l, ways: [] as typeof l.bases });
 lines.push({ id: 'qishr', name: { en: 'Qishr', ar: 'القشر' }, sub: SUB.qishr, bases: COFFEES.filter(c => c.id === 'qishr'), styles: [], ways: [] });
 const discovery = KITS.filter(k => k.discovery);
-const others = [
-  { id: 'dates', items: BOXES.filter(b => b.fam === 'dates') },
-  { id: 'ramadan', items: BOXES.filter(b => b.fam === 'ramadan') },
-  { id: 'eid', items: BOXES.filter(b => b.fam === 'eid') },
-] as const;
+// Dates view. Everyday is sold by weight: one card per variety, a chip per size (each size is its
+// own product, priced on the server by id). Reserve and stuffed: the variety or filling is chosen
+// on the product page.
+const BY_ID = Object.fromEntries(BOXES.map(b => [b.id, b]));
+const SIZES = ['dates-250', 'date-box', 'dates-1kg'].map(id => BY_ID[id]);
+const reserve = BOXES.filter(b => b.tier === 'reserve');
+const stuffed = BOXES.filter(b => b.tier === 'stuffed');
+const gifts = ['guest-box', 'coffee-duo', 'four-palms'].map(id => BY_ID[id]);
+const seasons = (['ramadan', 'eid'] as const).map(id => ({ id, items: BOXES.filter(b => b.fam === id) }));
+const DATE_PICKS = [
+  { id: 'everyday', name: { ar: 'تمر كل يوم', en: 'Everyday' }, sub: { ar: 'خلاص وسكري قصيمي، بالوزن', en: 'Khalas and Sukkari Qassimi, by weight' }, c: DATES.khalas.c },
+  { id: 'reserve', name: { ar: 'تمر النخبة', en: 'Reserve' }, sub: { ar: 'سكري ملكي مفتّل، عجوة، مجدول', en: 'Royal Sukkari Mufattal, Ajwa, Medjool' }, c: DATES.ajwa.c, badge: true },
+  { id: 'stuffed', name: { ar: 'تمر محشي', en: 'Stuffed' }, sub: { ar: 'فستق، كاجو، كريمة البسكويت…', en: 'Pistachio, cashew, biscuit cream…' }, c: DATES.mufattal.c },
+];
+const dateArt = (c: string) => `<svg viewBox="-26 -46 52 92" aria-hidden="true"><path fill="${c}" d="M-2 -42c13 0 22 12 22 40c0 27-9 44-22 44c-12 0-21-15-21-43c0-29 8-41 21-41z"/><path d="M-12 -18q6 3 11 0M-14 4q7 4 14 0M-11 24q6 3 12-1M4 -30q5 2 9-1" stroke="#33211A" stroke-opacity=".3" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`;
 ---
 <Base lang={lang} title={ar ? 'المتجر' : 'Shop'} current="shop">
   <section class="wrap shop-head">
     <h1 class="h-l">{ar ? 'القهوة والتمر' : 'Coffee & dates'}</h1>
-    <p class="lead">{ar ? 'اختر قهوتك، ثم اختر كيف تشربها.' : 'Choose your coffee, then how you take it.'}</p>
+    <p class="lead">{ar ? 'اختر قهوتك، ثم كيف تشربها. أو اختر تمرك.' : 'Choose your coffee, then how you take it. Or choose your dates.'}</p>
     <p class="muted small">{ar ? 'كل طريقة تأتي في علبة واحدة، الكيس وظروفه معاً. الأسعار تُعلن قريباً.' : 'Each style comes in one box, the bag and its packs together. Prices are announced soon.'}</p>
   </section>
 
+  <!-- Coffee | Dates. Without JavaScript the tabs stay hidden and both views simply show. -->
+  <div class="wrap top-tabs" role="tablist" aria-label={ar ? 'القهوة أو التمر' : 'Coffee or dates'} id="topTabs" hidden>
+    <button type="button" role="tab" id="view-tab-coffee" aria-controls="view-coffee" aria-selected="true" data-view="coffee">{ar ? 'القهوة' : 'Coffee'}{!ar && <span lang="ar">القهوة</span>}</button>
+    <button type="button" role="tab" id="view-tab-dates" aria-controls="view-dates" aria-selected="false" data-view="dates">{ar ? 'التمر' : 'Dates'}{!ar && <span lang="ar">التمر</span>}</button>
+  </div>
+
+  <div id="view-coffee" role="tabpanel" aria-labelledby="view-tab-coffee" data-view-panel="coffee">
   <!-- Step 1: choose the coffee. Without JavaScript every panel below simply shows. -->
   <section class="wrap picker" aria-label={ar ? 'اختر قهوتك' : 'Choose your coffee'}>
     <div class="pick-cards" role="tablist">
@@ -108,17 +125,88 @@ const others = [
     </section>
   </div>
 
-  {others.map((g, gi) => (
-    <section class={`fam ${gi % 2 ? '' : 'alt'}`} id={g.id} aria-labelledby={`h-${g.id}`} data-group data-season={g.id === 'ramadan' || g.id === 'eid' ? g.id : undefined}>
+  </div>
+
+  <div id="view-dates" role="tabpanel" aria-labelledby="view-tab-dates" data-view-panel="dates">
+    <section class="wrap picker" aria-label={ar ? 'اختر تمرك' : 'Choose your dates'}>
+      <div class="pick-cards three">
+        {DATE_PICKS.map(d => (
+          <a class="pick" href={`#${d.id}`} data-date-pick={d.id}>
+            <span class="pick-bag date-art" set:html={dateArt(d.c)} />
+            <span class="pick-txt">
+              <b>{d.name[lang]}{!ar && <span lang="ar" class="pick-ar">{d.name.ar}</span>}</b>
+              <small>{d.sub[lang]}</small>
+              {d.badge && <em class="badge">{ar ? 'ننصح بها' : 'Our pick'}{!ar && <span lang="ar"> · ننصح بها</span>}</em>}
+            </span>
+          </a>
+        ))}
+      </div>
+      <p class="pick-more"><a class="link" href="#gifts">{ar ? 'هدية؟ علب الهدايا مع القهوة' : 'A gift? Boxes with coffee'}</a></p>
+    </section>
+
+    <section class="fam dsec" id="everyday" aria-labelledby="h-everyday">
       <div class="wrap">
-        <div class="fam-head">
-          <h2 id={`h-${g.id}`} class="h-m">{FAMILIES[g.id].name[lang]}</h2>
-          <p class="muted">{FAMILIES[g.id].line[lang]}</p>
+        <div class="panel-head"><h2 id="h-everyday" class="h-m">{ar ? 'تمر كل يوم' : 'Everyday dates'}</h2><p class="muted">{ar ? 'بالوزن، للبيت، في علبة شفافة.' : 'By weight, for the house, in a clear tray.'}</p></div>
+        <div class="ed-grid">
+          {EVERYDAY.map(v => { const d = DATES[v]; const def = BY_ID['date-box']; return (
+            <article class="ed" data-everyday={v}>
+              <span class="ed-art" set:html={dateArt(d.c)} />
+              <div class="ed-txt">
+                <h3>{d.name[lang]}{!ar && <span lang="ar">{d.name.ar}</span>}</h3>
+                <p class="muted">{d.region[lang]} · {d.notes[lang]}</p>
+                <fieldset class="sizes">
+                  <legend class="sr">{ar ? 'الحجم' : 'Size'}</legend>
+                  {SIZES.map(b => <label data-product={b.id}><input type="radio" name={`size-${v}`} value={b.id} checked={b.id === 'date-box'} data-price-text={priceText(b.price, lang)} data-priced={b.price != null ? '1' : ''} /><span>{b.size[lang]}</span></label>)}
+                </fieldset>
+                <div class="ed-buy">
+                  <span class="price" data-price-for={def.id}>{priceText(def.price, lang)}</span>
+                  <button class="btn primary sm" type="button" data-add={def.id} data-opt={v} disabled={def.price == null}><span>{ar ? 'أضف' : 'Add'}</span></button>
+                </div>
+              </div>
+            </article>
+          ); })}
         </div>
-        <div class="grid">{g.items.map(p => <ProductCard p={p} lang={lang} />)}</div>
       </div>
     </section>
-  ))}
+
+    <section class="fam dsec alt" id="reserve" aria-labelledby="h-reserve">
+      <div class="wrap">
+        <div class="panel-head"><h2 id="h-reserve" class="h-m">{ar ? 'تمر النخبة' : 'Reserve dates'} <em class="badge">{ar ? 'ننصح بها' : 'Our pick'}</em></h2></div>
+        <p class="muted panel-note">{ar ? 'تمر كل يوم بالوزن للبيت؛ والنخبة أكبر وأعتنى بها، في علب.' : 'Everyday dates by weight for the house; Reserve dates are larger and more carefully kept, boxed.'}</p>
+        <div class="grid">{reserve.map(p => <ProductCard p={p} lang={lang} />)}</div>
+      </div>
+    </section>
+
+    <section class="fam dsec" id="stuffed" aria-labelledby="h-stuffed">
+      <div class="wrap">
+        <div class="panel-head"><h2 id="h-stuffed" class="h-m">{ar ? 'تمر محشي' : 'Stuffed dates'}</h2></div>
+        <p class="muted panel-note">{ar ? 'حشوة واحدة لكل علبة، تختارها في صفحة العلبة مع مسببات الحساسية. كل تمرة مغلّفة وحدها.' : 'One filling per box, chosen on the box’s page with its allergens. Each date sealed on its own.'}</p>
+        <div class="grid">{stuffed.map(p => <ProductCard p={p} lang={lang} />)}</div>
+      </div>
+    </section>
+
+    <section class="fam dsec alt" id="gifts" aria-labelledby="h-gifts" data-group>
+      <div class="wrap">
+        <div class="panel-head"><h2 id="h-gifts" class="h-m">{ar ? 'علب الهدايا' : 'Gift boxes'}</h2><p class="muted">{ar ? 'قهوة وتمر بالحزام الذهبي، لأي زيارة.' : 'Coffee and dates in the gold sleeve, for any visit.'}</p></div>
+        <div class="grid">{gifts.map(p => <ProductCard p={p} lang={lang} />)}</div>
+      </div>
+    </section>
+
+    <!-- Ramadan and Eid last, so they don't push the dates down. -->
+    <div id="season" data-season="ramadan eid">
+      {seasons.map(g => (
+        <section class="fam dsec" id={g.id} aria-labelledby={`h-${g.id}`} data-group data-season={g.id}>
+          <div class="wrap">
+            <div class="fam-head">
+              <h2 id={`h-${g.id}`} class="h-m">{FAMILIES[g.id].name[lang]}</h2>
+              <p class="muted">{FAMILIES[g.id].line[lang]}</p>
+            </div>
+            <div class="grid">{g.items.map(p => <ProductCard p={p} lang={lang} />)}</div>
+          </div>
+        </section>
+      ))}
+    </div>
+  </div>
 </Base>
 
 <script>
@@ -135,9 +223,55 @@ const others = [
     if (scroll) document.getElementById(id)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   }
   tabs.forEach(t => t.addEventListener('click', () => choose(t.dataset.pick!, true)));
-  const fromHash = () => { const h = location.hash.slice(1); if (ids.includes(h)) { choose(h, true); return true; } return false; };
-  if (!fromHash()) { tabs.forEach(t => t.setAttribute('aria-selected', 'false')); panels.forEach(p => { p.hidden = p.dataset.panel !== 'gulf'; }); tabs[0].setAttribute('aria-selected', 'true'); }
+  // Coffee | Dates: one view at a time. Coffee opens first; #dates and its sections open Dates.
+  const DATE_IDS = ['dates', 'everyday', 'reserve', 'stuffed', 'gifts', 'season', 'ramadan', 'eid'];
+  const viewTabs = [...document.querySelectorAll<HTMLButtonElement>('[data-view]')];
+  const views = [...document.querySelectorAll<HTMLElement>('[data-view-panel]')];
+  document.getElementById('topTabs')!.hidden = false;
+  function setView(v: 'coffee' | 'dates') {
+    viewTabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.view === v)));
+    views.forEach(p => { p.hidden = p.dataset.viewPanel !== v; });
+  }
+  const motion = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth') as ScrollBehavior;
+  viewTabs.forEach(t => t.addEventListener('click', () => {
+    const v = t.dataset.view as 'coffee' | 'dates';
+    setView(v);
+    if (v === 'dates') history.replaceState(null, '', '#dates');
+    else { const cur = tabs.find(x => x.getAttribute('aria-selected') === 'true')?.dataset.pick ?? 'gulf'; history.replaceState(null, '', `#${cur}`); }
+  }));
+  // Arrow keys move between the two tabs.
+  viewTabs.forEach((t, i) => t.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const n = viewTabs[(i + 1) % 2]; n.focus(); n.click();
+  }));
+  const fromHash = () => {
+    const h = location.hash.slice(1);
+    if (ids.includes(h)) { setView('coffee'); choose(h, true); return true; }
+    if (DATE_IDS.includes(h)) {
+      setView('dates');
+      const el = h === 'dates' ? document.getElementById('topTabs') : document.getElementById(h);
+      requestAnimationFrame(() => el?.scrollIntoView({ behavior: motion(), block: 'start' }));
+      return true;
+    }
+    return false;
+  };
+  tabs.forEach(t => t.setAttribute('aria-selected', 'false')); panels.forEach(p => { p.hidden = p.dataset.panel !== 'gulf'; }); tabs[0].setAttribute('aria-selected', 'true');
+  if (!fromHash()) setView('coffee');
   addEventListener('hashchange', fromHash);
+  // Everyday dates: the size chips set what the Add button adds, its price and whether it can be ordered.
+  document.querySelectorAll<HTMLElement>('[data-everyday]').forEach(card => {
+    const btn = card.querySelector<HTMLButtonElement>('[data-add]')!, price = card.querySelector<HTMLElement>('.price')!;
+    const sync = () => {
+      const r = card.querySelector<HTMLInputElement>('input[type=radio]:checked'); if (!r) return;
+      btn.dataset.add = r.value; price.dataset.priceFor = r.value;
+      price.textContent = ((window as any).hikayaPrice?.(r.value) as string | undefined) ?? r.dataset.priceText ?? '';
+      const ok = (window as any).hikayaOrderable?.(r.value) as boolean | undefined;
+      btn.disabled = ok === undefined ? !r.dataset.priced : !ok;
+      const tag = btn.parentElement?.querySelector<HTMLElement>('.sold-out-tag'); if (tag) tag.hidden = !btn.disabled;
+    };
+    card.addEventListener('change', sync); sync();
+    document.addEventListener('catalog:live', sync);
+  });
   // When the owners hide a product, live.ts hides a tab whose cards are all hidden: open another.
   document.addEventListener('catalog:live', () => {
     const cur = tabs.find(t => t.getAttribute('aria-selected') === 'true');
@@ -146,6 +280,37 @@ const others = [
 </script>
 
 <style>
+  .top-tabs { display: flex; gap: 8px; padding-bottom: 20px; }
+  .top-tabs button { border: 0; border-radius: 999px; padding: 10px 22px; font: inherit; font-weight: 700; font-size: 17px; background: var(--sheet); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); cursor: pointer; display: inline-flex; gap: 8px; align-items: baseline; }
+  .top-tabs button span { font-weight: 600; font-size: 15px; color: var(--ink-2); }
+  .top-tabs button[aria-selected='true'] { background: var(--bunn); color: var(--paper); box-shadow: none; }
+  .top-tabs button[aria-selected='true'] span { color: #D9C9B4; }
+  .top-tabs button:focus-visible { outline: 2.5px solid var(--tamr); outline-offset: 3px; }
+  .pick-cards.three { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 760px) { .pick-cards.three { grid-template-columns: 1fr; } }
+  a.pick { text-decoration: none; }
+  .date-art :global(svg) { width: 34px; height: 60px; display: block; margin-inline: auto; }
+  .pick-ar { font-size: 15px; font-weight: 600; color: var(--ink-2); margin-inline-start: 8px; }
+  .badge { display: inline-block; justify-self: start; font-style: normal; font-size: 13px; font-weight: 700; color: var(--paper); background: var(--tamr); border-radius: 999px; padding: 2px 10px; vertical-align: middle; }
+  .pick-txt em.badge { color: var(--paper); opacity: 1; font-weight: 700; }
+  .top-tabs { scroll-margin-top: 90px; }
+  .dsec { scroll-margin-top: 90px; }
+  #view-dates { scroll-margin-top: 90px; }
+  .ed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+  .ed { display: grid; grid-template-columns: 56px 1fr; gap: 16px; padding: 18px; border-radius: 22px; background: var(--sheet); box-shadow: inset 0 0 0 1.5px var(--line); }
+  .ed-art :global(svg) { width: 48px; height: 86px; }
+  .ed-txt { display: grid; gap: 10px; align-content: start; }
+  .ed h3 { font-family: var(--display); font-size: 22px; margin: 0; }
+  .ed h3 span { font-size: 16px; color: var(--ink-2); margin-inline-start: 8px; }
+  .ed p { margin: 0; font-size: 14.5px; }
+  .sizes { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .sizes label { position: relative; }
+  .sizes input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .sizes span { display: inline-block; padding: 7px 14px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--line); font-weight: 600; font-size: 14.5px; }
+  .sizes input:checked + span { box-shadow: inset 0 0 0 2.5px var(--bunn); background: color-mix(in srgb, var(--khalal) 14%, var(--sheet)); }
+  .sizes input:focus-visible + span { outline: 2.5px solid var(--tamr); outline-offset: 2px; }
+  .ed-buy { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+  .ed-buy .price { font-weight: 700; }
   .shop-head { display: grid; gap: 10px; padding-block: clamp(36px, 5vw, 64px) 24px; }
   .shop-head > * { max-width: 760px; }
   .small { font-size: 15px; }

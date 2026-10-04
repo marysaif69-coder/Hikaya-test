@@ -29,6 +29,7 @@ const catalog = Object.fromEntries(PRODUCTS.map(p => [p.id, {
   ...(p.kind === 'kit' ? { base: p.base, inside: { en: kitInside(p, 'en'), ar: kitInside(p, 'ar') } } : {}),
   ...(p.kind === 'pack' ? { for: p.for } : {}),
   ...(p.kind === 'box' && p.packs?.coffee ? { bases: Object.keys(p.packs.coffee) } : {}),
+  ...(p.kind === 'box' && (p.chooseDate || p.fillings || p.packs?.dates) ? { dates: true } : {}),
 }]));
 const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'}` : (lang === 'ar' ? 'حكاية · قهوة وتمر في كالغاري' : 'Hikaya · Coffee & dates in Calgary');
 ---

@@ -4,7 +4,7 @@ import Pouch from '../../../components/Pouch.astro';
 import Sachet from '../../../components/Sachet.astro';
 import Pair from '../../../components/Pair.astro';
 import ProductCard from '../../../components/ProductCard.astro';
-import { PRODUCTS, COFFEES, KITS, PACKS, FAMILIES, SPICES, GRINDS, DATES, FILLINGS, ALLERGENS, boxOptions, priceText, baseOf, packOf, stylesFor, allergyNote, kitInside, type Lang, type Product, type Coffee } from '../../../data/products';
+import { PRODUCTS, COFFEES, KITS, PACKS, FAMILIES, SPICES, GRINDS, DATES, FILLINGS, ALLERGENS, BOXES, varietiesOf, priceText, baseOf, packOf, stylesFor, allergyNote, kitInside, type Lang, type Product, type Coffee } from '../../../data/products';
 import { BREW } from '../../../data/brew';
 import { UI, path } from '../../../data/i18n';
 
@@ -28,6 +28,8 @@ const cup = p.kind === 'coffee' || p.kind === 'kit' ? p : null; // has a taste a
 // Pairings come after the tasting: until a coffee has its date, no pairing shows.
 const pairDate = cup?.date ? DATES[cup.date] : null;
 const dateBox = PRODUCTS.find(o => o.id === 'date-box')!;
+// Dates by weight: the other sizes of the same tray (not the Ramadan box).
+const otherSizes = p.kind === 'box' && p.tier === 'everyday' && p.grams ? BOXES.filter(b => b.tier === 'everyday' && b.grams && b.sleeve === p.sleeve && b.id !== p.id).sort((a, b) => a.grams! - b.grams!) : [];
 // "Make it the way your family does": on a bag's page, the bag alone or one of its styles.
 const styles = p.kind === 'coffee' ? stylesFor(p.id) : [];
 // Other bags of the same line that are ways of their own (Jubani, Qishr on the Yemeni page).
@@ -80,6 +82,7 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
     <div class="pdp-info">
       <h1 class="h-l">{p.name[lang]}{lang === 'en' && <span lang="ar">{p.name.ar}</span>}</h1>
       <p class="pdp-price"><span class="price" data-price-for={startId} id="mainPrice">{priceText(start.price, lang)}</span> {start.price != null && <span class="draft">· {UI.draftPrice[lang]}</span>} <span class="muted">· {sizeText}</span></p>
+      {p.kind === 'box' && p.tier === 'reserve' && <p class="pick-badge">{L('Our pick', 'ننصح بها')}</p>}
       <p class="pdp-notes">{p.notes[lang]}</p>
       {cup && <p class="taste"><span class="label">{ar ? 'الطعم' : 'Tastes like'}</span> {cup.taste[lang]}</p>}
 
@@ -150,11 +153,14 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
             {p.fillings.map((k, i) => { const f = FILLINGS[k]; return <label><input type="radio" name="opt" value={k} checked={i === 0} /><span>{f.name[lang]} <small class="allergy">{L('Contains: ', 'يحتوي على: ')}{f.allergens.map(a => ALLERGENS[a][lang]).join(L(', ', '، '))}{f.maybe && ` ${f.maybe[lang]}`}</small></span></label>; })}
           </fieldset>
         )}
-        {p.kind === 'box' && !p.fillings && boxOptions(p).length > 0 && (
+        {p.kind === 'box' && !p.fillings && varietiesOf(p).length > 0 && (
           <fieldset class="choice">
             <legend>{UI.date[lang]}</legend>
-            {boxOptions(p).map((k, i) => { const d = DATES[k as keyof typeof DATES]; return <label><input type="radio" name="opt" value={k} checked={i === 0} /><span><i class="dot" style={`background:${d.c}`}></i>{d.name[lang]}</span></label>; })}
+            {varietiesOf(p).map((k, i) => { const d = DATES[k]; return <label><input type="radio" name="opt" value={k} checked={i === 0} /><span><i class="dot" style={`background:${d.c}`}></i>{d.name[lang]}{p.tier === 'reserve' && <small class="muted"> · {d.region[lang]}</small>}</span></label>; })}
           </fieldset>
+        )}
+        {otherSizes.length > 0 && (
+          <p class="also"><span class="label">{L('Also in', 'متوفر أيضاً')}</span> {otherSizes.map(b => <a href={path(lang, `shop/${b.id}`)} data-product={b.id}>{b.size[lang]}</a>)}</p>
         )}
         <div class="buy-row">
           <label class="qty"><span class="sr">{UI.qty[lang]}</span>
@@ -333,6 +339,10 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
   .buy { display: grid; gap: 18px; padding-top: 6px; }
   .grind-line { font-weight: 600; }
   .grind-line .label { margin-inline-end: 8px; }
+  .pick-badge { justify-self: start; display: inline-block; margin: 0; font-size: 13px; font-weight: 700; color: var(--paper); background: var(--tamr); border-radius: 999px; padding: 2px 10px; }
+  .also { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
+  .also a { padding: 6px 14px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--line); text-decoration: none; font-weight: 600; font-size: 14.5px; color: var(--ink); }
+  .also a:hover { box-shadow: inset 0 0 0 1.5px var(--bunn); }
   .choice { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
   .choice legend { font-weight: 600; font-size: 15px; margin-bottom: 10px; }
   .choice input { position: absolute; opacity: 0; }

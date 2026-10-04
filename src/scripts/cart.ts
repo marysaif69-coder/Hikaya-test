@@ -2,7 +2,7 @@
 
 export type Line = { id: string; opt: string; qty: number };
 type T = { en: string; ar: string };
-type Item = { n: T; price: number | null; kind: string; img: string | null; opts: Record<string, T> | null; base?: string; inside?: T; for?: string; bases?: string[] };
+type Item = { n: T; price: number | null; kind: string; img: string | null; opts: Record<string, T> | null; base?: string; inside?: T; for?: string; bases?: string[]; dates?: boolean };
 type Catalog = { lang: 'en' | 'ar'; cart: string; added: string; add: string; items: Record<string, Item> };
 
 const KEY = 'hikaya-cart-v1';
@@ -63,7 +63,7 @@ export function advice(lines = read(), lang: 'en' | 'ar' = 'en') {
   }
   // Saffron comes in with Najdi, Qassimi, Hijazi, Taste the Gulf and the gift boxes with Najdi.
   const saffron = lines.some(l => l.id === 'pack-saffron' || l.id === 'najdi' || l.id === 'qassimi' || l.id === 'hijazi' || l.id === 'taste-gulf' || (cat[l.id]?.bases?.includes('gulf') && cat[l.id]?.kind === 'box'));
-  const notes: { text: string; add?: string; label?: string }[] = [];
+  const notes: { text: string; add?: string; label?: string; href?: string }[] = [];
   for (const id of packs) {
     const it = cat[id], base = it.for && cat[it.for];
     if (!base || bases.has(it.for!)) continue;
@@ -74,6 +74,10 @@ export function advice(lines = read(), lang: 'en' | 'ar' = 'en') {
   }
   if ((packs.has('pack-qassim') || packs.has('pack-hijazi')) && !saffron)
     notes.push({ text: ar ? 'القصيمية والحجازية تُصنعان مع ظرف الزعفران أيضاً.' : 'Qassimi and Hijazi are made with the saffron packet too.', add: 'pack-saffron', label: ar ? 'أضف ظرف زعفران' : 'Add a saffron packet' });
+  // Coffee and no dates: point to the Dates tab (no particular date until the pairings are chosen).
+  const coffee = lines.some(l => { const k = cat[l.id]?.kind; return k === 'coffee' || k === 'kit' || (k === 'box' && cat[l.id]?.bases); });
+  if (coffee && !lines.some(l => cat[l.id]?.dates))
+    notes.push({ text: ar ? 'أضف تمراً لقهوتك.' : 'Add dates for your coffee.', href: `/${lang}/shop/#dates`, label: ar ? 'اختر تمرك' : 'Choose your dates' });
   return notes;
 }
 
@@ -85,7 +89,9 @@ export function paintAdvice(list: HTMLElement, lang: 'en' | 'ar', after: () => v
     const p = document.createElement('p'); p.textContent = n.text; li.append(p);
     const it = n.add ? catalog().items[n.add] : null;
     // Only offer what can be ordered now (hidden or sold out: no button once live data is in).
-    if (n.add && it && it.price != null && (window as any).hikayaOrderable?.(n.add) !== false) {
+    if (n.href) {
+      const a = document.createElement('a'); a.className = 'note-add'; a.href = n.href; a.textContent = n.label!; li.append(a);
+    } else if (n.add && it && it.price != null && (window as any).hikayaOrderable?.(n.add) !== false) {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'note-add'; b.textContent = n.label!;
       b.addEventListener('click', () => { add(n.add!, Object.keys(it.opts ?? {})[0] ?? ''); after(); });
       li.append(b);

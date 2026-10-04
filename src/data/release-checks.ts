@@ -6,6 +6,17 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: '3-2', title: 'Round 3 · batch 2: Shop: Coffee | Dates tabs', date: '2026-10-04',
+    checks: [
+      { id: '3-2-tabs', text: 'Shop opens on Coffee. Tap “Dates · التمر”: three cards (Everyday, Reserve with “Our pick”, Stuffed), then the sections below.', links: [{ label: 'Shop (AR)', href: '/ar/shop/' }, { label: 'Shop (EN)', href: '/en/shop/' }] },
+      { id: '3-2-hash', text: 'A link straight to the dates opens the Dates tab: try /shop/#dates and /shop/#reserve. /shop/#yemen still opens the Yemen coffee.', links: [{ label: '#dates (AR)', href: '/ar/shop/#dates' }, { label: '#reserve (EN)', href: '/en/shop/#reserve' }, { label: '#yemen (EN)', href: '/en/shop/#yemen' }] },
+      { id: '3-2-sizes', text: 'Everyday dates: on Khalas and on Sukkari Qassimi, tap 250 g, 500 g, 1 kg: the price and the Add button follow (“Price coming” until you set prices).', links: [{ label: 'Everyday (EN)', href: '/en/shop/#everyday' }] },
+      { id: '3-2-gifts', text: '“A gift? Boxes with coffee” goes down to the gift boxes (Guest Box, Coffee Duo, Four Palms); Ramadan and Eid show last, only in their season.', links: [{ label: 'Gifts (AR)', href: '/ar/shop/#gifts' }] },
+      { id: '3-2-pages', text: 'Product pages: Reserve 12 shows where each date comes from and “Our pick”; Everyday 1 kg shows “Also in 250 g, 500 g”.', links: [{ label: 'Reserve 12 (AR)', href: '/ar/shop/reserve-12/' }, { label: '1 kg (EN)', href: '/en/shop/dates-1kg/' }] },
+      { id: '3-2-cart', text: 'Put only a coffee in the cart: the cart says “Add dates for your coffee” with a link to the dates.', links: [{ label: 'Cart (EN)', href: '/en/cart/' }] },
+    ],
+  },
+  {
     id: '3-1', title: 'Round 3 · batch 1: dates in three tiers (data and server)', date: '2026-10-04',
     checks: [
       { id: '3-1-prices', text: 'Admin → Shop → Products: the new dates (Everyday 250 g, 500 g, 1 kg; Reserve 12 and 24; Stuffed 12 and 24) show “no price”. Set their prices there when you are ready; until then they say “Price coming” and can’t be ordered.', links: [{ label: 'Desk', href: '/admin/' }] },
