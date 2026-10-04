@@ -5,7 +5,7 @@ import { env } from './http';
 import { dollars } from './pricing';
 
 type Lang = 'en' | 'ar';
-export type Mail = { to: string; subject: string; html: string; text: string; kind: string; orderId?: number | null; replyTo?: string };
+export type Mail = { to: string; subject: string; html: string; text: string; kind: string; orderId?: number | null; replyTo?: string; headers?: Record<string, string> };
 
 export async function send(m: Mail) {
   // People on a shared team login have an internal handle: their emails go to the shared inbox,
@@ -23,7 +23,7 @@ export async function send(m: Mail) {
       const r = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-        body: JSON.stringify({ from, to: [m.to], subject: m.subject, html: m.html, text: m.text, reply_to: m.replyTo || env('EMAIL_REPLY_TO') || undefined }),
+        body: JSON.stringify({ from, to: [m.to], subject: m.subject, html: m.html, text: m.text, reply_to: m.replyTo || env('EMAIL_REPLY_TO') || undefined, headers: m.headers }),
       });
       status = r.ok ? 'sent' : 'failed';
       if (!r.ok) error = (await r.text()).slice(0, 500);
@@ -227,8 +227,19 @@ export function reviewEmail(o: OrderForMail, reviewUrl: string, siteUrl: string)
   return { to: o.email, subject: s, html: layout(L, s, body, siteUrl), text: `${s}\n\n${reviewUrl}`, kind: 'review-request', orderId: o.id };
 }
 
+// ---------- marketing footer ----------
+/** Who is writing (name and mailing address, as Canada's anti-spam law asks) and how to stop. The
+ * address is the owners' pickup address from Admin → Settings; until it is set it reads [TBD]. */
+function marketingFooter(lang: Lang, unsubUrl: string, why: string) {
+  const ar = lang === 'ar';
+  const where = env('PICKUP_ADDRESS') || (ar ? '[يُحدد لاحقاً]' : '[TBD]');
+  const html = `<p style="font-size:13px;color:#66503F;margin-top:24px">${esc(why)} <a href="${unsubUrl}" style="color:#66503F">${ar ? 'إلغاء الاشتراك' : 'Unsubscribe'}</a><br>${ar ? 'حكاية' : 'Hikaya'} · ${esc(where)}</p>`;
+  const text = `${why}\n${ar ? 'إلغاء الاشتراك' : 'Unsubscribe'}: ${unsubUrl}\n${ar ? 'حكاية' : 'Hikaya'} · ${where}`;
+  return { html, text, headers: { 'List-Unsubscribe': `<${unsubUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } };
+}
+
 /** About three weeks after a coffee order: the bag is running low. Only to people on the mailing list. */
-export function refillEmail(o: OrderForMail, coffees: { en: string; ar: string; pack: boolean }[], siteUrl: string): Mail {
+export function refillEmail(o: OrderForMail, coffees: { en: string; ar: string; pack: boolean }[], siteUrl: string, unsubUrl: string): Mail & { headers: Record<string, string> } {
   const L = (o.lang === 'ar' ? 'ar' : 'en') as Lang, ar = L === 'ar';
   const s = ar ? 'هل قارب الكيس على النفاد؟' : 'Running low?';
   const names = coffees.map(c => esc(c[L])).join(ar ? '، ' : ', ');
@@ -236,7 +247,8 @@ export function refillEmail(o: OrderForMail, coffees: { en: string; ar: string; 
   const body = `<p>${ar ? `مرّت ثلاثة أسابيع تقريباً على طلبك ${o.ref} (${names}). إن قارب الكيس على النفاد، تستطيع طلب الشيء نفسه بضغطة من حسابك.` : `It has been about three weeks since order ${o.ref} (${names}). If the bag is running low, you can order the same again in one tap from your account.`}</p>
 ${btn(`${siteUrl}/${L}/account/`, ar ? 'اطلب الشيء نفسه' : 'Order the same again')}
 ${anyPack ? `<p>${ar ? 'وإن بقي عندك كيس، فالظرف وحده في المتجر.' : 'Still have a bag at home? The pack on its own is in the shop.'} <a href="${siteUrl}/${L}/shop/#packs" style="color:#A93B28">${ar ? 'الظرف وحده' : 'Just the pack'}</a></p>` : ''}`;
-  return { to: o.email, subject: s, html: layout(L, s, body, siteUrl), text: `${s}\n\n${siteUrl}/${L}/account/`, kind: 'refill-reminder', orderId: o.id };
+  const f = marketingFooter(L, unsubUrl, ar ? 'تصلك هذه الرسالة لأنك اشتركت في رسائل حكاية.' : 'You get this because you signed up for Hikaya letters.');
+  return { to: o.email, subject: s, html: layout(L, s, body + f.html, siteUrl), text: `${s}\n\n${siteUrl}/${L}/account/\n\n${f.text}`, kind: 'refill-reminder', orderId: o.id, headers: f.headers };
 }
 
 // ---------- gift cards ----------
@@ -298,9 +310,8 @@ export const letterHtml = (text: string) => text.trim().split(/\n{2,}/).map(par 
 
 export function letterEmail(to: string, lang: Lang, subject: string, body: string, unsubUrl: string, siteUrl: string): Mail & { headers: Record<string, string> } {
   const ar = lang === 'ar';
-  const foot = `<p style="font-size:13px;color:#66503F;margin-top:24px">${ar ? 'تصلك هذه الرسالة لأنك اشتركت في رسائل حكاية.' : 'You get this because you signed up for Hikaya letters.'} <a href="${unsubUrl}" style="color:#66503F">${ar ? 'إلغاء الاشتراك' : 'Unsubscribe'}</a></p>`;
-  return { to, subject, html: layout(lang, subject, letterHtml(body) + foot, siteUrl), text: `${body}\n\n${ar ? 'إلغاء الاشتراك' : 'Unsubscribe'}: ${unsubUrl}`, kind: 'letter',
-    headers: { 'List-Unsubscribe': `<${unsubUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } };
+  const f = marketingFooter(lang, unsubUrl, ar ? 'تصلك هذه الرسالة لأنك اشتركت في رسائل حكاية.' : 'You get this because you signed up for Hikaya letters.');
+  return { to, subject, html: layout(lang, subject, letterHtml(body) + f.html, siteUrl), text: `${body}\n\n${f.text}`, kind: 'letter', headers: f.headers };
 }
 
 /** Sends up to 100 emails per request through Resend's batch endpoint; logs each one. */

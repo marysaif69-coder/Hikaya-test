@@ -45,3 +45,10 @@ the server refuses the order until a price is set:
 ## Words for the owners to rewrite
 - "Why Hikaya?" note on the story page (/en/story/): a draft, signed "Hikaya", no names. Rewrite it in
   your own words (it is in src/pages/[lang]/story.astro).
+
+## Website decisions waiting on the owners (from the 4 Oct review)
+- "Running low?" email (about three weeks after a coffee order): it is built (unsubscribe link,
+  one-click unsubscribe, sender address, at most one every 60 days, no gifts or regular-order
+  customers) but switched off (`REFILLS_ON` in `netlify/functions/reminders.mts`). Waiting on the
+  owners: either a separate tick at checkout for these reminders, or widen "about three emails a
+  year" everywhere it appears (consent text, confirmation email, footer, handbook).

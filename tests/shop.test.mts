@@ -950,19 +950,48 @@ for (let i = 0; i < 40 && !blocked; i++) { try { await rl.limit('order:test-ip',
 assert.ok(blocked); ok('a script placing many orders from one place is stopped after 8 an hour');
 
 // ---------- refill reminder, about three weeks after a coffee order ----------
+const { sendRefills, REFILLS_ON } = await import('../netlify/functions/reminders.mts');
 const rfo = await order({ email: 'refill@example.com', day: '2027-04-08', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] });
 assert.equal(rfo.status, 201, JSON.stringify(rfo.data));
 await pg.query(`UPDATE orders SET status = 'completed' WHERE ref = $1`, [rfo.data.ref]);
-const rfBefore = sent.length;
-await daily('2027-04-29');
-assert.ok(!sent.slice(rfBefore).some(m => m.to === 'refill@example.com' || m.to?.includes?.('refill@example.com')));
 await pg.query(`INSERT INTO subscribers (email, lang, source, consent_text, confirmed_at, unsub_token) VALUES ('refill@example.com', 'en', 'checkout', 'yes', NOW(), 'u-refill')`);
+const rfOff = sent.length; await daily('2027-04-29');
+assert.equal(REFILLS_ON, false); assert.ok(!sent.slice(rfOff).some(m => /Running low/.test(m.subject))); ok('the "Running low?" email stays off until the owners decide how people agree to it');
 await pg.query(`UPDATE orders SET refill_sent_at = NULL WHERE ref = $1`, [rfo.data.ref]);
-await daily('2027-04-29');
+await pg.query(`UPDATE subscribers SET confirmed_at = NULL WHERE email = 'refill@example.com'`);
+const rfBefore = sent.length;
+await sendRefills('2027-04-29');
+assert.ok(!sent.slice(rfBefore).some(m => m.to === 'refill@example.com' || m.to?.includes?.('refill@example.com')));
+await pg.query(`UPDATE subscribers SET confirmed_at = NOW() WHERE email = 'refill@example.com'`);
+await pg.query(`UPDATE orders SET refill_sent_at = NULL WHERE ref = $1`, [rfo.data.ref]);
+await sendRefills('2027-04-29');
 const rfMail = sent.slice(rfBefore).find(m => /Running low/.test(m.subject));
 assert.ok(rfMail); assert.match(rfMail.html, /Najdi/); assert.match(rfMail.html, /account/); assert.match(rfMail.html, /Just the pack/);
-const rfCount = sent.length; await daily('2027-04-30'); assert.ok(!sent.slice(rfCount).some(m => /Running low/.test(m.subject)));
+const rfCount = sent.length; await sendRefills('2027-04-30'); assert.ok(!sent.slice(rfCount).some(m => /Running low/.test(m.subject)));
 ok('about three weeks after a coffee order, one "Running low?" email, only to people on the mailing list, never twice');
+assert.match(rfMail.html, /\/api\/list\/unsubscribe\?t=u-refill/); assert.match(rfMail.text, /\/api\/list\/unsubscribe\?t=u-refill/);
+assert.equal(rfMail.headers['List-Unsubscribe'], '<https://hikaya.test/api/list/unsubscribe?t=u-refill>'); assert.equal(rfMail.headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
+assert.match(rfMail.html, /Hikaya · \[TBD\]/); ok('it has an unsubscribe link, one-click unsubscribe headers, and who it is from');
+// A second coffee order four weeks later: no second email within 60 days.
+const rfo2 = await order({ email: 'refill@example.com', day: '2027-05-06', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] });
+await pg.query(`UPDATE orders SET status = 'completed' WHERE ref = $1`, [rfo2.data.ref]);
+const rfCap = sent.length; await sendRefills('2027-05-27');
+assert.ok(!sent.slice(rfCap).some(m => /Running low/.test(m.subject))); ok('at most one "Running low?" email every 60 days');
+// Gift orders, and customers with an active regular order, are left out.
+for (const [email, tok] of [['rfgift@example.com', 'u-rfgift'], ['rfreg@example.com', 'u-rfreg']]) await pg.query(`INSERT INTO subscribers (email, lang, source, consent_text, confirmed_at, unsub_token) VALUES ($1, 'en', 'checkout', 'yes', NOW(), $2)`, [email, tok]);
+const rfg = await order({ email: 'rfgift@example.com', day: '2027-04-08', gift: true, gift_to: 'Aunt Huda', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] });
+const rfr = await order({ email: 'rfreg@example.com', day: '2027-04-08', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] });
+await pg.query(`UPDATE orders SET status = 'completed' WHERE ref = ANY($1)`, [[rfg.data.ref, rfr.data.ref]]);
+await pg.query(`INSERT INTO subscriptions (email, name, phone, method, slot_window, payment, lines, every_weeks, next_date) VALUES ('rfreg@example.com', 'R', '4035550100', 'pickup', '11:00–14:00', 'e-transfer', '[]', 4, '2027-05-06')`);
+const rfLeft = sent.length; await sendRefills('2027-04-29');
+assert.ok(!sent.slice(rfLeft).some(m => /Running low/.test(m.subject))); ok('no "Running low?" for a gift, or for someone whose regular order is coming');
+// One-click unsubscribe (POST) works, and stops the email.
+const unsubPost: Response = await orders(new Request(`${H}/api/list/unsubscribe?t=u-refill`, { method: 'POST', body: 'List-Unsubscribe=One-Click' }));
+assert.equal(unsubPost.status, 200);
+assert.ok((await pg.query(`SELECT unsubscribed_at FROM subscribers WHERE email = 'refill@example.com'`)).rows[0].unsubscribed_at);
+await pg.query(`UPDATE orders SET refill_sent_at = NULL WHERE email = 'refill@example.com'`); await pg.query(`DELETE FROM email_log WHERE kind = 'refill-reminder'`);
+const rfUn = sent.length; await sendRefills('2027-04-29');
+assert.ok(!sent.slice(rfUn).some(m => /Running low/.test(m.subject))); ok('one-click unsubscribe from the mail app works, and nothing more is sent');
 
 // ---------- what was actually paid (paid_cents) ----------
 const pc = (ref: string) => pg.query(`SELECT total_cents, paid_cents, payment_status, refunded_cents FROM orders WHERE ref = $1`, [ref]).then(r => r.rows[0] as any);

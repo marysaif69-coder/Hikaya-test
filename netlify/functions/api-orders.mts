@@ -60,6 +60,11 @@ export default async (req: Request) => {
       try { const lang = await confirm(str(url.searchParams.get('t'), 64)); return Response.redirect(`${siteUrl(req)}/${lang}/thanks/?list=1`, 303); }
       catch { return Response.redirect(`${siteUrl(req)}/en/thanks/?listexpired=1`, 303); }
     }
+    // One-click unsubscribe from the mail app (the List-Unsubscribe-Post header): a POST, no page.
+    if (path === '/api/list/unsubscribe' && req.method === 'POST') {
+      await unsubscribe(str(url.searchParams.get('t'), 64));
+      return new Response(null, { status: 200 });
+    }
     if (path === '/api/list/unsubscribe' && req.method === 'GET') {
       const lang = await unsubscribe(str(url.searchParams.get('t'), 64));
       return Response.redirect(`${siteUrl(req)}/${lang}/thanks/?unsub=1`, 303);
