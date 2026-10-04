@@ -2,9 +2,9 @@
 // Opening: the logo tells its own story. The words بُن (coffee) and تمر (date) appear where their
 // bubbles sit in the logo, then each turns into its bubble: Bunn high right, Tamr low left. The
 // khalal seed appears where they meet, the dots type, the name and one line follow, then the
-// logo settles into the header. Every visit: the full story the first time on a device, then a
-// short one (no words, quicker), and both end with the names held under the bubbles.
-// Once per visit, skippable, never under reduced motion. Built from the official logo paths.
+// logo settles into the header. Every time the homepage opens: the full story the first time on a
+// device, then a short one (no words, quicker); both end with the names beside the bubbles.
+// Every time the homepage opens (full the first time, short after), skippable, never under reduced motion. Built from the official logo paths.
 import fs from 'node:fs';
 const svg = fs.readFileSync('public/brand/logo.svg', 'utf8');
 const [tamr, seed, bunn, groove, dots] = [...svg.matchAll(/<path fill="(#[0-9A-F]+)" d="([^"]+)"\/>/g)].map(m => m[2]);
@@ -104,7 +104,7 @@ const g = svg.match(/<g transform="([^"]+)">/)![1];
     let done = false;
     const finish = (instant = false) => {
       if (done) return; done = true;
-      try { sessionStorage.setItem('hikaya-intro', '1'); localStorage.setItem('hikaya-seen', '1'); } catch {}
+      try { localStorage.setItem('hikaya-seen', '1'); } catch {}
       const target = document.querySelector<HTMLElement>('.top .lockup img');
       const end = () => { root.classList.remove('intro-on'); intro.remove(); };
       if (instant || !target) { intro.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: 'ease-out' }).onfinish = end; return; }
