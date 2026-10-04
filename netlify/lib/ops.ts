@@ -5,6 +5,7 @@ import { HttpError, env, siteUrl } from './http';
 import { send } from './email';
 import { pushTeam } from './push';
 import { calgaryNow } from './slots';
+import { randomUUID } from 'node:crypto';
 
 // ---------- checklists ----------
 export type Checklist = { key: string; name: string; items: string[] };
@@ -24,12 +25,14 @@ export async function checklists(): Promise<Checklist[]> {
 }
 export async function saveChecklists(list: unknown) {
   if (!Array.isArray(list) || !list.length || list.length > 12) throw new HttpError(400, 'invalid', 'Keep between 1 and 12 checklists.');
-  const out: Checklist[] = list.map((c: any, i: number) => {
+  const out: Checklist[] = list.map((c: any) => {
     const name = String(c?.name ?? '').trim().slice(0, 60);
     const items = (Array.isArray(c?.items) ? c.items : []).map((x: unknown) => String(x).trim().slice(0, 140)).filter(Boolean).slice(0, 30);
     if (!name || !items.length) throw new HttpError(400, 'invalid', 'Each checklist needs a name and at least one line.');
-    return { key: String(c?.key ?? '').trim().slice(0, 40) || `list-${i + 1}`, name, items };
+    // A new list gets a random key, never one from its position (that shifts when a list is removed).
+    return { key: String(c?.key ?? '').trim().slice(0, 40) || `list-${randomUUID().slice(0, 8)}`, name, items };
   });
+  if (new Set(out.map(c => c.key)).size !== out.length) throw new HttpError(400, 'invalid', 'Two checklists have the same key.');
   await sql`INSERT INTO settings (key, value) VALUES ('checklists', ${JSON.stringify(out)}::jsonb) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`;
   return { ok: true };
 }

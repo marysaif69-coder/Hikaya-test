@@ -6,6 +6,7 @@ import { HttpError } from './http';
 import { PRODUCTS, DATES, type DateId } from '../../src/data/products';
 import { addDays, calgaryNow } from './slots';
 import { weekSheet } from './week';
+import { randomUUID } from 'node:crypto';
 
 const day = (v: unknown) => (v instanceof Date ? v.toISOString() : String(v ?? '')).slice(0, 10);
 const isoOk = (v: unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -101,8 +102,11 @@ export async function saveSupply(key: string, b: any, by: string) {
   if (b?.name !== undefined && key === 'new') {
     const name = String(b.name).trim().slice(0, 80);
     if (!name) throw new HttpError(400, 'name', 'Give it a name.');
-    const k = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40);
-    await sql`INSERT INTO supplies (key, name, unit, on_hand, low_at, updated_by) VALUES (${k}, ${name}, ${String(b.unit ?? 'pcs').slice(0, 12) || 'pcs'}, ${onHand}, ${lowAt}, ${by}) ON CONFLICT (key) DO NOTHING`;
+    // A key that can't clash: an Arabic name has no Latin letters to make one from.
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30);
+    const k = `${slug || 's'}-${randomUUID().slice(0, 8)}`;
+    const r = await one`INSERT INTO supplies (key, name, unit, on_hand, low_at, updated_by) VALUES (${k}, ${name}, ${String(b.unit ?? 'pcs').slice(0, 12) || 'pcs'}, ${onHand}, ${lowAt}, ${by}) ON CONFLICT (key) DO NOTHING RETURNING key`;
+    if (!r) throw new HttpError(409, 'exists', 'That supply is already on the list.');
     return { ok: true };
   }
   const r = await one`UPDATE supplies SET on_hand = ${onHand}, low_at = ${lowAt}, updated_by = ${by}, updated_at = NOW() WHERE key = ${key} RETURNING key`;

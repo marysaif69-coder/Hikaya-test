@@ -1255,4 +1255,18 @@ await order({ email: 'runsheet@example.com', day: '2027-08-05' });
 const rsM = sent.length; await tomorrowEmail('2027-08-05');
 assert.ok(sent.slice(rsM).some(m => m.to[0] === 'deskhelper@example.com' && /^Tomorrow: /.test(m.subject))); ok('helpers added in Admin → Team get the evening run sheet');
 
+// ---------- checklist keys and supplies with Arabic names ----------
+const ckSave = (lists: any[]) => call(admin, '/api/admin/checklists', { cookie: adm, body: { checklists: lists } });
+const L = (name: string, key?: string) => ({ ...(key ? { key } : {}), name, items: ['Check'] });
+await ckSave([L('A'), L('B'), L('C'), L('D')]);
+const ck1 = (await call(admin, '/api/admin/checklists', { cookie: adm })).data.checklists;
+await ckSave([...ck1.slice(1), L('E')]);
+const ck2 = (await call(admin, '/api/admin/checklists', { cookie: adm })).data.checklists;
+assert.equal(new Set(ck2.map((c: any) => c.key)).size, ck2.length);
+assert.equal((await ckSave([L('X', 'same'), L('Y', 'same')])).status, 400); ok('every checklist keeps its own key, even after one is removed');
+await call(admin, '/api/admin/supplies/new', { cookie: adm, body: { name: 'أكياس صغيرة', unit: 'pcs', onHand: 10 } });
+await call(admin, '/api/admin/supplies/new', { cookie: adm, body: { name: 'علب الهدايا', unit: 'pcs', onHand: 5 } });
+const supAr = (await call(admin, '/api/admin/supplies', { cookie: adm })).data.supplies;
+assert.ok(supAr.some((x: any) => x.name === 'أكياس صغيرة') && supAr.some((x: any) => x.name === 'علب الهدايا')); ok('supplies named in Arabic are all saved');
+
 console.log(`\n${pass} checks passed`);
