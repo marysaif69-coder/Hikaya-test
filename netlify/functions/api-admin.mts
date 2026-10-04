@@ -22,6 +22,7 @@ import { sql, one } from '../lib/db';
 import { getSettings, WINDOWS, calgaryNow, addDays } from '../lib/slots';
 import { items, setStatus, setPayment, event, STATUSES, moveOrder, editOrder } from '../lib/orders';
 import { readable } from '../lib/ask';
+import { DECISIONS } from '../../src/data/decisions';
 import { liveCatalog, saveProduct, getSeasons, saveSeasons, takeStock, restock } from '../lib/catalog';
 import { savePromo, normCode } from '../lib/promos';
 import { refundOrder, refundsFor } from '../lib/refunds';
@@ -91,7 +92,7 @@ async function handle(req: Request) {
     // Helpers can read everything and run orders; money, catalog, settings and exports are owners only.
     if (admin.role !== 'admin') {
       const write = req.method !== 'GET';
-      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write) || parts[0] === 'recall.csv' || parts[0] === 'hours.csv' || parts[0] === 'letters' || parts[0] === 'business' || parts[0] === 'release-checks' || parts[0] === 'visibility' || parts[0] === 'costs' || parts[0] === 'margins' || parts[0] === 'backup.json' || parts[0] === 'activity' || (parts[0] === 'checklists' && write)
+      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write) || parts[0] === 'recall.csv' || parts[0] === 'hours.csv' || parts[0] === 'letters' || parts[0] === 'business' || parts[0] === 'release-checks' || parts[0] === 'decisions' || parts[0] === 'visibility' || parts[0] === 'costs' || parts[0] === 'margins' || parts[0] === 'backup.json' || parts[0] === 'activity' || (parts[0] === 'checklists' && write)
         // Gift card codes work at checkout like money, so helpers can't list them either.
         || parts[0] === 'giftcards'
         || (write && ['products', 'settings', 'ask', 'connections', 'content', 'report', 'pay'].includes(parts[0])) || (parts[0] === 'orders' && parts[2] === 'refund');
@@ -396,6 +397,24 @@ async function handle(req: Request) {
     // ---------- business details (owners) ----------
     if (parts[0] === 'business' && req.method === 'GET') return json(await businessDetails());
     if (parts[0] === 'business' && req.method === 'POST') return json(await saveBusiness(await body(req)));
+
+    // ---------- owners' decisions (Settings → Decisions): their answer, who and when ----------
+    if (parts[0] === 'decisions' && req.method === 'GET') {
+      const r = await one`SELECT value FROM settings WHERE key = 'decisions'`;
+      const answers = r ? (typeof r.value === 'string' ? JSON.parse(r.value) : r.value) : {};
+      return json({ decisions: DECISIONS.map(d => ({ ...d, answer: answers[d.id] ?? null })) });
+    }
+    if (parts[0] === 'decisions' && req.method === 'POST') {
+      const b = await body(req);
+      const d = DECISIONS.find(x => x.id === str(b.id, 80));
+      if (!d) throw new HttpError(404, 'not-found');
+      const choice = d.options?.includes(String(b.choice ?? '')) ? String(b.choice) : null;
+      const answer = str(b.answer, 2000);
+      if (!choice && !answer) { await sql`UPDATE settings SET value = value - ${d.id}::text WHERE key = 'decisions'`; return json({ ok: true, open: true }); }
+      const v = JSON.stringify({ [d.id]: { choice, answer, by: admin.email, at: new Date().toISOString() } });
+      await sql`INSERT INTO settings (key, value) VALUES ('decisions', ${v}::jsonb) ON CONFLICT (key) DO UPDATE SET value = settings.value || EXCLUDED.value`;
+      return json({ ok: true });
+    }
 
     // ---------- release checks (Settings → IT): who ticked each check on the preview ----------
     if (parts[0] === 'release-checks' && req.method === 'GET') {

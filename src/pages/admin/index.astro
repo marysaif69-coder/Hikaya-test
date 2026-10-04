@@ -4,6 +4,7 @@
 import '../../styles/fonts.css';
 import '../../styles/global.css';
 import { RELEASES } from '../../data/release-checks';
+import { DECISIONS } from '../../data/decisions';
 ---
 <!doctype html>
 <html lang="en" dir="ltr">
@@ -46,6 +47,7 @@ import { RELEASES } from '../../data/release-checks';
       <button type="button" data-tab="numbers" data-group="numbers" aria-pressed="false" class="owner-only">Numbers</button>
       <button type="button" data-tab="plan" data-group="numbers" aria-pressed="false" class="owner-only">Plan</button>
       <button type="button" data-tab="settings" data-group="settings" aria-pressed="false" class="owner-only">Settings</button>
+      <button type="button" data-tab="decisions" data-group="settings" aria-pressed="false" class="owner-only">Decisions <span class="badge" id="decN" hidden></span></button>
       <button type="button" data-tab="it" data-group="settings" aria-pressed="false" class="owner-only">IT · Release checks</button>
     </nav>
   </header>
@@ -514,6 +516,21 @@ import { RELEASES } from '../../data/release-checks';
       </form>
     </section>
 
+    <!-- Decisions only the owners can make (src/data/decisions.ts); answers are saved with who and when -->
+    <section id="v-decisions" hidden class="a-settings">
+      <div class="conn"><h2 class="h-s">Decisions for Maryam and Shadi</h2>
+        <p class="muted">Questions only you can answer. Pick an option or write your answer, then Save. The site keeps “[TBD]” until it is answered, and the next change to the site starts from your answer. Clear both and save to reopen a question.</p></div>
+      {DECISIONS.map(d => (
+        <form class="conn dec" data-dec={d.id}>
+          <h3>{d.question} <small class="muted">· {d.topic}</small></h3>
+          <p class="muted small">{d.context}</p>
+          {d.options && <div class="dec-opts">{d.options.map(o => <label class="notify"><input type="radio" name="choice" value={o} /> <span>{o}</span></label>)}</div>}
+          <textarea name="answer" rows="2" placeholder="Your answer or notes"></textarea>
+          <div class="acts"><button type="submit" class="btn line sm">Save answer</button><small class="muted dec-who"></small></div>
+        </form>
+      ))}
+    </section>
+
     <!-- IT: what to check on the preview after each release (src/data/release-checks.ts) -->
     <section id="v-it" hidden class="a-settings">
       <div class="conn"><h2 class="h-s">Release checks</h2>
@@ -689,6 +706,8 @@ import { RELEASES } from '../../data/release-checks';
   .rel-list li { display: grid; gap: 4px; }
   .rel-links { display: flex; flex-wrap: wrap; gap: 12px; padding-inline-start: 28px; }
   .rel-who { padding-inline-start: 28px; }
+  .dec h3 { margin: 0; } .dec textarea { width: 100%; font: inherit; } .dec-opts { display: grid; gap: 6px; }
+  .dec.done { opacity: .8; }
   .conn { display: grid; gap: 10px; background: var(--sheet); padding: 22px; border-radius: 24px; }
   .conn :global(.cn) { border-radius: 14px; padding: 10px 14px; background: var(--paper); font-size: 14.5px; }
   .conn :global(.cn.ok) { box-shadow: inset 4px 0 0 #6E8B4A; }
@@ -810,7 +829,7 @@ import { RELEASES } from '../../data/release-checks';
 
   // ---------- auth ----------
   function showLogin() {
-    for (const id of ['v-today', 'v-orders', 'v-inbox', 'v-day', 'v-week', 'v-numbers', 'v-words', 'v-plan', 'v-drivers', 'v-customers', 'v-production', 'v-products', 'v-promos', 'v-assistant', 'v-chats', 'v-settings', 'v-it', 'tabs', 'subtabs', 'qsBox', 'who']) $(id).hidden = true;
+    for (const id of ['v-today', 'v-orders', 'v-inbox', 'v-day', 'v-week', 'v-numbers', 'v-words', 'v-plan', 'v-drivers', 'v-customers', 'v-production', 'v-products', 'v-promos', 'v-assistant', 'v-chats', 'v-settings', 'v-it', 'v-decisions', 'tabs', 'subtabs', 'qsBox', 'who']) $(id).hidden = true;
     $('login').hidden = false;
     mountLogin($('loginBox'), 'en', user => {
       if (user.role === 'driver' || user.role === 'packer') { location.href = '/admin/driver/'; return; }
@@ -829,7 +848,7 @@ import { RELEASES } from '../../data/release-checks';
     const qs = new URLSearchParams(location.search);
     if (qs.get('order')) openOrder(qs.get('order')!);
     if (qs.get('ticket')) { tab('inbox'); openTicket(qs.get('ticket')!); }
-    loadInboxCount(); loadAskWarn(); loadWhere();
+    loadInboxCount(); loadAskWarn(); loadWhere(); if (ROLE === 'admin') loadDecisions().catch(() => {});
   }
   // Which address this is, and what customers see on hikayacoffee.ca right now.
   async function loadWhere() {
@@ -858,7 +877,7 @@ import { RELEASES } from '../../data/release-checks';
       if (on && !(ROLE !== 'admin' && b.classList.contains('owner-only'))) shown++;
     });
     $('subtabs').hidden = shown < 2;
-    for (const v of ['today', 'orders', 'inbox', 'day', 'week', 'numbers', 'words', 'plan', 'drivers', 'customers', 'production', 'products', 'promos', 'assistant', 'chats', 'settings', 'it']) $(`v-${v}`).hidden = v !== name;
+    for (const v of ['today', 'orders', 'inbox', 'day', 'week', 'numbers', 'words', 'plan', 'drivers', 'customers', 'production', 'products', 'promos', 'assistant', 'chats', 'settings', 'it', 'decisions']) $(`v-${v}`).hidden = v !== name;
     if (name === 'products') loadProducts();
     if (name === 'week') loadWeek();
     if (name === 'numbers') { loadNumbers(); if (ROLE === 'admin') { loadMargins(); loadCosts(); } }
@@ -875,6 +894,7 @@ import { RELEASES } from '../../data/release-checks';
     if (name === 'day') loadDay();
     if (name === 'settings') loadSettings();
     if (name === 'it') loadReleaseChecks();
+    if (name === 'decisions') loadDecisions();
   }
   $('tabs').addEventListener('click', e => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-main]'); if (!b) return;
@@ -1812,6 +1832,29 @@ import { RELEASES } from '../../data/release-checks';
     const data = Object.fromEntries([...f.querySelectorAll<HTMLInputElement>('[name]')].map(i => [i.name, i.value]));
     await api('/api/admin/business', data); alert('Saved. The site and emails use it within a minute.'); loadBusiness(); loadConnections();
   });
+  // ---------- owners' decisions ----------
+  async function loadDecisions() {
+    const { decisions } = await api('/api/admin/decisions');
+    let open = 0;
+    for (const d of decisions) {
+      const f = document.querySelector<HTMLFormElement>(`#v-decisions [data-dec="${d.id}"]`); if (!f) continue;
+      const a = d.answer;
+      if (!a) open++;
+      f.querySelectorAll<HTMLInputElement>('input[name="choice"]').forEach(i => { i.checked = a?.choice === i.value; });
+      (f.elements.namedItem('answer') as HTMLTextAreaElement).value = a?.answer ?? '';
+      f.querySelector<HTMLElement>('.dec-who')!.textContent = a ? `Answered by ${a.by}, ${new Date(a.at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })}` : 'Open';
+      f.classList.toggle('done', Boolean(a));
+    }
+    $('decN').textContent = String(open); $('decN').hidden = !open;
+  }
+  $('v-decisions').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target as HTMLFormElement;
+    const choice = f.querySelector<HTMLInputElement>('input[name="choice"]:checked')?.value ?? '';
+    await api('/api/admin/decisions', { id: f.dataset.dec, choice, answer: (f.elements.namedItem('answer') as HTMLTextAreaElement).value });
+    loadDecisions();
+  });
+
   // ---------- IT: release checks ----------
   async function loadReleaseChecks() {
     const { ticks } = await api('/api/admin/release-checks');

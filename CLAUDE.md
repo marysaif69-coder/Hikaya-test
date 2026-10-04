@@ -20,6 +20,9 @@ Read `docs/backend.md` for how everything works, `docs/launch-plan.md` for what 
 - `npm test` (API, shop management and preview-gate checks) and `npm run build` must pass.
 - Add what to check on the preview for the release to `src/data/release-checks.ts` (newest at
   the top). The owners tick them in Admin → Settings → IT · Release checks.
+- Questions only the owners can answer go in `src/data/decisions.ts`; they answer in Admin →
+  Settings → Decisions. Before changing anything a decision covers, read their answer there
+  (GET /api/admin/decisions with an owner's login, or ask the user).
 - Changes to `knowledge/handbook.md`, the assistant (`netlify/lib/ask*.ts`) or product data
   should be followed by the Ask Hikaya eval: GitHub → Actions → "Ask Hikaya eval" → Run
   workflow (about $1). 37/40 passed on the first run; keep it at least there.

@@ -6,6 +6,13 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'decisions', title: 'Decisions page for the owners', date: '2026-10-04',
+    checks: [
+      { id: 'decisions-tab', text: 'Settings → Decisions: the open questions (Rada’i and Baydani, nuts, Yemeni styles at launch, Qassimi milk, delivery edges, mailing address, Running low email). Answer one and save: it shows who answered and when.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'taste-gulf-milk', text: 'Taste the Gulf: the how-to says you add evaporated milk yourself for the Qassimi pot.', links: [{ label: 'Taste the Gulf (AR)', href: '/ar/shop/taste-gulf/' }, { label: 'Taste the Gulf (EN)', href: '/en/shop/taste-gulf/' }] },
+    ],
+  },
+  {
     id: '2-2', title: 'Round 2 · batch 2: allergen information', date: '2026-10-04',
     checks: [
       { id: 'card-allergy', text: 'Shop: every style and pack card has an allergen line, including “Allergens confirmed with the final recipe” for Qassimi, Hijazi and Hadrami.', links: [{ label: 'Shop (AR)', href: '/ar/shop/' }, { label: 'Shop (EN)', href: '/en/shop/' }] },

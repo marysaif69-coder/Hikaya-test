@@ -1054,6 +1054,21 @@ assert.equal((await call(admin, '/api/admin/list', { cookie: adm })).data.cups.y
 await call(orders, '/api/list', { body: { email: 'odd@example.com', lang: 'en', consent: true, source: 'soon', cup: 'nonsense' } });
 assert.equal((await pg.query(`SELECT cup FROM subscribers WHERE email = 'odd@example.com'`)).rows[0].cup, null); ok('Which cup is yours? is kept with the sign-up and counted in the desk; anything else is ignored');
 
+// ---------- owners' decisions ----------
+assert.equal((await call(admin, '/api/admin/decisions', { cookie: helper })).status, 403);
+const decs0 = (await call(admin, '/api/admin/decisions', { cookie: adm })).data.decisions;
+assert.ok(decs0.some((d: any) => d.id === 'radai-baydani-use' && d.answer === null));
+await call(admin, '/api/admin/decisions', { cookie: adm, body: { id: 'delivery-edges', choice: 'Neither', answer: 'Maybe next year.' } });
+await call(admin, '/api/admin/decisions', { cookie: adm, body: { id: 'delivery-edges', choice: 'Not an option' } });
+const dAns = (await call(admin, '/api/admin/decisions', { cookie: adm })).data.decisions.find((d: any) => d.id === 'delivery-edges').answer;
+assert.equal(dAns, null); // an unknown option and no text reopens it
+await call(admin, '/api/admin/decisions', { cookie: adm, body: { id: 'delivery-edges', choice: 'Neither', answer: 'Maybe next year.' } });
+const dAns2 = (await call(admin, '/api/admin/decisions', { cookie: adm })).data.decisions.find((d: any) => d.id === 'delivery-edges').answer;
+assert.equal(dAns2.choice, 'Neither'); assert.equal(dAns2.answer, 'Maybe next year.'); assert.ok(dAns2.by && dAns2.at);
+assert.equal((await call(admin, '/api/admin/decisions', { cookie: adm, body: { id: 'made-up', answer: 'x' } })).status, 404); ok('owners answer the open decisions in the desk, saved with who and when; helpers cannot');
+const { DECISIONS } = await import('../src/data/decisions');
+assert.equal(new Set(DECISIONS.map(d => d.id)).size, DECISIONS.length); ok('every decision has its own id');
+
 // ---------- IT: release checks ----------
 assert.equal((await call(admin, '/api/admin/release-checks', { cookie: helper })).status, 403);
 await call(admin, '/api/admin/release-checks', { cookie: adm, body: { id: '1b-2:letter-test', done: true } });
