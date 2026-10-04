@@ -121,7 +121,7 @@ export const SPICES: Record<Spice, { c: string; name: L }> = {
   saffron: { c: '#A93B28', name: { en: 'Saffron', ar: 'زعفران' } },
   cardamom: { c: '#5E7A2E', name: { en: 'Cardamom', ar: 'هيل' } }, // the one green: the cardamom dot
   ginger: { c: '#CF9C0C', name: { en: 'Ginger', ar: 'زنجبيل' } },
-  husk: { c: '#8E2F1F', name: { en: 'Husk', ar: 'قشر' } },
+  husk: { c: '#8E2F1F', name: { en: 'Qishr', ar: 'قشر' } },
   sesame: { c: '#D9C08A', name: { en: 'Sesame', ar: 'سمسم' } },
   cinnamon: { c: '#7A3E1D', name: { en: 'Cinnamon', ar: 'قرفة' } },
 };
@@ -170,7 +170,7 @@ export const COFFEES: Coffee[] = [
     why: { en: 'Honeyed Medjool with a cardamom cup.', ar: 'المجدول العسلي مع فنجان الهيل.' } }),
   C({ id: 'jubani', line: 'yemen', fam: 'mountain', name: { en: 'Jubani', ar: 'جُبَني' }, roast: 2, spices: ['husk'], grinds: ['fine'],
     taste: { en: 'Dried cherry · round', ar: 'كرز مجفف · مستديرة' },
-    notes: { en: 'Yemeni-style coffee and its own dried husk, ground together. [TBD: with ginger or plain]', ar: 'قهوة على الطريقة اليمنية مع قشرها المجفف، مطحونان معاً. [يُحدد لاحقاً: بالزنجبيل أو سادة]' },
+    notes: { en: 'Yemeni-style coffee with qishr, its own dried husk, ground together in one bag. [TBD: with ginger or plain]', ar: 'قهوة على الطريقة اليمنية مع القشر، قشرها المجفف، مطحونان معاً في كيس واحد. [يُحدد لاحقاً: بالزنجبيل أو سادة]' },
     story: { en: 'The bean and its husk in one pot, the way Juban makes it.', ar: 'الحبّة وقشرها في إبريق واحد، على طريقة جُبَن.' },
     ingredients: ['Coffee, coffee cherry husk. [TBD: ginger]', 'Café, cascara. [TBD : gingembre]'],
     bunn: { en: 'Me, and my own husk.', ar: 'أنا، ومعي قشري.' }, date: 'sukkari',

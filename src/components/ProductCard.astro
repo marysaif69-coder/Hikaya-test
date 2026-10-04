@@ -14,6 +14,7 @@ const forBase = p.kind === 'pack' ? COFFEES.find(c => c.id === p.for) : null;
 // One line under the name: what a style adds, what a pack is for, or how a coffee tastes.
 const line = p.kind === 'kit' ? '+ ' + p.parts.map(x => (x.mini ? (ar ? 'ظرف صغير: ' : 'small ') : '') + packOf(x.id)!.name[lang]).join(' + ')
   : p.kind === 'pack' ? (ar ? `لـ${forBase?.name.ar}` : `For ${forBase?.name.en}`)
+  : p.kind === 'coffee' && p.spices.includes('husk') && p.id !== 'qishr' ? (ar ? 'قهوة وقشر، معاً في الكيس' : 'Coffee and qishr, together in the bag')
   : p.kind === 'coffee' && row && p.spices.length ? (ar ? `بال${p.spices.map(x => SPICES[x].name.ar).join(' وال')} فقط` : `With ${p.spices.map(x => SPICES[x].name.en.toLowerCase()).join(' and ')} only`)
   : p.kind === 'coffee' ? p.taste[lang]
   : `${FAMILIES[p.fam].name[lang]} · ${p.size[lang]}`;
@@ -29,9 +30,9 @@ const saves = p.kind === 'kit' && !p.discovery ? [p.base, ...p.parts.map(x => x.
     {p.kind === 'coffee'
       ? <div class="pc-pouch"><div class="face"><Pouch coffee={p} lang={lang} label={false} /></div></div>
       : p.kind === 'kit'
-      ? <div class="pc-pouch pc-kit"><div class="face"><Pouch coffee={baseOf(p)} lang={lang} label={false} /></div><div class="kit-packs">{p.parts.map(x => <Sachet pack={packOf(x.id)!} lang={lang} mini={x.mini} />)}</div></div>
+      ? <div class="pc-pouch pouch-kit"><div class="face"><Pouch coffee={baseOf(p)} lang={lang} label={false} /></div><div class="kit-packs">{p.parts.map(x => <Sachet pack={packOf(x.id)!} lang={lang} mini={x.mini} />)}</div></div>
       : p.kind === 'pack'
-      ? <div class="pc-pouch pc-pack"><Sachet pack={p} lang={lang} /></div>
+      ? <div class="pc-pouch pouch-pack"><Sachet pack={p} lang={lang} /></div>
       : <img src={p.img} alt="" loading="lazy" width="600" height="750" />}
   </a>
   <div class="pc-body">
@@ -52,17 +53,17 @@ const saves = p.kind === 'kit' && !p.discovery ? [p.base, ...p.parts.map(x => x.
 </article>
 
 <style>
-  .pc { display: grid; grid-template-rows: auto 1fr; gap: 14px; }
-  .pc-media { display: block; border-radius: 26px; overflow: hidden; background: var(--paper-2); aspect-ratio: 4 / 5; }
+  .pc { display: grid; grid-template-rows: auto 1fr; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .pc-media { display: block; width: 100%; border-radius: 26px; overflow: hidden; background: var(--paper-2); aspect-ratio: 4 / 5; }
   .pc-pouch { height: 100%; display: grid; place-items: center; padding: 8% 22%; position: relative; }
   .pc-pouch .face { width: 100%; transition: transform .5s var(--ease); }
-  .pc-kit { padding: 8% 30% 8% 14%; }
+  .pouch-kit { padding-block: 8%; padding-inline: 14% 30%; }
   .kit-packs { position: absolute; inset-inline-end: 8%; bottom: 10%; width: 28%; display: grid; }
   .kit-packs :global(.sachet) { transform: rotate(6deg); }
   .kit-packs :global(.sachet:nth-child(n+2)) { margin-top: -42%; }
   .kit-packs :global(.sachet:nth-child(2)) { transform: rotate(-4deg); }
   .kit-packs :global(.sachet:nth-child(3)) { transform: rotate(3deg); }
-  .pc-pack { padding: 14% 30%; }
+  .pouch-pack { padding: 14% 30%; }
   @media (hover: hover) and (pointer: fine) { .pc:hover .pc-pouch .face { transform: translateY(-6px) rotate(-1.2deg); } }
   .pc-media > img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--ease); }
   @media (hover: hover) and (pointer: fine) { .pc:hover .pc-media > img { transform: scale(1.035); } }
