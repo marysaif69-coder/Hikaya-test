@@ -1146,4 +1146,24 @@ globalThis.fetch = fRp;
 const rpM = sent.length; await daily('2027-05-02'); await daily('2027-05-03');
 assert.equal(sent.slice(rpM).filter(m => /month in numbers \(April 2027\)/.test(m.subject)).length, 1); ok('if the monthly report fails on the 1st, it goes out on the 2nd, once');
 
+// ---------- a bag's stock and limits reach the styles and boxes it is in ----------
+const stockOf = async (id: string) => (await pg.query(`SELECT stock FROM product_settings WHERE product_id = $1`, [id])).rows[0]?.stock;
+await call(admin, '/api/admin/products/gulf', { cookie: adm, body: { stock: 3 } });
+const sk = await order({ email: 'stock-kit@example.com', day: '2027-06-17', lines: [{ id: 'najdi', opt: 'dallah', qty: 2 }] });
+assert.equal(sk.status, 201, JSON.stringify(sk.data)); assert.equal(await stockOf('gulf'), 1);
+await call(admin, `/api/admin/orders/${sk.data.ref}`, { cookie: adm, body: { status: 'cancelled', notify: false } });
+assert.equal(await stockOf('gulf'), 3); ok('Najdi orders count down the Gulf bag, and a cancel gives it back');
+await call(admin, '/api/admin/products/gulf', { cookie: adm, body: { stock: null, available: false } });
+assert.equal((await order({ email: 'stock-box@example.com', day: '2027-06-17', lines: [{ id: 'guest-box', opt: 'khalas', qty: 1 }] })).data.error, 'sold-out');
+assert.equal((await call(orders, '/api/catalog')).data.products.najdi.available, false); ok('Gulf coffee sold out: Najdi and the Guest Box show sold out too');
+await call(admin, '/api/admin/products/gulf', { cookie: adm, body: { available: true } });
+await call(admin, '/api/admin/products/pack-qassim', { cookie: adm, body: { stock: 1 } });
+assert.equal((await order({ email: 'stock-taste@example.com', day: '2027-06-17', lines: [{ id: 'taste-gulf', opt: 'dallah', qty: 1 }] })).status, 201);
+assert.equal(await stockOf('pack-qassim'), 1); ok('a small tasting pack is its own item: it does not use up a full Qassim pack');
+await call(admin, '/api/admin/products/pack-qassim', { cookie: adm, body: { stock: null } });
+await call(admin, '/api/admin/products/gulf', { cookie: adm, body: { daily_cap: 1 } });
+assert.equal((await order({ email: 'cap-kit1@example.com', day: '2027-06-18', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] })).status, 201);
+assert.equal((await order({ email: 'cap-kit2@example.com', day: '2027-06-18', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] })).data.error, 'day-limit'); ok("the Gulf bag's daily limit counts the Najdi orders that day");
+await call(admin, '/api/admin/products/gulf', { cookie: adm, body: { daily_cap: null } });
+
 console.log(`\n${pass} checks passed`);

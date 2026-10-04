@@ -27,15 +27,35 @@ export async function saveSeasons(next: Partial<Seasons>) {
   return v;
 }
 
+/** What one product uses up: itself, plus for a style or discovery pack its base bag and its
+ * full-size packs (small tasting packs are a separate item), and for a gift box the bags and
+ * packs inside. Stock, sold out and daily limits on a bag or pack then reach everything it is in. */
+export function componentsOf(id: string, qty: number): [string, number][] {
+  const p = PRODUCTS.find(x => x.id === id);
+  const out: [string, number][] = [[id, qty]];
+  if (p?.kind === 'kit') { out.push([p.base, qty]); for (const x of p.parts) if (!x.mini) out.push([x.id, qty]); }
+  if (p?.kind === 'box') for (const group of [p.packs?.coffee, p.packs?.sachets]) for (const [c, n] of Object.entries(group ?? {})) out.push([c, n * qty]);
+  return out;
+}
+/** Lines expanded into everything they use, added up per product. */
+export function expand(lines: { product_id: string; qty: number }[]) {
+  const m = new Map<string, number>();
+  for (const l of lines) for (const [id, n] of componentsOf(l.product_id, l.qty)) m.set(id, (m.get(id) ?? 0) + n);
+  return m;
+}
+
 export async function liveCatalog(): Promise<Record<string, Live>> {
   const [rows, seasons] = await Promise.all([sql`SELECT product_id, price_cents, visible, available, stock, daily_cap FROM product_settings`, getSeasons()]);
   const by = new Map(rows.map(r => [r.product_id, r]));
+  // A bag or pack switched to sold out, or with no stock left, makes everything it is in sold out too.
+  const out = (id: string) => { const r = by.get(id); return Boolean(r && (!r.available || r.stock === 0)); };
   return Object.fromEntries(PRODUCTS.map(p => {
     const r = by.get(p.id);
     const season = seasonOf(p.id);
     const visible = r ? r.visible : true;
     const shown = visible && (!season || seasons[season]);
-    return [p.id, { price_cents: r?.price_cents ?? fileCents(p), visible, available: (r ? r.available : true) && shown, stock: r?.stock ?? null, dailyCap: r?.daily_cap ?? null, season, shown, changed: Boolean(r) }];
+    const partsOk = componentsOf(p.id, 1).slice(1).every(([id]) => !out(id));
+    return [p.id, { price_cents: r?.price_cents ?? fileCents(p), visible, available: (r ? r.available : true) && shown && partsOk, stock: r?.stock ?? null, dailyCap: r?.daily_cap ?? null, season, shown, changed: Boolean(r) }];
   }));
 }
 
@@ -51,8 +71,7 @@ async function lowStockAlert(id: string, left: number) {
 }
 
 export async function takeStock(lines: { product_id: string; qty: number }[]) {
-  const want = new Map<string, number>();
-  for (const l of lines) want.set(l.product_id, (want.get(l.product_id) ?? 0) + l.qty);
+  const want = expand(lines);
   const taken: [string, number][] = [];
   for (const [id, qty] of want) {
     const r = await one`UPDATE product_settings SET stock = stock - ${qty} WHERE product_id = ${id} AND stock IS NOT NULL AND stock >= ${qty} RETURNING stock`;
@@ -73,7 +92,7 @@ export async function giveStock(taken: [string, number][]) {
 /** Puts a cancelled order's items back into stock. */
 export async function restock(orderId: number) {
   const its = await sql`SELECT product_id, SUM(qty)::int AS qty FROM order_items WHERE order_id = ${orderId} GROUP BY product_id`;
-  await giveStock(its.map(i => [i.product_id, i.qty] as [string, number]));
+  await giveStock([...expand(its.map(i => ({ product_id: i.product_id, qty: i.qty })))]);
 }
 
 export async function saveProduct(id: string, change: { price_cents?: number | null; visible?: boolean; available?: boolean; stock?: number | null; daily_cap?: number | null }, actor: string) {
@@ -98,12 +117,15 @@ export async function saveProduct(id: string, change: { price_cents?: number | n
  * day. `exceptOrder` leaves out an order being moved. */
 export async function assertDayLimits(date: string, lines: { product_id: string; qty: number }[], giftBoxesPerDay: number | null, exceptOrder = 0) {
   const caps = await sql`SELECT product_id, daily_cap FROM product_settings WHERE daily_cap IS NOT NULL`;
-  const want = new Map<string, number>(); for (const l of lines) want.set(l.product_id, (want.get(l.product_id) ?? 0) + l.qty);
+  // A bag's daily cap counts the bags inside styles and gift boxes too, on both sides.
+  const want = expand(lines);
+  const day = caps.length ? expand(await sql`SELECT i.product_id, i.qty FROM order_items i JOIN orders o ON o.id = i.order_id
+    WHERE o.slot_date = ${date} AND o.status <> 'cancelled' AND NOT o.is_sample AND o.id <> ${exceptOrder}` as any) : new Map<string, number>();
   const taken = async (ids: string[]) => ids.length ? (await one`SELECT COALESCE(SUM(i.qty), 0)::int AS n FROM order_items i JOIN orders o ON o.id = i.order_id
     WHERE o.slot_date = ${date} AND o.status <> 'cancelled' AND NOT o.is_sample AND o.id <> ${exceptOrder} AND i.product_id = ANY(${ids})`)!.n as number : 0;
   for (const c of caps) {
     const n = want.get(c.product_id); if (!n) continue;
-    const left = c.daily_cap - await taken([c.product_id]);
+    const left = c.daily_cap - (day.get(c.product_id) ?? 0);
     const name = PRODUCTS.find(p => p.id === c.product_id)?.name.en ?? c.product_id;
     if (n > left) throw new HttpError(409, 'day-limit', left > 0 ? `Only ${left} more ${name} can be made for that day. Lower the quantity or choose another day.` : `${name} is fully booked for that day. Choose another day.`);
   }
