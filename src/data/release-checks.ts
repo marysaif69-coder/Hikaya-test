@@ -6,6 +6,15 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: '2-2', title: 'Round 2 · batch 2: allergen information', date: '2026-10-04',
+    checks: [
+      { id: 'card-allergy', text: 'Shop: every style and pack card has an allergen line, including “Allergens confirmed with the final recipe” for Qassimi, Hijazi and Hadrami.', links: [{ label: 'Shop (AR)', href: '/ar/shop/' }, { label: 'Shop (EN)', href: '/en/shop/' }] },
+      { id: 'pair-allergy', text: 'Homepage, the coffee-and-date pairs: Rada’i shows “Contains: Sesame, Tree nuts (almonds)”, readable on the dark panel.', links: [{ label: 'Home (AR)', href: '/ar/' }, { label: 'Home (EN)', href: '/en/' }] },
+      { id: 'find-milk', text: 'Find your coffee: Gulf → Qassimi → Milk shows a warning and suggests plain Gulf coffee.', links: [{ label: 'Find (AR)', href: '/ar/find/' }, { label: 'Find (EN)', href: '/en/find/' }] },
+      { id: 'faq-barley', text: 'Visit → Allergens: mentions possible barley in the Qassim blend and that Hadrami and Hijazi are still to confirm.', links: [{ label: 'Visit (AR)', href: '/ar/visit/' }, { label: 'Visit (EN)', href: '/en/visit/' }] },
+    ],
+  },
+  {
     id: '2-1', title: 'Round 2 · batch 1: saffron, packs and tasting boxes', date: '2026-10-04',
     checks: [
       { id: 'dallah-serve', text: 'Brew guide, Gulf coffee: brewed in a small pot, poured into the dallah (or a thermos) to serve; the coarse grind reads “Coarse, for Gulf coffee”.', links: [{ label: 'Brew (AR)', href: '/ar/brew/' }, { label: 'Brew (EN)', href: '/en/brew/' }] },

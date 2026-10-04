@@ -2,7 +2,7 @@
 // A product in a grid. Kept short on purpose: name, one line, price. Everything else is on the
 // product page. `row` is the slim version for "the bag on its own".
 import type { Product, Lang } from '../data/products';
-import { FAMILIES, ALLERGENS, SPICES, priceText, baseOf, packOf, COFFEES } from '../data/products';
+import { FAMILIES, SPICES, priceText, baseOf, packOf, COFFEES, allergyNote } from '../data/products';
 import { UI, path } from '../data/i18n';
 import Pouch from './Pouch.astro';
 import Sachet from './Sachet.astro';
@@ -19,8 +19,9 @@ const line = p.kind === 'kit' ? '+ ' + p.parts.map(x => (x.mini ? (ar ? 'ظرف 
   : p.kind === 'coffee' ? p.taste[lang]
   : `${FAMILIES[p.fam].name[lang]} · ${p.size[lang]}`;
 const defaultOpt = p.kind === 'coffee' ? (p.grinds[0] ?? '') : p.kind === 'kit' ? (baseOf(p).grinds[0] ?? '') : p.kind === 'box' && p.chooseDate ? 'khalas' : '';
-// Only what a pack or style is known to contain; anything still unconfirmed is on its own page.
-const contains = p.kind === 'pack' ? p.allergens : p.kind === 'kit' ? [...new Set(p.parts.flatMap(x => packOf(x.id)?.allergens ?? []))] : [];
+// Packs and styles always say what they contain, including "to be confirmed": a card with no line
+// must mean no known allergens, not "not checked yet".
+const note = p.kind === 'pack' || p.kind === 'kit' ? allergyNote(p, lang) : null;
 const unpriced = p.price == null;
 // A style costs less than its bag and packs bought apart: the saving shows once prices are set.
 const saves = p.kind === 'kit' && !p.discovery ? [p.base, ...p.parts.map(x => x.id)].join(',') : '';
@@ -41,7 +42,7 @@ const saves = p.kind === 'kit' && !p.discovery ? [p.base, ...p.parts.map(x => x.
     {p.kind === 'coffee' && p.popular && <p class="badge">{ar ? 'فنجان كل يوم' : 'The everyday cup'}</p>}
     <p class="pc-line">{line}</p>
     {saves && <p class="saves" data-saves={p.id} data-parts={saves} hidden></p>}
-    {contains.length > 0 && <p class="allergy">{ar ? 'يحتوي على ' : 'Contains '}{contains.map(a => ALLERGENS[a][lang].replace(/ \(.*\)/, '')).join(ar ? '، ' : ', ').toLowerCase()}</p>}
+    {note && !note.none && <p class="allergy">{note.text}</p>}
     <div class="pc-row">
       <span class="price" data-price-for={p.id}>{priceText(p.price, lang)}</span>
       <button class="pc-add" type="button" data-add={p.id} data-opt={defaultOpt} disabled={unpriced} aria-label={`${UI.add[lang]}: ${p.name[lang]}`}>

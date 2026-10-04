@@ -7,7 +7,7 @@ import Sachet from '../../components/Sachet.astro';
 import BoxBuilder from '../../components/BoxBuilder.astro';
 import Films from '../../components/Films.astro';
 import GuestWall from '../../components/GuestWall.astro';
-import { COFFEES, KITS, DATES, LINES, BOXES, money, priceText, packOf, baseOf, type Lang, type CoffeeLine, type Coffee, type Kit } from '../../data/products';
+import { COFFEES, KITS, DATES, LINES, BOXES, money, priceText, packOf, baseOf, allergyNote, type Lang, type CoffeeLine, type Coffee, type Kit } from '../../data/products';
 import { path } from '../../data/i18n';
 import { sunsetMinutes, hhmm, RAMADAN_START } from '../../data/calendar';
 
@@ -70,7 +70,7 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
     <div class="wrap story-grid">
       <div class="story-text">
         <h2 id="story-h" class="h-l">{ar ? 'لكل منطقة طريقتها، ولكل بيت فنجان.' : 'Every region has its way, every home its cup.'}</h2>
-        <p class="lead">{ar ? 'اسأل عشرة بيوت كيف يصنعون القهوة، تسمع عشر حكايات. في نجد شقراء بالزعفران، وفي القصيم أغنى، وفي الحجاز أعطر. وفي اليمن لكل بلدة إضافتها: السمسم واللوز في رداع، والذرة في البيضاء. وفي الشام ناعمة كالبودرة، برغوتها في الركوة.' : 'Ask ten homes how they make their coffee and you will hear ten stories. In Najd it is pale, with saffron; in Qassim, richer; in the Hijaz, more fragrant. In Yemen every town adds its own: sesame and almonds in Rada’a, sorghum in Al-Bayda. In the Levant it is powder-fine, with its foam, in the rakwa.'}</p>
+        <p class="lead">{ar ? 'اسأل عشرة بيوت كيف يصنعون القهوة، تسمع عشر حكايات. في نجد شقراء بالزعفران، وفي القصيم أغنى، وفي الحجاز أعطر. وفي اليمن لكل بلدة إضافتها: السمسم واللوز في رداع، والذرة الرفيعة في البيضاء. وفي الشام ناعمة كالبودرة، برغوتها في الركوة.' : 'Ask ten homes how they make their coffee and you will hear ten stories. In Najd it is pale, with saffron; in Qassim, richer; in the Hijaz, more fragrant. In Yemen every town adds its own: sesame and almonds in Rada’a, sorghum in Al-Bayda. In the Levant it is powder-fine, with its foam, in the rakwa.'}</p>
         <p>{ar ? 'لذلك نحمّص القهوة طازجة في كالغاري، ونترك إضافات كل بيت في ظروفها المختومة، فتشربها كما تشربها في بيتك.' : 'So we roast the coffee fresh in Calgary, keep each home’s additions in their own sealed packs, and you make it the way you take it at home.'}</p>
         <div class="cta">
           <a class="btn primary" href={path(lang, 'find')}>{ar ? 'اعثر على قهوتك' : 'Find your coffee'}</a>
@@ -155,6 +155,7 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
                 <p class="why">{c.why[lang]} <span>{d.name[lang]} · {d.region[lang]}</span></p>
                 <div class="panel-buy">
                   <p><span class="price" data-price-for={`${c.id},date-box`}>{c.price == null || dateBox.price == null ? priceText(null, lang) : money(c.price + dateBox.price, lang)}</span> <span class="muted">{ar ? `${c.name.ar} + ٥٠٠ غ ${d.name.ar}` : `${c.name.en} + 500 g ${d.name.en}`}</span></p>
+                  {c.kind === 'kit' && <p class={`allergy ${allergyNote(c, lang).none ? 'none' : ''}`}>{allergyNote(c, lang).text}</p>}
                   <button class="btn tamr" type="button" data-add={`${c.id},date-box`} data-opt={`${bag.grinds[0] ?? ""},${c.date}`} disabled={c.price == null}><span>{ar ? 'أضف الاثنين' : 'Add the pair'}</span></button>
                   <a href={path(lang, `shop/${c.id}`)}>{ar ? 'عن هذه القهوة' : 'About this coffee'}</a>
                 </div>
@@ -254,6 +255,9 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
   .panel-buy { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px; padding-top: 20px; border-top: 1px solid rgba(245, 239, 227, .18); }
   .panel-buy p { flex-basis: 100%; }
   .panel-buy .price { font-size: 26px; margin-inline-end: 8px; }
+  /* The global allergy red can't be read on the dark panel. */
+  .panel-buy .allergy { color: #F2C9B8; margin: 0; }
+  .panel-buy .allergy.none { color: #CDBBA5; }
   .panel-buy .muted { color: #CDBBA5; }
   .panel-buy a { color: var(--paper); }
   .panel.replay .panel-chat :global(.say.tamr) { animation: answer .9s var(--ease) both; }

@@ -29,7 +29,7 @@ const Q2: Record<string, Opt[]> = {
     { v: 'yemeni', t: L('Cardamom only, no ginger', 'بالهيل فقط، بلا زنجبيل'), s: L('Yemeni qahwa', 'قهوة يمنية') },
     { v: 'hadrami', t: L('The Hadramawt way', 'على طريقة حضرموت'), s: L('Hadrami', 'حضرمية') },
     { v: 'radai', t: L('With sesame and almonds', 'بالسمسم واللوز'), s: L('Rada’i', 'رداعية') },
-    { v: 'baydani', t: L('With sorghum', 'بالذرة'), s: L('Baydani', 'بيضانية') },
+    { v: 'baydani', t: L('With sorghum', 'بالذرة الرفيعة'), s: L('Baydani', 'بيضانية') },
     { v: 'jubani', t: L('Coffee with its husk', 'البن مع قشره'), s: L('Jubani', 'جُبَني') },
     { v: 'qishr', t: L('Light, like tea: the husk', 'خفيفة مثل الشاي: القشر'), s: L('Qishr', 'قشر') },
     { v: 'taste-yemen', t: L('Not sure, I want to try', 'لست متأكداً، أريد أن أجرّب') },
@@ -60,12 +60,15 @@ const data = Object.fromEntries(PRODUCTS.filter(p => p.kind === 'coffee' || p.ki
     allergens: [...new Set(packs.flatMap(x => x.allergens))], tbd: packs.some(x => x.maybe),
     allergy: p.kind === 'kit' ? allergyNote(p, lang).text : L('Coffee and spice only', 'قهوة وبهار فقط'),
     base: p.kind === 'kit' ? p.base : p.id,
+    // Qassimi is made with evaporated milk the customer adds at home (no pack lists milk).
+    homeMilk: p.id === 'qassimi',
   }];
 }));
 const words = {
   avoid: L('{name} has {what} in its pack, so it is not for your house. Try this instead:', '{name} فيها {what} في ظرفها، فهي ليست لبيتكم. جرّب هذه بدلاً منها:'),
   tbd: L('The allergens in one of its packs are still being confirmed. Ask us before you order.', 'مسببات الحساسية في أحد ظروفها ما زالت تُؤكد. اسألنا قبل أن تطلب.'),
-  packs: L('Already have a bag at home? Take just the pack.', 'عندك كيس في البيت؟ خذ الظرف وحده.'),
+  milk: L('{name} is made with evaporated milk you add at home, so it is not for your house. Try this instead:', '{name} تُحضَّر بحليب مبخّر تضيفه في البيت، فهي ليست لبيتكم. جرّب هذه بدلاً منها:'),
+  packs: L('Have a fresh plain bag? Take its pack on its own.', 'عندك كيس جديد بلا إضافات؟ خذ ظرفه وحده.'),
 };
 const allergenName: Record<string, string> = { sesame: L('sesame', 'سمسم'), nuts: L('almonds', 'لوز'), milk: L('milk', 'حليب'), grain: L('grain', 'حبوب') };
 ---
@@ -125,6 +128,9 @@ const allergenName: Record<string, string> = { sesame: L('sesame', 'سمسم'), 
     const p = data[id];
     if (q3 && p.allergens.includes(q3)) {
       warn = words.avoid.replace('{name}', p.name).replace('{what}', allergenName[q3]);
+      id = p.base;
+    } else if (q3 === 'milk' && p.homeMilk) {
+      warn = words.milk.replace('{name}', p.name);
       id = p.base;
     }
     return { id, warn };
