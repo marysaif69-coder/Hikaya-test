@@ -3,10 +3,11 @@ import Base from '../../layouts/Base.astro';
 import Intro from '../../components/Intro.astro';
 import Pair from '../../components/Pair.astro';
 import Pouch from '../../components/Pouch.astro';
+import Sachet from '../../components/Sachet.astro';
 import BoxBuilder from '../../components/BoxBuilder.astro';
 import Films from '../../components/Films.astro';
 import GuestWall from '../../components/GuestWall.astro';
-import { COFFEES, KITS, DATES, LINES, BOXES, money, priceText, type Lang, type CoffeeLine } from '../../data/products';
+import { COFFEES, KITS, DATES, LINES, BOXES, money, priceText, packOf, baseOf, type Lang, type CoffeeLine, type Coffee, type Kit } from '../../data/products';
 import { path } from '../../data/i18n';
 import { sunsetMinutes, hhmm, RAMADAN_START } from '../../data/calendar';
 
@@ -15,7 +16,15 @@ const lang = Astro.params.lang as Lang;
 const ar = lang === 'ar';
 const najdi = COFFEES[0];
 const dateBox = BOXES.find(b => b.id === 'date-box')!;
-const shelf = (['gulf', 'yemen', 'shami'] as CoffeeLine[]).map(l => ({ l, c: COFFEES.find(c => c.line === l)!, bags: COFFEES.filter(c => c.line === l), styles: KITS.filter(k => k.line === l && !k.discovery) }));
+const shelf = [
+  ...(['gulf', 'yemen', 'shami'] as CoffeeLine[]).map(l => ({ id: l, name: LINES[l].name, line: LINES[l].line, fam: LINES[l].fam, c: COFFEES.find(c => c.line === l)!, items: [...COFFEES.filter(c => c.line === l && c.id !== 'qishr'), ...KITS.filter(k => k.line === l && !k.discovery)] })),
+  // Qishr is a drink of its own, as in the shop.
+  { id: 'qishr', name: { en: 'Qishr', ar: 'القشر' }, line: { en: 'From Yemen: the coffee cherry, brewed like tea.', ar: 'من اليمن: ثمرة البن، تُغلى مثل الشاي.' }, fam: 'husk', c: COFFEES.find(c => c.id === 'qishr')!, items: [] as { name: { en: string; ar: string } }[] },
+];
+// What people actually drink: the styles, then Jubani, Shami with cardamom and Qishr.
+const cups: (Kit | Coffee)[] = [...KITS.filter(k => !k.discovery), ...COFFEES.filter(c => ['jubani', 'shami', 'qishr'].includes(c.id))];
+const bagOf = (c: Kit | Coffee) => (c.kind === 'kit' ? baseOf(c) : c);
+const tasting = KITS.filter(k => k.discovery);
 const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
 ---
 <Base lang={lang} title="" intro>
@@ -28,10 +37,11 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
           bunn={{ ar: 'ضيف جديد في كالغاري.', en: 'A new guest in Calgary.' }}
           tamr={{ ar: 'مكانك محفوظ، والتمرة جاهزة.', en: 'Your seat is kept, the date is ready.' }} />
         <div class="hero-copy">
-          <h1 class="h-m">{ar ? 'قهوة اليمن والخليج والشام، وتمرٌ لمن يحبّ التمر معها.' : 'Coffee from Yemen, the Gulf and the Levant, and dates for those who take one with it.'}</h1>
-          <p class="lead">{ar ? 'نحمّص بكميات صغيرة في كالغاري. استلام من الخميس إلى الأحد، أو نوصلها لبيتك.' : 'Roasted in small batches in Calgary. Pick up Thursday to Sunday, or we bring it to your door.'}</p>
+          <h1 class="h-m">{ar ? 'لكل بيت فنجانه. اختر فنجانك.' : 'Every home has its cup. Find yours.'}</h1>
+          <p class="lead">{ar ? 'قهوة الخليج واليمن والشام، محمّصة بكميات صغيرة في كالغاري، وتمرٌ لمن يحبّه معها. استلام من الخميس إلى الأحد، أو نوصلها لبيتك.' : 'Gulf, Yemeni and Shami coffee, roasted in small batches in Calgary, and dates for those who take one with it. Pick up Thursday to Sunday, or we bring it to your door.'}</p>
           <div class="cta">
-            <a class="btn primary" href={path(lang, 'shop')}>{ar ? 'تسوّق القهوة والتمر' : 'Shop coffee & dates'}</a>
+            <a class="btn primary" href={path(lang, 'find')}>{ar ? 'اعثر على فنجانك' : 'Find your cup'}</a>
+            <a class="btn ghost" href={path(lang, 'shop')}>{ar ? 'تسوّق القهوة والتمر' : 'Shop coffee & dates'}</a>
             <a class="btn tamr" href={path(lang, 'ramadan')} data-season="ramadan">{ar ? 'اطلب لرمضان مسبقاً' : 'Pre-order for Ramadan'}</a>
           </div>
         </div>
@@ -39,7 +49,7 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
       <div class="hero-pack" aria-hidden="true">
         <div class="pack-panel patterned">
           <img class="pack-box" src="/media/img/giftbox.webp" alt="" width="1000" height="1250" fetchpriority="high" />
-          <div class="pack-pouch"><Pouch coffee={najdi} lang={lang} label={false} /></div>
+          <div class="pack-pouch"><Pouch coffee={najdi} lang={lang} label={false} /><span class="pack-sachet"><Sachet pack={packOf('pack-saffron')!} lang={lang} /></span></div>
         </div>
       </div>
     </div>
@@ -54,43 +64,6 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
   </ul>
 
   <div class="print-band patterned" aria-hidden="true"></div>
-
-  <!-- Signature: choose a coffee, Tamr answers with its date. Works without JS via :checked. -->
-  <section class="pairing" aria-labelledby="pairing-h">
-    <div class="wrap">
-      <div class="pairing-head">
-        <h2 id="pairing-h" class="h-l">{ar ? 'اختر قهوتك، وتمر تردّ.' : 'Choose a coffee. Tamr answers.'}</h2>
-        <p class="lead">{ar ? 'بعض القهوة تُشرب مع تمرة، وبعضها لا. اختر قهوتك، وتمر تقترح ما يليق بها إن أردت.' : 'Some coffees are drunk with a date, some are not. Choose yours, and Tamr will suggest one if you want it.'}</p>
-      </div>
-      <fieldset class="chips">
-        <legend class="sr">{ar ? 'القهوة' : 'Coffee'}</legend>
-        {COFFEES.map((c, i) => (
-          <label class="chip"><input type="radio" name="pick" value={c.id} checked={i === 0} /><span>{c.name[lang]}</span></label>
-        ))}
-      </fieldset>
-      <div class="panels">
-        {COFFEES.map((c, i) => {
-          const d = DATES[c.date];
-          return (
-            <div class="panel" data-for={c.id} hidden={i !== 0}>
-              <div class="panel-pouch"><Pouch coffee={c} lang={lang} /></div>
-              <div class="panel-chat">
-                <Pair lang={lang} size="l"
-                  bunn={c.bunn}
-                  tamr={{ ar: `خذ معها ${d.name.ar}.`, en: `Take ${d.name.en} with it.` }} />
-                <p class="why">{c.why[lang]} <span>{d.name[lang]} · {d.region[lang]}</span></p>
-                <div class="panel-buy">
-                  <p><span class="price" data-price-for={`${c.id},date-box`}>{c.price == null || dateBox.price == null ? priceText(null, lang) : money(c.price + dateBox.price, lang)}</span> <span class="muted">{ar ? `${c.name.ar} ${c.size} + ٥٠٠ غ ${d.name.ar}` : `${c.name.en} ${c.size} + 500 g ${d.name.en}`}</span></p>
-                  <button class="btn tamr" type="button" data-add={`${c.id},date-box`} data-opt={`${c.grinds[0] ?? ""},${c.date}`} disabled={c.price == null}><span>{ar ? 'أضف الاثنين' : 'Add the pair'}</span></button>
-                  <a href={path(lang, `shop/${c.id}`)}>{ar ? 'عن هذه القهوة' : 'About this coffee'}</a>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  </section>
 
   <!-- The story: one bag, made the way your family makes it. -->
   <section class="sec story-sec" aria-labelledby="story-h">
@@ -117,21 +90,79 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
   <section class="sec shelf-sec" aria-labelledby="shelf-h">
     <div class="wrap">
       <div class="split-head">
-        <h2 id="shelf-h" class="h-l">{ar ? 'ثلاث قهوات على الرف.' : 'Three coffees on the shelf.'}</h2>
+        <h2 id="shelf-h" class="h-l">{ar ? 'على الرف.' : 'On the shelf.'}</h2>
         <p class="lead">{ar ? 'كيس لكل قهوة، والظروف تجعلها كما تشربها.' : 'A bag for each coffee, and the packs make it the way you take it.'}</p>
       </div>
       <ul class="shelf">
-        {shelf.map(({ l, c, bags, styles }) => (
-          <li class={`rise shelf-${LINES[l].fam}`}>
-            <a href={path(lang, 'shop') + `#${l}`}>
-              <div class="shelf-bag"><Pouch coffee={c} lang={lang} label={false} /></div>
-              <h3 class="h-s">{LINES[l].name[lang]}</h3>
-              <p class="muted">{LINES[l].line[lang]}</p>
-              <p class="count">{[...bags, ...styles].map(x => x.name[lang]).join(' · ')}</p>
+        {shelf.map(x => (
+          <li class={`rise shelf-${x.fam}`}>
+            <a href={path(lang, 'shop') + `#${x.id}`}>
+              <div class="shelf-bag"><Pouch coffee={x.c} lang={lang} label={false} /></div>
+              <h3 class="h-s">{x.name[lang]}</h3>
+              <p class="muted">{x.line[lang]}</p>
+              {x.items.length > 0 && <p class="count">{x.items.map(p => p.name[lang]).join(' · ')}</p>}
             </a>
           </li>
         ))}
       </ul>
+    </div>
+  </section>
+
+  <!-- New to it? The tasting boxes, right after the shelf. -->
+  <section class="sec tasting-sec" aria-labelledby="tasting-h">
+    <div class="wrap tasting-grid">
+      <div class="tasting-copy">
+        <h2 id="tasting-h" class="h-l">{ar ? 'جديد عليها؟ تذوّق قبل أن تختار.' : 'New to it? Taste before you choose.'}</h2>
+        <p class="lead">{ar ? 'كيس واحد مع ظرف صغير من كل طريقة. جرّبها في بيتك، ثم اختر فنجانك.' : 'One bag with a small pack of each style. Try them at home, then choose your cup.'}</p>
+        <a class="btn ghost" href={path(lang, 'find')}>{ar ? 'أو أجب عن ثلاثة أسئلة' : 'Or answer three questions'}</a>
+      </div>
+      <div class="tasting-cards">
+        {tasting.map(k => (
+          <a class="t-card" href={path(lang, `shop/${k.id}`)}>
+            <span class="t-art"><span class="t-bag"><Pouch coffee={baseOf(k)} lang={lang} label={false} /></span><span class="t-packs">{k.parts.map(x => <Sachet pack={packOf(x.id)!} lang={lang} mini={x.mini} />)}</span></span>
+            <b>{k.name[lang]}</b>
+            <small>{k.taste[lang]}</small>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Signature: choose a coffee, Tamr answers with its date. Works without JS via :checked. -->
+  <section class="pairing" aria-labelledby="pairing-h">
+    <div class="wrap">
+      <div class="pairing-head">
+        <h2 id="pairing-h" class="h-l">{ar ? 'اختر قهوتك، وتمر تردّ.' : 'Choose a coffee. Tamr answers.'}</h2>
+        <p class="lead">{ar ? 'بعض القهوة تُشرب مع تمرة، وبعضها لا. اختر قهوتك، وتمر تقترح ما يليق بها إن أردت.' : 'Some coffees are drunk with a date, some are not. Choose yours, and Tamr will suggest one if you want it.'}</p>
+      </div>
+      <fieldset class="chips">
+        <legend class="sr">{ar ? 'القهوة' : 'Coffee'}</legend>
+        {cups.map((c, i) => (
+          <label class="chip"><input type="radio" name="pick" value={c.id} checked={i === 0} /><span>{c.name[lang]}</span></label>
+        ))}
+      </fieldset>
+      <div class="panels">
+        {cups.map((c, i) => {
+          const d = DATES[c.date];
+          const bag = bagOf(c);
+          return (
+            <div class="panel" data-for={c.id} hidden={i !== 0}>
+              <div class="panel-pouch"><Pouch coffee={bag} lang={lang} /></div>
+              <div class="panel-chat">
+                <Pair lang={lang} size="l"
+                  bunn={c.bunn}
+                  tamr={{ ar: `خذ معها ${d.name.ar}.`, en: `Take ${d.name.en} with it.` }} />
+                <p class="why">{c.why[lang]} <span>{d.name[lang]} · {d.region[lang]}</span></p>
+                <div class="panel-buy">
+                  <p><span class="price" data-price-for={`${c.id},date-box`}>{c.price == null || dateBox.price == null ? priceText(null, lang) : money(c.price + dateBox.price, lang)}</span> <span class="muted">{ar ? `${c.name.ar} + ٥٠٠ غ ${d.name.ar}` : `${c.name.en} + 500 g ${d.name.en}`}</span></p>
+                  <button class="btn tamr" type="button" data-add={`${c.id},date-box`} data-opt={`${bag.grinds[0] ?? ""},${c.date}`} disabled={c.price == null}><span>{ar ? 'أضف الاثنين' : 'Add the pair'}</span></button>
+                  <a href={path(lang, `shop/${c.id}`)}>{ar ? 'عن هذه القهوة' : 'About this coffee'}</a>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   </section>
 
@@ -167,6 +198,18 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
   .pack-panel { position: relative; border-radius: clamp(28px, 4vw, 48px); border-bottom-left-radius: 8px; overflow: hidden; aspect-ratio: 4 / 5; }
   .pack-box { position: absolute; inset: 9% 8% 16% 18%; width: 74%; height: 75%; object-fit: cover; object-position: 60% 40%; border-radius: clamp(20px, 3vw, 34px); box-shadow: 0 24px 40px -24px rgba(51, 33, 26, .45); }
   html[dir='rtl'] .pack-box { inset: 9% 18% 16% 8%; }
+  .pack-sachet { position: absolute; width: 34%; inset-inline-end: -22%; bottom: 4%; transform: rotate(7deg); }
+  .tasting-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 28px clamp(28px, 5vw, 72px); align-items: center; }
+  @media (max-width: 860px) { .tasting-grid { grid-template-columns: 1fr; } }
+  .tasting-copy { display: grid; gap: 16px; justify-items: start; }
+  .tasting-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .t-card { display: grid; gap: 4px; padding: 16px; border-radius: 26px; border-bottom-left-radius: 6px; background: var(--sheet); text-decoration: none; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); transition: box-shadow .15s; }
+  .t-card:hover { box-shadow: inset 0 0 0 1.5px var(--bunn); }
+  .t-card b { font-family: var(--display); font-size: 21px; }
+  .t-card small { color: var(--ink-2); font-size: 14px; }
+  .t-art { position: relative; display: block; padding: 6% 34% 6% 10%; background: var(--paper-2); border-radius: 18px; margin-bottom: 8px; }
+  .t-packs { position: absolute; inset-inline-end: 6%; bottom: 8%; width: 26%; display: grid; }
+  .t-packs :global(.sachet:nth-child(n+2)) { margin-top: -40%; }
   .pack-pouch { position: absolute; width: 44%; inset-inline-start: 6%; bottom: 3%; filter: drop-shadow(0 22px 22px rgba(51, 33, 26, .28)); }
   html[dir='rtl'] .pack-pouch { inset-inline-start: auto; left: 6%; }
   .js .hero-pair .say { opacity: 0; transform: translateY(10px) scale(.98); animation: say .7s var(--ease) forwards; }
@@ -221,14 +264,14 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
   /* ---------- shelf ---------- */
   .split-head { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 40px; align-items: end; margin-bottom: clamp(32px, 4vw, 56px); }
   @media (max-width: 800px) { .split-head { grid-template-columns: 1fr; } }
-  .shelf { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(16px, 3vw, 40px); align-items: end; }
+  .shelf { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(16px, 3vw, 40px); align-items: end; }
   .shelf a { display: grid; gap: 8px; text-decoration: none; }
   .shelf-bag { padding: 0 12% 18px; border-bottom: 3px solid var(--bunn); margin-bottom: 10px; transition: transform .45s var(--ease); }
   .shelf a:hover .shelf-bag { transform: translateY(-8px); }
   .shelf-husk .shelf-bag { padding-inline: 22%; }
   .shelf a:hover h3 { text-decoration: underline; text-underline-offset: .2em; }
   .count { font-size: 14px; font-weight: 600; color: var(--tamr); }
-  @media (max-width: 760px) { .shelf { grid-template-columns: 1fr; row-gap: 40px; } .shelf .shelf-bag { max-width: 50%; } }
+  @media (max-width: 1000px) { .shelf { grid-template-columns: 1fr 1fr; row-gap: 40px; } }
   .story-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: clamp(28px, 5vw, 72px); align-items: center; }
   @media (max-width: 860px) { .story-grid { grid-template-columns: 1fr; } }
   .story-text { display: grid; gap: 16px; }
