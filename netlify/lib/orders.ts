@@ -1,4 +1,4 @@
-import { sql, one, type Row } from './db';
+import { sql, one, type Row, isUniqueViolation } from './db';
 import { HttpError, str, isEmail, siteUrl } from './http';
 import { hash, token, isAdminEmail, type Session } from './auth';
 import { priceCart, totals, dollars, type PricedLine } from './pricing';
@@ -85,7 +85,7 @@ export async function createOrder(input: any, s: Session | null, cardEnabled: bo
           ${t.subtotal_cents}, ${t.delivery_cents}, ${t.discount_cents}, ${total}, ${promo?.code ?? null}, ${notes || null}, ${hash(guestToken)}, ${isSample}, ${gift}, ${giftTo}, ${giftPhone}, ${giftMessage},
           ${gcCode && gcCents ? gcCode : null}, ${gcCents}, ${total === 0 ? 'paid' : 'unpaid'}, ${input?.sms === true}, ${opts.subscriptionId ?? null})
         RETURNING *`;
-    } catch (e: any) { if (!String(e?.message).includes('unique')) throw e; }
+    } catch (e: any) { if (!isUniqueViolation(e)) throw e; }
   }
   if (!order) throw new HttpError(500, 'ref');
   for (const l of lines) {

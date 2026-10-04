@@ -1,7 +1,7 @@
 // Gift cards: bought on /en/gift-card/, paid by card (Square) or e-Transfer. Once paid, the code
 // is emailed to the person receiving it. The code works at checkout like money: it pays part or
 // all of an order, and what is left stays on the card. A cancelled order puts the money back.
-import { sql, one, type Row } from './db';
+import { sql, one, type Row, isUniqueViolation } from './db';
 import { HttpError, str, isEmail, siteUrl } from './http';
 import { randomCode } from './promos';
 import { send, giftCardEmail, giftCardReceipt } from './email';
@@ -32,7 +32,7 @@ export async function buyGiftCard(b: any, req: Request) {
     try {
       g = await one`INSERT INTO gift_cards (ref, code, amount_cents, balance_cents, buyer_name, buyer_email, to_name, to_email, message, lang, payment)
         VALUES (${randomCode('GC')}, ${randomCode('GIFT')}, ${amount}, ${amount}, ${buyer_name}, ${buyer_email}, ${to_name}, ${to_email}, ${message}, ${lang}, ${payment}) RETURNING *`;
-    } catch (e: any) { if (!String(e?.message).includes('unique')) throw e; }
+    } catch (e: any) { if (!isUniqueViolation(e)) throw e; }
   }
   if (!g) throw new HttpError(500, 'ref');
   let payUrl: string | null = null;
@@ -85,7 +85,7 @@ export async function sellGiftCardHere(b: any, by: string, req?: Request) {
     try {
       g = await one`INSERT INTO gift_cards (ref, code, amount_cents, balance_cents, buyer_name, buyer_email, to_name, to_email, message, lang, payment, paid_at, sold_by)
         VALUES (${randomCode('GC')}, ${randomCode('GIFT')}, ${amount}, ${amount}, ${buyer_name}, ${buyer_email}, ${to_name}, ${to_email}, ${message}, ${lang}, ${payment}, NOW(), ${by}) RETURNING *`;
-    } catch (e: any) { if (!String(e?.message).includes('unique')) throw e; }
+    } catch (e: any) { if (!isUniqueViolation(e)) throw e; }
   }
   if (!g) throw new HttpError(500, 'ref');
   const sentTo = g.to_email || g.buyer_email || null;

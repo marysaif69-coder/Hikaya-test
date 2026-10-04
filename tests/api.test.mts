@@ -224,4 +224,12 @@ assert.equal((await call(help, '/api/ask', { body: { text: 'x'.repeat(1600), lan
 const chats = await call(admin, '/api/admin/chats', { cookie: adm });
 assert.ok(chats.data.chats.length >= 2); ok('team can read recent conversations');
 
+// A date box needs a real date variety, not a name every object has.
+for (const opt of ['constructor', 'toString', '__proto__']) assert.equal((await call(orders, '/api/promo', { body: { code: 'NONE', lines: [{ id: 'date-box', opt, qty: 1 }] } })).data.error, 'choose-date');
+ok('a date box with a made-up variety ("constructor") is refused');
+const { isUniqueViolation } = await import('../netlify/lib/db');
+assert.equal(isUniqueViolation(Object.assign(new Error('Failed query: INSERT ...'), { cause: { code: '23505' } })), true);
+assert.equal(isUniqueViolation({ code: '23505' }), true); assert.equal(isUniqueViolation(new Error('unique-looking note')), false);
+ok('a duplicate ref is recognised whether or not the database driver wraps the error');
+
 console.log(`\n${pass} checks passed`);

@@ -27,7 +27,7 @@ export function priceCart(lines: unknown, live?: Record<string, Live>): PricedLi
       option = p.grinds.includes(raw.opt) ? raw.opt : p.grinds[0];
       label = GRINDS[option as keyof typeof GRINDS];
     } else if (p.kind === 'box' && p.chooseDate) {
-      if (!(raw.opt in DATES)) throw new HttpError(400, 'choose-date', 'Choose a date variety for the box.');
+      if (typeof raw.opt !== 'string' || !Object.hasOwn(DATES, raw.opt)) throw new HttpError(400, 'choose-date', 'Choose a date variety for the box.');
       option = raw.opt;
       label = DATES[raw.opt as keyof typeof DATES].name;
     } else if (p.kind === 'kit') {

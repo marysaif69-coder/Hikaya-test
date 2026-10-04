@@ -2,7 +2,7 @@
 // and the customer, and appears in the admin Inbox. Customers can attach photos with the
 // upload token they get back when the request is opened.
 import { randomInt } from 'node:crypto';
-import { sql, one, type Row } from './db';
+import { sql, one, type Row, isUniqueViolation } from './db';
 import { HttpError, str, isEmail, siteUrl } from './http';
 import { hash, token } from './auth';
 import { send, ticketReceived, ticketAlert } from './email';
@@ -42,7 +42,7 @@ export async function createTicket(input: TicketInput, source: 'form' | 'ask', r
       t = await one`INSERT INTO tickets (ref, kind, source, lang, name, email, phone, order_ref, summary, details, chat_id, upload_token_hash)
         VALUES (${newRef()}, ${kind}, ${source}, ${input.lang === 'ar' ? 'ar' : 'en'}, ${str(input.name, 120) || null}, ${email}, ${str(input.phone, 40) || null},
           ${orderRef}, ${summary}, ${str(input.details, 3000) || null}, ${chatId}, ${hash(uploadToken)}) RETURNING *`;
-    } catch (e: any) { if (!String(e?.message).includes('unique')) throw e; }
+    } catch (e: any) { if (!isUniqueViolation(e)) throw e; }
   }
   if (!t) throw new HttpError(500, 'ref');
   await send(ticketReceived(t as any, siteUrl(req), ramadanNow()));

@@ -13,4 +13,8 @@ export const sql: Sql = (strings, ...values) => {
   return getDatabase().sql(strings, ...values) as unknown as Promise<Row[]>;
 };
 
+/** A unique-constraint clash (e.g. a random ref already taken). In production the driver wraps the
+ * Postgres error and keeps its code in `cause`; in tests it is the error itself. */
+export const isUniqueViolation = (e: any) => (e?.cause ?? e)?.code === '23505';
+
 export const one = async (strings: TemplateStringsArray, ...values: unknown[]) => (await sql(strings, ...values))[0] ?? null;
