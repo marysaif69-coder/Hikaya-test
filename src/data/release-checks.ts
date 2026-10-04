@@ -6,6 +6,14 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'design-1', title: 'Design: the Dates tab on a laptop, the dark Yemeni beans band, speech-bubble corners', date: '2026-10-04',
+    checks: [
+      { id: 'design-tier-art', text: 'On a laptop, Shop → Dates: next to the cards, a drawing of the box for that tier (clear tray, Reserve box, Stuffed box). On a phone it is hidden.', links: [{ label: 'Dates (EN)', href: '/en/shop/#reserve' }] },
+      { id: 'design-beans-dark', text: 'Shop → بن اليمن: the whole tab is dark like the black box, with gold buttons and gold “Ordering opens soon”; readable in Arabic and English.', links: [{ label: 'Yemeni beans (AR)', href: '/ar/shop/#beans' }] },
+      { id: 'design-corners', text: 'The new cards (dates, Reserve and Stuffed, the homepage dates, the Iftar and Eid boxes) have the one small speech-bubble corner like the rest of the site.', links: [{ label: 'Home (AR)', href: '/ar/' }, { label: 'Ramadan (EN)', href: '/en/ramadan/' }] },
+    ],
+  },
+  {
     id: 'site-review-1', title: 'Site review: homepage dates and Yemeni beans, team bar, old names', date: '2026-10-04',
     checks: [
       { id: 'home-dates', text: 'Homepage: “وتمر بجانب الفنجان · And a date beside the cup”, three cards (Everyday, Reserve, Stuffed) that open their tab in the shop.', links: [{ label: 'Home (AR)', href: '/ar/' }, { label: 'Home (EN)', href: '/en/' }] },

@@ -1,6 +1,7 @@
 ---
 import Base from '../../../layouts/Base.astro';
 import ProductCard from '../../../components/ProductCard.astro';
+import BoxArt from '../../../components/BoxArt.astro';
 import { COFFEES, SPECIALTY, KITS, PACKS, BOXES, FAMILIES, LINES, DATES, EVERYDAY, FILLINGS, ALLERGENS, MIXED, varietiesOf, mixedOk, priceText, type Lang, type CoffeeLine, type Box, type DateId, type FillingId } from '../../../data/products';
 import { path } from '../../../data/i18n';
 import Pouch from '../../../components/Pouch.astro';
@@ -170,6 +171,7 @@ const DATE_PICKS = [
     <section class="fam dsec" id="everyday" aria-labelledby="h-everyday" data-dpanel="everyday">
       <div class="wrap">
         <div class="panel-head"><h2 id="h-everyday" class="h-m">{ar ? 'تمر كل يوم' : 'Everyday dates'}</h2><p class="muted">{ar ? 'بالوزن، للبيت، في علبة شفافة.' : 'By weight, for the house, in a clear tray.'}</p></div>
+        <div class="tier-body"><div class="tier-main">
         <fieldset class="kinds" data-kinds="everyday" hidden>
           <legend class="sr">{ar ? 'النوع' : 'Kind'}</legend>
           {EVERYDAY.map((k, i) => <label><input type="radio" name="kind-everyday" value={k} checked={i === 0} /><span>{DATES[k].name[lang]}</span></label>)}
@@ -193,6 +195,7 @@ const DATE_PICKS = [
             </article>
           ); })}
         </div>
+        </div><div class="tier-art" aria-hidden="true"><BoxArt p={BY_ID['date-box']} lang={lang} /></div></div>
       </div>
     </section>
 
@@ -200,6 +203,7 @@ const DATE_PICKS = [
       <div class="wrap">
         <div class="panel-head"><h2 id="h-reserve" class="h-m">{ar ? 'تمر النخبة' : 'Reserve dates'} <em class="badge">{ar ? 'ننصح بها' : 'Our pick'}</em></h2></div>
         <p class="muted panel-note">{ar ? 'تمر كل يوم بالوزن للبيت؛ والنخبة أكبر وأعتنى بها، في علب.' : 'Everyday dates by weight for the house; Reserve dates are larger and more carefully kept, boxed.'}</p>
+        <div class="tier-body"><div class="tier-main">
         <fieldset class="kinds" data-kinds="reserve" hidden>
           <legend class="sr">{ar ? 'النوع' : 'Kind'}</legend>
           {reserveKinds.map((k, i) => <label><input type="radio" name="kind-reserve" value={k.key} checked={i === 0} /><span>{k.name[lang]}</span></label>)}
@@ -219,6 +223,7 @@ const DATE_PICKS = [
           </article>)}
         </div>
         <p class="muted more"><a href={path(lang, 'shop/reserve-12')}>{ar ? 'عن علبة النخبة' : 'About the Reserve box'}</a></p>
+        </div><div class="tier-art" aria-hidden="true"><BoxArt p={BY_ID['reserve-12']} lang={lang} /></div></div>
       </div>
     </section>
 
@@ -226,6 +231,7 @@ const DATE_PICKS = [
       <div class="wrap">
         <div class="panel-head"><h2 id="h-stuffed" class="h-m">{ar ? 'تمر محشي' : 'Stuffed dates'}</h2></div>
         <p class="muted panel-note">{ar ? 'حشوة واحدة لكل علبة، أو مشكّل. كل تمرة مغلّفة وحدها، مع ملصق مسببات الحساسية.' : 'One filling per box, or Mixed. Each date sealed on its own, with its allergen label.'}</p>
+        <div class="tier-body"><div class="tier-main">
         <fieldset class="kinds" data-kinds="stuffed" hidden>
           <legend class="sr">{ar ? 'النوع' : 'Kind'}</legend>
           {stuffedKinds.map((k, i) => <label><input type="radio" name="kind-stuffed" value={k.key} checked={i === 0} /><span>{k.name[lang]}</span></label>)}
@@ -245,6 +251,7 @@ const DATE_PICKS = [
           </article>)}
         </div>
         <p class="muted more"><a href={path(lang, 'shop/stuffed-12')}>{ar ? 'عن التمر المحشي' : 'About the stuffed dates'}</a></p>
+        </div><div class="tier-art" aria-hidden="true"><BoxArt p={BY_ID['stuffed-12']} lang={lang} /></div></div>
       </div>
     </section>
 
@@ -426,6 +433,25 @@ const DATE_PICKS = [
   .ed-buy { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
   .ed-buy .price { font-weight: 700; }
   .more { margin-top: 16px; }
+  /* Dates tiers: the box drawing beside the cards on wide screens (the package, opened). */
+  .tier-body { display: grid; gap: 28px; }
+  .tier-art { display: none; }
+  @media (min-width: 900px) {
+    .tier-body { grid-template-columns: minmax(0, 1fr) minmax(0, 380px); align-items: start; }
+    .tier-art { display: block; border-radius: 36px; border-bottom-left-radius: 8px; overflow: hidden; aspect-ratio: 4 / 5; }
+    .tier-main .ed-grid { grid-template-columns: minmax(0, 560px); }
+  }
+  /* Speech-bubble cards: one tightened tail corner (DESIGN.md). */
+  .ed, .beans-facts li { border-bottom-left-radius: 6px; }
+  /* Yemeni beans: a dark band, like the black box. */
+  #view-beans { --ink: #F5EFE3; --ink-2: #CDBFA9; --sheet: #2A231E; --line: #43382F; --paper-2: #2A231E; --bunn: #CF9C0C; --paper: #1C1714; background: #1C1714; color: var(--ink); }
+  #view-beans .fam { background: transparent; }
+  #view-beans .beans-lead { color: #F5EFE3; }
+  #view-beans .slogan { color: #CF9C0C; }
+  #view-beans .h-ar { color: #CDBFA9; }
+  #view-beans :global(.black-box > rect:first-child) { fill: #2A231E; }
+  #view-beans :global(.sold-out-tag), #view-beans :global(.allergy) { color: #E7C866; }
+  #view-beans :global(.black-box > ellipse) { opacity: .35; }
   .beans-facts { list-style: none; margin: -8px 0 26px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px 18px; }
   .beans-facts li { display: grid; gap: 2px; padding: 12px 14px; border-radius: 16px; background: var(--sheet); box-shadow: inset 0 0 0 1.5px var(--line); font-size: 14.5px; }
   .beans-facts b { font-family: var(--display); font-size: 17px; }
