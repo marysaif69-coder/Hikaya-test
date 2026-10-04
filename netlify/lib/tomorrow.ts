@@ -32,7 +32,9 @@ ${gifts.length ? `<h3 style="margin:16px 0 6px">Gift messages</h3><ul>${gifts.ma
 ${notes.length ? `<h3 style="margin:16px 0 6px">Notes</h3><ul>${notes.map(o => `<li>${esc(o.ref)} ${esc(o.name)}: ${esc([o.notes, o.team_note].filter(Boolean).join(' · '))}</li>`).join('')}</ul>` : ''}
 <p style="margin-top:18px"><a href="${site}/admin/" style="color:#A93B28">Day sheet and packing slips</a> · <a href="${site}/admin/driver/" style="color:#A93B28">Driver page</a></p></div>`;
   const text = `Tomorrow, ${nice}\n${pick.length} pickups, ${del.length} deliveries\n\nTo pack:\n${pack.map(p => `${p.qty} x ${p.name_en}${p.option ? ` (${p.option})` : ''}`).join('\n')}\n\n${site}/admin/`;
-  const team = [...new Set([...env('ADMIN_EMAILS').split(','), ...env('STAFF_EMAILS').split(',')].map((e: string) => e.trim().toLowerCase()).filter(Boolean))];
+  // Owners and helpers: the ones in Netlify, and the helpers added in Admin → Team.
+  const helpers = await sql`SELECT email FROM team_members WHERE role = 'helper' AND status <> 'off'`;
+  const team = [...new Set([...env('ADMIN_EMAILS').split(','), ...env('STAFF_EMAILS').split(','), ...helpers.map(h => String(h.email))].map((e: string) => e.trim().toLowerCase()).filter(Boolean))];
   for (const to of team) await send({ to, subject: `Tomorrow: ${pick.length} pickup${pick.length === 1 ? '' : 's'}, ${del.length} deliver${del.length === 1 ? 'y' : 'ies'} (${nice})`, html, text, kind: 'team-tomorrow' });
   return orders.length;
 }

@@ -1248,4 +1248,11 @@ const rush2 = await Promise.all([1, 2].map(i => order({ email: `rushcap${i}@exam
 assert.deepEqual(rush2.map(r => r.status).sort(), [201, 409]); ok('the same for a product\'s daily limit');
 await call(admin, '/api/admin/products/hadrami', { cookie: adm, body: { daily_cap: null } });
 
+// ---------- helpers added in the desk get the run sheet ----------
+await call(admin, '/api/admin/team', { cookie: adm, body: { email: 'deskhelper@example.com', role: 'helper', name: 'Desk Helper' } });
+const { tomorrowEmail } = await import('../netlify/lib/tomorrow');
+await order({ email: 'runsheet@example.com', day: '2027-08-05' });
+const rsM = sent.length; await tomorrowEmail('2027-08-05');
+assert.ok(sent.slice(rsM).some(m => m.to[0] === 'deskhelper@example.com' && /^Tomorrow: /.test(m.subject))); ok('helpers added in Admin → Team get the evening run sheet');
+
 console.log(`\n${pass} checks passed`);
