@@ -31,8 +31,8 @@
       "ar": "قهوة يمنية"
     },
     "taste": {
-      "en": "Bright · cardamom · round",
-      "ar": "مشرقة · هيل · مستديرة"
+      "en": "Soft · fruity · cardamom",
+      "ar": "ناعمة · فاكهية · هيل"
     },
     "notes": {
       "en": "Yemeni-style, from Ethiopian beans. Medium-light roast, fine ground, with cardamom mixed in. The ginger comes in the packs.",
@@ -57,8 +57,8 @@
       "ar": "جُبَني"
     },
     "taste": {
-      "en": "Dried cherry · round",
-      "ar": "كرز مجفف · مستديرة"
+      "en": "Dried fruit · soft · sweet",
+      "ar": "فاكهة مجففة · ناعمة · حلوة"
     },
     "notes": {
       "en": "Yemeni-style coffee with qishr, its own dried husk, ground together in one bag. [TBD: with ginger or plain]",
@@ -135,8 +135,8 @@
       "ar": "شامية سادة"
     },
     "taste": {
-      "en": "Thick · bittersweet · plain",
-      "ar": "كثيفة · مُرّة حلوة · سادة"
+      "en": "Thick · chocolatey · plain",
+      "ar": "كثيفة · شوكولاتية · سادة"
     },
     "notes": {
       "en": "The same Shami coffee, nothing added.",
@@ -187,20 +187,20 @@
       "ar": "قصيمية"
     },
     "taste": {
-      "en": "Rich · saffron · warm spice",
-      "ar": "غنية · زعفران · بهار دافئ"
+      "en": "Velvety · warm spice · saffron",
+      "ar": "مخملية · بهار دافئ · زعفران"
     },
     "notes": {
-      "en": "Gulf coffee with the Qassim blend pack and the saffron packet.",
-      "ar": "قهوة خليجية مع الخلطة القصيمية وظرف الزعفران."
+      "en": "Gulf coffee with the Qassim spice blend and the saffron packet. Add your own milk as you make it.",
+      "ar": "قهوة خليجية مع خلطة البهار القصيمية وظرف الزعفران. وتضيف حليبك عند التحضير."
     },
     "story": {
-      "en": "The Qassim way: the same pale coffee, richer in the cup.",
-      "ar": "على طريقة القصيم: القهوة الشقراء نفسها، أغنى في الفنجان."
+      "en": "The Qassim way: the same pale coffee with warm spice, and milk added at home for a velvety cup.",
+      "ar": "على طريقة القصيم: القهوة الشقراء نفسها بدفء البهار، ويُضاف الحليب في البيت لقوام مخملي."
     },
     "bunn": {
-      "en": "Richer than my brothers.",
-      "ar": "أغنى من إخوتي."
+      "en": "Add your milk. I’ll do the rest.",
+      "ar": "أضف حليبك، وأنا أكمل الباقي."
     },
     "why": {
       "en": "Sukkari, from Qassim too.",
@@ -213,8 +213,8 @@
       "ar": "حجازية"
     },
     "taste": {
-      "en": "Fragrant · saffron · spice",
-      "ar": "عطرة · زعفران · بهار"
+      "en": "Fragrant · aromatic spice · saffron",
+      "ar": "عطرة · بهار زكي · زعفران"
     },
     "notes": {
       "en": "Gulf coffee with the Hijazi blend pack and the saffron packet.",
@@ -239,8 +239,8 @@
       "ar": "حضرمية"
     },
     "taste": {
-      "en": "[TBD]",
-      "ar": "[يُحدد لاحقاً]"
+      "en": "Warm · ginger · spice",
+      "ar": "دافئة · زنجبيل · بهار"
     },
     "notes": {
       "en": "Yemeni qahwa with the Hadrami pack: ginger and the Hadrami additions.",
@@ -265,8 +265,8 @@
       "ar": "رداعية"
     },
     "taste": {
-      "en": "Nutty · sesame · warm",
-      "ar": "مكسرات · سمسم · دافئة"
+      "en": "Nutty · toasted sesame · ginger",
+      "ar": "مكسرات · سمسم محمّص · زنجبيل"
     },
     "notes": {
       "en": "Yemeni qahwa with the Rada’i pack: ginger, roasted sesame and almonds.",
@@ -291,20 +291,20 @@
       "ar": "بيضانية"
     },
     "taste": {
-      "en": "Toasty · grain · warm",
-      "ar": "محمّصة · حبوب · دافئة"
+      "en": "Toasty · lightly sweet · ginger",
+      "ar": "محمّصة · حلوة قليلاً · زنجبيل"
     },
     "notes": {
-      "en": "Yemeni qahwa with the Baydani pack: ginger and roasted sorghum.",
-      "ar": "قهوة يمنية مع الخلطة البيضانية: زنجبيل وذرة رفيعة محمّصة."
+      "en": "Yemeni qahwa with the Baydani pack: ginger and roasted sorghum, toasty and lightly sweet.",
+      "ar": "قهوة يمنية مع الخلطة البيضانية: زنجبيل وذرة محمّصة، محمّصة وحلوة قليلاً."
     },
     "story": {
-      "en": "Al-Bayda's way: grain in the pot with the coffee.",
-      "ar": "على طريقة البيضاء: الحبوب في الإبريق مع القهوة."
+      "en": "Al-Bayda's way: toasty and lightly sweet, warm with ginger.",
+      "ar": "على طريقة البيضاء: محمّصة وحلوة قليلاً، بدفء الزنجبيل."
     },
     "bunn": {
-      "en": "They brewed me with sorghum.",
-      "ar": "غلوني مع الذرة."
+      "en": "Al-Bayda’s warmth in my cup.",
+      "ar": "دفء البيضاء في فنجاني."
     },
     "why": {
       "en": "Khalas toffee with a toasty cup.",
@@ -383,12 +383,12 @@
       "ar": "خلطة قصيمية"
     },
     "notes": {
-      "en": "The Qassimi blend for Gulf coffee. Use it with the saffron packet.",
-      "ar": "الخلطة القصيمية للقهوة الخليجية، تُستعمل مع ظرف الزعفران."
+      "en": "The Qassimi spice blend for Gulf coffee. Use it with the saffron packet, and add your own milk as you make it.",
+      "ar": "خلطة البهار القصيمية للقهوة الخليجية، تُستعمل مع ظرف الزعفران، وتضيف حليبك عند التحضير."
     },
     "contents": {
-      "en": "Spices and milk powder. [TBD: full list]",
-      "ar": "بهارات وحليب مجفف. [يُحدد لاحقاً: القائمة الكاملة]"
+      "en": "Qassimi spices. No milk: you add your own. [TBD: full list]",
+      "ar": "بهارات قصيمية. بلا حليب: تضيف حليبك بنفسك. [يُحدد لاحقاً: القائمة الكاملة]"
     }
   },
   "pack-hijazi": {
@@ -439,8 +439,8 @@
       "ar": "خلطة بيضانية"
     },
     "notes": {
-      "en": "Ginger and sorghum, for Yemeni qahwa the way Al-Bayda makes it.",
-      "ar": "زنجبيل وذرة رفيعة، للقهوة اليمنية على طريقة البيضاء."
+      "en": "Ginger and roasted sorghum, for Yemeni qahwa the way Al-Bayda makes it: toasty and lightly sweet.",
+      "ar": "زنجبيل وذرة محمّصة، للقهوة اليمنية على طريقة البيضاء: محمّصة وحلوة قليلاً."
     },
     "contents": {
       "en": "Ginger, roasted sorghum. [TBD: the richer version]",

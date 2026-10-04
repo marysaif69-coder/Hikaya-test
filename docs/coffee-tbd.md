@@ -20,7 +20,9 @@ the server refuses the order until a price is set:
 - Saffron amount per pot, and when the Qassim/Hijazi packs go in
 - Hadrami pack contents (copy is written to work either way; allergens shown as "to be confirmed")
 - Hijazi blend: with or without mastic (allergens "to be confirmed")
-- Qassim pack: full list; may contain barley (milk is shown)
+- Qassim pack: full list (spices only, no milk: the customer adds their own milk for Qassimi); may contain barley
+- How much milk per pot for Qassimi, and when it goes in
+- Taste notes for every coffee and style are drafts from research: confirm or rewrite them after the tastings
 - Baydani: the richer version
 - Jubani: with ginger or plain
 - Qishr: roasted or raw husk; size kept at 100 g

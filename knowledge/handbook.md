@@ -21,8 +21,9 @@ Edit this file to change what the assistant says, then run the test questions
 
 - Three lines: Gulf coffee, Yemeni coffee and Shami coffee. Each bag holds the coffee and its everyday spice only: Gulf coffee has cardamom mixed in; Yemeni qahwa has cardamom only (no ginger in the bag); Shami comes with cardamom or plain (sada). Jubani (coffee with its own husk) and qishr (dried coffee cherry husk, with ginger) are in the Yemeni line.
 - Family styles: the same bag with its sealed packs, in one box at one price. For Gulf coffee: Najdi (with the saffron packet), Qassimi (Qassim blend pack and saffron), Hijazi (Hijazi blend pack and saffron). For Yemeni qahwa: Hadrami (ginger and the Hadrami additions), Rada'i (ginger, roasted sesame and almonds) and Baydani (ginger and sorghum). The ginger is in these packs, not in the bag; plain Yemeni qahwa is cardamom only.
+- Qassimi is made with milk the customer adds at home (the pack has none), which gives it a velvety cup. Taste notes on the site are drafts until our tastings.
 - Najdi always includes the saffron packet: the saffron is what makes it Najdi. Gulf coffee without saffron is called "Gulf coffee, cardamom only", not Najdi.
-- Why packs: one fresh bag serves many families' ways, and the spices with allergens (milk, sesame, almonds, grain) stay sealed in their own packs, never in the coffee. Saffron is kept in its own packet so it stays bright until the pot.
+- Why packs: one fresh bag serves many families' ways, and the additions with allergens (sesame, almonds, grain) stay sealed in their own packs, never in the coffee. Saffron is kept in its own packet so it stays bright until the pot.
 - Packs are also sold on their own ("Just the pack") as a refill for a bag the customer already has. If someone buys a pack without its bag, check they have the bag at home.
 - New to it? The discovery packs (in Arabic: تذوّق النكهة الخليجية and تذوّق النكهة اليمنية): Taste the Gulf (250 g Gulf coffee, a small Qassim pack, a small Hijazi pack and the saffron packet) and Taste Yemen (250 g Yemeni qahwa with small Hadrami, Rada'i and Baydani packs).
 - Not sure which? The three-question guide is at /en/find/ (Arabic: /ar/find/).
@@ -150,7 +151,7 @@ chooses replacement or refund; you never decide or promise which one.
 
 ## Health, diet and ingredients
 
-- Ingredients are listed on each product (see the product list). The coffee bags hold coffee and spices only. Allergens are only in the sealed packs: the Rada'i pack has sesame and almonds, the Baydani pack has sorghum (a grain), the Qassim pack has milk powder (barley not confirmed yet). The Hadrami and Hijazi pack contents are still being finalised: say allergens will be confirmed with the final recipe.
+- Ingredients are listed on each product (see the product list). The coffee bags hold coffee and spices only. Allergens are only in the sealed packs: the Rada'i pack has sesame and almonds, the Baydani pack has sorghum (a grain), the Qassim pack is spices only, with no milk: for Qassimi the customer adds their own milk as part of the recipe (barley in the Qassim blend not confirmed yet). The Hadrami and Hijazi pack contents are still being finalised: say allergens will be confirmed with the final recipe.
 - We have not published allergen statements for our facility or our dates' packing facilities. For allergies, say we cannot confirm cross-contact yet and offer to ask the team.
 - Dates contain natural sugars and fibre. We do not give medical advice: for diabetes, pregnancy, caffeine sensitivity or other health questions, share only the plain facts here and suggest asking their doctor.
 - Qishr is light on caffeine compared with roasted coffee. Do not give caffeine amounts in milligrams.
