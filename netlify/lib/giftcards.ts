@@ -45,16 +45,21 @@ export async function buyGiftCard(b: any, req: Request) {
   return { ref: g.ref as string, payUrl };
 }
 
-/** Marks a gift card paid and emails the code (once). From the Square webhook or the desk. */
+/** Marks a gift card paid and emails the code. From the Square webhook or the desk. The card counts
+ * as sent only once the code email went out; calling it again retries the email until then. The
+ * buyer's "it's on its way" receipt goes with the first code email that goes out. */
 export async function giftCardPaid(ref: string, req?: Request, paymentId: string | null = null) {
   const g = await one`UPDATE gift_cards SET paid_at = COALESCE(paid_at, NOW()), square_payment_id = COALESCE(${paymentId}, square_payment_id) WHERE ref = ${ref} AND cancelled_at IS NULL RETURNING *`;
   if (!g) throw new HttpError(404, 'not-found');
+  let emailStatus = 'sent';
   if (!g.sent_at) {
-    await send(giftCardEmail(mail(g), siteUrl(req)));
-    await send(giftCardReceipt(mail(g), true, siteUrl(req)));
-    await sql`UPDATE gift_cards SET sent_at = NOW() WHERE id = ${g.id}`;
+    emailStatus = await send(giftCardEmail(mail(g), siteUrl(req)));
+    if (emailStatus === 'sent') {
+      await sql`UPDATE gift_cards SET sent_at = NOW() WHERE id = ${g.id}`;
+      await send(giftCardReceipt(mail(g), true, siteUrl(req)));
+    }
   }
-  return g;
+  return { ...g, emailStatus };
 }
 
 /** A gift card sold in person (market, pop-up, at the door): paid on the spot by cash, card on the
@@ -84,11 +89,12 @@ export async function sellGiftCardHere(b: any, by: string, req?: Request) {
   }
   if (!g) throw new HttpError(500, 'ref');
   const sentTo = g.to_email || g.buyer_email || null;
+  let emailStatus: string | null = null;
   if (sentTo) {
-    await send(giftCardEmail(mail(g), siteUrl(req)));
-    await sql`UPDATE gift_cards SET sent_at = NOW() WHERE id = ${g.id}`;
+    emailStatus = await send(giftCardEmail(mail(g), siteUrl(req)));
+    if (emailStatus === 'sent') await sql`UPDATE gift_cards SET sent_at = NOW() WHERE id = ${g.id}`;
   }
-  return { ref: g.ref as string, code: g.code as string, amount_cents: amount, to_name, message, sentTo };
+  return { ref: g.ref as string, code: g.code as string, amount_cents: amount, to_name, message, sentTo, emailStatus };
 }
 
 /** Balance check at checkout. Never says whether an unpaid card exists. */

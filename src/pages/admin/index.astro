@@ -1567,15 +1567,17 @@ import '../../styles/global.css';
       <td class="ref">${esc(g.ref)}${g.paid_at ? `<br><small>${esc(g.code)}</small>` : ''}</td><td>${money(g.amount_cents)}</td><td>${g.paid_at ? money(g.balance_cents) : '–'}</td>
       <td>${esc(g.buyer_name)} → ${esc(g.to_name)}<br><small>${esc(g.to_email || g.buyer_email)}</small></td>
       <td>${g.paid_at ? `Yes, ${esc(GC_PAY[g.payment] ?? g.payment)}${g.sold_by ? `<br><small>in person, ${esc(g.sold_by)}</small>` : ''}` : `<b>Not yet</b> (${esc(GC_PAY[g.payment] ?? g.payment)})`}</td>
-      <td>${g.paid_at ? `<button type="button" class="linkish" data-gcprint="${esc(g.ref)}">Print</button>` : `<button type="button" data-gcpaid="${esc(g.ref)}">Money received</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">None sold yet.</td></tr>');
+      <td>${g.paid_at ? `<button type="button" class="linkish" data-gcprint="${esc(g.ref)}">Print</button>${!g.sent_at && (g.to_email || g.buyer_email) ? ` <button type="button" data-gcresend="${esc(g.ref)}">Email the code again</button>` : ''}` : `<button type="button" data-gcpaid="${esc(g.ref)}">Money received</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">None sold yet.</td></tr>');
   }
   $('gcTable').addEventListener('click', async e => {
     const pr = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-gcprint]');
     if (pr) { const g = giftCards.find(x => x.ref === pr.dataset.gcprint); if (g) printGiftCard({ code: g.code, amount_cents: g.amount_cents, to_name: g.to_name, message: null }); return; }
-    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-gcpaid]');
-    if (!b || !confirm(`Mark ${b.dataset.gcpaid} as paid and email the gift card code?`)) return;
-    const r = await api(`/api/admin/giftcards/${b.dataset.gcpaid}/paid`, {});
-    alert(`Done. The code was emailed to ${r.sentTo}.`); loadGiftCards();
+    const again = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-gcresend]');
+    const b = again ? null : (e.target as HTMLElement).closest<HTMLButtonElement>('[data-gcpaid]');
+    const ref = again?.dataset.gcresend ?? b?.dataset.gcpaid;
+    if (!ref || (b && !confirm(`Mark ${ref} as paid and email the gift card code?`))) return;
+    const r = await api(`/api/admin/giftcards/${ref}/paid`, {});
+    alert(r.emailStatus === 'sent' ? `Done. The code was emailed to ${r.sentTo}.` : 'Paid, but the email did not go out. Print the card or send the code by hand, or press "Email the code again" later.'); loadGiftCards();
   });
 
   const GC_PAY: Record<string, string> = { card: 'card online', 'e-transfer': 'e-Transfer', cash: 'cash', 'card-here': 'card on the reader' };
@@ -1600,7 +1602,7 @@ import '../../styles/global.css';
     if (!(dollarsIn >= 5 && dollarsIn <= 500)) { alert('Amount from $5 to $500.'); return; }
     if (!confirm(`Sell a ${money(Math.round(dollarsIn * 100))} gift card, paid by ${GC_PAY[v('payment')]}?`)) return;
     const g = await api('/api/admin/giftcards/sell', { amount_cents: Math.round(dollarsIn * 100), payment: v('payment'), to_name: v('to_name'), to_email: v('to_email'), buyer_name: v('buyer_name'), buyer_email: v('buyer_email'), message: v('message'), lang: v('lang') });
-    $('gcSold').innerHTML = `<p class="gc-code">Code <b>${esc(g.code)}</b> · ${money(g.amount_cents)}${g.sentTo ? ` · emailed to ${esc(g.sentTo)}` : ' · not emailed: write it on a card or print it'}</p><p><button type="button" class="btn line sm" id="gcPrint">Print a gift card</button></p>`;
+    $('gcSold').innerHTML = `<p class="gc-code">Code <b>${esc(g.code)}</b> · ${money(g.amount_cents)}${g.sentTo ? (g.emailStatus === 'sent' ? ` · emailed to ${esc(g.sentTo)}` : ' · paid, but the email did not go out: print the card or send the code by hand') : ' · not emailed: write it on a card or print it'}</p><p><button type="button" class="btn line sm" id="gcPrint">Print a gift card</button></p>`;
     $('gcPrint').addEventListener('click', () => printGiftCard(g));
     f.reset(); loadGiftCards();
   });

@@ -1177,4 +1177,16 @@ assert.equal((await order({ email: 'reused@example.com', day: '2027-06-24', line
 ok('Najdi no longer carries the old bag\'s price from before the restructure; a price set since is kept');
 await pg.query(`UPDATE product_settings SET price_cents = $1, updated_at = NOW() WHERE product_id = 'najdi'`, [nPrice]);
 
+// ---------- a gift card code email that fails ----------
+const gf = await call(orders, '/api/giftcard', { body: { amount_cents: 5000, buyer_name: 'Noor', buyer_email: 'noor@example.com', to_name: 'Amal', to_email: 'amal@example.com', payment: 'e-transfer', lang: 'en' } });
+const fG = globalThis.fetch;
+globalThis.fetch = (async (url: string, init: any) => { if (String(url).includes('resend') && JSON.parse(init.body).to[0] === 'amal@example.com') return new Response('down', { status: 500, headers: { 'retry-after': '0' } }); return fG(url, init); }) as any;
+const gfPaid = (await call(admin, `/api/admin/giftcards/${gf.data.ref}/paid`, { cookie: adm, body: {} })).data;
+assert.equal(gfPaid.emailStatus, 'failed'); assert.equal((await pg.query(`SELECT sent_at FROM gift_cards WHERE ref = $1`, [gf.data.ref])).rows[0].sent_at, null);
+globalThis.fetch = fG;
+const gfM = sent.length;
+assert.equal((await call(admin, `/api/admin/giftcards/${gf.data.ref}/paid`, { cookie: adm, body: {} })).data.emailStatus, 'sent');
+assert.equal(sent.slice(gfM).filter(m => m.to[0] === 'amal@example.com').length, 1); assert.equal(sent.slice(gfM).filter(m => m.to[0] === 'noor@example.com').length, 1);
+assert.ok((await pg.query(`SELECT sent_at FROM gift_cards WHERE ref = $1`, [gf.data.ref])).rows[0].sent_at); ok('a gift card email that failed is not marked sent, and can be emailed again (once)');
+
 console.log(`\n${pass} checks passed`);

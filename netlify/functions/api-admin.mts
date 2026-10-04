@@ -365,7 +365,7 @@ async function handle(req: Request) {
     if (parts[0] === 'giftcards' && !parts[1] && req.method === 'GET') return json({ giftcards: await listGiftCards() });
     if (parts[0] === 'giftcards' && parts[1] && parts[2] === 'paid' && req.method === 'POST') {
       const g = await giftCardPaid(parts[1], req);
-      return json({ ok: true, sentTo: g.to_email || g.buyer_email });
+      return json({ ok: true, sentTo: g.to_email || g.buyer_email, emailStatus: g.emailStatus });
     }
     if (parts[0] === 'giftcards' && parts[1] === 'sell' && req.method === 'POST') return json(await sellGiftCardHere(await body(req), admin.as?.name ?? admin.email, req));
 
