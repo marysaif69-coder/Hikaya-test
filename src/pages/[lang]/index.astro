@@ -107,6 +107,7 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
       <ol class="story-steps">
         <li><b>{ar ? '١ · الكيس' : '1 · The bag'}</b><span>{ar ? 'خليجية أو يمنية أو شامية: القهوة وبهارها الأساسي فقط.' : 'Gulf, Yemeni or Shami: the coffee and its everyday spice, nothing more.'}</span></li>
         <li><b>{ar ? '٢ · طريقة أهلك' : '2 · Your family’s way'}</b><span>{ar ? 'نجدية، قصيمية، حجازية، حضرمية، رداعية، بيضانية: الكيس مع ظروفه في علبة واحدة.' : 'Najdi, Qassimi, Hijazi, Hadrami, Rada’i, Baydani: the bag with its packs, in one box.'}</span></li>
+        <li class="try"><b>{ar ? 'جديد عليها؟' : 'New to it?'}</b><span>{ar ? 'تذوّق الخليج وتذوّق اليمن: كيس مع ظرف صغير من كل طريقة، لتجد طريقتك.' : 'Taste the Gulf and Taste Yemen: one bag with a small pack of each style, so you find yours.'} <a href={path(lang, 'shop') + '#start'}>{ar ? 'ابدأ من هنا' : 'Start here'}</a></span></li>
         <li><b>{ar ? '٣ · الظرف وحده' : '3 · Just the pack'}</b><span>{ar ? 'حين ينقص عندك، الظرف يأتي وحده للكيس الذي في بيتك.' : 'When you run low, the pack comes on its own, for the bag already in your house.'}</span></li>
       </ol>
     </div>
@@ -236,6 +237,8 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
   .story-steps li { display: grid; gap: 4px; padding: 16px 18px; border-radius: 22px; border-bottom-left-radius: 6px; background: var(--sheet); }
   .story-steps b { font-family: var(--display); font-size: 20px; }
   .story-steps span { color: var(--ink-2); font-size: 15.5px; }
+  .story-steps li.try { background: color-mix(in srgb, var(--tamr) 9%, var(--sheet)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tamr) 40%, transparent); }
+  .story-steps li.try a { color: var(--tamr); font-weight: 600; }
 
   /* ---------- Ramadan window ---------- */
   .ramadan-cta { position: relative; min-height: clamp(560px, 70vw, 760px); display: grid; align-items: center; overflow: hidden; background: var(--bunn); }

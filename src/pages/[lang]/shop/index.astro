@@ -5,6 +5,8 @@ import Pair from '../../../components/Pair.astro';
 import { COFFEES, KITS, PACKS, BOXES, FAMILIES, LINES, type Lang, type CoffeeLine } from '../../../data/products';
 import { path } from '../../../data/i18n';
 import Pouch from '../../../components/Pouch.astro';
+import Sachet from '../../../components/Sachet.astro';
+import { packOf } from '../../../data/products';
 
 export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
 const lang = Astro.params.lang as Lang;
@@ -40,6 +42,26 @@ const T = {
     <Pair lang={lang} size="s" bunn={{ ar: 'من أين نبدأ؟', en: 'Where do we start?' }} tamr={{ ar: 'من الكيس، ثم طريقة أهلك.', en: 'With the bag, then your family’s way.' }} />
   </section>
 
+  <!-- How it works, in one line of pictures: bag + packs = your family's way, all in one box. -->
+  <section class="wrap how" aria-labelledby="how-h">
+    <h2 id="how-h" class="sr">{ar ? 'كيف يعمل' : 'How it works'}</h2>
+    <div class="how-row">
+      <div class="how-item">
+        <span class="how-pic"><Pouch coffee={COFFEES[0]} lang={lang} label={false} /></span>
+        <p><b>{ar ? 'الكيس' : 'The bag'}</b><span>{ar ? 'القهوة وبهارها الأساسي مخلوط فيها: الهيل في الخليجية، والحوائج في اليمنية.' : 'The coffee, with its everyday spice already mixed in: cardamom in the Gulf, hawaij in the Yemeni.'}</span></p>
+      </div>
+      <span class="how-op" aria-hidden="true">+</span>
+      <div class="how-item">
+        <span class="how-pic packs"><Sachet pack={packOf('pack-saffron')!} lang={lang} /><Sachet pack={packOf('pack-qassim')!} lang={lang} /></span>
+        <p><b>{ar ? 'الظروف' : 'The packs'}</b><span>{ar ? 'ما يضيفه أهلك: الزعفران، الخلطة القصيمية، السمسم واللوز... مختومة، وعلى كل ظرف مكوناته.' : 'What your family adds: saffron, the Qassim blend, sesame and almonds... sealed, each with its own label.'}</span></p>
+      </div>
+      <span class="how-op" aria-hidden="true">=</span>
+      <div class="how-item how-end">
+        <p><b>{ar ? 'طريقة أهلك، في علبة واحدة' : 'Your family’s way, in one box'}</b><span>{ar ? 'تختار الطريقة، فتأتي مع ظروفها. لا شيء آخر تشتريه.' : 'Choose a style and its packs come with it. Nothing else to buy.'}</span></p>
+      </div>
+    </div>
+  </section>
+
   <!-- Step 1: choose the coffee. Without JavaScript every panel below simply shows. -->
   <section class="wrap picker" aria-labelledby="pick-h">
     <h2 id="pick-h" class="step"><span>1</span>{ar ? 'اختر قهوتك' : 'Choose your coffee'}</h2>
@@ -56,7 +78,7 @@ const T = {
       ))}
     </div>
     <div class="pick-more" role="tablist" aria-label={ar ? 'خيارات أخرى' : 'More ways in'}>
-      <button type="button" role="tab" class="pill" id="tab-start" aria-controls="start" aria-selected="false" data-pick="start">{ar ? 'جديد عليها؟ ابدأ من هنا' : 'New to it? Start here'}</button>
+      <button type="button" role="tab" class="pill try" id="tab-start" aria-controls="start" aria-selected="false" data-pick="start">{ar ? 'جديد عليها؟ جرّب الطرق كلها في علبة' : 'New to it? Try every style in one box'}</button>
       <button type="button" role="tab" class="pill" id="tab-packs" aria-controls="packs" aria-selected="false" data-pick="packs">{ar ? 'عندي كيس: الظرف وحده' : 'I have a bag: just the pack'}</button>
       <a class="pill ghost" href={path(lang, 'find')}>{ar ? 'لست متأكداً؟ ثلاثة أسئلة' : 'Not sure? Three questions'}</a>
       <a class="pill ghost" href="#dates">{ar ? 'التمر والصناديق' : 'Dates & boxes'}</a>
@@ -74,6 +96,13 @@ const T = {
           </div>
           <h3 class="step"><span>2</span>{l.styles.length ? T.styles[lang] : (ar ? 'اختر كيسك' : 'Choose your bag')}</h3>
           {l.styles.length > 0 && <p class="muted step-note">{T.stylesNote[lang]}</p>}
+          {discovery.filter(k => k.line === l.id).map(k => (
+            <a class="try-box" href={path(lang, `shop/${k.id}`)}>
+              <span class="try-pics">{k.parts.map(x => <Sachet pack={packOf(x.id)!} lang={lang} mini={x.mini} />)}</span>
+              <span class="try-txt"><b>{ar ? `لست متأكداً؟ ${k.name.ar}` : `Not sure which? ${k.name.en}`}</b><span>{k.notes[lang]}</span></span>
+              <span class="try-go" aria-hidden="true">{ar ? '←' : '→'}</span>
+            </a>
+          ))}
           {l.styles.length > 0 && <div class="grid">{l.styles.map(p => <ProductCard p={p} lang={lang} />)}</div>}
           {l.styles.length > 0 && <h4 class="sub-h">{ar ? 'أو الكيس وحده' : 'Or the bag on its own'}</h4>}
           <div class="grid">{l.bases.map(p => <ProductCard p={p} lang={lang} />)}</div>
@@ -138,6 +167,28 @@ const T = {
   .shop-head { display: grid; grid-template-columns: 1.3fr .7fr; gap: 24px 64px; align-items: end; padding-block: clamp(40px, 6vw, 80px) 28px; }
   .shop-head > div { display: grid; gap: 14px; }
   @media (max-width: 860px) { .shop-head { grid-template-columns: 1fr; } }
+  .how { padding-bottom: 28px; }
+  .how-row { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 14px; align-items: center; padding: 18px; border-radius: 28px; border-bottom-left-radius: 6px; background: var(--sheet); }
+  .how-item { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; }
+  .how-item p { margin: 0; display: grid; gap: 2px; }
+  .how-item b { font-family: var(--display); font-size: 18px; }
+  .how-item span { font-size: 14px; color: var(--ink-2); }
+  .how-pic { width: 46px; display: block; }
+  .how-pic.packs { width: 64px; display: flex; gap: 4px; }
+  .how-pic.packs :global(.sachet) { width: 30px; }
+  .how-op { font-family: var(--display); font-size: 30px; color: var(--tamr); }
+  .how-end { grid-template-columns: 1fr; padding: 12px 14px; border-radius: 18px; background: color-mix(in srgb, var(--khalal) 18%, var(--sheet)); }
+  @media (max-width: 860px) { .how-row { grid-template-columns: 1fr; gap: 8px; } .how-op { justify-self: center; line-height: 1; } }
+  .pill.try { background: var(--tamr); color: var(--tamr-ink, #fff); box-shadow: none; }
+  .pill.try[aria-selected='true'] { background: var(--bunn); }
+  .try-box { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; margin: 0 0 28px; padding: 14px 18px; border-radius: 22px; border-bottom-right-radius: 6px; background: var(--sheet); box-shadow: inset 0 0 0 2px var(--tamr); text-decoration: none; color: var(--ink); }
+  .try-box:hover { background: color-mix(in srgb, var(--tamr) 6%, var(--sheet)); }
+  .try-pics { display: flex; gap: 4px; width: 96px; }
+  .try-pics :global(.sachet) { width: 30px; }
+  .try-txt { display: grid; gap: 2px; }
+  .try-txt b { font-family: var(--display); font-size: 19px; color: var(--tamr); }
+  .try-txt span { font-size: 14.5px; color: var(--ink-2); }
+  .try-go { font-size: 22px; color: var(--tamr); }
   .picker { display: grid; gap: 16px; padding-bottom: 36px; }
   .pick-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
   @media (max-width: 760px) { .pick-cards { grid-template-columns: 1fr; gap: 10px; } }

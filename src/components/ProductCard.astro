@@ -30,6 +30,7 @@ const unpriced = p.price == null;
   <div class="pc-body">
     <h3><a href={href}>{p.name[lang]}</a>{lang === 'en' && <span lang="ar">{p.name.ar}</span>}</h3>
     <p class="pc-sub">{sub}</p>
+    {p.kind === 'kit' && p.parts.some(x => x.id === 'pack-saffron') && <p class="badge">{ar ? 'الزعفران في العلبة' : 'Saffron included'}</p>}
     {(p.kind === 'coffee' || p.kind === 'kit') && <p class="pc-taste">{p.taste[lang]}</p>}
     {allergy && (!allergy.none || p.kind === 'pack') && <p class={`allergy ${allergy.none ? 'none' : ''}`}>{allergy.text}</p>}
     {(p.kind === 'coffee' || p.kind === 'kit') && <p class="pc-with">{UI.withDate[lang]} <b>{DATES[p.date].name[lang]}</b></p>}
@@ -69,6 +70,7 @@ const unpriced = p.price == null;
   .pc h3 a:hover { text-decoration: underline; }
   .pc h3 span { font-size: 21px; color: var(--tamr); }
   .pc-sub { font-size: 14.5px; color: var(--ink-2); }
+  .badge { justify-self: start; margin: 4px 0 2px; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--tamr) 12%, var(--sheet)); color: var(--tamr-2); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
   .pc-taste { font-size: 14px; font-weight: 600; color: var(--bunn); }
   .pc-with { font-size: 14.5px; }
   .pc-with b { color: var(--tamr); font-weight: 600; }
