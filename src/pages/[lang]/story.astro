@@ -12,7 +12,7 @@ const CH = {
   bunn: { name: 'بُن', en: 'Bunn · the coffee', pts: { en: ['The traveller and the teller', 'Learned his ways on the terraces of Haraz', 'Bitter, quick, proud', 'Speaks first'], ar: ['المسافر والحكّاء', 'تعلّم طرقه في مدرجات حراز', 'مُرّ وسريع وفخور', 'يتكلم أولاً'] } },
   tamr: { name: 'تمر', en: 'Tamr · the date', pts: { en: ['The host and the listener', 'Of any palm, and knows Al-Ahsa by heart', 'Sweet, patient, teasing', 'Always answers'], ar: ['المضيفة والمستمعة', 'من كل نخلة، وتعرف الأحساء عن ظهر قلب', 'حلوة وصبورة ومشاكسة', 'تردّ دائماً'] } },
 };
-// The logo, piece by piece (official paths), for "Reading the logo".
+// The logo (official paths), drawn large at the top of the page.
 const LOGO = fs.readFileSync('public/brand/logo.svg', 'utf8');
 const [lTamr, lSeed, lBunn, lGroove, lDots] = [...LOGO.matchAll(/<path fill="(#[0-9A-F]+)" d="([^"]+)"\/>/g)].map(m => m[2]);
 const lVb = LOGO.match(/viewBox="([^"]+)"/)![1];
