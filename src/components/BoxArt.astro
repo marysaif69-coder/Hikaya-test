@@ -4,11 +4,10 @@
 // its lid, with what goes inside, or the clear tray of the Everyday dates. 4:5, like the photos.
 import type { Box, Lang } from '../data/products';
 import { DATES, EVERYDAY, RESERVE, PRODUCTS, defaultBoxOpt } from '../data/products';
+import { dateSvg } from '../data/date-art';
 interface Props { p: Box; lang: Lang; sleeve?: 'ramadan' | 'eid' }
 const { p, lang, sleeve } = Astro.props;
 const uid = `${p.id}-${Math.random().toString(36).slice(2, 7)}`;
-const date = 'M-2 -42c13 0 22 12 22 40c0 27-9 44-22 44c-12 0-21-15-21-43c0-29 8-41 21-41z';
-const lines = 'M-12 -18q6 3 11 0M-14 4q7 4 14 0M-11 24q6 3 12-1M4 -30q5 2 9-1';
 const tray = p.tier === 'everyday';
 const sealed = p.tier === 'stuffed';
 // Colours of the dates that go in.
@@ -25,7 +24,9 @@ const dArea = { x: area.x + pouchW, y: area.y, w: area.w - pouchW, h: area.h };
 const cols = count >= 24 ? 6 : count === 15 ? 5 : count >= 12 ? (coffees.length ? 3 : 4) : 3;
 const rows = Math.max(1, Math.ceil(count / cols));
 const cw = dArea.w / cols, ch = dArea.h / rows;
-const cells = coffees.length === 2 ? [] : Array.from({ length: count }, (_, i) => ({ x: dArea.x + (i % cols) * cw, y: dArea.y + Math.floor(i / cols) * ch, c: palette[i % palette.length] }));
+// Stuffed boxes: each date opened with its filling (the fillings in turn, as in Mixed).
+const fills = sealed ? p.fillings ?? [] : [];
+const cells = coffees.length === 2 ? [] : Array.from({ length: count }, (_, i) => ({ x: dArea.x + (i % cols) * cw, y: dArea.y + Math.floor(i / cols) * ch, c: sealed ? '#8E4A22' : palette[i % palette.length], f: fills.length ? fills[i % fills.length] : null }));
 const s = Math.min(cw / 52, ch / 92) * 0.78;
 const ar = lang === 'ar';
 ---
@@ -64,7 +65,7 @@ const ar = lang === 'ar';
     {cells.map(c => (
       <g>
         {!tray && <rect x={c.x + 3} y={c.y + 3} width={cw - 6} height={ch - 6} rx="10" fill="#5A3A28" />}
-        <g transform={`translate(${c.x + cw / 2} ${c.y + ch / 2}) scale(${s})`}><path d={date} fill={c.c} /><path d={lines} stroke="#33211A" stroke-opacity=".28" stroke-width="2" fill="none" stroke-linecap="round" /></g>
+        <g transform={`translate(${c.x + cw / 2} ${c.y + ch / 2}) scale(${s})`} set:html={dateSvg(c.c, c.f)} />
         {sealed && <rect x={c.x + 7} y={c.y + 7} width={cw - 14} height={ch - 14} rx="9" fill="#FFFFFF" fill-opacity=".22" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="2" />}
       </g>
     ))}

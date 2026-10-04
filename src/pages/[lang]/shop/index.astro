@@ -4,6 +4,7 @@ import ProductCard from '../../../components/ProductCard.astro';
 import { COFFEES, KITS, PACKS, BOXES, FAMILIES, LINES, DATES, EVERYDAY, FILLINGS, ALLERGENS, MIXED, varietiesOf, mixedOk, priceText, type Lang, type CoffeeLine, type Box, type DateId, type FillingId } from '../../../data/products';
 import { path } from '../../../data/i18n';
 import Pouch from '../../../components/Pouch.astro';
+import { dateSvg } from '../../../data/date-art';
 
 export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
 const lang = Astro.params.lang as Lang;
@@ -33,18 +34,22 @@ const BY_ID = Object.fromEntries(BOXES.map(b => [b.id, b]));
 const SIZES = ['dates-250', 'date-box', 'dates-1kg'].map(id => BY_ID[id]);
 const reserve = BOXES.filter(b => b.tier === 'reserve');
 const stuffed = BOXES.filter(b => b.tier === 'stuffed');
+// One date, or (Mixed) three side by side; stuffed dates show their filling.
+const dateArt = (c: string, filling?: string | null, mix?: { c: string; f?: string | null }[]) => mix
+  ? `<svg viewBox="-72 -46 144 92" aria-hidden="true">${mix.map((m, i) => `<g transform="translate(${(i - 1) * 46} 0) scale(.9)">${dateSvg(m.c, m.f as FillingId | undefined)}</g>`).join('')}</svg>`
+  : `<svg viewBox="-26 -46 52 92" aria-hidden="true">${dateSvg(c, filling as FillingId | undefined)}</svg>`;
 // Reserve and stuffed: like Everyday, one card per kind (a variety, a filling, or Mixed) with a
 // chip per box size (12 or 24); each size is its own product, and the kind is the option.
-type Kind = { key: string; name: { en: string; ar: string }; sub: string; c: string; boxes: Box[] };
+type Kind = { key: string; name: { en: string; ar: string }; sub: string; c: string; boxes: Box[]; art: string };
 const toAr = (n: number) => (ar ? String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]) : String(n));
 const reserveKinds: Kind[] = [
-  ...varietiesOf(reserve[0]).map((v: DateId) => ({ key: v, name: DATES[v].name, sub: `${DATES[v].region[lang]} · ${DATES[v].notes[lang]}`, c: DATES[v].c, boxes: reserve })),
-  { key: 'mixed', name: MIXED, sub: ar ? `من كل صنف بالتساوي: ${toAr(4)} في علبة ١٢، و${toAr(8)} في علبة ٢٤.` : 'An even mix of the three: 4 of each in the 12, 8 of each in the 24.', c: DATES.medjool.c, boxes: reserve.filter(mixedOk) },
+  ...varietiesOf(reserve[0]).map((v: DateId) => ({ key: v, name: DATES[v].name, sub: `${DATES[v].region[lang]} · ${DATES[v].notes[lang]}`, c: DATES[v].c, boxes: reserve, art: dateArt(DATES[v].c) })),
+  { key: 'mixed', name: MIXED, sub: ar ? `من كل صنف بالتساوي: ${toAr(4)} في علبة ١٢، و${toAr(8)} في علبة ٢٤.` : 'An even mix of the three: 4 of each in the 12, 8 of each in the 24.', c: DATES.medjool.c, boxes: reserve.filter(mixedOk), art: dateArt('', null, varietiesOf(reserve[0]).map(v => ({ c: DATES[v].c }))) },
 ];
 const contains = (keys: FillingId[]) => (ar ? 'يحتوي على: ' : 'Contains: ') + [...new Set(keys.flatMap(k => FILLINGS[k].allergens))].map(a => ALLERGENS[a][lang]).join(ar ? '، ' : ', ');
 const stuffedKinds: Kind[] = [
-  ...(stuffed[0].fillings ?? []).map((f: FillingId) => ({ key: f, name: FILLINGS[f].name, sub: contains([f]) + (FILLINGS[f].maybe ? ` ${FILLINGS[f].maybe![lang]}` : ''), c: DATES.mufattal.c, boxes: stuffed })),
-  ...(stuffed.some(mixedOk) ? [{ key: 'mixed', name: MIXED, sub: `${ar ? 'كل الحشوات بالتساوي. ' : 'All the fillings, evenly. '}${contains(stuffed[0].fillings ?? [])}`, c: DATES.mufattal.c, boxes: stuffed.filter(mixedOk) }] : []),
+  ...(stuffed[0].fillings ?? []).map((f: FillingId) => ({ key: f, name: FILLINGS[f].name, sub: contains([f]) + (FILLINGS[f].maybe ? ` ${FILLINGS[f].maybe![lang]}` : ''), c: DATES.mufattal.c, boxes: stuffed, art: dateArt(DATES.mufattal.c, f) })),
+  ...(stuffed.some(mixedOk) ? [{ key: 'mixed', name: MIXED, sub: `${ar ? 'كل الحشوات بالتساوي. ' : 'All the fillings, evenly. '}${contains(stuffed[0].fillings ?? [])}`, c: DATES.mufattal.c, boxes: stuffed.filter(mixedOk), art: dateArt('', null, (stuffed[0].fillings ?? []).slice(0, 3).map(f => ({ c: DATES.mufattal.c, f }))) }] : []),
 ];
 // The gift boxes: Coffee & Dates, Two Coffees, Reserve and Stuffed (12), and Four Palms.
 const gifts = ['guest-box', 'coffee-duo', 'reserve-12', 'stuffed-12', 'four-palms'].map(id => BY_ID[id]);
@@ -53,7 +58,6 @@ const DATE_PICKS = [
   { id: 'reserve', name: { ar: 'تمر النخبة', en: 'Reserve' }, sub: { ar: 'سكري ملكي مفتّل، عجوة، مجدول', en: 'Royal Sukkari Mufattal, Ajwa, Medjool' }, c: DATES.ajwa.c, badge: true },
   { id: 'stuffed', name: { ar: 'تمر محشي', en: 'Stuffed' }, sub: { ar: 'فستق، كاجو، كريمة البسكويت…', en: 'Pistachio, cashew, biscuit cream…' }, c: DATES.mufattal.c },
 ];
-const dateArt = (c: string) => `<svg viewBox="-26 -46 52 92" aria-hidden="true"><path fill="${c}" d="M-2 -42c13 0 22 12 22 40c0 27-9 44-22 44c-12 0-21-15-21-43c0-29 8-41 21-41z"/><path d="M-12 -18q6 3 11 0M-14 4q7 4 14 0M-11 24q6 3 12-1M4 -30q5 2 9-1" stroke="#33211A" stroke-opacity=".3" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`;
 ---
 <Base lang={lang} title={ar ? 'المتجر' : 'Shop'} current="shop">
   <section class="wrap shop-head">
@@ -142,27 +146,31 @@ const dateArt = (c: string) => `<svg viewBox="-26 -46 52 92" aria-hidden="true">
 
   <div id="view-dates" role="tabpanel" aria-labelledby="view-tab-dates" data-view-panel="dates">
     <section class="wrap picker" aria-label={ar ? 'اختر تمرك' : 'Choose your dates'}>
-      <div class="pick-cards three">
+      <div class="pick-cards three" role="tablist" aria-label={ar ? 'اختر تمرك' : 'Choose your dates'}>
         {DATE_PICKS.map(d => (
-          <a class="pick" href={`#${d.id}`} data-date-pick={d.id}>
-            <span class="pick-bag date-art" set:html={dateArt(d.c)} />
+          <button type="button" role="tab" class="pick" id={`dtab-${d.id}`} aria-controls={d.id} aria-selected="false" data-dpick={d.id}>
+            <span class="pick-bag date-art" set:html={d.id === 'stuffed' ? dateArt(d.c, 'pistachio') : dateArt(d.c)} />
             <span class="pick-txt">
               <b>{d.name[lang]}{!ar && <span lang="ar" class="pick-ar">{d.name.ar}</span>}</b>
               <small>{d.sub[lang]}</small>
               {d.badge && <em class="badge">{ar ? 'ننصح بها' : 'Our pick'}{!ar && <span lang="ar"> · ننصح بها</span>}</em>}
             </span>
-          </a>
+          </button>
         ))}
       </div>
       <p class="pick-more"><a class="link" href="#gifts">{ar ? 'هدية؟ علب الهدايا مع القهوة' : 'A gift? Boxes with coffee'}</a></p>
     </section>
 
-    <section class="fam dsec" id="everyday" aria-labelledby="h-everyday">
+    <section class="fam dsec" id="everyday" aria-labelledby="h-everyday" data-dpanel="everyday">
       <div class="wrap">
         <div class="panel-head"><h2 id="h-everyday" class="h-m">{ar ? 'تمر كل يوم' : 'Everyday dates'}</h2><p class="muted">{ar ? 'بالوزن، للبيت، في علبة شفافة.' : 'By weight, for the house, in a clear tray.'}</p></div>
+        <fieldset class="kinds" data-kinds="everyday" hidden>
+          <legend class="sr">{ar ? 'النوع' : 'Kind'}</legend>
+          {EVERYDAY.map((k, i) => <label><input type="radio" name="kind-everyday" value={k} checked={i === 0} /><span>{DATES[k].name[lang]}</span></label>)}
+        </fieldset>
         <div class="ed-grid">
           {EVERYDAY.map(v => { const d = DATES[v]; const def = BY_ID['date-box']; return (
-            <article class="ed" data-chips={v}>
+            <article class="ed" data-chips={v} data-kind={v} data-kind-of="everyday">
               <span class="ed-art" set:html={dateArt(d.c)} />
               <div class="ed-txt">
                 <h3>{d.name[lang]}{!ar && <span lang="ar">{d.name.ar}</span>}</h3>
@@ -182,13 +190,17 @@ const dateArt = (c: string) => `<svg viewBox="-26 -46 52 92" aria-hidden="true">
       </div>
     </section>
 
-    <section class="fam dsec alt" id="reserve" aria-labelledby="h-reserve">
+    <section class="fam dsec alt" id="reserve" aria-labelledby="h-reserve" data-dpanel="reserve">
       <div class="wrap">
         <div class="panel-head"><h2 id="h-reserve" class="h-m">{ar ? 'تمر النخبة' : 'Reserve dates'} <em class="badge">{ar ? 'ننصح بها' : 'Our pick'}</em></h2></div>
         <p class="muted panel-note">{ar ? 'تمر كل يوم بالوزن للبيت؛ والنخبة أكبر وأعتنى بها، في علب.' : 'Everyday dates by weight for the house; Reserve dates are larger and more carefully kept, boxed.'}</p>
+        <fieldset class="kinds" data-kinds="reserve" hidden>
+          <legend class="sr">{ar ? 'النوع' : 'Kind'}</legend>
+          {reserveKinds.map((k, i) => <label><input type="radio" name="kind-reserve" value={k.key} checked={i === 0} /><span>{k.name[lang]}</span></label>)}
+        </fieldset>
         <div class="ed-grid">
-          {reserveKinds.map(k => <article class="ed" data-chips={`reserve-${k.key}`}>
-            <span class="ed-art" set:html={dateArt(k.c)} />
+          {reserveKinds.map(k => <article class="ed" data-chips={`reserve-${k.key}`} data-kind={k.key} data-kind-of="reserve">
+            <span class="ed-art" set:html={k.art} />
             <div class="ed-txt">
               <h3>{k.name[lang]}{!ar && <span lang="ar">{k.name.ar}</span>}</h3>
               <p class="muted">{k.sub}</p>
@@ -204,13 +216,17 @@ const dateArt = (c: string) => `<svg viewBox="-26 -46 52 92" aria-hidden="true">
       </div>
     </section>
 
-    <section class="fam dsec" id="stuffed" aria-labelledby="h-stuffed">
+    <section class="fam dsec" id="stuffed" aria-labelledby="h-stuffed" data-dpanel="stuffed">
       <div class="wrap">
         <div class="panel-head"><h2 id="h-stuffed" class="h-m">{ar ? 'تمر محشي' : 'Stuffed dates'}</h2></div>
         <p class="muted panel-note">{ar ? 'حشوة واحدة لكل علبة، أو مشكّل. كل تمرة مغلّفة وحدها، مع ملصق مسببات الحساسية.' : 'One filling per box, or Mixed. Each date sealed on its own, with its allergen label.'}</p>
+        <fieldset class="kinds" data-kinds="stuffed" hidden>
+          <legend class="sr">{ar ? 'النوع' : 'Kind'}</legend>
+          {stuffedKinds.map((k, i) => <label><input type="radio" name="kind-stuffed" value={k.key} checked={i === 0} /><span>{k.name[lang]}</span></label>)}
+        </fieldset>
         <div class="ed-grid">
-          {stuffedKinds.map(k => <article class="ed" data-chips={`stuffed-${k.key}`}>
-            <span class="ed-art" set:html={dateArt(k.c)} />
+          {stuffedKinds.map(k => <article class="ed" data-chips={`stuffed-${k.key}`} data-kind={k.key} data-kind-of="stuffed">
+            <span class="ed-art" set:html={k.art} />
             <div class="ed-txt">
               <h3>{k.name[lang]}{!ar && <span lang="ar">{k.name.ar}</span>}</h3>
               <p class="muted allergy">{k.sub}</p>
@@ -226,7 +242,7 @@ const dateArt = (c: string) => `<svg viewBox="-26 -46 52 92" aria-hidden="true">
       </div>
     </section>
 
-    <section class="fam dsec alt" id="gifts" aria-labelledby="h-gifts">
+    <section class="fam dsec alt" id="gifts" aria-labelledby="h-gifts" data-dpanel="gifts">
       <div class="wrap">
         <div class="panel-head"><h2 id="h-gifts" class="h-m">{ar ? 'علب الهدايا' : 'Gift boxes'}</h2><p class="muted">{ar ? 'قهوة وتمر بالحزام الذهبي، لأي زيارة.' : 'Coffee and dates in the gold sleeve, for any visit.'}</p></div>
         <p class="muted panel-note" data-season="ramadan eid">{ar ? 'في رمضان والعيد: اختر ملصق رمضان أو العيد في صفحة العلبة.' : 'In Ramadan and Eid: choose the Ramadan or Eid sticker on the box’s page.'}</p>
@@ -272,6 +288,22 @@ const dateArt = (c: string) => `<svg viewBox="-26 -46 52 92" aria-hidden="true">
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
     const n = viewTabs[(i + 1) % 2]; n.focus(); n.click();
   }));
+  // Dates: Everyday, Reserve, Stuffed (and the gift boxes) one at a time, like the coffees; inside
+  // each, the kind chosen shows its card. Without JavaScript everything shows.
+  const dtabs = [...document.querySelectorAll<HTMLButtonElement>('[data-dpick]')];
+  const dpanels = [...document.querySelectorAll<HTMLElement>('[data-dpanel]')];
+  function chooseDates(id: string, scroll: boolean) {
+    dtabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.dpick === id)));
+    dpanels.forEach(p => { p.hidden = p.dataset.dpanel !== id; });
+    if (scroll) requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: motion(), block: 'start' }));
+  }
+  dtabs.forEach(t => t.addEventListener('click', () => { chooseDates(t.dataset.dpick!, true); history.replaceState(null, '', `#${t.dataset.dpick}`); }));
+  document.querySelectorAll<HTMLFieldSetElement>('[data-kinds]').forEach(f => {
+    const tier = f.dataset.kinds!;
+    const cards = [...document.querySelectorAll<HTMLElement>(`[data-kind-of="${tier}"]`)];
+    const show = () => { const v = f.querySelector<HTMLInputElement>('input:checked')?.value; cards.forEach(c => { c.hidden = c.dataset.kind !== v; }); };
+    f.hidden = false; f.addEventListener('change', show); show();
+  });
   const fromHash = () => {
     const h = location.hash.slice(1);
     if (ids.includes(h)) { setView('coffee'); choose(h, true); return true; }
@@ -279,6 +311,7 @@ const dateArt = (c: string) => `<svg viewBox="-26 -46 52 92" aria-hidden="true">
     if (h === 'ramadan' || h === 'eid') { location.replace(`/${document.documentElement.lang === 'ar' ? 'ar' : 'en'}/${h}/`); return true; }
     if (DATE_IDS.includes(h)) {
       setView('dates');
+      chooseDates(h === 'dates' ? 'everyday' : h, false);
       const el = h === 'dates' ? document.getElementById('topTabs') : document.getElementById(h);
       requestAnimationFrame(() => el?.scrollIntoView({ behavior: motion(), block: 'start' }));
       return true;
@@ -286,6 +319,7 @@ const dateArt = (c: string) => `<svg viewBox="-26 -46 52 92" aria-hidden="true">
     return false;
   };
   tabs.forEach(t => t.setAttribute('aria-selected', 'false')); panels.forEach(p => { p.hidden = p.dataset.panel !== 'gulf'; }); tabs[0].setAttribute('aria-selected', 'true');
+  chooseDates('everyday', false);
   if (!fromHash()) setView('coffee');
   addEventListener('hashchange', fromHash);
   // Dates cards (Everyday, Reserve, Stuffed): the size chips set what the Add button adds, its price
@@ -343,6 +377,13 @@ const dateArt = (c: string) => `<svg viewBox="-26 -46 52 92" aria-hidden="true">
   .ed-buy { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
   .ed-buy .price { font-weight: 700; }
   .more { margin-top: 16px; }
+  .kinds { border: 0; padding: 0; margin: 0 0 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .kinds label { position: relative; }
+  .kinds input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .kinds span { display: inline-block; padding: 9px 16px; border-radius: 999px; background: var(--sheet); box-shadow: inset 0 0 0 1.5px var(--line); font-weight: 600; font-size: 15px; }
+  .kinds input:checked + span { background: var(--bunn); color: var(--paper); box-shadow: none; }
+  .kinds input:focus-visible + span { outline: 2.5px solid var(--tamr); outline-offset: 2px; }
+  button.pick { font: inherit; }
   .more a { color: var(--tamr); font-weight: 600; }
   .shop-head { display: grid; gap: 10px; padding-block: clamp(36px, 5vw, 64px) 24px; }
   .shop-head > * { max-width: 760px; }
