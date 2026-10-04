@@ -35,7 +35,10 @@ const size = (t: string) => (t.length <= 12 ? 1 : t.length <= 18 ? .86 : t.lengt
           </div>
           <p class="mark"><b>حكاية</b><small>HIKAYA · @hikaya.yyc</small></p>
         </div>
-        <figcaption><button type="button" class="save" data-save={i}>{ar ? 'احفظ الصورة' : 'Save image'}</button></figcaption>
+        <figcaption>
+          {!ar && <p class="en-lines"><span>{c.bunn.en}</span> <span>{c.tamr.en}</span></p>}
+          <button type="button" class="save" data-save={i} aria-label={ar ? `احفظ المحادثة ${i + 1} صورة` : `Save conversation ${i + 1} as an image`}>{ar ? 'احفظ الصورة' : 'Save image'}</button>
+        </figcaption>
       </figure>
     ))}
   </section>
@@ -46,12 +49,18 @@ const size = (t: string) => (t.length <= 12 ? 1 : t.length <= 18 ? .86 : t.lengt
   document.querySelectorAll<HTMLButtonElement>('[data-save]').forEach(b => b.addEventListener('click', async () => {
     const card = document.getElementById(`bt-${b.dataset.save}`)!;
     b.disabled = true;
+    // Instagram portrait, 1080 × 1350: a full-size copy drawn off screen (stretching the small card
+    // breaks the letter spacing), with the English lines inside the bubbles as on the posts.
+    const holder = document.createElement('div');
+    holder.style.cssText = 'position:fixed;left:-20000px;top:0;width:1080px;height:1350px;pointer-events:none';
+    const copy = card.cloneNode(true) as HTMLElement;
+    copy.removeAttribute('id'); copy.classList.add('export');
+    holder.append(copy); document.body.append(holder);
     try {
       await document.fonts.ready;
-      // Instagram portrait: 1080 × 1350.
-      const url = await toPng(card, { pixelRatio: 1, canvasWidth: 1080, canvasHeight: 1350, backgroundColor: '#F5EFE3', style: { borderRadius: '0', boxShadow: 'none' } });
+      const url = await toPng(copy, { pixelRatio: 1, width: 1080, height: 1350, backgroundColor: '#F5EFE3', style: { borderRadius: '0', boxShadow: 'none' } });
       const a = document.createElement('a'); a.href = url; a.download = `hikaya-bunn-tamr-${Number(b.dataset.save) + 1}.png`; a.click();
-    } finally { b.disabled = false; }
+    } finally { holder.remove(); b.disabled = false; }
   }));
 </script>
 
@@ -61,13 +70,19 @@ const size = (t: string) => (t.length <= 12 ? 1 : t.length <= 18 ? .86 : t.lengt
   .small a { color: var(--tamr); font-weight: 600; }
   .bt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 28px; padding-bottom: 72px; }
   .bt { margin: 0; display: grid; gap: 10px; }
+  .bt figcaption { display: grid; gap: 8px; }
   .card { aspect-ratio: 4 / 5; background: var(--paper); border-radius: 24px; display: grid; grid-template-rows: 1fr auto; align-items: center; padding: 10% 8% 7%; box-shadow: inset 0 0 0 1.5px var(--line); container-type: inline-size; }
   .art { position: relative; }
   .art svg { width: 100%; height: auto; display: block; }
   /* The lines sit where each bubble's body is (Bunn high right, Tamr low left), in white. */
   .line { position: absolute; margin: 0; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: .3em; width: 30%; text-align: center; color: #F5EFE3; line-height: 1.25; }
   .line span { font-family: var(--display); font-weight: 700; font-size: calc(7.6cqi * var(--s)); }
-  .line small { font: 500 calc(3.3cqi * var(--s))/1.25 var(--body); opacity: .85; }
+  /* The English inside the bubbles is for the saved image only (too small to read on a phone);
+     on the page it shows under the card. */
+  .line small { display: none; font: 500 calc(3.3cqi * var(--s))/1.25 var(--body); opacity: .85; }
+  .card.export { width: 1080px; height: 1350px; aspect-ratio: auto; border-radius: 0; }
+  .card.export .line small { display: block; }
+  .en-lines { margin: 0; display: grid; gap: 2px; font-size: 15px; color: var(--ink-2); }
   /* Each line stays inside the part of its bubble the other one doesn't cover. */
   .l-bunn { left: 75%; top: 32%; }
   .l-tamr { left: 27%; top: 63%; }

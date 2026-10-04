@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Pair from '../../components/Pair.astro';
-import { DATES, type Lang } from '../../data/products';
+import { DATES, EVERYDAY, RESERVE, type Lang, type DateId } from '../../data/products';
 import { path } from '../../data/i18n';
 import fs from 'node:fs';
 
@@ -9,8 +9,8 @@ export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lan
 const lang = Astro.params.lang as Lang;
 const ar = lang === 'ar';
 const CH = {
-  bunn: { name: 'بُن', en: 'Bunn · the coffee', pts: { en: ['The traveller and the teller', 'Learned his ways on the terraces of Haraz', 'Bitter, quick, proud', 'Speaks first'], ar: ['المسافر والحكّاء', 'تعلّم طرقه في مدرجات حراز', 'مُرّ وسريع وفخور', 'يتكلم أولاً'] } },
-  tamr: { name: 'تمر', en: 'Tamr · the date', pts: { en: ['The host and the listener', 'Of any palm, and knows Al-Ahsa by heart', 'Sweet, patient, teasing', 'Always answers'], ar: ['المضيفة والمستمعة', 'من كل نخلة، وتعرف الأحساء عن ظهر قلب', 'حلوة وصبورة ومشاكسة', 'تردّ دائماً'] } },
+  bunn: { name: 'بُن', sub: { ar: 'القهوة', en: 'Bunn · the coffee' }, pts: { en: ['The traveller and the teller', 'Learned his ways on the terraces of Haraz', 'Bitter, quick, proud', 'Speaks first'], ar: ['المسافر والحكّاء', 'تعلّم طرقه في مدرجات حراز', 'مُرّ وسريع وفخور', 'يتكلم أولاً'] } },
+  tamr: { name: 'تمر', sub: { ar: 'التمرة', en: 'Tamr · the date' }, pts: { en: ['The host and the listener', 'Of any palm, and knows Al-Ahsa by heart', 'Sweet, patient, teasing', 'Always answers'], ar: ['المضيفة والمستمعة', 'من كل نخلة، وتعرف الأحساء عن ظهر قلب', 'حلوة وصبورة ومشاكسة', 'تردّ دائماً'] } },
 };
 // The logo (official paths), drawn large at the top of the page.
 const LOGO = fs.readFileSync('public/brand/logo.svg', 'utf8');
@@ -21,18 +21,19 @@ const STEPS = [
   { tamr: false, t: { ar: 'بُن', en: 'Bunn' }, s: { ar: 'بُن', en: 'Bunn' }, d: { ar: 'القهوة. يتكلم أولاً، كما تُصبّ القهوة أولاً للضيف.', en: 'The coffee. He speaks first, the way coffee is poured first for a guest.' } },
   { tamr: true, apart: true, t: { ar: 'تمر', en: 'Tamr' }, s: { ar: 'تمر', en: 'Tamr' }, d: { ar: 'التمرة. تردّ، كما تكون التمرة بجانب الفنجان.', en: 'The date. She answers, the way a date sits beside the cup.' } },
   { tamr: true, lens: 'dash', t: { ar: 'يلتقيان', en: 'They meet' }, s: { ar: 'يلتقيان', en: 'They meet' }, d: { ar: 'فنجان وتمرة، والحديث بينهما.', en: 'A cup and a date, and the talk between them.' } },
-  { tamr: true, lens: 'gold', t: { ar: 'هنا تحدث الحكاية', en: 'The hikaya happens here' }, s: { ar: 'الحكاية', en: 'The hikaya' }, d: { ar: 'حيث يلتقيان: حبّة بن بلون الخلال، أول ذهب التمر.', en: 'Where they meet: a coffee bean in the gold of khalal, the date’s first colour.' } },
+  { tamr: true, lens: 'gold', t: { ar: 'هنا تحدث الحكاية', en: 'The hikaya happens here' }, s: { ar: 'الحكاية', en: 'The hikaya' }, d: { ar: 'حيث يلتقيان: حبّة بن بلون الخلال، أول ذهب التمر.', en: 'Where they meet: a coffee bean in the gold of khalal, the date’s first gold.' } },
   { tamr: true, lens: 'gold', dots: true, t: { ar: 'وللحكاية بقية', en: 'The story goes on' }, s: { ar: 'بقية', en: 'Goes on' }, d: { ar: 'تمر ما زالت تكتب.', en: 'Tamr is still typing.' } },
 ] as const;
 const STAGES = [
   { t: { en: 'Now', ar: 'الآن' }, d: { en: 'Setting up in Calgary: roasting, tasting, packaging.', ar: 'نؤسس في كالغاري: تحميص وتذوق وتغليف.' }, on: true },
-  { t: { en: 'December 2026', ar: 'ديسمبر ٢٠٢٦' }, d: { en: 'Coming soon: the waiting list opens, and the coffee story with it.', ar: 'قريباً: تفتح قائمة الانتظار، ومعها حكاية القهوة.' }, on: false },
-  { t: { en: 'Around Christmas', ar: 'قرابة عيد الميلاد' }, d: { en: 'Online pre-orders open; pickups and deliveries from 22 January 2027.', ar: 'يفتح الطلب المسبق عبر الإنترنت، والاستلام والتوصيل من ٢٢ يناير ٢٠٢٧.' }, ds: { en: 'Ramadan and Eid boxes with them.', ar: 'ومعه صناديق رمضان والعيد.' }, on: false },
+  // No months here: the waiting list and pre-orders open when the permits are in (docs/launch-phases.md).
+  { t: { en: 'Soon', ar: 'قريباً' }, d: { en: 'The waiting list opens, and the coffee story with it.', ar: 'تفتح قائمة الانتظار، ومعها حكاية القهوة.' }, on: false },
+  { t: { en: 'When our permits are in', ar: 'حين تصل التصاريح' }, d: { en: 'Ramadan pre-orders open online, for pickup and delivery in Calgary.', ar: 'تفتح الطلبات المسبقة لرمضان عبر الإنترنت، للاستلام والتوصيل في كالغاري.' }, ds: { en: 'With the Ramadan and Eid stickers on our gift boxes.', ar: 'ومعها ملصق رمضان والعيد على علب الهدايا.' }, on: false },
   { t: { en: 'Later', ar: 'لاحقاً' }, d: { en: 'More shops, more houses, more tables.', ar: 'متاجر أكثر، وبيوت أكثر، وموائد أكثر.' }, on: false },
   { t: { en: 'One day', ar: 'يوماً ما' }, d: { en: 'The café. Its menu is already being written.', ar: 'المقهى. قائمته تُكتب منذ الآن.' }, on: false },
 ];
 ---
-<Base lang={lang} title={ar ? 'حكايتنا' : 'Our story'} current="story">
+<Base lang={lang} title={ar ? 'حكايتنا' : 'Our story'} current="story" description={ar ? 'حكاية: بُن وتمر، القهوة والتمرة. قهوة خليجية ويمنية وشامية وتمر، من كالغاري.' : 'Hikaya means “a story”: Bunn and Tamr, the coffee and the date. Gulf, Yemeni-style and Shami coffee and dates, from Calgary.'}>
   <!-- The logo builds itself one step at a time and stays; point at (or tap) a part to read it again. -->
   <section class="wrap s-hero" aria-labelledby="s-h">
     <div class="s-copy">
@@ -51,20 +52,25 @@ const STAGES = [
         <p class="w w-tamr" lang="ar" aria-hidden="true">تمر</p>
       </div>
       <div class="side">
-        <div class="cap">
-          {STEPS.map((st, i) => <div class:list={['cap-l', { on: i === 4 }]} aria-hidden={i === 4 ? undefined : 'true'}><h2>{st.t[lang]}</h2><p>{st.d[lang]}</p></div>)}
+        <!-- The animated caption is for sight; the list below gives all five to screen readers, and
+             shows instead of it with reduced motion or without JavaScript. -->
+        <div class="cap" aria-hidden="true">
+          {STEPS.map((st, i) => <div class:list={['cap-l', { on: i === 4 }]}><h2>{st.t[lang]}</h2><p>{st.d[lang]}</p></div>)}
         </div>
+        <ol class="cap-all">
+          {STEPS.map(st => <li><h2>{st.t[lang]}</h2><p>{st.d[lang]}</p></li>)}
+        </ol>
         <p class="hint"><button type="button" class="again" id="again">{ar ? 'شاهدها مرة أخرى' : 'Watch again'}</button> <span>{ar ? 'أو اختر أي جزء من الشعار.' : 'Or point at any part of the logo.'}</span></p>
       </div>
     </div>
-    <script is:inline>if (!matchMedia('(prefers-reduced-motion: reduce)').matches) document.getElementById('stage').classList.remove('done');</script>
+    <script is:inline>(function () { var st = document.getElementById('stage'); st.classList.add('js'); if (!matchMedia('(prefers-reduced-motion: reduce)').matches) st.classList.remove('done'); })();</script>
   </section>
 
   <section class="chars">
     <div class="wrap c-grid">
       {(['bunn', 'tamr'] as const).map(k => (
         <article class={`char ${k}`}>
-          <h2><span lang="ar">{CH[k].name}</span>{!ar && <small lang="en">{CH[k].en}</small>}</h2>
+          <h2><span lang="ar">{CH[k].name}</span><small lang={lang}>{CH[k].sub[lang]}</small></h2>
           <ul>{CH[k].pts[lang].map(p => <li>{p}</li>)}</ul>
         </article>
       ))}
@@ -89,7 +95,7 @@ const STAGES = [
         <li>{ar ? 'دائماً اثنان: بُن يبدأ وتمر تردّ.' : 'Always a pair: Bunn begins, Tamr replies.'}</li>
         <li>{ar ? 'العربية أولاً، ثماني كلمات أو أقل.' : 'Arabic first, eight words or fewer.'}</li>
         <li>{ar ? 'يحكيان ولا يبيعان.' : 'They tell, they don’t sell.'}</li>
-        <li>{ar ? 'والحكاية لا تنتهي: وللحكاية بقية.' : 'And the story never ends: وللحكاية بقية.'}</li>
+        <li>{ar ? 'والحكاية لا تنتهي: وللحكاية بقية.' : <>And the story never ends: <span lang="ar" dir="rtl">وللحكاية بقية</span>.</>}</li>
       </ul>
     </div>
       <p class="bt-link"><a class="btn ghost" href={path(lang, 'bunn-and-tamr')}>{ar ? 'كل حوارات بُن وتمر' : 'All of Bunn and Tamr’s conversations'}</a></p>
@@ -99,17 +105,23 @@ const STAGES = [
     <div class="wrap">
       <h2 id="dates-h" class="h-l">{ar ? 'تمر، الصوت الآخر' : 'Tamr, the other voice'}</h2>
       <p class="lead">{ar ? 'نختار التمر كما يختاره المضيف: بالصنف والمنطقة والموسم.' : 'We choose dates the way a host does: by variety, region and season.'}</p>
-      <ul class="d-row">
-        {Object.values(DATES).map(d => (
-          <li>
-            <svg class="date" viewBox="-26 -46 52 92" aria-hidden="true"><path fill={d.c} d="M-2 -42c13 0 22 12 22 40c0 27-9 44-22 44c-12 0-21-15-21-43c0-29 8-41 21-41z" /><path d="M-12 -18q6 3 11 0M-14 4q7 4 14 0M-11 24q6 3 12-1M4 -30q5 2 9-1" stroke="#33211A" stroke-opacity=".3" stroke-width="2" fill="none" stroke-linecap="round" /></svg>
-            <h3>{d.name[lang]}{lang === 'en' && <span lang="ar">{d.name.ar}</span>}</h3>
-            <p class="rg">{d.region[lang]}</p>
-            <p class="muted">{d.notes[lang]}</p>
-            <p class="sweet"><span class="label">{ar ? 'الحلاوة' : 'Sweetness'}</span><span class="bar"><b style={`width:${d.sweet}%`}></b></span></p>
-          </li>
-        ))}
-      </ul>
+      {([['everyday', { ar: 'تمر كل يوم', en: 'Everyday' }, { ar: 'بالوزن، للبيت', en: 'By weight, for the house' }, EVERYDAY], ['reserve', { ar: 'تمر النخبة', en: 'Reserve' }, { ar: 'في علب ١٢ و٢٤، ننصح بها', en: 'Boxes of 12 and 24, our pick' }, RESERVE]] as const).map(([id, name, sub, ids]) => (
+        <>
+        <h3 class="tier"><span lang="ar">{name.ar}</span>{!ar && <span> · {name.en}</span>} <small class="muted">{sub[lang]}</small></h3>
+        <ul class="d-row" data-tier={id}>
+          {(ids as readonly DateId[]).map(k => { const d = DATES[k]; return (
+            <li>
+              <svg class="date" viewBox="-26 -46 52 92" aria-hidden="true"><path fill={d.c} d="M-2 -42c13 0 22 12 22 40c0 27-9 44-22 44c-12 0-21-15-21-43c0-29 8-41 21-41z" /><path d="M-12 -18q6 3 11 0M-14 4q7 4 14 0M-11 24q6 3 12-1M4 -30q5 2 9-1" stroke="#33211A" stroke-opacity=".3" stroke-width="2" fill="none" stroke-linecap="round" /></svg>
+              <h3><span lang="ar">{d.name.ar}</span>{!ar && <span class="en">{d.name.en}</span>}</h3>
+              <p class="rg">{d.region[lang]}</p>
+              <p class="muted">{d.notes[lang]}</p>
+              <p class="sweet"><span class="label">{ar ? 'الحلاوة' : 'Sweetness'}</span><span class="bar" role="img" aria-label={ar ? `الحلاوة: ${d.sweet >= 85 ? 'حلوة جداً' : d.sweet >= 65 ? 'حلوة' : 'حلاوة خفيفة'}` : `Sweetness: ${d.sweet >= 85 ? 'very sweet' : d.sweet >= 65 ? 'sweet' : 'gently sweet'}`}><b style={`width:${d.sweet}%`}></b></span></p>
+            </li>
+          ); })}
+        </ul>
+        </>
+      ))}
+      <p class="muted tier-more">{ar ? 'وتمر محشي بالفستق والكاجو وكريمة البسكويت، كل تمرة مغلّفة وحدها.' : 'And stuffed dates, with pistachio, cashew or biscuit cream, each sealed on its own.'} <a href={path(lang, 'shop') + '#dates'}>{ar ? 'التمر في المتجر' : 'Dates in the shop'}</a></p>
     </div>
   </section>
 
@@ -134,7 +146,7 @@ const STAGES = [
     const TIMELINE: [number, string, number][] = [[150, 's-w1', 1], [800, 's-b1', 0], [1500, 's-w2', 2], [2100, 's-b2', 0], [2900, 's-meet', 3], [4000, 's-gold', 4], [5200, 's-dots', 5]];
     let timers: number[] = [];
     const stop = () => { timers.forEach(clearTimeout); timers = []; };
-    const say = (n: number) => caps.forEach((c, i) => { c.classList.toggle('on', i === n - 1); c.toggleAttribute('aria-hidden', i !== n - 1); });
+    const say = (n: number) => caps.forEach((c, i) => c.classList.toggle('on', i === n - 1));
     const finish = () => { stage.classList.remove(...STATES); stage.classList.add('done'); };
     const play = () => {
       stop();
@@ -173,6 +185,18 @@ const STAGES = [
   .cap { display: grid; }
   .cap-l { grid-area: 1 / 1; display: grid; gap: 8px; align-content: center; opacity: 0; translate: 0 6px; transition: opacity .7s ease, translate .7s ease; pointer-events: none; }
   .cap-l.on { opacity: 1; translate: 0 0; }
+  /* All five captions: for screen readers always; shown instead of the animated one without
+     JavaScript or with reduced motion. */
+  .cap-all { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; padding: 0; }
+  .cap-all li { list-style: none; }
+  .stage:not(.js) .cap, .stage:not(.js) .hint { display: none; }
+  .stage:not(.js) .cap-all { position: static; width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; display: grid; gap: 14px; }
+  @media (prefers-reduced-motion: reduce) {
+    .cap { display: none; }
+    .cap-all { position: static; width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; display: grid; gap: 14px; }
+  }
+  .cap-all h2 { font-size: 20px; margin: 0; }
+  .cap-all p { margin: 2px 0 0; }
   .cap h2 { font-size: clamp(26px, 2.8vw, 38px); }
   .cap p { margin: 0; color: var(--ink-2); font-size: 18px; }
   .hint { margin: 0; font-size: 14px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
@@ -216,12 +240,17 @@ const STAGES = [
   .r-list { margin: 0; padding-inline-start: 20px; display: grid; gap: 10px; font-size: 18px; }
   .dates { background: var(--paper-2); }
   .dates .lead { margin-top: 12px; }
-  .d-row { list-style: none; margin: 36px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 28px 22px; }
+  .tier { margin: 40px 0 0; font-size: 26px; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
+  .tier small { font-size: 15px; font-family: var(--body); }
+  .tier-more { margin-top: 32px; }
+  .tier-more a { color: var(--tamr); font-weight: 600; }
+  .d-row { list-style: none; margin: 20px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px 22px; }
   @media (max-width: 960px) { .d-row { grid-template-columns: repeat(2, 1fr); } }
   .d-row li { display: grid; gap: 6px; align-content: start; }
   .date { width: 40px; height: 72px; margin-bottom: 8px; transform: rotate(-14deg); }
   .d-row h3 { font-size: 24px; display: flex; gap: 10px; align-items: baseline; }
-  .d-row h3 span { font-size: 19px; color: var(--tamr); }
+  .d-row h3 { flex-wrap: wrap; }
+  .d-row h3 .en { font-size: 19px; color: var(--tamr); }
   .rg { font-size: 14px; font-weight: 600; color: var(--ink-2); }
   .sweet { display: grid; gap: 4px; margin-top: 6px; }
   .bar { height: 6px; background: var(--line); border-radius: 6px; overflow: hidden; }

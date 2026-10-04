@@ -6,6 +6,12 @@ export type Decision = { id: string; topic: string; question: string; context: s
 
 export const DECISIONS: Decision[] = [
   {
+    id: 'story-timeline', topic: 'Story page · Timeline', asked: '2026-10-04',
+    question: 'The story page timeline no longer gives months. Is this wording right?',
+    context: 'It said “December 2026: the waiting list opens” and “Around Christmas: pre-orders open”, but the launch plan depends on the permits. Now: «قريباً: تفتح قائمة الانتظار» / “Soon: the waiting list opens”, and «حين تصل التصاريح: تفتح الطلبات المسبقة لرمضان» / “When our permits are in: Ramadan pre-orders open”. The yellow banner and the Ramadan page still say “around Christmas”: tell us if those should change too.',
+    options: ['Approve the new wording', 'Put months back (write them below)', 'Change it (write below)'],
+  },
+  {
     id: 'ramadan-deliveries', topic: 'Ramadan · Delivery times', asked: '2026-10-04',
     question: 'Ramadan deliveries: end the delivery windows before iftar, or keep 17:00–20:00 and tell customers which windows arrive before iftar?',
     context: 'The Ramadan page promised “Ramadan orders arrive before sunset”, but checkout offers 17:00–20:00 on Ramadan days (sunset is about 5:30–6:30 pm). The page now says: for delivery before iftar, choose 11–2 or 2–5. Ending the windows earlier can be built from the iftar times in the calendar.',

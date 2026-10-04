@@ -6,6 +6,17 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: '4-1', title: 'Round 4: Story page and Bunn & Tamr page', date: '2026-10-04',
+    checks: [
+      { id: '4-1-bt-phone', text: 'Bunn & Tamr on a phone: the English lines are readable under each card (not tiny inside the bubbles).', links: [{ label: 'Bunn & Tamr (EN)', href: '/en/bunn-and-tamr/' }, { label: 'Bunn & Tamr (AR)', href: '/ar/bunn-and-tamr/' }] },
+      { id: '4-1-bt-save', text: 'Tap “Save image” on a card and open the picture: 1080 × 1350, the English words spaced normally (“Sukkari”, not “S ukkari”).', links: [{ label: 'Bunn & Tamr (EN)', href: '/en/bunn-and-tamr/' }] },
+      { id: '4-1-cards', text: 'Cards no longer name a date for a coffee; card 5 says “Qassimi: add your evaporated milk…”.', links: [{ label: 'Bunn & Tamr (AR)', href: '/ar/bunn-and-tamr/' }] },
+      { id: '4-1-story', text: 'Story page: the Arabic page shows القهوة / التمرة under بُن and تمر; the dates show Everyday and Reserve, Arabic names first; the timeline says “Soon” and “When our permits are in” (no months).', links: [{ label: 'Story (AR)', href: '/ar/story/' }, { label: 'Story (EN)', href: '/en/story/' }] },
+      { id: '4-1-motion', text: 'Story page with “Reduce motion” on (phone settings): all five logo captions show as a list.', links: [{ label: 'Story (EN)', href: '/en/story/' }] },
+      { id: '4-1-preview', text: 'Share the story page link in a chat: the preview text is about Hikaya, not “[address]”.' },
+    ],
+  },
+  {
     id: '3-4', title: 'Round 3 · batch 4: Ramadan and Eid pages, Ask Hikaya, stickers, and choices on the Dates tab', date: '2026-10-04',
     checks: [
       { id: '3-4-dates-cards', text: 'Shop → Dates: Reserve and Stuffed now work like Everyday: a card for each kind (and Mixed) with 12 / 24 and its own Add button.', links: [{ label: '#reserve (AR)', href: '/ar/shop/#reserve' }, { label: '#dates (EN)', href: '/en/shop/#dates' }] },
