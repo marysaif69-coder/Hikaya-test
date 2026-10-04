@@ -1022,4 +1022,57 @@ assert.equal((await call(driverApi, '/api/driver/delivered', { cookie: dan2, bod
 const ddRow = (await pg.query(`SELECT collected_cents, paid_cents, total_cents FROM orders WHERE ref = $1`, [dd1.data.ref])).rows[0] as any;
 assert.deepEqual([ddRow.collected_cents, ddRow.paid_cents], [2600, ddRow.total_cents]); ok('pay at the door after a change: the driver collects and records only what is still owed');
 
+// ---------- cancelled is final; no paying for a cancelled order ----------
+const newCard = async (cents: number) => {
+  const g = await call(orders, '/api/giftcard', { body: { amount_cents: cents, buyer_name: 'Rana', buyer_email: 'rana@example.com', to_name: 'Lina', payment: 'e-transfer', lang: 'en' } });
+  await call(admin, `/api/admin/giftcards/${g.data.ref}/paid`, { cookie: adm, body: {} });
+  return (await pg.query(`SELECT code FROM gift_cards WHERE ref = $1`, [g.data.ref])).rows[0].code as string;
+};
+const bal = async (code: string) => (await pg.query(`SELECT balance_cents FROM gift_cards WHERE code = $1`, [code])).rows[0].balance_cents as number;
+const cg = await newCard(5000);
+const cgO = await order({ email: 'cancelgc@example.com', day: '2027-03-11', giftcard: cg, lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] });
+await call(admin, `/api/admin/orders/${cgO.data.ref}`, { cookie: adm, body: { status: 'cancelled', notify: false } });
+assert.equal(await bal(cg), 5000);
+const reopen = await call(admin, `/api/admin/orders/${cgO.data.ref}`, { cookie: adm, body: { status: 'confirmed', notify: false } });
+assert.deepEqual([reopen.status, reopen.data.error], [409, 'cancelled']); assert.equal(await bal(cg), 5000);
+assert.equal((await pg.query(`SELECT status FROM orders WHERE ref = $1`, [cgO.data.ref])).rows[0].status, 'cancelled'); ok('a cancelled order cannot be reopened (its gift card money was already given back)');
+const cg2 = await newCard(5000);
+const cgO2 = await order({ email: 'cancelgc2@example.com', day: '2027-03-11', giftcard: cg2, lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] });
+const afterTake = await bal(cg2);
+await Promise.all([1, 2].map(() => call(admin, `/api/admin/orders/${cgO2.data.ref}`, { cookie: adm, body: { status: 'cancelled', notify: false } })));
+assert.equal(await bal(cg2) - afterTake, 2600); ok('two cancels at the same moment give the gift card money back once');
+// A cancelled card order: no "Pay now"; a late payment is recorded and the owners are told.
+process.env.SQUARE_ACCESS_TOKEN = 'sq-test'; process.env.SQUARE_LOCATION_ID = 'L1'; process.env.SQUARE_WEBHOOK_SIGNATURE_KEY = 'whk';
+const sqB2: any[] = []; const fS2 = globalThis.fetch;
+globalThis.fetch = (async (url: string, init: any) => {
+  if (String(url).includes('/v2/online-checkout/payment-links')) { sqB2.push(JSON.parse(init.body)); return new Response(JSON.stringify({ payment_link: { url: `https://square.test/c${sqB2.length}`, order_id: `SQC-${sqB2.length}` } }), { status: 200 }); }
+  return fS2(url, init);
+}) as any;
+const webhook = (await import('../netlify/functions/square-webhook.mts')).default;
+const { createHmac } = await import('node:crypto');
+const sendHook = (orderId: string, paymentId: string, cents: number) => {
+  const raw = JSON.stringify({ type: 'payment.updated', data: { object: { payment: { id: paymentId, order_id: orderId, status: 'COMPLETED', amount_money: { amount: cents, currency: 'CAD' } } } } });
+  const sig = createHmac('sha256', 'whk').update(`${H}/api/square/webhook` + raw).digest('base64');
+  return webhook(new Request(`${H}/api/square/webhook`, { method: 'POST', headers: { 'x-square-hmacsha256-signature': sig }, body: raw }));
+};
+const ccEmail = 'cardcancel@example.com';
+const cc = await order({ email: ccEmail, day: '2027-03-12', payment: 'card', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] });
+const ccSq = (await pg.query(`SELECT square_order_id FROM orders WHERE ref = $1`, [cc.data.ref])).rows[0].square_order_id;
+await call(admin, `/api/admin/orders/${cc.data.ref}`, { cookie: adm, body: { status: 'cancelled', notify: false } });
+const ccPub = (await call(orders, '/api/my/orders', { cookie: await login(ccEmail) })).data.orders.find((x: any) => x.ref === cc.data.ref);
+assert.equal(ccPub.payUrl, null); ok('a cancelled card order shows no "Pay now"');
+assert.equal((await sendHook(ccSq, 'PAY-LATE', 2600)).status, 200);
+const ccRow = (await pg.query(`SELECT status, payment_status FROM orders WHERE ref = $1`, [cc.data.ref])).rows[0] as any;
+assert.deepEqual([ccRow.status, ccRow.payment_status], ['cancelled', 'paid']);
+assert.ok((await pg.query(`SELECT 1 FROM order_events e JOIN orders o ON o.id = e.order_id WHERE o.ref = $1 AND e.detail LIKE 'Paid after it was cancelled%'`, [cc.data.ref])).rows.length);
+assert.equal((await call(admin, `/api/admin/orders/${cc.data.ref}`, { cookie: adm })).data.order.refundable, 2600); ok('paid after cancelling: the order stays cancelled, is marked for a refund, and the owners are told');
+// A payment on the link from before a change still finds its order.
+const ol = await order({ email: 'oldlink@example.com', day: '2027-03-12', payment: 'card', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] });
+const olFirst = (await pg.query(`SELECT square_order_id FROM orders WHERE ref = $1`, [ol.data.ref])).rows[0].square_order_id;
+assert.equal((await call(admin, `/api/admin/orders/${ol.data.ref}/items`, { cookie: adm, body: { lines: [{ id: 'najdi', opt: 'dallah', qty: 2 }] } })).status, 200);
+await sendHook(olFirst, 'PAY-OLD', 2600);
+const olRow = await pc(ol.data.ref);
+assert.deepEqual([olRow.paid_cents, olRow.payment_status], [2600, 'unpaid']); ok('a payment on the older link still counts, and the rest is still owed');
+globalThis.fetch = fS2; delete process.env.SQUARE_ACCESS_TOKEN; delete process.env.SQUARE_LOCATION_ID; delete process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+
 console.log(`\n${pass} checks passed`);

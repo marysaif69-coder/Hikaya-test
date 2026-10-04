@@ -971,7 +971,7 @@ import '../../styles/global.css';
         <div class="acts"><button type="button" id="eiSave">Save changes</button></div>
         <p class="ev">Prices are today's. Quantity 0 removes a line. If it was paid and the total goes up, it shows what is still to pay; if it goes down, use Refund.</p></details>` : ''}
       <h3>Move the order</h3>
-      <div class="acts">${flow.map(s => `<button type="button" data-status="${s}" class="${s === o.status ? 'cur' : ''}">${STATUS_LABEL[s]}</button>`).join('')}<button type="button" class="danger" data-status="cancelled">Cancel order</button></div>
+      ${o.status === 'cancelled' ? '<p class="ev">This order was cancelled. Its stock, code and gift card money went back, so it can\'t be reopened; place a new order instead.</p>' : `<div class="acts">${flow.map(s => `<button type="button" data-status="${s}" class="${s === o.status ? 'cur' : ''}">${STATUS_LABEL[s]}</button>`).join('')}<button type="button" class="danger" data-status="cancelled">Cancel order</button></div>`}
       <label class="notify"><input type="checkbox" id="pNotify" checked /> Email the customer about the change</label>
       ${o.method === 'delivery' ? `<h3>Driver</h3><div class="acts"><select id="pDriver"><option value="">Not assigned</option></select></div>` : ''}
       <h3>Change day or time</h3>

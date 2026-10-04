@@ -105,6 +105,7 @@ export async function finishOrder(n: NewOrder, req?: Request, extra: { every_wee
       const link = await paymentLink(order, lines, `${siteUrl(req)}/${order.lang}/thanks/?order=${order.ref}&t=${guestToken}`);
       payUrl = link.url;
       await sql`UPDATE orders SET square_order_id = ${link.orderId}, square_link_url = ${link.url} WHERE id = ${order.id}`;
+      await sql`INSERT INTO order_square_orders (square_order_id, order_id) VALUES (${link.orderId}, ${order.id}) ON CONFLICT (square_order_id) DO NOTHING`;
       order.square_link_url = link.url;
     } catch (e) {
       console.error(e);
@@ -160,7 +161,7 @@ export async function publicOrder(o: Row) {
   return {
     ref: o.ref, status: o.status, paymentStatus: o.payment_status, payment: o.payment, method: o.method,
     day: mailShape(o).slot_date, window: o.slot_window, street: o.street, postal: o.postal, name: o.name,
-    subtotal: o.subtotal_cents, delivery: o.delivery_cents, discount: o.discount_cents ?? 0, promo: o.promo_code ?? null, gift: o.gift ? { to: o.gift_to, phone: o.gift_phone, message: o.gift_message } : null, giftCard: o.gift_card_cents ?? 0, regular: Boolean(o.subscription_id), refunded: o.refunded_cents ?? 0, total: o.total_cents, paid: o.paid_cents ?? 0, notes: o.notes, payUrl: o.payment_status === 'unpaid' ? o.square_link_url : null,
+    subtotal: o.subtotal_cents, delivery: o.delivery_cents, discount: o.discount_cents ?? 0, promo: o.promo_code ?? null, gift: o.gift ? { to: o.gift_to, phone: o.gift_phone, message: o.gift_message } : null, giftCard: o.gift_card_cents ?? 0, regular: Boolean(o.subscription_id), refunded: o.refunded_cents ?? 0, total: o.total_cents, paid: o.paid_cents ?? 0, notes: o.notes, payUrl: o.payment_status === 'unpaid' && o.status !== 'cancelled' ? o.square_link_url : null,
     created: o.created_at, items: await items(o.id), stopsBefore: await stopsBefore(o),
   };
 }
@@ -176,11 +177,14 @@ const MAIL_ON: Partial<Record<Status, OrderMailKind>> = { confirmed: 'confirmed'
 
 export async function setStatus(ref: string, status: string, actor: string, req?: Request, sendEmail = true) {
   if (!STATUSES.includes(status as Status)) throw new HttpError(400, 'bad-status');
-  const before = await one`SELECT status FROM orders WHERE ref = ${ref}`;
-  if (!before) throw new HttpError(404, 'not-found');
-  const o = await one`UPDATE orders SET status = ${status}, updated_at = NOW() WHERE ref = ${ref} RETURNING *`;
-  if (!o) throw new HttpError(404, 'not-found');
-  if (status === 'cancelled' && before.status !== 'cancelled') await releaseOrder(o);
+  // Cancelled is final: its stock, promo use and gift card money have been given back, so
+  // reopening it would spend them twice. One statement, so two cancels at once release only once.
+  const o = await one`UPDATE orders SET status = ${status}, updated_at = NOW() WHERE ref = ${ref} AND status <> 'cancelled' RETURNING *`;
+  if (!o) {
+    if (!await one`SELECT 1 AS x FROM orders WHERE ref = ${ref}`) throw new HttpError(404, 'not-found');
+    throw new HttpError(409, 'cancelled', 'This order was cancelled. Place a new order instead.');
+  }
+  if (status === 'cancelled') await releaseOrder(o);
   await event(o.id, 'status', status, actor);
   const kind = MAIL_ON[status as Status];
   if (kind && sendEmail) await notify(kind, o, req);
@@ -255,6 +259,7 @@ export async function editOrder(ref: string, rawLines: unknown, actor: string, r
         ? await amountLink(`${upd.ref}-bal-${Date.now()}`, `Balance for order ${upd.ref}`, due, upd.email, back)
         : await paymentLink(upd, lines, back, `${upd.ref}-${Date.now()}`);
       await sql`UPDATE orders SET square_order_id = ${link.orderId}, square_link_url = ${link.url} WHERE id = ${o.id}`;
+      await sql`INSERT INTO order_square_orders (square_order_id, order_id) VALUES (${link.orderId}, ${o.id}) ON CONFLICT (square_order_id) DO NOTHING`;
       upd.square_link_url = link.url;
     } catch (e) { console.error(e); }
   }
@@ -266,6 +271,8 @@ export async function editOrder(ref: string, rawLines: unknown, actor: string, r
 
 /** A cancelled order gives its stock and promo code use back. */
 export async function releaseOrder(o: Row) {
+  // The payment page goes too, so "Pay now" can't be used on a cancelled order.
+  await sql`UPDATE orders SET square_link_url = NULL WHERE id = ${o.id}`;
   if (!o.is_sample) await restock(o.id);
   await unredeem(o.promo_code ?? null);
   await giveBackToGiftCard(o.gift_card_code ?? null, o.gift_card_cents ?? 0);

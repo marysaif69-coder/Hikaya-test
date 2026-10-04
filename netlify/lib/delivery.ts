@@ -208,6 +208,7 @@ export async function addDeliveryPhoto(s: Session, ref: string, mime: string, by
 export async function delivered(s: Session, ref: string, collected: unknown, req?: Request) {
   const o = await myStop(s, ref);
   if (o.status === 'completed') return { ok: true };
+  if (o.status === 'cancelled') throw new HttpError(409, 'cancelled', 'This order was cancelled. Do not hand it over; call the team.');
   const photo = await one`SELECT id FROM delivery_photos WHERE order_id = ${o.id} LIMIT 1`;
   if (!photo) throw new HttpError(400, 'photo', 'Take a photo of the order at the door first.');
   const owed = dueAtDoor(o), due = o.payment_status === 'unpaid' && o.payment === 'at-pickup';
