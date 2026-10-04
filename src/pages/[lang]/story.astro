@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import Pair from '../../components/Pair.astro';
 import { DATES, type Lang } from '../../data/products';
 import { path } from '../../data/i18n';
+import fs from 'node:fs';
 
 export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
 const lang = Astro.params.lang as Lang;
@@ -11,6 +12,17 @@ const CH = {
   bunn: { name: 'بُن', en: 'Bunn · the coffee', pts: { en: ['The traveller and the teller', 'Learned his ways on the terraces of Haraz', 'Bitter, quick, proud', 'Speaks first'], ar: ['المسافر والحكّاء', 'تعلّم طرقه في مدرجات حراز', 'مُرّ وسريع وفخور', 'يتكلم أولاً'] } },
   tamr: { name: 'تمر', en: 'Tamr · the date', pts: { en: ['The host and the listener', 'Of any palm, and knows Al-Ahsa by heart', 'Sweet, patient, teasing', 'Always answers'], ar: ['المضيفة والمستمعة', 'من كل نخلة، وتعرف الأحساء عن ظهر قلب', 'حلوة وصبورة ومشاكسة', 'تردّ دائماً'] } },
 };
+// The logo, piece by piece (official paths), for "Reading the logo".
+const LOGO = fs.readFileSync('public/brand/logo.svg', 'utf8');
+const [lTamr, lSeed, lBunn, lGroove, lDots] = [...LOGO.matchAll(/<path fill="(#[0-9A-F]+)" d="([^"]+)"\/>/g)].map(m => m[2]);
+const lVb = LOGO.match(/viewBox="([^"]+)"/)![1];
+const lG = LOGO.match(/<g transform="([^"]+)">/)![1];
+const PARTS = [
+  { n: 1, c: '#33211A', at: [76, 22], name: { ar: 'بُن · القهوة', en: 'Bunn · the coffee' }, d: { ar: 'الفقاعة الداكنة، عالية إلى اليمين. بلون البن المحمّص. يتكلم أولاً، كما تُصبّ القهوة أولاً للضيف.', en: 'The dark bubble, high on the right, the colour of roasted coffee. He speaks first, the way coffee is poured first for a guest.' } },
+  { n: 2, c: '#A93B28', at: [20, 80], name: { ar: 'تمر · التمرة', en: 'Tamr · the date' }, d: { ar: 'الفقاعة الحمراء، منخفضة إلى اليسار. بلون التمر الناضج. تردّ دائماً، كما تكون التمرة بجانب الفنجان.', en: 'The red bubble, low on the left, the colour of a ripe date. She always answers, the way a date sits beside the cup.' } },
+  { n: 3, c: '#CF9C0C', at: [50, 38], name: { ar: 'الحبّة الذهبية · الخلال', en: 'The gold bean · khalal' }, d: { ar: 'حيث تلتقي الفقاعتان: حبّة بن بلون الخلال، أي التمر في مرحلته الذهبية الأولى. هي الحكاية التي بينهما.', en: 'Where the bubbles meet: a coffee bean in the colour of khalal, the date at its first golden stage. It is the story they share.' } },
+  { n: 4, c: '#F5EFE3', at: [27, 52], name: { ar: 'النقاط الثلاث', en: 'The three dots' }, d: { ar: 'تمر ما زالت تكتب. الحديث لم ينتهِ: وللحكاية بقية.', en: 'Tamr is still typing. The conversation goes on: وللحكاية بقية, and the story continues.' } },
+];
 const STAGES = [
   { t: { en: 'Now', ar: 'الآن' }, d: { en: 'Setting up in Calgary: roasting, tasting, packaging.', ar: 'نؤسس في كالغاري: تحميص وتذوق وتغليف.' }, on: true },
   { t: { en: 'December 2026', ar: 'ديسمبر ٢٠٢٦' }, d: { en: 'Coming soon: the waiting list opens, and the coffee story with it.', ar: 'قريباً: تفتح قائمة الانتظار، ومعها حكاية القهوة.' }, on: false },
@@ -21,11 +33,30 @@ const STAGES = [
 ---
 <Base lang={lang} title={ar ? 'حكايتنا' : 'Our story'} current="story">
   <section class="wrap s-head">
-    <img class="s-logo" src="/brand/logo.svg" alt={ar ? 'شعار حكاية: فقاعتا حديث تلتقيان عند بذرة ذهبية' : 'The Hikaya logo: two speech bubbles meeting at a gold seed'} width="300" height="251" />
     <div class="stack" style="--gap:18px">
       <h1 class="h-xl">{ar ? 'حكاية' : 'Hikaya means “a story”.'}</h1>
       <p class="lead">{ar ? 'شعارنا حوار. بُن، القهوة، يتكلم أولاً. تمر تردّ. وحيث تلتقي فقاعتاهما بذرة بلون الخلال: الحكاية التي بينهما.' : 'Our logo is a conversation. Bunn, the coffee, speaks first. Tamr, the date, answers. Where their bubbles meet sits a seed the colour of khalal: the story they share.'}</p>
     </div>
+  </section>
+
+  <!-- Reading the logo: what each piece means. -->
+  <section class="sec wrap read" aria-labelledby="read-h">
+    <h2 id="read-h" class="h-l">{ar ? 'قراءة الشعار' : 'Reading the logo'}</h2>
+    <div class="read-grid">
+      <div class="read-art">
+        <svg viewBox={lVb} role="img" aria-label={ar ? 'شعار حكاية' : 'The Hikaya logo'}><g transform={lG}><path fill="#A93B28" d={lTamr} /><path fill="#CF9C0C" d={lSeed} /><path fill="#33211A" d={lBunn} /><path fill="#33211A" d={lGroove} /><path fill="#F5EFE3" d={lDots} /></g></svg>
+        {PARTS.map(p => <span class="pin" style={`left:${p.at[0]}%;top:${p.at[1]}%`} aria-hidden="true">{ar ? ['١', '٢', '٣', '٤'][p.n - 1] : p.n}</span>)}
+      </div>
+      <ol class="read-list">
+        {PARTS.map(p => (
+          <li>
+            <span class="pin static" aria-hidden="true">{ar ? ['١', '٢', '٣', '٤'][p.n - 1] : p.n}</span>
+            <div><h3><i style={`background:${p.c}`}></i>{p.name[lang]}</h3><p>{p.d[lang]}</p></div>
+          </li>
+        ))}
+      </ol>
+    </div>
+    <p class="muted read-colours">{ar ? 'الألوان من الفاكهة والمشروب نفسه: البن المحمّص، والتمر الناضج، والخلال الذهبي، وورق كريمي كالحليب في القهوة.' : 'The colours come from the fruit and the drink themselves: roasted coffee, ripe date, golden khalal, and a cream paper like milk in coffee.'}</p>
   </section>
 
   <section class="chars">
@@ -91,12 +122,26 @@ const STAGES = [
 </Base>
 
 <style>
+  .read { display: grid; gap: 24px; }
+  .read-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: clamp(24px, 5vw, 64px); align-items: center; }
+  @media (max-width: 760px) { .read-grid { grid-template-columns: 1fr; } }
+  .read-art { position: relative; max-width: 420px; width: 100%; justify-self: center; }
+  .read-art svg { width: 100%; height: auto; display: block; }
+  .pin { position: absolute; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--paper); color: var(--bunn); font-weight: 700; font-size: 15px; box-shadow: 0 0 0 2px var(--bunn); }
+  .pin.static { position: static; transform: none; flex: none; }
+  .read-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
+  .read-list li { display: flex; gap: 14px; align-items: flex-start; }
+  .read-list h3 { display: flex; align-items: center; gap: 8px; font-size: 19px; margin: 2px 0 4px; }
+  .read-list h3 i { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(51, 33, 26, .25); }
+  .read-list p { margin: 0; color: var(--ink-2); }
+  .read-colours { max-width: 70ch; }
   .why { display: grid; gap: 18px; }
   .bt-link { margin-top: 20px; }
   .why-note { max-width: 680px; display: grid; gap: 14px; padding: 24px 26px; border-radius: 28px; border-bottom-right-radius: 6px; background: var(--sheet); font-size: 18px; }
   .why-note p { margin: 0; }
   .why-note .sign { font-family: var(--display); font-weight: 700; color: var(--tamr); }
-  .s-head { display: grid; grid-template-columns: .6fr 1.4fr; gap: clamp(24px, 5vw, 80px); align-items: center; padding-block: clamp(48px, 7vw, 104px); }
+  .s-head > * { max-width: 900px; }
+  .s-head { display: grid; grid-template-columns: 1fr; gap: clamp(24px, 5vw, 80px); align-items: center; padding-block: clamp(48px, 7vw, 104px); }
   .s-logo { width: 100%; max-width: 300px; }
   @media (max-width: 760px) { .s-head { grid-template-columns: 1fr; } .s-logo { max-width: 160px; } }
   .chars { padding-bottom: 24px; }
