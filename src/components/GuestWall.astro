@@ -19,7 +19,7 @@ const SAMPLES = [
       <form class="wall-form" name="story" method="POST" data-netlify="true" netlify-honeypot="company" action={path(lang, 'thanks') + '?story=1'}>
         <input type="hidden" name="form-name" value="story" />
         <input type="hidden" name="lang" value={lang} />
-        <p class="sr"><label>Company <input name="company" tabindex="-1" autocomplete="off" /></label></p>
+        <p hidden aria-hidden="true"><label>Company <input name="company" tabindex="-1" autocomplete="off" /></label></p>
         <div class="field">
           <label for={`story-${lang}`}>{ar ? 'سطرك' : 'Your line'}</label>
           <textarea id={`story-${lang}`} name="line" rows="3" maxlength="160" required placeholder={ar ? 'بالعربية أو بالإنجليزية' : 'In Arabic or English'}></textarea>

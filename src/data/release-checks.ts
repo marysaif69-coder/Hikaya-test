@@ -6,6 +6,16 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: '2-7', title: 'Round 2 · batch 7: accessibility and small fixes', date: '2026-10-04',
+    checks: [
+      { id: 'pair-tag', text: 'Homepage pairs (dark band): “Ordering opens soon” is readable, in gold.', links: [{ label: 'Home (AR)', href: '/ar/' }, { label: 'Home (EN)', href: '/en/' }] },
+      { id: 'ramadan-29', text: 'Ramadan page: the iftar table ends on 8 March (29 days), then “Eid: around 9 March”.', links: [{ label: 'Ramadan (AR)', href: '/ar/ramadan/' }, { label: 'Ramadan (EN)', href: '/en/ramadan/' }] },
+      { id: '404-switch', text: 'Open a page that doesn’t exist (e.g. /en/nothing/): the “عربي” switch goes to the Arabic home page.', links: [{ label: 'Missing page', href: '/en/nothing-here/' }] },
+      { id: 'intro-reduced', text: 'With “Reduce motion” on (phone settings), the homepage opens straight away with no intro, even with ?intro=full.' },
+      { id: 'chat-sr', text: 'Ask Hikaya with VoiceOver or TalkBack: each new reply is read once, not the whole conversation again.' },
+    ],
+  },
+  {
     id: '2-6', title: 'Round 2 · batch 6: Ask Hikaya handbook, privacy', date: '2026-10-04',
     checks: [
       { id: 'ask-subscription', text: 'Ask Hikaya “Do you have a coffee subscription?”: it explains regular orders (every 2 or 4 weeks, paid each time), not “no subscriptions”.' },

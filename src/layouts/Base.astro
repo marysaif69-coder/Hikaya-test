@@ -14,7 +14,9 @@ const { alertFor, season, lang, title, description = UI.metaLine[lang], current,
 const org = { '@context': 'https://schema.org', '@type': 'Store', name: 'Hikaya Coffee & Dates', alternateName: 'حكاية', url: new URL(`/${lang}/`, Astro.site).href, logo: new URL('/brand/logo.svg', Astro.site).href, areaServed: { '@type': 'City', name: 'Calgary' }, sameAs: ['https://www.instagram.com/hikaya.yyc/'] };
 const alt = other(lang);
 const here = Astro.url.pathname;
-const altHref = here.replace(/^\/(en|ar)\//, `/${alt}/`);
+// The 404 page is one English file for every missing path: its switch goes to the other home page.
+const is404 = here.replace(/\/$/, '') === '/404';
+const altHref = is404 ? `/${alt}/` : here.replace(/^\/(en|ar)\//, `/${alt}/`);
 const nav: [keyof typeof UI.nav, string][] = [['shop', 'shop'], ['ramadan', 'ramadan'], ['eid', 'eid'], ['brew', 'brew'], ['story', 'story'], ['visit', 'visit']];
 
 // Small catalog for the client cart (names, prices, options) — no secrets, all public.
@@ -39,11 +41,12 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
   <meta name="description" content={description} />
   <meta name="theme-color" content="#F5EFE3" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="canonical" href={new URL(here, Astro.site)} />
-  <link rel="alternate" hreflang={lang} href={new URL(here, Astro.site)} />
-  <link rel="alternate" hreflang="x-default" href={new URL(here.replace(/^\/(en|ar)\//, '/en/'), Astro.site)} />
+  {!is404 && <link rel="canonical" href={new URL(here, Astro.site)} />}
+  {!is404 && <link rel="alternate" hreflang={lang} href={new URL(here, Astro.site)} />}
+  {!is404 && <link rel="alternate" hreflang="x-default" href={new URL(here.replace(/^\/(en|ar)\//, '/en/'), Astro.site)} />}
   <link rel="sitemap" href="/sitemap-index.xml" />
-  <link rel="alternate" hreflang={alt} href={new URL(altHref, Astro.site)} />
+  {!is404 && <link rel="alternate" hreflang={alt} href={new URL(altHref, Astro.site)} />}
+  {is404 && <meta name="robots" content="noindex" />}
   <meta property="og:title" content={fullTitle} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={new URL(image, Astro.site)} />
@@ -54,7 +57,7 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
   {jsonld && <script type="application/ld+json" set:html={JSON.stringify(jsonld)} />}
   <link rel="preload" href="/fonts/ElMessiri-700-arabic.woff2" as="font" type="font/woff2" crossorigin />
   <script is:inline>document.documentElement.classList.add('js')</script>
-  {intro && <script is:inline>try{var q=new URLSearchParams(location.search).get('intro');if(q||!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.classList.add('intro-on');if(q==='short'||(q!=='full'&&localStorage.getItem('hikaya-seen')))document.documentElement.classList.add('intro-short')}}catch(e){}</script>}
+  {intro && <script is:inline>try{var q=new URLSearchParams(location.search).get('intro');if(q!=='full'&&q!=='short')q=null;if(!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.classList.add('intro-on');setTimeout(function(){document.documentElement.classList.remove('intro-on')},9000);if(q==='short'||(q!=='full'&&localStorage.getItem('hikaya-seen')))document.documentElement.classList.add('intro-short')}}catch(e){}</script>}
 </head>
 <body>
 <TeamBar />

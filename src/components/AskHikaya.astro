@@ -50,6 +50,7 @@ const T = {
     <button type="button" class="ask-x" id="askClose" aria-label={T.close}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" /></svg></button>
   </header>
   <ol class="ask-log" id="askLog" aria-live="polite"></ol>
+  <div class="ask-rate" id="askRate"></div>
   <div class="ask-chips" id="askChips">{T.chips.map(c => <button type="button">{c}</button>)}</div>
   <form class="ask-form" id="askForm">
     <label class="sr" for="askInput">{T.placeholder}</label>
@@ -137,10 +138,12 @@ const T = {
     return box;
   }
 
+  // "Was this helpful?" sits outside the live region, so it is not read out with every reply.
+  const rateBox = document.getElementById('askRate')!;
   function rate() {
-    log.querySelector('.rate')?.remove();
+    rateBox.innerHTML = '';
     if (!st.chat || !st.log.some(e => e.who === 'me')) return;
-    const li = document.createElement('li'); li.className = 'rate';
+    const li = document.createElement('div'); li.className = 'rate';
     li.innerHTML = `<span></span> <button type="button" data-r="up"></button> <button type="button" data-r="down"></button>`;
     li.querySelector('span')!.textContent = T.helpful;
     li.querySelector('[data-r=up]')!.textContent = T.yes;
@@ -149,10 +152,13 @@ const T = {
       fetch('/api/ask/rate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chat: st.chat, rating: b.dataset.r }) }).catch(() => {});
       li.textContent = T.thanks;
     }));
-    log.append(li);
+    rateBox.append(li);
   }
 
+  // The whole conversation is drawn only on open, reset and when we learn the chat is on; a new
+  // message only appends, so screen readers announce just that message.
   function paint() {
+    log.setAttribute('aria-busy', 'true');
     log.innerHTML = '';
     log.append(bubble({ who: 'hk', text: T.hello }));
     if (enabled === false) log.append(bubble({ who: 'hk', text: `${T.off} /${lang}/help/` }));
@@ -160,6 +166,7 @@ const T = {
     chips.hidden = st.log.length > 0 || enabled === false;
     form.hidden = enabled === false;
     rate();
+    log.removeAttribute('aria-busy');
     log.scrollTop = log.scrollHeight;
   }
 
@@ -186,8 +193,9 @@ const T = {
     text = text.trim();
     if (!text || busy) return;
     busy = true;
-    st.log.push({ who: 'me', text }); save(); paint();
-    const typing = document.createElement('li'); typing.className = 'msg hk typing'; typing.innerHTML = '<div class="b"><i></i><i></i><i></i></div>';
+    st.log.push({ who: 'me', text }); save();
+    log.append(bubble({ who: 'me', text })); chips.hidden = true;
+    const typing = document.createElement('li'); typing.className = 'msg hk typing'; typing.setAttribute('aria-hidden', 'true'); typing.innerHTML = '<div class="b"><i></i><i></i><i></i></div>';
     log.append(typing); log.scrollTop = log.scrollHeight;
     try {
       const r = await fetch('/api/ask', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chat: st.chat, text, lang }) });
@@ -200,7 +208,9 @@ const T = {
     } catch (e) {
       st.log.push({ who: 'hk', text: (e as any).d ? errorText((e as any).d, isAr, T.error) : T.error });
     }
-    busy = false; save(); paint();
+    busy = false; save();
+    typing.remove(); log.append(bubble(st.log[st.log.length - 1])); rate();
+    log.scrollTop = log.scrollHeight;
     input.focus({ preventScroll: true });
   }
 
@@ -305,6 +315,8 @@ const T = {
   .ask .typing i:nth-child(2) { animation-delay: .15s; } .ask .typing i:nth-child(3) { animation-delay: .3s; }
   @keyframes ask-dot { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
   @media (prefers-reduced-motion: reduce) { .ask .typing i { animation: none; opacity: .6; } }
+  .ask .ask-rate { display: flex; justify-content: center; padding: 2px 16px 6px; }
+  .ask .ask-rate:empty { display: none; }
   .ask .rate { align-self: center; font-size: 13.5px; color: var(--ink-2); display: flex; gap: 6px; align-items: center; }
   .ask .rate button { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 3px 11px; font-size: 13.5px; }
   .ask .rate button:hover { border-color: var(--bunn); }

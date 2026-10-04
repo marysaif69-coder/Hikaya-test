@@ -260,6 +260,8 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
   /* The global allergy red can't be read on the dark panel. */
   .panel-buy .allergy { color: #F2C9B8; margin: 0; }
   .panel-buy .allergy.none { color: #CDBBA5; }
+  /* "Ordering opens soon" / "Sold out" is added by live.ts; the red can't be read on the dark band. */
+  .panel-buy :global(.sold-out-tag) { color: var(--khalal-2); }
   .panel-buy .muted { color: #CDBBA5; }
   .panel-buy a { color: var(--paper); }
   .panel.replay .panel-chat :global(.say.tamr) { animation: answer .9s var(--ease) both; }

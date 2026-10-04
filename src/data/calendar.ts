@@ -3,8 +3,9 @@
 
 export const CALGARY = { lat: 51.0447, lon: -114.0719 };
 export const RAMADAN_START = '2027-02-08'; // expected first fast
-export const RAMADAN_DAYS = 30;
 export const EID = '2027-03-09'; // expected
+// Days of fasting: up to the day before Eid (so the table never lists Eid day as a fast).
+export const RAMADAN_DAYS = Math.round((Date.parse(EID) - Date.parse(RAMADAN_START)) / 86400000);
 export const PICKUP_FROM = '2027-01-22';
 
 const rad = (d: number) => (d * Math.PI) / 180;

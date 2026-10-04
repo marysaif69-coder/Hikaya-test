@@ -132,7 +132,8 @@ html[dir='rtl'] .cartbtn { padding: 9px 16px 9px 10px; }
   .lockup .wm small { display: none; }
   .lockup .wm-img { height: 24px; }
   .lockup { gap: 8px; }
-  .cartbtn .lbl { display: none; }
+  /* Hidden on phones but still read out, so the link is "Cart 2", not just "2". */
+  .cartbtn .lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .cartbtn, html[dir='rtl'] .cartbtn { padding: 8px 10px; }
   .top .wrap { gap: 6px; min-height: 64px; }
   .langsw { padding: 8px; }

@@ -116,7 +116,9 @@ const g = svg.match(/<g transform="([^"]+)">/)![1];
       if (done) return; done = true;
       try { localStorage.setItem('hikaya-seen', '1'); } catch {}
       const target = document.querySelector<HTMLElement>('.top .lockup img');
-      const end = () => { root.classList.remove('intro-on'); intro.remove(); };
+      const end = () => { root.classList.remove('intro-on'); intro.remove(); if (target) target.style.opacity = ''; };
+      // If anything below fails (no Web Animations, a runtime error), take the intro away at once.
+      try {
       if (instant || !target) { intro.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: 'ease-out' }).onfinish = end; return; }
       // Fly the logo into the header (FLIP), while the paper lifts to reveal the page.
       const a = mark.getBoundingClientRect(), b = target.getBoundingClientRect();
@@ -126,6 +128,7 @@ const g = svg.match(/<g transform="([^"]+)">/)![1];
       target.style.opacity = '0';
       mark.animate([{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${s})` }], { duration: 720, easing: 'cubic-bezier(.77, 0, .175, 1)', fill: 'forwards' })
         .onfinish = () => { target.style.opacity = ''; end(); };
+      } catch { end(); }
     };
     const t = setTimeout(() => finish(), root.classList.contains('intro-short') ? 2500 : 6100);
     const skip = () => { clearTimeout(t); finish(true); };
