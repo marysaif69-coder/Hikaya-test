@@ -41,3 +41,7 @@ the server refuses the order until a price is set:
 
 ## Later
 - Ready-mixed bags (FAQ only)
+
+## Words for the owners to rewrite
+- "Why Hikaya?" note on the story page (/en/story/): a draft, signed "Hikaya", no names. Rewrite it in
+  your own words (it is in src/pages/[lang]/story.astro).

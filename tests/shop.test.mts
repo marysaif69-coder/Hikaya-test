@@ -892,7 +892,7 @@ assert.equal((await call(admin, '/api/admin/search?q=x', { cookie: dan2 })).stat
 
 // ---------- waitlist from the Coming soon page ----------
 const wlMails = sent.length;
-assert.equal((await call(orders, '/api/list', { body: { email: 'Waiting@Example.com', lang: 'ar', consent: true, source: 'soon' } })).status, 200);
+assert.equal((await call(orders, '/api/list', { body: { email: 'Waiting@Example.com', lang: 'ar', consent: true, source: 'soon', cup: 'yemen' } })).status, 200);
 const wlRow = (await pg.query(`SELECT source, lang, consent_text FROM subscribers WHERE email = 'waiting@example.com'`)).rows[0] as any;
 assert.equal(wlRow.source, 'soon'); assert.equal(wlRow.lang, 'ar'); assert.match(wlRow.consent_text, /ثلاث رسائل/);
 const wlConfirm = sent.slice(wlMails).find(m => m.to.includes('waiting@example.com'));
@@ -900,6 +900,9 @@ const wlT = wlConfirm.text.match(/list\/confirm\?t=([A-Za-z0-9_-]+)/)[1];
 await call(orders, `/api/list/confirm?t=${wlT}`);
 const tdList = (await todayFn('admin', '2027-03-26')).list;
 assert.ok(tdList.confirmed >= 1 && tdList.fromSoon === 1 && tdList.thisWeek >= 1); ok('waitlist sign-ups are kept with where they came from and their Arabic consent; Today counts them');
+assert.equal((await call(admin, '/api/admin/list', { cookie: adm })).data.cups.yemen, 1);
+await call(orders, '/api/list', { body: { email: 'odd@example.com', lang: 'en', consent: true, source: 'soon', cup: 'nonsense' } });
+assert.equal((await pg.query(`SELECT cup FROM subscribers WHERE email = 'odd@example.com'`)).rows[0].cup, null); ok('Which cup is yours? is kept with the sign-up and counted in the desk; anything else is ignored');
 
 // ---------- who can see the website ----------
 const siteStateFn = (await import('../netlify/functions/site-state.mts')).default;
@@ -942,5 +945,20 @@ const rl = await import('../netlify/lib/rate');
 let blocked = false;
 for (let i = 0; i < 40 && !blocked; i++) { try { await rl.limit('order:test-ip', 8, 60); } catch (e: any) { blocked = e.status === 429; } }
 assert.ok(blocked); ok('a script placing many orders from one place is stopped after 8 an hour');
+
+// ---------- refill reminder, about three weeks after a coffee order ----------
+const rfo = await order({ email: 'refill@example.com', day: '2027-04-08', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] });
+assert.equal(rfo.status, 201, JSON.stringify(rfo.data));
+await pg.query(`UPDATE orders SET status = 'completed' WHERE ref = $1`, [rfo.data.ref]);
+const rfBefore = sent.length;
+await daily('2027-04-29');
+assert.ok(!sent.slice(rfBefore).some(m => m.to === 'refill@example.com' || m.to?.includes?.('refill@example.com')));
+await pg.query(`INSERT INTO subscribers (email, lang, source, consent_text, confirmed_at, unsub_token) VALUES ('refill@example.com', 'en', 'checkout', 'yes', NOW(), 'u-refill')`);
+await pg.query(`UPDATE orders SET refill_sent_at = NULL WHERE ref = $1`, [rfo.data.ref]);
+await daily('2027-04-29');
+const rfMail = sent.slice(rfBefore).find(m => /Running low/.test(m.subject));
+assert.ok(rfMail); assert.match(rfMail.html, /Najdi/); assert.match(rfMail.html, /account/); assert.match(rfMail.html, /Just the pack/);
+const rfCount = sent.length; await daily('2027-04-30'); assert.ok(!sent.slice(rfCount).some(m => /Running low/.test(m.subject)));
+ok('about three weeks after a coffee order, one "Running low?" email, only to people on the mailing list, never twice');
 
 console.log(`\n${pass} checks passed`);

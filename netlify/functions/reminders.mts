@@ -6,7 +6,8 @@ import { loadOverrides } from '../lib/business';
 import { sql } from '../lib/db';
 import { calgaryNow, addDays } from '../lib/slots';
 import { notify, event } from '../lib/orders';
-import { send, reviewEmail } from '../lib/email';
+import { send, reviewEmail, refillEmail } from '../lib/email';
+import { PRODUCTS } from '../../src/data/products';
 import { env, siteUrl } from '../lib/http';
 import { sendSms, smsEnabled, reminderText } from '../lib/sms';
 import { runSubscriptions } from '../lib/subscriptions';
@@ -45,12 +46,29 @@ export async function daily(today = calgaryNow().date) {
     }
     reviews = done.length;
   }
+  // About three weeks after a completed order with coffee in it: one "running low?" email, only to
+  // customers who are on the mailing list (they agreed to hear from us), with no regular order and
+  // nothing ordered since.
+  const due = await sql`SELECT o.* FROM orders o JOIN subscribers s ON s.email = o.email AND s.confirmed_at IS NOT NULL AND s.unsubscribed_at IS NULL
+    WHERE o.status = 'completed' AND NOT o.is_sample AND o.refill_sent_at IS NULL AND o.subscription_id IS NULL
+      AND NOT EXISTS (SELECT 1 FROM orders n WHERE n.email = o.email AND n.id > o.id AND n.status <> 'cancelled')
+      AND o.slot_date BETWEEN ${addDays(today, -24)} AND ${addDays(today, -21)} LIMIT 200`;
+  let refills = 0;
+  for (const o of due) {
+    const items = await sql`SELECT product_id FROM order_items WHERE order_id = ${o.id}`;
+    const coffees = items.map(i => PRODUCTS.find(p => p.id === i.product_id)).filter(p => p && p.kind !== 'box')
+      .map(p => ({ en: p!.name.en, ar: p!.name.ar, pack: p!.kind === 'kit' || p!.kind === 'pack' }));
+    await sql`UPDATE orders SET refill_sent_at = NOW() WHERE id = ${o.id}`;
+    if (!coffees.length) continue;
+    await send(refillEmail({ ...o, slot_date: String(o.slot_date) } as any, coffees, siteUrl()));
+    refills++;
+  }
   const regular = await runSubscriptions(undefined, today);
   const team = await tomorrowEmail(tomorrow);
   const shifts = await shiftReminders(today);
   const papers = await paperReminders(today);
   const report = await sendMonthlyReport(today);
-  const out = { reminders: rows.length, texts, reviews, regular, team, shifts, papers, report };
+  const out = { reminders: rows.length, texts, reviews, refills, regular, team, shifts, papers, report };
   console.log('daily', tomorrow, out);
   return out;
 }

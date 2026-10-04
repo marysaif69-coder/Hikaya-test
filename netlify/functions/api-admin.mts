@@ -30,7 +30,7 @@ import { askStatus } from '../lib/ask-fallback';
 import { askEnabled } from '../lib/ask';
 import { weekSheet, weekStart } from '../lib/week';
 import { sendBackInStock, waitingByProduct } from '../lib/alerts';
-import { listStats } from '../lib/list';
+import { listStats, cupStats } from '../lib/list';
 import { numbers } from '../lib/visits';
 import { PRODUCTS, FAMILIES, fileCents } from '../../src/data/products';
 import { send, ticketReply } from '../lib/email';
@@ -404,7 +404,7 @@ async function handle(req: Request) {
     }
 
     // ---------- mailing list ----------
-    if (parts[0] === 'list' && req.method === 'GET') return json(await listStats());
+    if (parts[0] === 'list' && req.method === 'GET') return json({ ...(await listStats()), cups: await cupStats() });
     if (parts[0] === 'list.csv' && req.method === 'GET') {
       const rows = await sql`SELECT email, lang, source, consent_at, confirmed_at, consent_text FROM subscribers WHERE confirmed_at IS NOT NULL AND unsubscribed_at IS NULL ORDER BY confirmed_at`;
       const cell = (v: unknown) => { const t = v instanceof Date ? v.toISOString() : String(v ?? ''); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };

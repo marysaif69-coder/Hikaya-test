@@ -8,15 +8,19 @@ import { send, listConfirmEmail } from './email';
 import { CONSENT } from './consent';
 export { CONSENT };
 
-export async function subscribe(email: string, lang: 'en' | 'ar', source: 'footer' | 'checkout' | 'soon', req?: Request) {
+/** The answers to "Which cup is yours?" on the waitlist (optional). */
+export const CUPS = ['gulf', 'yemen', 'shami', 'qishr', 'unsure'] as const;
+
+export async function subscribe(email: string, lang: 'en' | 'ar', source: 'footer' | 'checkout' | 'soon', req?: Request, cupIn?: unknown) {
+  const cup = (CUPS as readonly string[]).includes(String(cupIn)) ? String(cupIn) : null;
   const e = email.trim().toLowerCase();
   if (!isEmail(e)) throw Object.assign(new HttpError(400, 'invalid', 'Check the email.'), { fields: { email: 'email' } });
   const cur = await one`SELECT confirmed_at, unsubscribed_at FROM subscribers WHERE email = ${e}`;
-  if (cur?.confirmed_at && !cur.unsubscribed_at) return { already: true };
+  if (cur?.confirmed_at && !cur.unsubscribed_at) { if (cup) await sql`UPDATE subscribers SET cup = ${cup} WHERE email = ${e}`; return { already: true }; }
   const t = token(18);
-  await sql`INSERT INTO subscribers (email, lang, source, consent_text, confirm_token_hash, unsub_token)
-    VALUES (${e}, ${lang}, ${source}, ${CONSENT[lang]}, ${hash(t)}, ${token(18)})
-    ON CONFLICT (email) DO UPDATE SET lang = EXCLUDED.lang, source = EXCLUDED.source, consent_text = EXCLUDED.consent_text, consent_at = NOW(),
+  await sql`INSERT INTO subscribers (email, lang, source, consent_text, confirm_token_hash, unsub_token, cup)
+    VALUES (${e}, ${lang}, ${source}, ${CONSENT[lang]}, ${hash(t)}, ${token(18)}, ${cup})
+    ON CONFLICT (email) DO UPDATE SET lang = EXCLUDED.lang, source = EXCLUDED.source, consent_text = EXCLUDED.consent_text, consent_at = NOW(), cup = COALESCE(EXCLUDED.cup, subscribers.cup),
       confirm_token_hash = EXCLUDED.confirm_token_hash, confirmed_at = NULL, unsubscribed_at = NULL`;
   await send(listConfirmEmail(e, lang, `${siteUrl(req)}/api/list/confirm?t=${t}`, siteUrl(req)));
   return { already: false };
@@ -37,3 +41,9 @@ export const listStats = () => one`SELECT COUNT(*) FILTER (WHERE confirmed_at IS
   COUNT(*) FILTER (WHERE confirmed_at IS NOT NULL AND unsubscribed_at IS NULL AND source = 'soon')::int AS from_soon,
   COUNT(*) FILTER (WHERE confirmed_at > NOW() - INTERVAL '7 days' AND unsubscribed_at IS NULL)::int AS this_week,
   COUNT(*) FILTER (WHERE confirmed_at IS NULL AND unsubscribed_at IS NULL)::int AS waiting, COUNT(*) FILTER (WHERE unsubscribed_at IS NOT NULL)::int AS left FROM subscribers`;
+
+/** How the waitlist answered "Which cup is yours?" (confirmed, still subscribed). */
+export async function cupStats() {
+  const rows = await sql`SELECT COALESCE(cup, 'none') AS cup, COUNT(*)::int AS n FROM subscribers WHERE confirmed_at IS NOT NULL AND unsubscribed_at IS NULL GROUP BY 1`;
+  return Object.fromEntries(rows.map(r => [r.cup as string, r.n as number]));
+}

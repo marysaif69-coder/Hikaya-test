@@ -224,6 +224,18 @@ export function reviewEmail(o: OrderForMail, reviewUrl: string, siteUrl: string)
   return { to: o.email, subject: s, html: layout(L, s, body, siteUrl), text: `${s}\n\n${reviewUrl}`, kind: 'review-request', orderId: o.id };
 }
 
+/** About three weeks after a coffee order: the bag is running low. Only to people on the mailing list. */
+export function refillEmail(o: OrderForMail, coffees: { en: string; ar: string; pack: boolean }[], siteUrl: string): Mail {
+  const L = (o.lang === 'ar' ? 'ar' : 'en') as Lang, ar = L === 'ar';
+  const s = ar ? 'هل قارب الكيس على النفاد؟' : 'Running low?';
+  const names = coffees.map(c => esc(c[L])).join(ar ? '، ' : ', ');
+  const anyPack = coffees.some(c => c.pack);
+  const body = `<p>${ar ? `مرّت ثلاثة أسابيع تقريباً على طلبك ${o.ref} (${names}). إن قارب الكيس على النفاد، تستطيع طلب الشيء نفسه بضغطة من حسابك.` : `It has been about three weeks since order ${o.ref} (${names}). If the bag is running low, you can order the same again in one tap from your account.`}</p>
+${btn(`${siteUrl}/${L}/account/`, ar ? 'اطلب الشيء نفسه' : 'Order the same again')}
+${anyPack ? `<p>${ar ? 'وإن بقي عندك كيس، فالظرف وحده في المتجر.' : 'Still have a bag at home? The pack on its own is in the shop.'} <a href="${siteUrl}/${L}/shop/#packs" style="color:#A93B28">${ar ? 'الظرف وحده' : 'Just the pack'}</a></p>` : ''}`;
+  return { to: o.email, subject: s, html: layout(L, s, body, siteUrl), text: `${s}\n\n${siteUrl}/${L}/account/`, kind: 'refill-reminder', orderId: o.id };
+}
+
 // ---------- gift cards ----------
 export type GiftCardForMail = { ref: string; code: string; amount_cents: number; balance_cents?: number; buyer_name: string; buyer_email: string; to_name: string; to_email: string | null; message: string | null; lang: Lang; payment: string; square_link_url?: string | null };
 

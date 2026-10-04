@@ -19,7 +19,7 @@ Both audiences, weighted equally:
 
 ## Product Purpose
 
-Hikaya (حكاية, "a story") is a new coffee and dates brand in Calgary, Canada (Hikaya Coffee Ltd.). The website sells Gulf, Yemeni and Levantine spiced coffees and premium dates for pickup and local delivery, with Ramadan and Eid as the launch moments. Success for stage A2: pre-orders from January 2027, before Ramadan (~8 Feb 2027) and Eid (~9 Mar 2027).
+Hikaya (حكاية, "a story") is a new coffee and dates brand in Calgary, Canada (Hikaya Coffee Ltd.). The website sells Gulf, Yemeni and Shami coffees, qishr and dates for pickup and local delivery in Calgary. The coffee model: a base bag (coffee and its everyday spice) plus sealed packs that make it the way each home takes it (Najdi, Qassimi, Hijazi, Hadrami, Rada'i, Baydani), packs on their own as refills, and tasting boxes for newcomers. See docs/coffee-tbd.md for what is still open.
 
 Two sites share one brand: hikayacoffee.ca (the story) and the shop (hikaya-shop-preview on Netlify). Both are in scope.
 
@@ -37,9 +37,9 @@ Coffee and dates belong to the same table: Gulf qahwa is poured with a date, oth
 ## Capabilities and Constraints
 
 - Languages: Arabic and English only on the website, with true RTL for Arabic and Arabic first in paired lines. Packaging labels are English and French (Canadian law); ingredient labels on product pages show EN/FR.
-- Products (draft prices, CAD, confirm before launch): Gulf coffees Najdi, Khaleeji, Shamaliyya $24; Yemeni Rada'ey, Jubani, Sana'ani, Baydani $26; Levantine with cardamom $22, plain $20; Qishr 100 g $16; Ramadan Date Box $34; Iftar Pair $54; Four Palms $44; Eid Coffee & Dates $56, Eid Dates (four varieties) $58, Eid Coffee Duo (Najdi + Khaleeji) $46.
+- Products: base bags Gulf coffee (cardamom), Yemeni qahwa (cardamom only), Jubani (with qishr), Qishr (husk with ginger), Shami with cardamom, Shami sada; packs: saffron, Qassim blend (spices only; the customer adds milk), Hijazi blend, Hadrami, Rada'i, Baydani (ginger in the Yemeni packs); styles = bag + packs at one price; tasting boxes تذوّق النكهة الخليجية / اليمنية. Prices are not set yet (the site says "price coming"). Khaleeji, Shamaliyya and Sana'ani are discontinued.
 - Dates: Sukkari, Khalas, Medjool, Ajwa, Khudri.
-- Open: what separates Najdi from Khaleeji (same ingredients today); final prices; pickup address and hours; GST treatment.
+- Open: final prices; grams per pot and per pack; Hadrami and Hijazi pack contents; pickup address and hours; GST treatment.
 
 ## Brand Commitments
 

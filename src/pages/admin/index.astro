@@ -1606,7 +1606,7 @@ import '../../styles/global.css';
   async function loadPromos() {
     loadGiftCards(); if (ROLE === 'admin') loadLetters();
     api('/api/admin/list').then(l => {
-      $('listBox').innerHTML = `<h2 class="h-s">Mailing list</h2><p><b>${l.confirmed}</b> confirmed (${l.from_soon ?? 0} from the Coming soon page) · ${l.waiting} waiting to confirm · ${l.left} unsubscribed</p>
+      $('listBox').innerHTML = `<h2 class="h-s">Mailing list</h2><p><b>${l.confirmed}</b> confirmed (${l.from_soon ?? 0} from the Coming soon page) · ${l.waiting} waiting to confirm · ${l.left} unsubscribed</p>${l.cups && Object.keys(l.cups).length ? `<p><b>Which cup is yours?</b> ${[['gulf', 'Gulf'], ['yemen', 'Yemeni'], ['shami', 'Shami'], ['qishr', 'Qishr'], ['unsure', 'Not sure'], ['none', 'No answer']].filter(([k]) => l.cups[k]).map(([k, n]) => `${n} <b>${l.cups[k]}</b>`).join(' · ')}</p>` : ''}
         <p class="muted">People sign up at the bottom of every page or at checkout, tick the consent box, and confirm by email (Canada's anti-spam law). Download the confirmed list to send your letters from Mailchimp, Buttondown or Resend; every letter must include an unsubscribe link.</p>
         <p><a class="btn line sm" href="/api/admin/list.csv">Download the list (CSV)</a></p>`;
     });

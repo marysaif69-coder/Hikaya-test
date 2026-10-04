@@ -8,7 +8,7 @@ export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lan
 const lang = Astro.params.lang as Lang;
 const ar = lang === 'ar';
 const CH = {
-  bunn: { name: 'بُن', en: 'Bunn · the coffee', pts: { en: ['The traveller and the teller', 'Came down from the terraces of Haraz', 'Bitter, quick, proud', 'Speaks first'], ar: ['المسافر والحكّاء', 'نزل من مدرجات حراز', 'مُرّ وسريع وفخور', 'يتكلم أولاً'] } },
+  bunn: { name: 'بُن', en: 'Bunn · the coffee', pts: { en: ['The traveller and the teller', 'Learned his ways on the terraces of Haraz', 'Bitter, quick, proud', 'Speaks first'], ar: ['المسافر والحكّاء', 'تعلّم طرقه في مدرجات حراز', 'مُرّ وسريع وفخور', 'يتكلم أولاً'] } },
   tamr: { name: 'تمر', en: 'Tamr · the date', pts: { en: ['The host and the listener', 'Of any palm, and knows Al-Ahsa by heart', 'Sweet, patient, teasing', 'Always answers'], ar: ['المضيفة والمستمعة', 'من كل نخلة، وتعرف الأحساء عن ظهر قلب', 'حلوة وصبورة ومشاكسة', 'تردّ دائماً'] } },
 };
 const STAGES = [
@@ -39,6 +39,16 @@ const STAGES = [
     </div>
   </section>
 
+  <!-- Why Hikaya: a short note from us. DRAFT for the owners to rewrite in their own words. -->
+  <section class="sec wrap why" aria-labelledby="why-h">
+    <h2 id="why-h" class="h-l">{ar ? 'لماذا حكاية؟' : 'Why Hikaya?'}</h2>
+    <div class="why-note">
+      <p>{ar ? 'في بيوتنا، القهوة ترحيب قبل أن تكون مشروباً: دلّة على النار، وتمرة بجانب الفنجان، وحديث يطول.' : 'In our homes, coffee is a welcome before it is a drink: a dallah on the stove, a date beside the cup, a conversation that runs long.'}</p>
+      <p>{ar ? 'أردنا هذا الفنجان في كالغاري كما نعرفه، وأن نشاركه مع جيراننا. فبدأنا حكاية: قهوة نحمّصها هنا بطريقة كل بيت، وتمر يليق بها.' : 'We wanted that cup in Calgary, the way we know it, and to share it with our neighbours. So we started Hikaya: coffee roasted here, made the way each home makes it, and dates that belong beside it.'}</p>
+      <p class="sign">{ar ? '— حكاية' : '— Hikaya'}</p>
+    </div>
+  </section>
+
   <section class="sec wrap rules" aria-labelledby="rules-h">
     <h2 id="rules-h" class="h-l">{ar ? 'كيف يتكلمان' : 'How they talk'}</h2>
     <div class="r-grid">
@@ -55,7 +65,7 @@ const STAGES = [
   <section class="sec dates" aria-labelledby="dates-h">
     <div class="wrap">
       <h2 id="dates-h" class="h-l">{ar ? 'تمر، الصوت الآخر' : 'Tamr, the other voice'}</h2>
-      <p class="lead">{ar ? 'نختار التمر كما يُختار النبيذ: بالصنف والمنطقة والموسم.' : 'We choose dates like wine: by variety, region and harvest.'}</p>
+      <p class="lead">{ar ? 'نختار التمر كما يختاره المضيف: بالصنف والمنطقة والموسم.' : 'We choose dates the way a host does: by variety, region and season.'}</p>
       <ul class="d-row">
         {Object.values(DATES).map(d => (
           <li>
@@ -80,6 +90,10 @@ const STAGES = [
 </Base>
 
 <style>
+  .why { display: grid; gap: 18px; }
+  .why-note { max-width: 680px; display: grid; gap: 14px; padding: 24px 26px; border-radius: 28px; border-bottom-right-radius: 6px; background: var(--sheet); font-size: 18px; }
+  .why-note p { margin: 0; }
+  .why-note .sign { font-family: var(--display); font-weight: 700; color: var(--tamr); }
   .s-head { display: grid; grid-template-columns: .6fr 1.4fr; gap: clamp(24px, 5vw, 80px); align-items: center; padding-block: clamp(48px, 7vw, 104px); }
   .s-logo { width: 100%; max-width: 300px; }
   @media (max-width: 760px) { .s-head { grid-template-columns: 1fr; } .s-logo { max-width: 160px; } }

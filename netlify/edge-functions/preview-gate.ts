@@ -194,6 +194,10 @@ function gate(next: string, state: 'ask' | 'wrong' | 'unset', note = '', team = 
   .langs { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; border: 0; padding: 0; margin: 0; }
   .langs label { display: inline-flex; gap: 6px; align-items: center; border: 1.5px solid #DFD1BA; border-radius: 999px; padding: 7px 14px; background: #fff; cursor: pointer; font-size: 15px; color: #33211A; }
   .langs input { width: auto; accent-color: #33211A; }
+  .cups { margin-top: 4px; }
+  .cups legend { width: 100%; text-align: center; font-size: 14px; color: #33211A; margin-bottom: 8px; }
+  .cups legend small { color: #66503F; }
+  .cups label { font-size: 14px; padding: 6px 12px; }
   .consent { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; font-size: 13px; line-height: 1.45; color: #66503F; text-align: start; }
   .consent input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: #33211A; padding: 0; }
   .consent span span { display: block; direction: ltr; margin-top: 4px; }
@@ -219,6 +223,8 @@ function gate(next: string, state: 'ask' | 'wrong' | 'unset', note = '', team = 
     <input id="wl-e" name="email" type="email" inputmode="email" autocomplete="email" required>
     <fieldset class="langs"><legend class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">Language of the emails</legend>
       <label><input type="radio" name="lang" value="ar" checked> بالعربية</label><label><input type="radio" name="lang" value="en"> In English</label></fieldset>
+    <fieldset class="langs cups"><legend>أي فنجان فنجانك؟ · Which cup is yours? <small>(اختياري · optional)</small></legend>
+      <label><input type="radio" name="cup" value="gulf"> خليجية · Gulf</label><label><input type="radio" name="cup" value="yemen"> يمنية · Yemeni</label><label><input type="radio" name="cup" value="shami"> شامية · Shami</label><label><input type="radio" name="cup" value="qishr"> قشر · Qishr</label><label><input type="radio" name="cup" value="unsure"> لست متأكداً · Not sure</label></fieldset>
     <label class="consent"><input type="checkbox" name="consent" required><span>${CONSENT.ar}<span>${CONSENT.en}</span></span></label>
     <button type="submit">أخبروني · Tell me</button>
     <p class="msg" id="wl-msg" role="status" hidden></p>
@@ -246,7 +252,7 @@ function gate(next: string, state: 'ask' | 'wrong' | 'unset', note = '', team = 
       if (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email)) return say('اكتب بريداً صحيحاً.', 'Type a valid email.');
       if (!f.consent.checked) return say('ضع علامة في المربع لنستطيع مراسلتك.', 'Tick the box so we can write to you.');
       var b = f.querySelector('button'); b.disabled = true;
-      fetch('/api/list', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: email, lang: lang, consent: true, source: 'soon' }) })
+      fetch('/api/list', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: email, lang: lang, consent: true, source: 'soon', cup: (f.querySelector('input[name=cup]:checked') || {}).value }) })
         .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
         .then(function (x) {
           if (!x.ok) return say('لم ينجح ذلك. حاول مرة أخرى بعد قليل.', (x.d && x.d.message) || 'That did not work. Try again in a moment.');

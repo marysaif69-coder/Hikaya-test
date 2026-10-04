@@ -54,7 +54,7 @@ export default async (req: Request) => {
       await limit(`list:${ipKey(req)}`, 10, 60);
       const b = await body(req);
       if (b.consent !== true) throw Object.assign(new HttpError(400, 'consent', 'Tick the box to agree to receive our emails.'), { fields: { consent: 'required' } });
-      return json(await subscribe(str(b.email, 254), b.lang === 'ar' ? 'ar' : 'en', b.source === 'soon' ? 'soon' : 'footer', req));
+      return json(await subscribe(str(b.email, 254), b.lang === 'ar' ? 'ar' : 'en', b.source === 'soon' ? 'soon' : 'footer', req, b.cup));
     }
     if (path === '/api/list/confirm' && req.method === 'GET') {
       try { const lang = await confirm(str(url.searchParams.get('t'), 64)); return Response.redirect(`${siteUrl(req)}/${lang}/thanks/?list=1`, 303); }
