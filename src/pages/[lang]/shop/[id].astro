@@ -4,7 +4,7 @@ import Pouch from '../../../components/Pouch.astro';
 import Sachet from '../../../components/Sachet.astro';
 import Pair from '../../../components/Pair.astro';
 import ProductCard from '../../../components/ProductCard.astro';
-import { PRODUCTS, COFFEES, KITS, FAMILIES, SPICES, GRINDS, DATES, ALLERGENS, priceText, baseOf, packOf, stylesFor, allergyNote, kitInside, type Lang, type Product, type Coffee } from '../../../data/products';
+import { PRODUCTS, COFFEES, KITS, PACKS, FAMILIES, SPICES, GRINDS, DATES, ALLERGENS, priceText, baseOf, packOf, stylesFor, allergyNote, kitInside, type Lang, type Product, type Coffee } from '../../../data/products';
 import { BREW } from '../../../data/brew';
 import { UI, path } from '../../../data/i18n';
 
@@ -31,10 +31,7 @@ const dateBox = PRODUCTS.find(o => o.id === 'date-box')!;
 const styles = p.kind === 'coffee' ? stylesFor(p.id) : [];
 // Other bags of the same line that are ways of their own (Jubani, Qishr on the Yemeni page).
 const ownWays = styles.length ? COFFEES.filter(c => c.line === (p as Coffee).line && c.id !== p.id) : [];
-const plain: Record<string, { en: string; ar: string }> = {
-  gulf: { en: 'Gulf coffee, cardamom only', ar: 'قهوة خليجية، بالهيل فقط' },
-  yemeni: { en: 'Yemeni qahwa, as it is', ar: 'قهوة يمنية، كما هي' },
-};
+const packsFor = p.kind === 'coffee' ? PACKS.filter(k => k.for === p.id) : [];
 const discoveryFor = p.kind === 'coffee' ? KITS.find(k => k.discovery && k.base === p.id) : null;
 const grinds = bag && p.kind !== 'pack' ? bag.grinds : [];
 const lineKey = p.kind === 'box' ? null : p.line;
@@ -120,13 +117,14 @@ const sizeText = p.kind === 'coffee' ? p.size : p.kind === 'kit' ? kitInside(p, 
         {styles.length > 0 && (
           <fieldset class="styles" id="styles">
             <legend>{L('How do you take it?', 'كيف تشربها؟')}<small>{L('Every region has its way, every home its cup.', 'لكل منطقة طريقتها، ولكل بيت فنجان.')}</small></legend>
-            <label><input type="radio" name="style" value={p.id} checked data-priced={p.price != null ? '1' : ''} data-price-text={priceText(p.price, lang)} /><span><b>{plain[p.id]?.[lang] ?? p.name[lang]}</b><small>{L('Just the bag', 'الكيس وحده')}</small></span></label>
             {styles.map(k => (
               <label><input type="radio" name="style" value={k.id} data-priced={k.price != null ? '1' : ''} data-price-text={priceText(k.price, lang)} /><span><b>{k.name[lang]}</b><small>{L('The bag + ', 'الكيس + ')}{k.parts.map(x => packOf(x.id)!.name[lang]).join(' + ')}</small><small class={`allergy ${allergyNote(k, lang).none ? 'none' : ''}`}>{allergyNote(k, lang).text}</small></span></label>
             ))}
             {ownWays.map(c => (
               <label><input type="radio" name="style" value={c.id} data-priced={c.price != null ? '1' : ''} data-price-text={priceText(c.price, lang)} /><span><b>{c.name[lang]}</b><small>{L('A bag of its own: ', 'كيس قائم بذاته: ')}{c.notes[lang]}</small></span></label>
             ))}
+            <label class="nothing"><input type="radio" name="style" value={p.id} checked data-priced={p.price != null ? '1' : ''} data-price-text={priceText(p.price, lang)} /><span><b>{L('Nothing added', 'بدون إضافات')}</b><small>{L(`Just the bag${p.spices.length ? ', with its ' + p.spices.map(x => SPICES[x].name.en.toLowerCase()).join(' and ') : ''}`, `الكيس وحده${p.spices.length ? '، بال' + p.spices.map(x => SPICES[x].name.ar).join(' وال') : ''}`)}</small></span></label>
+            {packsFor.length > 0 && <p class="muted try">{L('Already have the bag? Take the pack by itself: ', 'عندك الكيس؟ خذ الظرف وحده: ')}{packsFor.map((k, i) => <>{i > 0 && (ar ? '، ' : ', ')}<a href={path(lang, `shop/${k.id}`)}>{k.name[lang]}</a></>)}</p>}
             {discoveryFor && <p class="muted try">{L('Not sure which? ', 'لست متأكداً؟ ')}<a href={path(lang, `shop/${discoveryFor.id}`)}>{discoveryFor.name[lang]}</a>{L(' has a small pack of each.', ' فيها ظرف صغير من كل طريقة.')}</p>}
           </fieldset>
         )}
