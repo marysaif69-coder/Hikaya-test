@@ -24,7 +24,7 @@ const others = [
 // Step 1 cards: each names everything inside it, so the smaller types are never hidden.
 const PICK_LINE: Record<CoffeeLine, { en: string; ar: string }> = {
   gulf: { en: 'Pale and golden, from the dallah', ar: 'شقراء وذهبية، من الدلّة' },
-  yemen: { en: 'From the pot, warm with hawaij', ar: 'من الإبريق، دافئة بالحوائج' },
+  yemen: { en: 'From the pot, ginger in the packs', ar: 'من الإبريق، والزنجبيل في الظروف' },
   shami: { en: 'Powder-fine, with foam, from the rakwa', ar: 'ناعمة برغوتها، من الركوة' },
 };
 const T = {
@@ -48,12 +48,12 @@ const T = {
     <div class="how-row">
       <div class="how-item">
         <span class="how-pic"><Pouch coffee={COFFEES[0]} lang={lang} label={false} /></span>
-        <p><b>{ar ? 'الكيس' : 'The bag'}</b><span>{ar ? 'القهوة وبهارها الأساسي مخلوط فيها: الهيل في الخليجية، والحوائج في اليمنية.' : 'The coffee, with its everyday spice already mixed in: cardamom in the Gulf, hawaij in the Yemeni.'}</span></p>
+        <p><b>{ar ? 'الكيس' : 'The bag'}</b><span>{ar ? 'القهوة والهيل مخلوط فيها، في الخليجية واليمنية.' : 'The coffee, with cardamom already mixed in, Gulf and Yemeni alike.'}</span></p>
       </div>
       <span class="how-op" aria-hidden="true">+</span>
       <div class="how-item">
         <span class="how-pic packs"><Sachet pack={packOf('pack-saffron')!} lang={lang} /><Sachet pack={packOf('pack-qassim')!} lang={lang} /></span>
-        <p><b>{ar ? 'الظروف' : 'The packs'}</b><span>{ar ? 'ما يضيفه أهلك: الزعفران، الخلطة القصيمية، السمسم واللوز... مختومة، وعلى كل ظرف مكوناته.' : 'What your family adds: saffron, the Qassim blend, sesame and almonds... sealed, each with its own label.'}</span></p>
+        <p><b>{ar ? 'الظروف' : 'The packs'}</b><span>{ar ? 'ما يضيفه أهلك: الزعفران، الخلطة القصيمية، الزنجبيل والسمسم... مختومة، وعلى كل ظرف مكوناته.' : 'What your family adds: saffron, the Qassim blend, ginger and sesame... sealed, each with its own label.'}</span></p>
       </div>
       <span class="how-op" aria-hidden="true">=</span>
       <div class="how-item how-end">

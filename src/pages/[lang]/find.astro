@@ -13,7 +13,7 @@ const L = (en: string, a: string) => (ar ? a : en);
 type Opt = { v: string; t: string; s?: string };
 const Q1: Opt[] = [
   { v: 'gulf', t: L('Gulf qahwa', 'القهوة الخليجية'), s: L('Pale and golden, poured from the dallah', 'شقراء وذهبية، تُصبّ من الدلّة') },
-  { v: 'yemen', t: L('Yemeni coffee', 'القهوة اليمنية'), s: L('From the pot, warm with ginger', 'من الإبريق، دافئة بالزنجبيل') },
+  { v: 'yemen', t: L('Yemeni coffee', 'القهوة اليمنية'), s: L('From the pot', 'من الإبريق') },
   { v: 'shami', t: L('Shami coffee', 'القهوة الشامية'), s: L('Thick, with its foam, from the rakwa', 'كثيفة برغوتها، من الركوة') },
   { v: 'new', t: L('None yet, I am new to it', 'لا شيء بعد، أنا جديد عليها') },
 ];
@@ -26,7 +26,7 @@ const Q2: Record<string, Opt[]> = {
     { v: 'taste-gulf', t: L('Not sure, I want to try', 'لست متأكداً، أريد أن أجرّب') },
   ],
   yemen: [
-    { v: 'yemeni', t: L('With hawaij, as it is', 'بالحوائج، كما هي'), s: L('Yemeni qahwa', 'قهوة يمنية') },
+    { v: 'yemeni', t: L('Cardamom only, no ginger', 'بالهيل فقط، بلا زنجبيل'), s: L('Yemeni qahwa', 'قهوة يمنية') },
     { v: 'hadrami', t: L('The Hadramawt way', 'على طريقة حضرموت'), s: L('Hadrami', 'حضرمية') },
     { v: 'radai', t: L('With sesame and almonds', 'بالسمسم واللوز'), s: L('Rada’i', 'رداعية') },
     { v: 'baydani', t: L('With sorghum', 'بالذرة'), s: L('Baydani', 'بيضانية') },

@@ -31,20 +31,20 @@
       "ar": "قهوة يمنية"
     },
     "taste": {
-      "en": "Warm · ginger · cardamom",
-      "ar": "دافئة · زنجبيل · هيل"
+      "en": "Bright · cardamom · round",
+      "ar": "مشرقة · هيل · مستديرة"
     },
     "notes": {
-      "en": "Yemeni-style, from Ethiopian beans. Medium-light roast, fine ground, with hawaij (ginger and cardamom) mixed in.",
-      "ar": "على الطريقة اليمنية، من حبوب إثيوبية. تحميص متوسط فاتح، طحنة ناعمة، والحوائج (زنجبيل وهيل) مخلوطة فيها."
+      "en": "Yemeni-style, from Ethiopian beans. Medium-light roast, fine ground, with cardamom mixed in. The ginger comes in the packs.",
+      "ar": "على الطريقة اليمنية، من حبوب إثيوبية. تحميص متوسط فاتح، طحنة ناعمة، والهيل مخلوط فيها. والزنجبيل يأتي في الظروف."
     },
     "story": {
-      "en": "Coffee the way Yemeni homes make it, in the pot with hawaij. On its own it is the everyday cup. With a pack it becomes Hadrami, Rada’i or Baydani.",
-      "ar": "القهوة كما تصنعها البيوت اليمنية، في الإبريق مع الحوائج. وحدها فنجان كل يوم، ومع ظرف تصير حضرمية أو رداعية أو بيضانية."
+      "en": "Coffee the way Yemeni homes make it, in the pot. On its own it is a clean cardamom cup. With a pack, ginger and all, it becomes Hadrami, Rada’i or Baydani.",
+      "ar": "القهوة كما تصنعها البيوت اليمنية، في الإبريق. وحدها فنجان صافٍ بالهيل، ومع ظرف، بزنجبيله وكل ما فيه، تصير حضرمية أو رداعية أو بيضانية."
     },
     "bunn": {
-      "en": "The hawaij is already in me.",
-      "ar": "الحوائج فيّ من الأصل."
+      "en": "Cardamom in me. The ginger waits in the pack.",
+      "ar": "فيّ الهيل، والزنجبيل ينتظر في الظرف."
     },
     "why": {
       "en": "Honeyed Medjool meets the ginger.",
@@ -243,8 +243,8 @@
       "ar": "[يُحدد لاحقاً]"
     },
     "notes": {
-      "en": "Yemeni qahwa with the Hadrami pack.",
-      "ar": "قهوة يمنية مع الخلطة الحضرمية."
+      "en": "Yemeni qahwa with the Hadrami pack: ginger and the Hadrami additions.",
+      "ar": "قهوة يمنية مع الخلطة الحضرمية: الزنجبيل وإضافات حضرموت."
     },
     "story": {
       "en": "The Hadramawt way, made in the pot.",
@@ -269,8 +269,8 @@
       "ar": "مكسرات · سمسم · دافئة"
     },
     "notes": {
-      "en": "Yemeni qahwa with the Rada’i pack of roasted sesame and almonds.",
-      "ar": "قهوة يمنية مع الخلطة الرداعية من السمسم المحمّص واللوز."
+      "en": "Yemeni qahwa with the Rada’i pack: ginger, roasted sesame and almonds.",
+      "ar": "قهوة يمنية مع الخلطة الرداعية: زنجبيل وسمسم محمّص ولوز."
     },
     "story": {
       "en": "From Rada’a: sesame and almonds in the pot with the coffee.",
@@ -295,8 +295,8 @@
       "ar": "محمّصة · حبوب · دافئة"
     },
     "notes": {
-      "en": "Yemeni qahwa with the Baydani pack of roasted sorghum.",
-      "ar": "قهوة يمنية مع الخلطة البيضانية من الذرة الرفيعة المحمّصة."
+      "en": "Yemeni qahwa with the Baydani pack: ginger and roasted sorghum.",
+      "ar": "قهوة يمنية مع الخلطة البيضانية: زنجبيل وذرة رفيعة محمّصة."
     },
     "story": {
       "en": "Al-Bayda's way: grain in the pot with the coffee.",
@@ -411,12 +411,12 @@
       "ar": "خلطة حضرمية"
     },
     "notes": {
-      "en": "Turns Yemeni qahwa into Hadrami, the way Hadramawt makes it.",
-      "ar": "تجعل القهوة اليمنية حضرمية، كما تصنعها حضرموت."
+      "en": "Ginger and the Hadrami additions, for Yemeni qahwa the way Hadramawt makes it.",
+      "ar": "الزنجبيل وإضافات حضرموت، للقهوة اليمنية كما تصنعها حضرموت."
     },
     "contents": {
-      "en": "[TBD: contents]",
-      "ar": "[يُحدد لاحقاً: المكونات]"
+      "en": "Ginger. [TBD: the rest]",
+      "ar": "زنجبيل. [يُحدد لاحقاً: الباقي]"
     }
   },
   "pack-radai": {
@@ -425,12 +425,12 @@
       "ar": "خلطة رداعية"
     },
     "notes": {
-      "en": "Roasted sesame and almonds, for Yemeni qahwa the way Rada’a makes it.",
-      "ar": "سمسم محمّص ولوز، للقهوة اليمنية على طريقة رداع."
+      "en": "Ginger, roasted sesame and almonds, for Yemeni qahwa the way Rada’a makes it.",
+      "ar": "زنجبيل وسمسم محمّص ولوز، للقهوة اليمنية على طريقة رداع."
     },
     "contents": {
-      "en": "Roasted sesame, almonds.",
-      "ar": "سمسم محمّص، لوز."
+      "en": "Ginger, roasted sesame, almonds.",
+      "ar": "زنجبيل، سمسم محمّص، لوز."
     }
   },
   "pack-baydani": {
@@ -439,12 +439,12 @@
       "ar": "خلطة بيضانية"
     },
     "notes": {
-      "en": "Sorghum, for Yemeni qahwa the way Al-Bayda makes it.",
-      "ar": "ذرة رفيعة، للقهوة اليمنية على طريقة البيضاء."
+      "en": "Ginger and sorghum, for Yemeni qahwa the way Al-Bayda makes it.",
+      "ar": "زنجبيل وذرة رفيعة، للقهوة اليمنية على طريقة البيضاء."
     },
     "contents": {
-      "en": "Roasted sorghum. [TBD: the richer version]",
-      "ar": "ذرة رفيعة محمّصة. [يُحدد لاحقاً: النسخة الأغنى]"
+      "en": "Ginger, roasted sorghum. [TBD: the richer version]",
+      "ar": "زنجبيل، ذرة رفيعة محمّصة. [يُحدد لاحقاً: النسخة الأغنى]"
     }
   },
   "date-box": {

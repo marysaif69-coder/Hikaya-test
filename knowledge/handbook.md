@@ -19,8 +19,8 @@ Edit this file to change what the assistant says, then run the test questions
 
 ## Our coffee: the bag, your family's way, and the packs
 
-- Three lines: Gulf coffee, Yemeni coffee and Shami coffee. Each bag holds the coffee and its everyday spice only: Gulf coffee has cardamom mixed in; Yemeni qahwa has hawaij (ginger and cardamom) mixed in; Shami comes with cardamom or plain (sada). Jubani (coffee with its own husk) and qishr (dried coffee cherry husk, with ginger) are in the Yemeni line.
-- Family styles: the same bag with its sealed packs, in one box at one price. For Gulf coffee: Najdi (with the saffron packet), Qassimi (Qassim blend pack and saffron), Hijazi (Hijazi blend pack and saffron). For Yemeni qahwa: Hadrami, Rada'i (roasted sesame and almonds) and Baydani (sorghum).
+- Three lines: Gulf coffee, Yemeni coffee and Shami coffee. Each bag holds the coffee and its everyday spice only: Gulf coffee has cardamom mixed in; Yemeni qahwa has cardamom only (no ginger in the bag); Shami comes with cardamom or plain (sada). Jubani (coffee with its own husk) and qishr (dried coffee cherry husk, with ginger) are in the Yemeni line.
+- Family styles: the same bag with its sealed packs, in one box at one price. For Gulf coffee: Najdi (with the saffron packet), Qassimi (Qassim blend pack and saffron), Hijazi (Hijazi blend pack and saffron). For Yemeni qahwa: Hadrami (ginger and the Hadrami additions), Rada'i (ginger, roasted sesame and almonds) and Baydani (ginger and sorghum). The ginger is in these packs, not in the bag; plain Yemeni qahwa is cardamom only.
 - Najdi always includes the saffron packet: the saffron is what makes it Najdi. Gulf coffee without saffron is called "Gulf coffee, cardamom only", not Najdi.
 - Why packs: one fresh bag serves many families' ways, and the spices with allergens (milk, sesame, almonds, grain) stay sealed in their own packs, never in the coffee. Saffron is kept in its own packet so it stays bright until the pot.
 - Packs are also sold on their own ("Just the pack") as a refill for a bag the customer already has. If someone buys a pack without its bag, check they have the bag at home.
