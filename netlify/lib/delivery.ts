@@ -61,9 +61,11 @@ export async function stops(s: Session, date: string, mine: boolean) {
   return Promise.all(rows.map(stopShape));
 }
 
-async function myStop(s: Session, ref: string) {
+/** One of my stops. `active`: refuse a cancelled order (a screen that is out of date must not deliver it). */
+async function myStop(s: Session, ref: string, opts: { active?: boolean } = {}) {
   const o = await one`SELECT * FROM orders WHERE ref = ${ref} AND method = 'delivery'`;
   if (!o || (s.role === 'driver' && o.driver_email !== s.email)) throw new HttpError(404, 'not-found', 'That stop is not on your list.');
+  if (opts.active && o.status === 'cancelled') throw new HttpError(409, 'cancelled', 'This order was cancelled. Do not hand it over; call the owners.');
   return o;
 }
 
@@ -73,6 +75,8 @@ const openRoute = (email: string, date: string) => one`SELECT * FROM routes WHER
 /** Start route: plans the shortest order for my stops still to do, records the start odometer,
  * and marks them "out for delivery" (each customer gets the "on its way" email). */
 export async function startRoute(s: Session, date: string, req?: Request, b: any = {}) {
+  // Starting tells every customer "on its way", so only on the day itself.
+  if (date !== calgaryNow().date) throw new HttpError(409, 'not-today', 'You can start a route only on its own day.');
   await assertPapers(s.email, date);
   if (await openRoute(s.email, date)) throw new HttpError(409, 'route-open', 'Your route is already going. End it first, or keep going.');
   // The odometer is optional: without it the app counts the km from the planned route.
@@ -120,7 +124,13 @@ export async function routeKm(r: Row) {
   const legs: { ref: string; meters: number | null }[] = typeof r.legs === 'string' ? JSON.parse(r.legs) : (r.legs ?? []);
   if (!legs.length || legs.every(l => l.meters === null)) return null;
   const refs = legs.map(l => l.ref);
-  const done = new Set((await sql`SELECT ref FROM orders WHERE ref = ANY(${refs}) AND (status = 'completed' OR EXISTS (SELECT 1 FROM order_events e WHERE e.order_id = orders.id AND e.detail LIKE 'Couldn''t deliver%'))`).map(x => x.ref));
+  // Only stops reached during this route: a stop left over from an earlier route and delivered in a
+  // later one counts in the later one (each route drove to it once).
+  const from = r.started_at, to = r.ended_at ?? null;
+  const done = new Set((await sql`SELECT ref FROM orders WHERE ref = ANY(${refs}) AND (
+      (status = 'completed' AND delivered_at >= ${from} AND (${to}::timestamptz IS NULL OR delivered_at <= ${to}))
+      OR EXISTS (SELECT 1 FROM order_events e WHERE e.order_id = orders.id AND e.detail LIKE 'Couldn''t deliver%'
+        AND e.created_at >= ${from} AND (${to}::timestamptz IS NULL OR e.created_at <= ${to})))`).map(x => x.ref));
   const m = legs.filter(l => done.has(l.ref)).reduce((n, l) => n + (l.meters ?? 0), 0) + (r.ended_at ? r.return_meters ?? 0 : 0);
   return Math.round(m / 100) / 10;
 }
@@ -196,7 +206,7 @@ export const routing = () => ({ planner: mapsEnabled(), shop: Boolean(shopAddres
 export async function addDeliveryPhoto(s: Session, ref: string, mime: string, bytes: Uint8Array) {
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(mime)) throw new HttpError(415, 'image', 'Send a JPEG, PNG or WebP photo.');
   if (!bytes.length || bytes.length > 1_500_000) throw new HttpError(413, 'too-large', 'That photo is too large.');
-  const o = await myStop(s, ref);
+  const o = await myStop(s, ref, { active: true });
   const n = await one`SELECT COUNT(*)::int AS n FROM delivery_photos WHERE order_id = ${o.id}`;
   if ((n?.n ?? 0) >= 4) throw new HttpError(409, 'enough', 'This stop already has 4 photos.');
   const p = await one`INSERT INTO delivery_photos (order_id, mime, data, taken_by) VALUES (${o.id}, ${mime}, ${bytes}, ${s.email}) RETURNING id`;
@@ -206,9 +216,9 @@ export async function addDeliveryPhoto(s: Session, ref: string, mime: string, by
 
 /** Delivered: needs a photo; if money was due at the door, how it was paid. */
 export async function delivered(s: Session, ref: string, collected: unknown, req?: Request) {
-  const o = await myStop(s, ref);
+  const o = await myStop(s, ref, { active: true });
   if (o.status === 'completed') return { ok: true };
-  if (o.status === 'cancelled') throw new HttpError(409, 'cancelled', 'This order was cancelled. Do not hand it over; call the team.');
+  if (!['received', 'confirmed', 'ready', 'out-for-delivery'].includes(o.status)) throw new HttpError(409, 'cancelled', 'This order was cancelled. Do not hand it over; call the owners.');
   const photo = await one`SELECT id FROM delivery_photos WHERE order_id = ${o.id} LIMIT 1`;
   if (!photo) throw new HttpError(400, 'photo', 'Take a photo of the order at the door first.');
   const owed = dueAtDoor(o), due = o.payment_status === 'unpaid' && o.payment === 'at-pickup';
@@ -218,14 +228,16 @@ export async function delivered(s: Session, ref: string, collected: unknown, req
     await setPayment(ref, 'paid', s.email);
     await event(o.id, 'payment', `Collected ${dollars(owed)} by ${collected} at the door`, s.email);
   }
+  // Guard against a cancel that landed while this request was running.
+  const still = await one`UPDATE orders SET delivered_at = NOW(), delivered_by = ${s.email} WHERE id = ${o.id} AND status <> 'cancelled' RETURNING id`;
+  if (!still) throw new HttpError(409, 'cancelled', 'This order was cancelled. Do not hand it over; call the owners.');
   await setStatus(ref, 'completed', s.email, req, true);
-  await sql`UPDATE orders SET delivered_at = NOW(), delivered_by = ${s.email} WHERE id = ${o.id}`;
   if (o.driver_email) await notifyNext(o.driver_email, String(o.slot_date instanceof Date ? o.slot_date.toISOString() : o.slot_date).slice(0, 10), req);
   return { ok: true };
 }
 
 export async function missed(s: Session, ref: string, why: string) {
-  const o = await myStop(s, ref);
+  const o = await myStop(s, ref, { active: true });
   const text = why.trim().slice(0, 500) || 'No reason given';
   await event(o.id, 'note', `Couldn't deliver: ${text}`, s.email);
   if (o.driver_email) await notifyNext(o.driver_email, String(o.slot_date instanceof Date ? o.slot_date.toISOString() : o.slot_date).slice(0, 10));
@@ -281,7 +293,12 @@ export async function setMember(id: number, b: any) {
   const vol = typeof b?.volunteer === 'boolean' ? b.volunteer : null, drv = typeof b?.drives === 'boolean' ? b.drives : null;
   const m = await one`UPDATE team_members SET status = COALESCE(${status}, status), role = COALESCE(${role}, role), volunteer = COALESCE(${vol}, volunteer), drives = COALESCE(${drv}, drives) WHERE id = ${id} RETURNING id`;
   if (!m) throw new HttpError(404, 'not-found');
-  if (status === 'off') { const e = await one`SELECT email FROM team_members WHERE id = ${id}`; await sql`DELETE FROM sessions WHERE email = ${e!.email}`; }
+  if (status === 'off') {
+    // Logged out everywhere, and their phones stop getting team notifications.
+    const e = await one`SELECT email FROM team_members WHERE id = ${id}`;
+    await sql`DELETE FROM sessions WHERE email = ${e!.email}`;
+    await sql`DELETE FROM push_subs WHERE email = ${e!.email}`;
+  }
   return { ok: true };
 }
 

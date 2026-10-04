@@ -15,12 +15,12 @@ export const shopAddress = () => env('SHOP_ADDRESS') || env('PICKUP_ADDRESS');
 const point = (o: Origin | string) => typeof o === 'string' ? { address: o }
   : o.lat !== undefined && o.lng !== undefined ? { location: { latLng: { latitude: o.lat, longitude: o.lng } } } : { address: o.address ?? '' };
 
-async function computeRoute(origin: Origin | string, stops: Stop[]) {
+async function computeRoute(origin: Origin | string, stops: Stop[], destination: Origin | string = origin) {
   const r = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': env('GOOGLE_MAPS_API_KEY'), 'x-goog-fieldmask': 'routes.optimizedIntermediateWaypointIndex,routes.legs.distanceMeters,routes.legs.duration' },
     body: JSON.stringify({
-      origin: point(origin), destination: point(origin), intermediates: stops.map(s => ({ address: s.address })),
+      origin: point(origin), destination: point(destination), intermediates: stops.map(s => ({ address: s.address })),
       travelMode: 'DRIVE', routingPreference: 'TRAFFIC_UNAWARE', optimizeWaypointOrder: stops.length > 1, regionCode: 'ca', units: 'METRIC',
     }),
   });
@@ -29,7 +29,7 @@ async function computeRoute(origin: Origin | string, stops: Stop[]) {
   const route = d.routes[0];
   const idx: number[] = route.optimizedIntermediateWaypointIndex?.length ? route.optimizedIntermediateWaypointIndex : stops.map((_, i) => i);
   const legs = (route.legs ?? []).map((l: any) => ({ meters: Number(l.distanceMeters ?? 0), seconds: Number(String(l.duration ?? '0s').replace('s', '')) }));
-  return { ordered: idx.map(i => stops[i]), legs }; // legs: origin→1st, …, last→origin (the way back)
+  return { ordered: idx.map(i => stops[i]), legs }; // legs: origin→1st, …, last→destination
 }
 
 /** Plans the day: window by window, each starting where the last one ended. */
@@ -46,9 +46,11 @@ export async function planRoute(stops: Stop[], origin: Origin | null): Promise<P
     for (const [gi, group] of groups.entries()) {
       for (let i = 0; i < group.length; i += 25) { // the planner takes 25 stops at a time
         const chunk = group.slice(i, i + 25);
-        const { ordered, legs: l } = await computeRoute(from, chunk);
-        ordered.forEach((s, k) => { order.push(s); legs.push({ ref: s.ref, meters: l[k]?.meters ?? null, seconds: l[k]?.seconds ?? null }); meters += l[k]?.meters ?? 0; seconds += l[k]?.seconds ?? 0; });
         const last = gi === groups.length - 1 && i + 25 >= group.length;
+        // The last chunk ends at the shop, so its last leg really is the drive back (and the planner
+        // orders it to finish near the shop); earlier chunks are round trips used only for ordering.
+        const { ordered, legs: l } = await computeRoute(from, chunk, last && shopAddress() ? shopAddress() : from);
+        ordered.forEach((s, k) => { order.push(s); legs.push({ ref: s.ref, meters: l[k]?.meters ?? null, seconds: l[k]?.seconds ?? null }); meters += l[k]?.meters ?? 0; seconds += l[k]?.seconds ?? 0; });
         if (last && shopAddress()) { returnMeters = l[l.length - 1]?.meters ?? 0; meters += l[l.length - 1]?.meters ?? 0; seconds += l[l.length - 1]?.seconds ?? 0; } // the drive back to the shop
         from = ordered[ordered.length - 1].address;
       }

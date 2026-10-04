@@ -285,7 +285,8 @@ import '../../styles/global.css';
     $('summary').textContent = list.length ? `${list.length} ${list.length === 1 ? 'stop' : 'stops'}, ${left.length} to go. In order of postal area.` : (mine ? 'No stops for you this day. The owners assign them in the desk.' : 'No deliveries this day.');
     const rt = (await api(`/api/driver/route${dayIn.value ? `?date=${dayIn.value}` : ''}`)).route;
     const myLeft = left.filter(o => o.driver === me.email);
-    $('startBox').hidden = !(notOut.length && !rt?.open);
+    // A route starts only on its own day (the server refuses other days: it emails every customer).
+    $('startBox').hidden = !(notOut.length && !rt?.open && dayIn.value === new Date().toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' }));
     $('fromRow').hidden = !me.routing?.shop;
     $('planNote').textContent = me.routing?.planner ? 'We put your stops in the shortest driving order, time window by time window. Your customers get the "on its way" email.' : 'Your stops go in order of time window and area. Your customers get the "on its way" email.';
     $('routeBox').hidden = !(rt?.open && myLeft.length) && !(rt?.open);

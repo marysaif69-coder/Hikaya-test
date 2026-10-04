@@ -51,7 +51,8 @@ export async function shiftsFrom(from: string, days = 21) {
 export async function signUp(s: Session, id: number) {
   const sh = await one`SELECT * FROM shifts WHERE id = ${id}`;
   if (!sh) throw new HttpError(404, 'not-found');
-  if (day(sh.day) < calgaryNow().date) throw new HttpError(400, 'past', 'That shift has passed.');
+  const now = calgaryNow(), hhmm = `${String(now.hour).padStart(2, '0')}:${String(now.minute).padStart(2, '0')}`;
+  if (day(sh.day) < now.date || (day(sh.day) === now.date && String(sh.ends).slice(0, 5) <= hhmm)) throw new HttpError(400, 'past', 'That shift has passed.');
   if (!canTake(s.role, sh.kind)) throw new HttpError(403, 'role', sh.kind === 'driving' ? 'Driving shifts are for drivers.' : 'This shift is for packers and helpers.');
   if (sh.kind === 'driving') await assertPapers(s.email, day(sh.day));
   const n = await one`SELECT COUNT(*)::int AS n FROM shift_people WHERE shift_id = ${id}`;
@@ -84,16 +85,23 @@ export async function assignShift(id: number, email: string, by: string) {
 }
 export const unassign = (id: number, email: string) => sql`DELETE FROM shift_people WHERE shift_id = ${id} AND email = ${email}`.then(() => ({ ok: true }));
 
-/** Check in and out on the day of the shift (from 1 hour before it starts). */
+/** Check in and out on the day of the shift: in from 1 hour before it starts until it ends; out
+ *  once (a second tap doesn't move the time, so hours can't be stretched). */
 export async function clock(s: Session, id: number, what: 'in' | 'out') {
-  const r = await one`SELECT p.*, s.day, s.starts FROM shift_people p JOIN shifts s ON s.id = p.shift_id WHERE p.shift_id = ${id} AND p.email = ${s.email}`;
+  const r = await one`SELECT p.*, s.day, s.starts, s.ends FROM shift_people p JOIN shifts s ON s.id = p.shift_id WHERE p.shift_id = ${id} AND p.email = ${s.email}`;
   if (!r) throw new HttpError(404, 'not-found', 'You are not on that shift.');
-  if (day(r.day) !== calgaryNow().date) throw new HttpError(400, 'not-today', 'You can check in on the day of the shift.');
+  const now = calgaryNow();
+  if (day(r.day) !== now.date) throw new HttpError(400, 'not-today', 'You can check in on the day of the shift.');
+  const mins = (t: string) => { const [h, m] = String(t).split(':').map(Number); return h * 60 + (m || 0); };
+  const nowMin = now.hour * 60 + now.minute;
   if (what === 'in') {
     if (r.checked_in_at) return { ok: true };
+    if (nowMin < mins(r.starts) - 60) throw new HttpError(400, 'too-early', 'You can check in from 1 hour before the shift starts.');
+    if (nowMin > mins(r.ends)) throw new HttpError(400, 'ended', 'That shift has ended. Ask the owners to add your times.');
     await sql`UPDATE shift_people SET checked_in_at = NOW() WHERE shift_id = ${id} AND email = ${s.email}`;
   } else {
     if (!r.checked_in_at) throw new HttpError(400, 'not-in', 'Check in first.');
+    if (r.checked_out_at) return { ok: true };
     await sql`UPDATE shift_people SET checked_out_at = NOW() WHERE shift_id = ${id} AND email = ${s.email}`;
   }
   return { ok: true };
@@ -162,12 +170,15 @@ export async function paperReminders(today = calgaryNow().date) {
     for (const doc of DOCS) {
       if (doc.forDrivers && m.role !== 'driver' && !m.drives) continue;
       const v = m[doc.key] ? day(m[doc.key]) : null;
-      if (!v || v > addDays(today, 30) || reminded[doc.key] === v) continue;
-      const expired = v < today;
+      if (!v || v > addDays(today, 30)) continue;
+      // One "expiring soon" and, once the date has passed, one "expired" (older records hold just the date = soon).
+      const stage = v < today ? 'expired' : 'soon';
+      if (reminded[doc.key] === `${v}:${stage}` || (stage === 'soon' && reminded[doc.key] === v)) continue;
+      const expired = stage === 'expired';
       const text = `${m.name ?? m.email}: the ${doc.label} ${expired ? 'expired on' : 'expires on'} ${v}.${doc.forDrivers ? ' Deliveries can only be given to drivers whose papers are valid.' : ''} Update the date in the team app (My details) once renewed.`;
       for (const to of [m.email, ...env('ADMIN_EMAILS').split(',').map((e: string) => e.trim()).filter(Boolean)])
         await send({ to, subject: `${expired ? 'Expired' : 'Expiring soon'}: ${doc.label} (${m.name ?? m.email})`, text, html: `<p style="font:15px Arial,sans-serif">${esc(text)}</p>`, kind: 'team-papers' });
-      reminded[doc.key] = v; sentN++;
+      reminded[doc.key] = `${v}:${stage}`; sentN++;
     }
     await sql`UPDATE team_members SET docs_reminded = ${JSON.stringify(reminded)}::jsonb WHERE id = ${m.id}`;
   }

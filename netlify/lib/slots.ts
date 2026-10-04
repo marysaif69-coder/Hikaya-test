@@ -28,10 +28,14 @@ export async function getSettings(): Promise<Settings> {
   };
 }
 
-/** Today's date and hour in Calgary. */
-export function calgaryNow(now = new Date()) {
-  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23' }).formatToParts(now).map(p => [p.type, p.value]));
-  return { date: `${parts.year}-${parts.month}-${parts.day}`, hour: Number(parts.hour) };
+/** For tests: what "now" is (route and shift checks use Calgary's today). */
+let clockNow = () => new Date();
+export const setClock = (f: (() => Date) | null) => { clockNow = f ?? (() => new Date()); };
+
+/** Today's date, hour and minute in Calgary. */
+export function calgaryNow(now = clockNow()) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(now).map(p => [p.type, p.value]));
+  return { date: `${parts.year}-${parts.month}-${parts.day}`, hour: Number(parts.hour), minute: Number(parts.minute) };
 }
 
 export const addDays = (iso: string, n: number) => {

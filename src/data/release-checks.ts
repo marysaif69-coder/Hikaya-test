@@ -6,6 +6,15 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: '1b-4', title: 'Round 1b · batch 4: team app, drivers and shifts (and Something is brewing)', date: '2026-10-04',
+    checks: [
+      { id: 'brewing', text: 'hikayacoffee.ca on a phone set to English: “Something is brewing.” big and white, شيء ما يغلي. smaller under it. On an Arabic phone it opens in Arabic.', links: [{ label: 'See Phase 0', href: '/?phase=brewing' }] },
+      { id: 'start-today', text: 'Team app → Deliveries: pick tomorrow in the day picker. There is no “Start route” card; it only shows on the day itself.', links: [{ label: 'Team app', href: '/admin/driver/' }] },
+      { id: 'turned-off', text: 'Turn a test team member off in Team: their phone stops getting team messages.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'check-in', text: 'Shifts: Check in is refused more than an hour before a shift starts; Check out a second time does not change the time.', links: [{ label: 'Team app', href: '/admin/driver/' }] },
+    ],
+  },
+  {
     id: '1b-3', title: 'Round 1b · batch 3: private gate, launch day, logins', date: '2026-10-04',
     checks: [
       { id: 'login-ar', text: 'My account in Arabic: ask for a code, type a wrong one. The error is in Arabic (الرمز غير صحيح.). Then log in with the right code from the same phone: it works.', links: [{ label: 'Account (AR)', href: '/ar/account/' }, { label: 'Account (EN)', href: '/en/account/' }] },

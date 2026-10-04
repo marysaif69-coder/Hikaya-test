@@ -56,7 +56,11 @@ export async function pushTo(emails: string[], msg: Push) {
   const list = [...new Set(emails.filter(Boolean).map(e => e.toLowerCase()))];
   if (!list.length) return 0;
   try {
-    const subs = await sql`SELECT id, endpoint, p256dh, auth FROM push_subs WHERE email = ANY(${list})`;
+    // Only people still on the team: someone turned off (or taken out of STAFF_EMAILS) gets nothing.
+    const allowed: string[] = [];
+    for (const e of list) if (await roleFor(e) !== 'customer') allowed.push(e);
+    if (!allowed.length) return 0;
+    const subs = await sql`SELECT id, endpoint, p256dh, auth FROM push_subs WHERE email = ANY(${allowed})`;
     if (!subs.length) return 0;
     const k = await pushKeys();
     const opts = { vapidDetails: { subject: `mailto:${env('EMAIL_REPLY_TO') || 'hello@hikayacoffee.ca'}`, publicKey: k.publicKey, privateKey: k.privateKey }, TTL: 6 * 3600 };

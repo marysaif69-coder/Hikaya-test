@@ -56,3 +56,6 @@ the server refuses the order until a price is set:
   T3A–T3S; list in `CALGARY_FSAS`, `netlify/lib/orders.ts`). Before this, any T1/T2/T3 code passed,
   including Lethbridge, Medicine Hat, Okotoks and Canmore. Waiting on the owners: should T1X
   (Chestermere) or T3Z (Springbank) be added? Both are refused until then.
+- Packers who also drive (round 1b item 16): a Packer added with "Also drives" can't finish
+  onboarding, and deliveries given to them are hidden. Waiting on the owners: may a packer drive?
+  Recommended: no; someone who packs and drives is added as Helper + Also drives.

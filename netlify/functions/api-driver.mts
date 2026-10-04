@@ -73,7 +73,7 @@ export default async (req: Request) => {
     if (path === 'route' && req.method === 'GET') return json({ route: await currentRoute(s, date) });
     // Reports: a driver sees their own; owners and helpers can pass ?driver=
     if ((path === 'report' || path === 'report.csv') && req.method === 'GET') {
-      const who = s.role === 'driver' ? s.email : str(url.searchParams.get('driver'), 254).toLowerCase() || s.email;
+      const who = s.role === 'admin' || s.role === 'staff' ? (str(url.searchParams.get('driver'), 254).toLowerCase() || s.email) : s.email;
       const iso = (k: string, d: string) => (/^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get(k) ?? '') ? url.searchParams.get(k)! : d);
       const today = calgaryNow().date;
       const r = await driverReport(who, iso('from', today.slice(0, 8) + '01'), iso('to', addDays(today, 0)));

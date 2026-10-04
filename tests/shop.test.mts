@@ -30,8 +30,13 @@ const { PRODUCTS: ALL } = await import('../src/data/products');
 for (const p of ALL) if (p.price == null) await pg.query('INSERT INTO product_settings (product_id, price_cents, updated_by) VALUES ($1, $2, $3)', [p.id, p.kind === 'pack' ? 500 : p.fam === 'mountain' ? 2600 : 2400, 'test']);
 const H = 'https://hikaya.test';
 let ipN = 0; // each request from a different address, so the rate limits don't trip
+const { setClock } = await import('../netlify/lib/slots');
 const call = async (fn: any, path: string, opts: { body?: any; cookie?: string } = {}) => {
+  // A route can only start on its own day: the 2027 route tests run "on" that day (noon in Calgary).
+  const startDay = path.match(/^\/api\/driver\/start\?date=(\d{4}-\d{2}-\d{2})/)?.[1];
+  if (startDay) setClock(() => new Date(`${startDay}T18:00:00Z`));
   const res: Response = await fn(new Request(H + path, { method: opts.body ? 'POST' : 'GET', headers: { 'content-type': 'application/json', origin: H, 'x-nf-client-connection-ip': `10.0.0.${++ipN % 250}`, ...(opts.cookie ? { cookie: opts.cookie } : {}) }, body: opts.body ? JSON.stringify(opts.body) : undefined }));
+  if (startDay) setClock(null);
   const text = await res.text(); let data: any; try { data = JSON.parse(text); } catch { data = text; }
   return { status: res.status, data };
 };
@@ -543,6 +548,7 @@ const stEve = (await call(driverApi, '/api/driver/start?date=2027-02-04', { cook
 assert.equal(stEve.started, 3); assert.equal(stEve.optimized, true);
 assert.equal(planCalls.length, 2); assert.equal(planCalls[0].origin.address, '1 Shop Rd, Calgary, AB'); assert.equal(planCalls[0].optimizeWaypointOrder, true);
 assert.equal(planCalls[1].origin.address, '10 A St, T2P 1J9, Calgary, AB'); ok('auto route: shortest order per time window, each window starting where the last ended');
+assert.equal(planCalls[1].destination.address, '1 Shop Rd, Calgary, AB'); ok('the last window is planned to end at the shop, so the drive back is really to the shop');
 assert.equal(stEve.km, 16); assert.equal(stEve.minutes, 40);
 const evStops = (await call(driverApi, '/api/driver/stops?date=2027-02-04', { cookie: eve })).data.stops;
 assert.deepEqual(evStops.map((x: any) => x.ref), [ev2.data.ref, ev1.data.ref, ev3.data.ref]); assert.equal(evStops[0].seq, 1); ok('stops shown in driving order, numbered');
@@ -577,6 +583,18 @@ await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [ev4.data.re
 await call(driverApi, '/api/driver/start?date=2027-02-05', { cookie: eve, body: { startOdometer: 84200 } });
 assert.equal((await call(driverApi, '/api/driver/end?date=2027-02-05', { cookie: eve, body: { endOdometer: 84100 } })).data.error, 'odometer');
 assert.equal((await call(driverApi, '/api/driver/end?date=2027-02-05', { cookie: eve, body: { endOdometer: 84231 } })).data.km, 31); ok('with odometer readings, the odometer km are used');
+// Two routes on one day: a stop left over from the first and delivered in the second counts once, in the second.
+const x1 = await order({ method: 'delivery', street: '70 G St', postal: 'T2P1J9', day: '2027-02-11', email: 'x1@example.com' });
+const x2 = await order({ method: 'delivery', street: '80 H St', postal: 'T3A0A1', day: '2027-02-11', email: 'x2@example.com' });
+await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [x1.data.ref, x2.data.ref], driver: 'eve@example.com' } });
+await call(driverApi, '/api/driver/start?date=2027-02-11', { cookie: eve, body: {} });
+await photo(x1.data.ref); await call(driverApi, '/api/driver/delivered', { cookie: eve, body: { ref: x1.data.ref } });
+const r1km = (await call(driverApi, '/api/driver/end?date=2027-02-11', { cookie: eve, body: {} })).data.km;
+await call(driverApi, '/api/driver/start?date=2027-02-11', { cookie: eve, body: {} });
+await photo(x2.data.ref); await call(driverApi, '/api/driver/delivered', { cookie: eve, body: { ref: x2.data.ref } });
+const r2km = (await call(driverApi, '/api/driver/end?date=2027-02-11', { cookie: eve, body: {} })).data.km;
+const twoRoutes = (await call(driverApi, '/api/driver/report?from=2027-02-11&to=2027-02-11', { cookie: eve })).data;
+assert.equal(r1km, 8); assert.equal(r2km, 8); assert.deepEqual(twoRoutes.routes.map((x: any) => x.km), [8, 8]); assert.equal(twoRoutes.total.km, 16); ok('a second route the same day: no leg is counted in both routes');
 delete process.env.GOOGLE_MAPS_API_KEY; delete process.env.SHOP_ADDRESS; globalThis.fetch = f1;
 const ev5 = await order({ method: 'delivery', street: '50 E St', postal: 'T3A0A1', day: '2027-02-06', email: 'e5@example.com' });
 const ev6 = await order({ method: 'delivery', street: '60 F St', postal: 'T2P1J9', day: '2027-02-06', email: 'e6@example.com' });
@@ -584,6 +602,21 @@ await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [ev5.data.re
 const noMaps = (await call(driverApi, '/api/driver/start?date=2027-02-06', { cookie: eve, body: {} })).data;
 assert.equal(noMaps.optimized, false); assert.equal(noMaps.km, null);
 assert.deepEqual((await call(driverApi, '/api/driver/stops?date=2027-02-06', { cookie: eve })).data.stops.map((x: any) => x.ref), [ev6.data.ref, ev5.data.ref]); ok('without the Maps key: stops by time window and area, still works');
+// A route starts only on its own day (raw request, no test clock: today is not 7 Feb 2027).
+const ev7 = await order({ method: 'delivery', street: '70 G St', postal: 'T2P1J9', day: '2027-02-07', email: 'e7@example.com', payment: 'at-pickup' });
+await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [ev7.data.ref], driver: 'eve@example.com' } });
+const early = sent.length;
+const notToday: Response = await driverApi(new Request(`${H}/api/driver/start?date=2027-02-07`, { method: 'POST', headers: { 'content-type': 'application/json', origin: H, cookie: eve }, body: '{}' }));
+assert.equal(notToday.status, 409); assert.equal((await notToday.json()).error, 'not-today');
+assert.ok(!sent.slice(early).some(m => m.subject?.includes(ev7.data.ref))); ok('a route for another day cannot be started (no "on its way" emails a day early)');
+// A stop cancelled while the driver's screen was out of date can't be delivered or reported missed.
+await photo(ev7.data.ref);
+await call(admin, `/api/admin/orders/${ev7.data.ref}`, { cookie: adm, body: { status: 'cancelled', notify: false } });
+const delC = await call(driverApi, '/api/driver/delivered', { cookie: eve, body: { ref: ev7.data.ref, collected: 'cash' } });
+assert.equal(delC.status, 409); assert.equal(delC.data.error, 'cancelled');
+const ev7Row = (await pg.query(`SELECT status, payment_status, collected_method FROM orders WHERE ref = $1`, [ev7.data.ref])).rows[0] as any;
+assert.equal(ev7Row.status, 'cancelled'); assert.equal(ev7Row.payment_status, 'unpaid'); assert.equal(ev7Row.collected_method, null);
+assert.equal((await call(driverApi, '/api/driver/missed', { cookie: eve, body: { ref: ev7.data.ref, why: 'x' } })).data.error, 'cancelled'); ok('a cancelled stop: Delivered and Missed are refused, no cash recorded');
 
 // ---------- the team: packers, volunteers, papers, shifts, hours ----------
 await call(admin, '/api/admin/team', { cookie: adm, body: { email: 'pat@example.com', name: 'Pat', role: 'packer', volunteer: true } });
@@ -593,6 +626,7 @@ assert.equal((await call(admin, '/api/admin/orders', { cookie: pat })).status, 4
 assert.equal((await call(driverApi, '/api/driver/me', { cookie: pat })).data.needsOnboarding, true);
 await call(driverApi, '/api/driver/onboard', { cookie: pat, body: { name: 'Pat Packer', phone: '403 555 0130', agree: true, food_cert_expires: '2026-10-20' } });
 assert.equal((await call(driverApi, '/api/driver/stops', { cookie: pat })).status, 403); ok('a volunteer packer onboards and gets the team app, not deliveries or the desk');
+assert.equal((await call(driverApi, '/api/driver/report?driver=eve@example.com', { cookie: pat })).data.driver, 'pat@example.com'); ok("a packer cannot read a driver's pay report");
 const pk1 = await order({ day: '2027-02-11', email: 'pk1@example.com' });
 const packList = (await call(driverApi, '/api/driver/pack?date=2027-02-11', { cookie: pat })).data.orders;
 assert.ok(packList.some((o: any) => o.ref === pk1.data.ref));
@@ -624,6 +658,8 @@ assert.ok(sent.slice(papMails).some(m => /Expiring soon: food handler certificat
 const papMails2 = sent.length; await daily('2026-10-06'); assert.ok(!sent.slice(papMails2).some(m => /Expir/.test(m.subject)));
 const papMails3 = sent.length; await daily('2027-01-03');
 assert.ok(sent.slice(papMails3).some(m => /Expired: driver's licence \(Eve Driver\)/.test(m.subject))); ok('papers: expired licence blocks deliveries; one reminder before things expire');
+assert.ok(sent.slice(papMails3).some(m => /Expired: food handler certificate \(Pat Packer\)/.test(m.subject))); ok('after "expiring soon", an "expired" reminder still comes once the date passes');
+const papMails4 = sent.length; await daily('2027-01-04'); assert.ok(!sent.slice(papMails4).some(m => /Pat Packer/.test(m.subject))); ok('and only once');
 await pg.query(`UPDATE team_members SET licence_expires = '2028-06-01' WHERE email = 'eve@example.com'`);
 // reminders and gaps the evening before
 const shMails = sent.length;
@@ -635,6 +671,15 @@ assert.ok(shSubj.some(m => /Tomorrow needs people/.test(m.subject) && /Driving 1
 await call(admin, `/api/admin/shifts/${driveShift.id}/assign`, { cookie: adm, body: { email: 'dan@example.com' } }).catch(() => null);
 // hours: check in and out on the day (the team can correct times)
 assert.equal((await call(driverApi, `/api/driver/shifts/${packShift.id}/in`, { cookie: pat, body: {} })).data.error, 'not-today');
+// On the day (09:00–12:00 Calgary, UTC−7): not before 08:00; one check-out only.
+setClock(() => new Date('2027-02-11T14:30:00Z'));
+assert.equal((await call(driverApi, `/api/driver/shifts/${packShift.id}/in`, { cookie: pat, body: {} })).data.error, 'too-early');
+setClock(() => new Date('2027-02-11T16:05:00Z')); await call(driverApi, `/api/driver/shifts/${packShift.id}/in`, { cookie: pat, body: {} });
+setClock(() => new Date('2027-02-11T19:00:00Z')); await call(driverApi, `/api/driver/shifts/${packShift.id}/out`, { cookie: pat, body: {} });
+const outAt = ((await pg.query(`SELECT checked_out_at FROM shift_people WHERE shift_id = $1 AND email = 'pat@example.com'`, [packShift.id])).rows[0] as any).checked_out_at;
+setClock(() => new Date('2027-02-11T23:00:00Z')); await call(driverApi, `/api/driver/shifts/${packShift.id}/out`, { cookie: pat, body: {} });
+setClock(null);
+assert.equal(String(((await pg.query(`SELECT checked_out_at FROM shift_people WHERE shift_id = $1 AND email = 'pat@example.com'`, [packShift.id])).rows[0] as any).checked_out_at), String(outAt)); ok('shifts: no check-in more than an hour early; a second check-out does not add hours');
 await call(admin, `/api/admin/shifts/${packShift.id}/times`, { cookie: adm, body: { email: 'pat@example.com', in: '2027-02-11T16:00:00Z', out: '2027-02-11T19:30:00Z' } });
 const hrs = (await call(admin, '/api/admin/hours?from=2027-02-01&to=2027-02-28', { cookie: adm })).data;
 const patH = hrs.people.find((p: any) => p.email === 'pat@example.com');
@@ -936,6 +981,16 @@ assert.equal((await call(driverApi, '/api/driver/push', { cookie: dan2 })).data.
 const bk2 = await (await admin(new Request(`${H}/api/admin/backup.json`, { headers: { cookie: adm } }))).json();
 assert.ok(bk2.tables.push_subs && !bk2.tables.push_keys); ok('the notification key is not in the backup');
 await call(driverApi, '/api/driver/push/unsubscribe', { cookie: adm, body: { endpoint: 'https://fcm.googleapis.com/fcm/send/maryam-phone' } });
+// Someone turned off gets no more team notifications, and their phones are forgotten.
+await call(admin, '/api/admin/team', { cookie: adm, body: { email: 'zed@example.com', name: 'Zed', role: 'driver' } });
+const zed = await login('zed@example.com');
+await call(driverApi, '/api/driver/onboard', { cookie: zed, body: { name: 'Zed Driver', phone: '403 555 0177', agree: true, licence_expires: '2029-01-01', insurance_expires: '2029-01-01' } });
+assert.equal((await call(driverApi, '/api/driver/push/subscribe', { cookie: zed, body: psub('zed-phone') })).status, 200);
+const zedId = (await call(admin, '/api/admin/team', { cookie: adm })).data.team.find((m: any) => m.email === 'zed@example.com').id;
+await call(admin, `/api/admin/team/${zedId}`, { cookie: adm, body: { status: 'off' } });
+pushed.length = 0;
+await call(admin, '/api/admin/announce', { cookie: adm, body: { body: 'Staff meeting Friday.' } });
+assert.ok(!pushed.some(x => x.endpoint.endsWith('zed-phone'))); assert.equal((await pg.query(`SELECT 1 FROM push_subs WHERE email = 'zed@example.com'`)).rows.length, 0); ok('someone turned off gets no team notifications, and their phones are forgotten');
 
 // ---------- today page ----------
 const tdA = await order({ day: '2027-03-26', payment: 'e-transfer', email: 'today1@example.com' });
