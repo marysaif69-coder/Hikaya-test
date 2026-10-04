@@ -9,7 +9,9 @@ import { cardEnabled } from './square';
 import { send, subscriptionEmail } from './email';
 import { PRODUCTS } from '../../src/data/products';
 
-const LEAD_DAYS = 7;
+// Placed 8 days ahead: one evening before the earliest deadline any desk setting allows (a Sunday
+// with the weekly deadline on Sunday closes 7 days before), so a regular order never misses it.
+const LEAD_DAYS = 8;
 const iso = (d: unknown) => String(d instanceof Date ? d.toISOString() : d).slice(0, 10);
 const lang = (r: Row) => (r.lang === 'ar' ? 'ar' : 'en') as 'en' | 'ar';
 /** The next day on the schedule that is still far enough ahead to order for. */

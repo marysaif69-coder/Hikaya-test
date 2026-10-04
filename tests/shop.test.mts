@@ -1223,4 +1223,13 @@ const { monthlyReport } = await import('../netlify/lib/report');
 assert.equal((await monthlyReport('2027-02-01')).numbers.orders, 1); assert.equal((await monthlyReport('2027-03-01')).numbers.orders, 0);
 ok('an order on the last evening of January (Calgary time) counts in January');
 
+// ---------- regular orders with the weekly deadline on Sunday ----------
+await call(admin, '/api/admin/settings', { cookie: adm, body: { cutoffMode: 'weekly', cutoffWeekday: 0, cutoffHour: 17 } });
+await pg.query(`INSERT INTO subscriptions (email, name, phone, method, slot_window, payment, lines, every_weeks, next_date) VALUES ('sunday-reg@example.com', 'S', '4035550100', 'pickup', '11:00–14:00', 'e-transfer', $1, 2, '2027-08-01')`, [JSON.stringify([{ id: 'najdi', opt: 'dallah', qty: 1 }])]);
+const sunM = sent.length; await daily('2027-07-24');
+assert.equal((await pg.query(`SELECT COUNT(*)::int AS n FROM orders WHERE email = 'sunday-reg@example.com' AND slot_date = '2027-08-01'`)).rows[0].n, 1);
+assert.ok(!sent.slice(sunM).some(m => /couldn't place/i.test(m.subject))); ok('a Sunday regular order is placed the evening before a Sunday deadline, eight days ahead');
+assert.equal((await call(admin, '/api/admin/settings', { cookie: adm, body: { cutoffWeekday: 5 } })).data.ordering.cutoffWeekday, 0); ok('the weekly deadline can only be Sunday to Wednesday');
+await call(admin, '/api/admin/settings', { cookie: adm, body: { cutoffMode: 'day-before', cutoffWeekday: 2, cutoffHour: 20 } });
+
 console.log(`\n${pass} checks passed`);

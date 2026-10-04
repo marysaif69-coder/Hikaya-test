@@ -203,7 +203,8 @@ async function handle(req: Request) {
           open: typeof b.open === 'boolean' ? b.open : cur.ordering.open,
           autoConfirm: typeof b.autoConfirm === 'boolean' ? b.autoConfirm : Boolean(cur.ordering.autoConfirm),
           cutoffMode: b.cutoffMode === 'weekly' || b.cutoffMode === 'day-before' ? b.cutoffMode : cur.ordering.cutoffMode,
-          cutoffWeekday: Number.isInteger(b.cutoffWeekday) && b.cutoffWeekday >= 0 && b.cutoffWeekday <= 6 ? b.cutoffWeekday : cur.ordering.cutoffWeekday,
+          // Sunday to Wednesday only, as the desk offers: a later weekday would close a Sunday 8-10 days ahead.
+          cutoffWeekday: Number.isInteger(b.cutoffWeekday) && b.cutoffWeekday >= 0 && b.cutoffWeekday <= 3 ? b.cutoffWeekday : cur.ordering.cutoffWeekday,
           cutoffHour: Number.isInteger(b.cutoffHour) && b.cutoffHour >= 0 && b.cutoffHour <= 23 ? b.cutoffHour : cur.ordering.cutoffHour,
           firstDay: typeof b.firstDay === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(b.firstDay) ? b.firstDay : cur.ordering.firstDay,
           closedDates: Array.isArray(b.closedDates) ? [...new Set(b.closedDates.filter((d: unknown) => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)))].sort().slice(0, 100) : cur.ordering.closedDates,

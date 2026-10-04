@@ -25,7 +25,7 @@ All sent through Resend from the site itself; no n8n or Zapier needed. Admin →
 
 ## Gift cards, regular orders, texts, monthly report
 - **Gift cards** (`/en/gift-card/`): $25–100; card (Square) or e-Transfer. Once paid (Square webhook, or Admin → Shop → Promotions → "Money received") the code is emailed to the recipient. At checkout the "Gift card" box pays what it can; the balance stays; a cancelled order puts it back. Tables: `gift_cards`; orders carry `gift_card_code` / `gift_card_cents`.
-- **Regular orders** (checkout → "The same again every 2/4 weeks"): stored in `subscriptions`. The daily job (`netlify/functions/reminders.mts`) turns each into a normal order 7 days before its day, at that day's prices, with the usual emails; if something is sold out the customer is emailed and the next one stays. Customers skip / pause / resume / stop in My account; the desk lists them under the Week sheet.
+- **Regular orders** (checkout → "The same again every 2/4 weeks"): stored in `subscriptions`. The daily job (`netlify/functions/reminders.mts`) turns each into a normal order 8 days before its day, at that day's prices, with the usual emails; if something is sold out the customer is emailed and the next one stays. Customers skip / pause / resume / stop in My account; the desk lists them under the Week sheet.
 - **Text reminders**: checkout tick; sent by the same daily job through Twilio when its three settings exist.
 - **Order again**: My account puts a past order's items back in the cart.
 - **Ask Hikaya voice**: the browser's own speech-to-text fills the box (Chrome, Safari, Edge); no audio is sent to us.
