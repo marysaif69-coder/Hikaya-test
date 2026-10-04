@@ -1,26 +1,30 @@
 ---
+// A product in a grid. Kept short on purpose: name, one line, price. Everything else is on the
+// product page. `row` is the slim version for "the bag on its own".
 import type { Product, Lang } from '../data/products';
-import { FAMILIES, DATES, priceText, baseOf, packOf, kitInside, allergyNote, COFFEES } from '../data/products';
+import { FAMILIES, ALLERGENS, priceText, baseOf, packOf, COFFEES } from '../data/products';
 import { UI, path } from '../data/i18n';
 import Pouch from './Pouch.astro';
 import Sachet from './Sachet.astro';
-interface Props { p: Product; lang: Lang }
-const { p, lang } = Astro.props;
+interface Props { p: Product; lang: Lang; row?: boolean }
+const { p, lang, row = false } = Astro.props;
 const ar = lang === 'ar';
 const href = path(lang, `shop/${p.id}`);
 const forBase = p.kind === 'pack' ? COFFEES.find(c => c.id === p.for) : null;
-const sub = p.kind === 'coffee' ? `${FAMILIES[p.fam].name[lang]} · ${p.size}`
-  : p.kind === 'kit' ? kitInside(p, lang)
+// One line under the name: what a style adds, what a pack is for, or how a coffee tastes.
+const line = p.kind === 'kit' ? '+ ' + p.parts.map(x => (x.mini ? (ar ? 'ظرف صغير: ' : 'small ') : '') + packOf(x.id)!.name[lang]).join(' + ')
   : p.kind === 'pack' ? (ar ? `لـ${forBase?.name.ar}` : `For ${forBase?.name.en}`)
+  : p.kind === 'coffee' ? p.taste[lang]
   : `${FAMILIES[p.fam].name[lang]} · ${p.size[lang]}`;
 const defaultOpt = p.kind === 'coffee' ? (p.grinds[0] ?? '') : p.kind === 'kit' ? (baseOf(p).grinds[0] ?? '') : p.kind === 'box' && p.chooseDate ? 'khalas' : '';
-const allergy = p.kind === 'pack' || p.kind === 'kit' ? allergyNote(p, lang) : null;
+// Only what a pack or style is known to contain; anything still unconfirmed is on its own page.
+const contains = p.kind === 'pack' ? p.allergens : p.kind === 'kit' ? [...new Set(p.parts.flatMap(x => packOf(x.id)?.allergens ?? []))] : [];
 const unpriced = p.price == null;
 ---
-<article class={`pc pc-${p.kind}`} data-product={p.id}>
+<article class={`pc pc-${p.kind} ${row ? 'pc-row-card' : ''}`} data-product={p.id}>
   <a href={href} class="pc-media" tabindex="-1" aria-hidden="true">
     {p.kind === 'coffee'
-      ? <div class={`pc-pouch ${p.art ? 'has-back' : ''}`}><div class="face"><Pouch coffee={p} lang={lang} label={false} /></div>{p.art && <div class="face back"><img src={p.art.back} alt="" loading="lazy" width="800" height="1257" /></div>}</div>
+      ? <div class="pc-pouch"><div class="face"><Pouch coffee={p} lang={lang} label={false} /></div></div>
       : p.kind === 'kit'
       ? <div class="pc-pouch pc-kit"><div class="face"><Pouch coffee={baseOf(p)} lang={lang} label={false} /></div><div class="kit-packs">{p.parts.map(x => <Sachet pack={packOf(x.id)!} lang={lang} mini={x.mini} />)}</div></div>
       : p.kind === 'pack'
@@ -29,11 +33,8 @@ const unpriced = p.price == null;
   </a>
   <div class="pc-body">
     <h3><a href={href}>{p.name[lang]}</a>{lang === 'en' && <span lang="ar">{p.name.ar}</span>}</h3>
-    <p class="pc-sub">{sub}</p>
-    {p.kind === 'kit' && p.parts.some(x => x.id === 'pack-saffron') && <p class="badge">{ar ? 'الزعفران في العلبة' : 'Saffron included'}</p>}
-    {(p.kind === 'coffee' || p.kind === 'kit') && <p class="pc-taste">{p.taste[lang]}</p>}
-    {allergy && (!allergy.none || p.kind === 'pack') && <p class={`allergy ${allergy.none ? 'none' : ''}`}>{allergy.text}</p>}
-    {(p.kind === 'coffee' || p.kind === 'kit') && <p class="pc-with">{UI.withDate[lang]} <b>{DATES[p.date].name[lang]}</b></p>}
+    <p class="pc-line">{line}</p>
+    {contains.length > 0 && <p class="allergy">{ar ? 'يحتوي على ' : 'Contains '}{contains.map(a => ALLERGENS[a][lang].replace(/ \(.*\)/, '')).join(ar ? '، ' : ', ').toLowerCase()}</p>}
     <div class="pc-row">
       <span class="price" data-price-for={p.id}>{priceText(p.price, lang)}</span>
       <button class="pc-add" type="button" data-add={p.id} data-opt={defaultOpt} disabled={unpriced} aria-label={`${UI.add[lang]}: ${p.name[lang]}`}>
@@ -47,39 +48,40 @@ const unpriced = p.price == null;
 <style>
   .pc { display: grid; grid-template-rows: auto 1fr; gap: 14px; }
   .pc-media { display: block; border-radius: 26px; overflow: hidden; background: var(--paper-2); aspect-ratio: 4 / 5; }
-  .pc-pouch { height: 100%; display: grid; place-items: center; padding: 8% 20% 8%; position: relative; }
-  .pc-pouch .face { width: 100%; transition: opacity .35s ease, transform .5s var(--ease), filter .35s ease; }
-  .pc-pouch .back { position: absolute; inset: 8% 14%; display: grid; place-items: center; opacity: 0; transform: translateY(8px) scale(.98); filter: blur(3px); }
-  .pc-pouch .back img { width: 100%; height: auto; border-radius: 6px; box-shadow: 0 24px 34px -22px rgba(51, 33, 26, .5); }
-  .pc-kit { padding: 8% 30% 8% 12%; }
-  .kit-packs { position: absolute; inset-inline-end: 7%; bottom: 9%; width: 30%; display: grid; gap: 6px; }
+  .pc-pouch { height: 100%; display: grid; place-items: center; padding: 8% 22%; position: relative; }
+  .pc-pouch .face { width: 100%; transition: transform .5s var(--ease); }
+  .pc-kit { padding: 8% 30% 8% 14%; }
+  .kit-packs { position: absolute; inset-inline-end: 8%; bottom: 10%; width: 28%; display: grid; }
   .kit-packs :global(.sachet) { transform: rotate(6deg); }
-  .kit-packs :global(.sachet:nth-child(2)) { transform: rotate(-4deg); margin-top: -40%; }
-  .kit-packs :global(.sachet:nth-child(3)) { transform: rotate(3deg); margin-top: -40%; }
-  .pc-pack { padding: 14% 28%; }
-  @media (hover: hover) and (pointer: fine) {
-    .pc:hover .has-back .face:first-child { opacity: 0; transform: translateY(-6px) scale(.98); filter: blur(3px); }
-    .pc:hover .has-back .back { opacity: 1; transform: none; filter: none; }
-    .pc:hover .pc-pouch:not(.has-back) .face { transform: translateY(-6px) rotate(-1.2deg); }
-  }
+  .kit-packs :global(.sachet:nth-child(n+2)) { margin-top: -42%; }
+  .kit-packs :global(.sachet:nth-child(2)) { transform: rotate(-4deg); }
+  .kit-packs :global(.sachet:nth-child(3)) { transform: rotate(3deg); }
+  .pc-pack { padding: 14% 30%; }
+  @media (hover: hover) and (pointer: fine) { .pc:hover .pc-pouch .face { transform: translateY(-6px) rotate(-1.2deg); } }
   .pc-media > img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--ease); }
   @media (hover: hover) and (pointer: fine) { .pc:hover .pc-media > img { transform: scale(1.035); } }
   .pc-body { display: grid; gap: 4px; align-content: start; }
-  .pc h3 { font-size: 25px; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 10px; }
+  .pc h3 { font-size: 24px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
   .pc h3 a { text-decoration: none; }
   .pc h3 a:hover { text-decoration: underline; }
-  .pc h3 span { font-size: 21px; color: var(--tamr); }
-  .pc-sub { font-size: 14.5px; color: var(--ink-2); }
-  .badge { justify-self: start; margin: 4px 0 2px; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--tamr) 12%, var(--sheet)); color: var(--tamr-2); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
-  .pc-taste { font-size: 14px; font-weight: 600; color: var(--bunn); }
-  .pc-with { font-size: 14.5px; }
-  .pc-with b { color: var(--tamr); font-weight: 600; }
+  .pc h3 span { font-size: 19px; color: var(--tamr); }
+  .pc-line { font-size: 14.5px; color: var(--ink-2); }
+  .allergy { font-size: 13px; }
   .pc-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-  .pc-row .price { font-size: 18px; }
-  .pc-add { display: inline-flex; align-items: center; gap: 6px; border: 0; background: var(--bunn); color: var(--paper); border-radius: 999px; border-bottom-right-radius: 5px; padding: 10px 15px 10px 12px; font-weight: 600; font-size: 14.5px; transition: background .15s, transform .15s var(--ease); }
-  .pc-add svg { width: 16px; height: 16px; }
+  .pc-row .price { font-size: 17px; }
+  .pc-row :global(.sold-out-tag[data-reason='noprice']) { display: none; }
+  .pc-add { display: inline-flex; align-items: center; gap: 6px; border: 0; background: var(--bunn); color: var(--paper); border-radius: 999px; border-bottom-right-radius: 5px; padding: 9px 14px 9px 11px; font-weight: 600; font-size: 14px; transition: background .15s, transform .15s var(--ease); }
+  .pc-add svg { width: 15px; height: 15px; }
   .pc-add:hover { background: var(--bunn-2); }
   .pc-add:active { transform: scale(.96); }
-  .pc-add:disabled { opacity: .45; }
+  .pc-add:disabled { opacity: .4; }
   .pc-add.done { background: var(--khalal); color: var(--bunn); }
+  /* Slim row: a small bag, the name and line, price and button side by side. */
+  .pc-row-card { grid-template-rows: none; grid-template-columns: 76px 1fr; align-items: center; gap: 16px; padding: 12px 16px; border-radius: 22px; background: var(--sheet); }
+  .pc-row-card .pc-media { aspect-ratio: auto; background: none; border-radius: 0; }
+  .pc-row-card .pc-pouch { padding: 0; }
+  .pc-row-card .pc-body { grid-template-columns: 1fr auto; column-gap: 16px; align-items: center; }
+  .pc-row-card h3, .pc-row-card .pc-line, .pc-row-card .allergy { grid-column: 1; }
+  .pc-row-card .pc-row { grid-column: 2; grid-row: 1 / span 3; margin: 0; }
+  @media (max-width: 560px) { .pc-row-card .pc-body { grid-template-columns: 1fr; } .pc-row-card .pc-row { grid-column: 1; grid-row: auto; margin-top: 6px; } }
 </style>

@@ -77,7 +77,7 @@ function apply(live: Live) {
     b.disabled = off;
     let tag = b.parentElement?.querySelector<HTMLElement>('.sold-out-tag');
     if (off && !tag) { tag = document.createElement('span'); tag.className = 'sold-out-tag'; b.after(tag); }
-    if (tag) { tag.hidden = !off; tag.textContent = noPrice ? (lang() === 'ar' ? 'الطلب يفتح قريباً' : 'Ordering opens soon') : ids.some(id => P[id] && !P[id].shown) ? (lang() === 'ar' ? 'غير متوفر الآن' : 'Not available now') : (lang() === 'ar' ? 'نفد' : 'Sold out'); }
+    if (tag) { tag.hidden = !off; tag.dataset.reason = noPrice ? 'noprice' : ''; tag.textContent = noPrice ? (lang() === 'ar' ? 'الطلب يفتح قريباً' : 'Ordering opens soon') : ids.some(id => P[id] && !P[id].shown) ? (lang() === 'ar' ? 'غير متوفر الآن' : 'Not available now') : (lang() === 'ar' ? 'نفد' : 'Sold out'); }
     // On a product page, offer "Email me when it's back".
     const own = ids.length === 1 && document.querySelector('main [data-pdp]')?.getAttribute('data-pdp') === ids[0] && b.closest('main');
     let nf = b.parentElement?.querySelector<HTMLFormElement>('.notify-me');
