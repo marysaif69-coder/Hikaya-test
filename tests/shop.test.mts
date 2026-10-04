@@ -292,11 +292,11 @@ globalThis.fetch = (async (url: string, init: any = {}) => {
 const rc = (await call(admin, '/api/admin/content/recipes', { cookie: adm })).data;
 assert.equal(rc.canSave, true); assert.equal(rc.sha, 'sha1');
 const edited = JSON.parse(JSON.stringify(rc.data));
-edited.palm.serve.en = 'Pour a third of the cup.'; edited.palm.steps[1].secs = 540; edited.palm.extra = 'sneaky'; edited.sneaky = { a: 1 };
+edited.palm.serve.en = 'Pour a third of the cup.'; edited.palm.steps[2].secs = 540; edited.palm.extra = 'sneaky'; edited.sneaky = { a: 1 };
 assert.equal((await call(admin, '/api/admin/content/recipes', { cookie: helper, body: { data: edited, sha: 'sha1' } })).status, 403);
 const sv = await call(admin, '/api/admin/content/recipes', { cookie: adm, body: { data: edited, sha: 'sha1' } });
 assert.equal(sv.data.saved, true); const savedJson = JSON.parse(ghFile);
-assert.equal(savedJson.palm.serve.en, 'Pour a third of the cup.'); assert.equal(savedJson.palm.steps[1].secs, 540); assert.equal(savedJson.palm.extra, undefined); assert.equal(savedJson.sneaky, undefined);
+assert.equal(savedJson.palm.serve.en, 'Pour a third of the cup.'); assert.equal(savedJson.palm.steps[2].secs, 540); assert.equal(savedJson.palm.extra, undefined); assert.equal(savedJson.sneaky, undefined);
 assert.match(puts[0].message, /by maryam@hikayacoffee.ca/); assert.equal(puts[0].branch, 'claude/frontend-design-skills-setup-2e6lwc'); ok('saving writes only the existing words to GitHub, with who changed it');
 assert.equal((await call(admin, '/api/admin/content/recipes', { cookie: adm, body: { data: edited, sha: 'sha1' } })).status, 409); ok('two people saving at once: the second is asked to reload');
 edited.palm.serve.ar = '  '; assert.equal((await call(admin, '/api/admin/content/recipes', { cookie: adm, body: { data: edited, sha: 'sha2' } })).status, 400);
