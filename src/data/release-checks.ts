@@ -6,6 +6,17 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'round-2', title: 'End of round 2: the customer site, on a phone, in Arabic and English', date: '2026-10-04',
+    checks: [
+      { id: 'shop-tabs', text: 'Shop: open each coffee tab.', links: [{ label: 'Shop (AR)', href: '/ar/shop/' }, { label: 'Shop (EN)', href: '/en/shop/' }] },
+      { id: 'gulf-sticky', text: 'Gulf coffee: the sticky bar at the bottom follows the style you pick.', links: [{ label: 'Gulf (AR)', href: '/ar/shop/gulf/' }, { label: 'Gulf (EN)', href: '/en/shop/gulf/' }] },
+      { id: 'taste-yemen', text: 'Taste Yemen: the how-to says one small pack per pot.', links: [{ label: 'Taste Yemen (AR)', href: '/ar/shop/taste-yemen/' }, { label: 'Taste Yemen (EN)', href: '/en/shop/taste-yemen/' }] },
+      { id: 'brew-find-visit', text: 'Brew guide; Find your coffee (Gulf → Qassimi → Milk); Visit → Allergens.', links: [{ label: 'Brew (AR)', href: '/ar/brew/' }, { label: 'Find (EN)', href: '/en/find/' }, { label: 'Visit (AR)', href: '/ar/visit/' }] },
+      { id: 'home', text: 'Homepage: the pairs (allergen line, “Add the pair”) and the Arabic hero (قهوة خليجية ويمنية وشامية).', links: [{ label: 'Home (AR)', href: '/ar/' }, { label: 'Home (EN)', href: '/en/' }] },
+      { id: 'ar-promo-error', text: 'Arabic checkout: a wrong promo code shows the Arabic message.', links: [{ label: 'Checkout (AR)', href: '/ar/checkout/' }] },
+    ],
+  },
+  {
     id: '2-7', title: 'Round 2 · batch 7: accessibility and small fixes', date: '2026-10-04',
     checks: [
       { id: 'pair-tag', text: 'Homepage pairs (dark band): “Ordering opens soon” is readable, in gold.', links: [{ label: 'Home (AR)', href: '/ar/' }, { label: 'Home (EN)', href: '/en/' }] },

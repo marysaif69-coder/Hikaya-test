@@ -37,7 +37,7 @@ Coffee and dates belong to the same table: Gulf qahwa is poured with a date, oth
 ## Capabilities and Constraints
 
 - Languages: Arabic and English only on the website, with true RTL for Arabic and Arabic first in paired lines. Packaging labels are English and French (Canadian law); ingredient labels on product pages show EN/FR.
-- Products: base bags Gulf coffee (cardamom), Yemeni qahwa (cardamom only), Jubani (with qishr), Qishr (husk with ginger), Shami with cardamom, Shami sada; packs: saffron, Qassim blend (spices only; the customer adds milk), Hijazi blend, Hadrami, Rada'i, Baydani (ginger in the Yemeni packs); styles = bag + packs at one price; tasting boxes تذوّق النكهة الخليجية / اليمنية. Prices are not set yet (the site says "price coming"). Khaleeji, Shamaliyya and Sana'ani are discontinued.
+- Products: base bags Gulf coffee (cardamom), Yemeni qahwa (cardamom only), Jubani (with qishr), Qishr (husk with ginger), Shami with cardamom, Shami sada; packs: saffron (soaked and added to the serving dallah at the end, never boiled), Qassim blend (spices only; the customer adds evaporated milk), Hijazi blend, Hadrami, Rada'i, Baydani (ginger in the Yemeni packs; how the Rada'i and Baydani packs are used is decided at the tasting); styles = bag + packs at one price; tasting boxes تذوّق النكهة الخليجية / اليمنية (one small pack per pot). Coffee is brewed in a small pot and served from the dallah. Prices for the coffee bags, styles, packs and tasting boxes are not set yet (the site says "price coming"). Boxes (the only way the site sells dates), with draft prices from `BOXES` in `src/data/products.ts` to check against the coffee prices (docs/coffee-tbd.md): year-round The Everyday Date Box $34, Four Palms $44, The Guest Box $54, The Coffee Duo (Najdi + Yemeni qahwa) $46; Ramadan The Iftar Pair $54, Ramadan Date Box $34; Eid Eid Coffee & Dates $56, Eid Dates $58, Eid Coffee Duo $46. Prices are not set yet (the site says "price coming"). Khaleeji, Shamaliyya and Sana'ani are discontinued.
 - Dates: Sukkari, Khalas, Medjool, Ajwa, Khudri.
 - Open: final prices; grams per pot and per pack; Hadrami and Hijazi pack contents; pickup address and hours; GST treatment.
 
@@ -54,7 +54,7 @@ Coffee and dates belong to the same table: Gulf qahwa is poured with a date, oth
 ## Evidence on Hand
 
 - Logo pack v0.8.1, colours, patterns (cream conversation, seed), packaging brief v2 and drawings: Google Drive (Hikaya folders).
-- Films (9:16 and 4:5): seed-to-story, Calgary slip, Ramadan iftar (20 s and 6 s), Eid visit, four families, cold qishr, the brew as sound, Bunn & Tamr chat ep. 1, neon winter test: Google Drive "02 Films".
+- Films (9:16 and 4:5): seed-to-story, Calgary slip, Ramadan iftar (20 s and 6 s), Eid visit, Along the counter (file four-families), cold qishr, the brew as sound, Bunn & Tamr chat ep. 1, neon winter test: Google Drive "02 Films".
 - Product and scene images from the website v3 artifact (bags, gift boxes, Eid and Ramadan scenes).
 - No real customer testimonials, reviews, press or sales numbers exist. Guest-wall lines are samples and must be labelled as such until real ones arrive.
 
