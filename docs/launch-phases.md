@@ -6,7 +6,7 @@ in the desk under Numbers → Plan.
 
 | # | Phase | When | What the public sees | Ordering |
 |---|---|---|---|---|
-| 0 | **Something is brewing** (now, on hikayacoffee.ca) | until the owners move on | The dark holding page: "Something is brewing. شيء ما يغلي.", the name only, hello@hikayacoffee.ca. The team gets in at hikayacoffee.ca/team. | No |
+| 0 | **Something is brewing** (now, on hikayacoffee.ca) | until the owners move on | The dark holding page: "شيء ما يغلي. Something is brewing.", the name only, hello@hikayacoffee.ca. The team gets in at hikayacoffee.ca/team. | No |
 | 1 | **Coming soon + waitlist** | when the owners switch to it in Settings, until the paperwork is done | The Coming soon page with the official lockup and an email sign-up (Arabic or English, CASL consent, confirm by email). The team gets in with the preview code under "Team". | No |
 | 2 | **Ramadan pre-orders** | as soon as the paperwork is done; aim for early January | The whole site, Ramadan switched on | Yes; pickup and delivery from 22 January (Thu–Sun) |
 | 3 | **During Ramadan** | about 8 Feb – 8 Mar | Ramadan boxes and iftar times; Eid boxes switched on about halfway | Yes, with order-by deadlines and daily limits |
