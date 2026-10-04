@@ -2,11 +2,11 @@ import { sql, one, type Row } from './db';
 import { HttpError, str, isEmail, siteUrl } from './http';
 import { hash, token, isAdminEmail, type Session } from './auth';
 import { priceCart, totals, dollars, type PricedLine } from './pricing';
-import { assertBookable, bookable, getSettings } from './slots';
+import { assertBookable, getSettings, calgaryNow, cutoffFor } from './slots';
 import { liveCatalog, takeStock, giveStock, restock, assertDayLimits } from './catalog';
 import { checkPromo, redeem, unredeem, shape, type Applied } from './promos';
 import { send, orderEmail, teamAlert, type OrderMailKind } from './email';
-import { pushOwners } from './push';
+import { pushOwners, pushTo } from './push';
 import { randomInt } from 'node:crypto';
 import { paymentLink, amountLink } from './square';
 import { takeFromGiftCard, giveBackToGiftCard, normGift } from './giftcards';
@@ -203,12 +203,23 @@ export async function moveOrder(ref: string, day: string, window: string, actor:
   if (cur === day && o.slot_window === window) throw new HttpError(400, 'same', 'That is the day and time it already has.');
   if (!opts.force) {
     const s = await getSettings();
-    if (!bookable(cur, s.ordering)) throw new HttpError(409, 'too-late', 'It is too late to change this order online. Reply to your confirmation email and we will help.');
-    await assertBookable(day, window, o.method);
+    // Only the current day's deadline matters here: a day the owners closed after the customer
+    // booked it can still be moved off.
+    const c = calgaryNow(), cut = cutoffFor(cur, s.ordering);
+    if (!(c.date < cut.date || (c.date === cut.date && c.hour < cut.hour))) throw new HttpError(409, 'too-late', 'It is too late to change this order online. Reply to your confirmation email and we will help.');
+    await assertBookable(day, window, o.method, o.id);
     await assertDayLimits(day, (await items(o.id)).map(i => ({ product_id: i.product_id, qty: i.qty })), s.caps.giftBoxesPerDay, o.id);
   } else if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !window) throw new HttpError(400, 'bad-slot', 'Choose a day and a time.');
-  const moved = await one`UPDATE orders SET slot_date = ${day}, slot_window = ${window}, reminded_at = NULL, sms_reminded_at = NULL, updated_at = NOW() WHERE id = ${o.id} RETURNING *`;
+  // A delivery moved to another day comes off its driver's list (they may not drive that day) and
+  // shows again under "deliveries with no driver". Another time on the same day keeps the driver.
+  const newDay = cur !== day && o.method === 'delivery';
+  const moved = await one`UPDATE orders SET slot_date = ${day}, slot_window = ${window}, reminded_at = NULL, sms_reminded_at = NULL,
+      driver_email = CASE WHEN ${newDay} THEN NULL ELSE driver_email END, route_seq = CASE WHEN ${newDay} THEN NULL ELSE route_seq END, updated_at = NOW() WHERE id = ${o.id} RETURNING *`;
   await event(o.id, 'moved', `${cur} ${o.slot_window} → ${day} ${window}`, actor);
+  if (newDay && o.driver_email) {
+    await event(o.id, 'driver', `Driver ${o.driver_email} removed (moved to ${day})`, actor);
+    await pushTo([o.driver_email], { title: `${o.ref} moved to ${day}`, body: 'It is off your list for now.', tag: 'stops' });
+  }
   await notify('moved', moved!, req);
   return moved!;
 }

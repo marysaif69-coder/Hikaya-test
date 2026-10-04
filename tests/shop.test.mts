@@ -1189,4 +1189,31 @@ assert.equal((await call(admin, `/api/admin/giftcards/${gf.data.ref}/paid`, { co
 assert.equal(sent.slice(gfM).filter(m => m.to[0] === 'amal@example.com').length, 1); assert.equal(sent.slice(gfM).filter(m => m.to[0] === 'noor@example.com').length, 1);
 assert.ok((await pg.query(`SELECT sent_at FROM gift_cards WHERE ref = $1`, [gf.data.ref])).rows[0].sent_at); ok('a gift card email that failed is not marked sent, and can be emailed again (once)');
 
+// ---------- moving orders ----------
+const mvD = await order({ email: 'move-driver@example.com', method: 'delivery', street: '5 Move St', postal: 'T2P1J9', day: '2027-07-01' });
+await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [mvD.data.ref], driver: 'dan@example.com' } });
+await call(admin, `/api/admin/orders/${mvD.data.ref}/move`, { cookie: adm, body: { day: '2027-07-01', window: '14:00–17:00', force: true } });
+assert.equal((await pg.query(`SELECT driver_email FROM orders WHERE ref = $1`, [mvD.data.ref])).rows[0].driver_email, 'dan@example.com'); ok('another time on the same day keeps the driver');
+await call(admin, `/api/admin/orders/${mvD.data.ref}/move`, { cookie: adm, body: { day: '2027-07-02', window: '14:00–17:00', force: true } });
+assert.equal((await pg.query(`SELECT driver_email FROM orders WHERE ref = $1`, [mvD.data.ref])).rows[0].driver_email, null); ok('a delivery moved to another day comes off the driver\'s list');
+// A full day: the customer can still change the time on that same day.
+const fullDay = '2027-07-08';
+const fd1 = await order({ email: 'fullday@example.com', day: fullDay, window: '11:00–14:00' });
+await order({ email: 'fullday2@example.com', day: fullDay, window: '11:00–14:00' });
+const fdN = (await pg.query(`SELECT COUNT(*)::int AS n FROM orders WHERE slot_date = $1 AND status <> 'cancelled' AND NOT is_sample`, [fullDay])).rows[0].n;
+await call(admin, '/api/admin/settings', { cookie: adm, body: { caps: { dailyOrders: fdN } } });
+const fdCookie = await login('fullday@example.com');
+assert.equal((await call(orders, '/api/my/orders/move', { cookie: fdCookie, body: { ref: fd1.data.ref, day: fullDay, window: '17:00–20:00' } })).status, 200);
+const other = await order({ email: 'fullday3@example.com', day: '2027-07-09' });
+const otherCookie = await login('fullday3@example.com');
+assert.equal((await call(orders, '/api/my/orders/move', { cookie: otherCookie, body: { ref: other.data.ref, day: fullDay, window: '14:00–17:00' } })).data.error, 'slot-full');
+ok('on a full day, a customer can change the time of their own order, but nobody else can move in');
+await call(admin, '/api/admin/settings', { cookie: adm, body: { caps: { dailyOrders: null } } });
+// A day the owners closed after it was booked: the customer can still move off it.
+const clO = await order({ email: 'closedday@example.com', day: '2027-07-15' });
+const clSet = (await call(admin, '/api/admin/settings', { cookie: adm })).data.ordering.closedDates;
+await call(admin, '/api/admin/settings', { cookie: adm, body: { closedDates: [...clSet, '2027-07-15'] } });
+assert.equal((await call(orders, '/api/my/orders/move', { cookie: await login('closedday@example.com'), body: { ref: clO.data.ref, day: '2027-07-16', window: '11:00–14:00' } })).status, 200);
+await call(admin, '/api/admin/settings', { cookie: adm, body: { closedDates: clSet } }); ok('a day closed after booking: the customer can still move the order to an open day');
+
 console.log(`\n${pass} checks passed`);
