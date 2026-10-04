@@ -2,7 +2,7 @@
 import '../styles/fonts.css';
 import '../styles/global.css';
 import type { Lang } from '../data/products';
-import { PRODUCTS, DATES, GRINDS } from '../data/products';
+import { PRODUCTS, DATES, GRINDS, COFFEES, kitInside } from '../data/products';
 import { UI, dir, other, path } from '../data/i18n';
 import AskHikaya from '../components/AskHikaya.astro';
 import TeamBar from '../components/TeamBar.astro';
@@ -17,10 +17,15 @@ const altHref = here.replace(/^\/(en|ar)\//, `/${alt}/`);
 const nav: [keyof typeof UI.nav, string][] = [['shop', 'shop'], ['ramadan', 'ramadan'], ['eid', 'eid'], ['brew', 'brew'], ['story', 'story'], ['visit', 'visit']];
 
 // Small catalog for the client cart (names, prices, options) — no secrets, all public.
+// Kits carry their base bag and packs, and packs the bag they are made for, so the cart can explain itself.
+const grindsOf = (id: string) => COFFEES.find(c => c.id === id)?.grinds ?? [];
 const catalog = Object.fromEntries(PRODUCTS.map(p => [p.id, {
   n: p.name, price: p.price, kind: p.kind,
-  img: p.kind === 'box' ? p.img : p.art?.front ?? null,
-  opts: p.kind === 'coffee' ? Object.fromEntries(p.grinds.map(g => [g, GRINDS[g]])) : p.chooseDate ? Object.fromEntries(Object.entries(DATES).map(([k, d]) => [k, d.name])) : null,
+  img: p.kind === 'box' ? p.img : p.kind === 'coffee' ? p.art?.front ?? null : null,
+  opts: p.kind === 'coffee' || p.kind === 'kit' ? Object.fromEntries(grindsOf(p.kind === 'kit' ? p.base : p.id).map(g => [g, GRINDS[g]])) : p.kind === 'box' && p.chooseDate ? Object.fromEntries(Object.entries(DATES).map(([k, d]) => [k, d.name])) : null,
+  ...(p.kind === 'kit' ? { base: p.base, inside: { en: kitInside(p, 'en'), ar: kitInside(p, 'ar') } } : {}),
+  ...(p.kind === 'pack' ? { for: p.for } : {}),
+  ...(p.kind === 'box' && p.packs?.coffee ? { bases: Object.keys(p.packs.coffee) } : {}),
 }]));
 const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'}` : (lang === 'ar' ? 'حكاية · قهوة وتمر في كالغاري' : 'Hikaya · Coffee & dates in Calgary');
 ---

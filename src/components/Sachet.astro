@@ -1,0 +1,21 @@
+---
+// A sealed pack, drawn small: crimped top and bottom, a colour band and the name in Arabic and English.
+import type { Pack, Lang } from '../data/products';
+interface Props { pack: Pack; lang: Lang; mini?: boolean; class?: string }
+const { pack, lang, mini = false, class: cls = '' } = Astro.props;
+const crimp = Array.from({ length: 12 }, (_, i) => `M${8 + i * 7} 4v8`).join('');
+---
+<svg class={`sachet ${mini ? 'mini' : ''} ${cls}`} viewBox="0 0 100 130" direction="ltr" role="img" aria-label={`${pack.name[lang]}${mini ? (lang === 'ar' ? ' (صغير)' : ' (small)') : ''}`}>
+  <rect x="2" y="2" width="96" height="126" rx="5" fill="#FFFDF9" stroke="#D8CDBB" />
+  <path d={crimp} stroke="#D8CDBB" stroke-width="1.2" />
+  <path d={crimp.replace(/M(\d+) 4v8/g, 'M$1 118v8')} stroke="#D8CDBB" stroke-width="1.2" />
+  <rect x="2" y="22" width="96" height="30" fill={pack.c} />
+  <image href="/brand/logo.svg" x="38" y="25" width="24" height="24" />
+  <text x="50" y="76" text-anchor="middle" font-family="El Messiri, serif" font-weight="700" font-size="14" fill="#33211A">{pack.name.ar}</text>
+  <text x="50" y="90" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="600" font-size="6.6" letter-spacing="1" fill="#33211A">{pack.name.en.toUpperCase()}</text>
+  {mini && <text x="50" y="106" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="6" fill="#66503F">SMALL · صغير</text>}
+</svg>
+
+<style>
+  .sachet { display: block; width: 100%; height: auto; filter: drop-shadow(0 14px 16px rgba(51, 33, 26, .22)); }
+</style>

@@ -6,7 +6,7 @@ import Pouch from '../../components/Pouch.astro';
 import BoxBuilder from '../../components/BoxBuilder.astro';
 import Films from '../../components/Films.astro';
 import GuestWall from '../../components/GuestWall.astro';
-import { COFFEES, DATES, FAMILIES, BOXES, money, type Lang } from '../../data/products';
+import { COFFEES, KITS, DATES, LINES, BOXES, money, priceText, type Lang, type CoffeeLine } from '../../data/products';
 import { path } from '../../data/i18n';
 import { sunsetMinutes, hhmm, RAMADAN_START } from '../../data/calendar';
 
@@ -15,7 +15,7 @@ const lang = Astro.params.lang as Lang;
 const ar = lang === 'ar';
 const najdi = COFFEES[0];
 const dateBox = BOXES.find(b => b.id === 'date-box')!;
-const shelf = (['palm', 'mountain', 'house', 'husk'] as const).map(f => ({ f, c: COFFEES.find(c => c.fam === f && c.art) ?? COFFEES.find(c => c.fam === f)!, n: COFFEES.filter(c => c.fam === f).length }));
+const shelf = (['gulf', 'yemen', 'shami'] as CoffeeLine[]).map(l => ({ l, c: COFFEES.find(c => c.line === l)!, bags: COFFEES.filter(c => c.line === l), styles: KITS.filter(k => k.line === l && !k.discovery) }));
 const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
 ---
 <Base lang={lang} title="" intro>
@@ -80,8 +80,8 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
                   tamr={{ ar: `خذ معها ${d.name.ar}.`, en: `Take ${d.name.en} with it.` }} />
                 <p class="why">{c.why[lang]} <span>{d.name[lang]} · {d.region[lang]}</span></p>
                 <div class="panel-buy">
-                  <p><span class="price" data-price-for={`${c.id},date-box`}>{money(c.price + dateBox.price, lang)}</span> <span class="muted">{ar ? `${c.name.ar} ${c.size} + ٥٠٠ غ ${d.name.ar}` : `${c.name.en} ${c.size} + 500 g ${d.name.en}`}</span></p>
-                  <button class="btn tamr" type="button" data-add={`${c.id},date-box`} data-opt={`${c.grinds[0] ?? ""},${c.date}`}><span>{ar ? 'أضف الاثنين' : 'Add the pair'}</span></button>
+                  <p><span class="price" data-price-for={`${c.id},date-box`}>{c.price == null || dateBox.price == null ? priceText(null, lang) : money(c.price + dateBox.price, lang)}</span> <span class="muted">{ar ? `${c.name.ar} ${c.size} + ٥٠٠ غ ${d.name.ar}` : `${c.name.en} ${c.size} + 500 g ${d.name.en}`}</span></p>
+                  <button class="btn tamr" type="button" data-add={`${c.id},date-box`} data-opt={`${c.grinds[0] ?? ""},${c.date}`} disabled={c.price == null}><span>{ar ? 'أضف الاثنين' : 'Add the pair'}</span></button>
                   <a href={path(lang, `shop/${c.id}`)}>{ar ? 'عن هذه القهوة' : 'About this coffee'}</a>
                 </div>
               </div>
@@ -92,21 +92,41 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
     </div>
   </section>
 
-  <!-- The shelf: four families standing like bags on a counter. -->
+  <!-- The story: one bag, made the way your family makes it. -->
+  <section class="sec story-sec" aria-labelledby="story-h">
+    <div class="wrap story-grid">
+      <div class="story-text">
+        <h2 id="story-h" class="h-l">{ar ? 'كيس واحد، على طريقة أهلك.' : 'One bag, made your family’s way.'}</h2>
+        <p class="lead">{ar ? 'اسأل عشرة بيوت كيف يصنعون القهوة، تسمع عشر حكايات. في نجد شقراء بالزعفران، وفي القصيم أغنى، وفي الحجاز أعطر. وفي اليمن لكل بلدة إضافتها: السمسم واللوز في رداع، والذرة في البيضاء. وفي الشام ناعمة كالبودرة، برغوتها في الركوة.' : 'Ask ten homes how they make their coffee and you will hear ten stories. In Najd it is pale, with saffron; in Qassim, richer; in the Hijaz, more fragrant. In Yemen every town adds its own: sesame and almonds in Rada’a, sorghum in Al-Bayda. In the Levant it is powder-fine, with its foam, in the rakwa.'}</p>
+        <p>{ar ? 'لذلك نحمّص القهوة طازجة في كالغاري، ونترك إضافات كل بيت في ظروفها المختومة، فتصنعها أنت كما يصنعها أهلك.' : 'So we roast the coffee fresh in Calgary, keep each home’s additions in their own sealed packs, and you make it the way your family does.'}</p>
+        <div class="cta">
+          <a class="btn primary" href={path(lang, 'find')}>{ar ? 'اعثر على قهوتك' : 'Find your coffee'}</a>
+          <a class="btn ghost" href={path(lang, 'our-recipes')}>{ar ? 'كيف اخترنا وصفاتنا' : 'How we chose our recipes'}</a>
+        </div>
+      </div>
+      <ol class="story-steps">
+        <li><b>{ar ? '١ · الكيس' : '1 · The bag'}</b><span>{ar ? 'خليجية أو يمنية أو شامية: القهوة وبهارها الأساسي فقط.' : 'Gulf, Yemeni or Shami: the coffee and its everyday spice, nothing more.'}</span></li>
+        <li><b>{ar ? '٢ · طريقة أهلك' : '2 · Your family’s way'}</b><span>{ar ? 'نجدية، قصيمية، حجازية، حضرمية، رداعية، بيضانية: الكيس مع ظروفه في علبة واحدة.' : 'Najdi, Qassimi, Hijazi, Hadrami, Rada’i, Baydani: the bag with its packs, in one box.'}</span></li>
+        <li><b>{ar ? '٣ · الظرف وحده' : '3 · Just the pack'}</b><span>{ar ? 'حين ينقص عندك، الظرف يأتي وحده للكيس الذي في بيتك.' : 'When you run low, the pack comes on its own, for the bag already in your house.'}</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- The shelf: three coffees standing like bags on a counter. -->
   <section class="sec shelf-sec" aria-labelledby="shelf-h">
     <div class="wrap">
       <div class="split-head">
-        <h2 id="shelf-h" class="h-l">{ar ? 'أربع عائلات على الرف.' : 'Four families on the shelf.'}</h2>
-        <p class="lead">{ar ? 'كيس واحد لكل قهوة، والملصق يحكي الباقي: الاسم والبهار ودرجة التحميص.' : 'One bag for every coffee. The sticker tells the rest: the name, the spice, the roast.'}</p>
+        <h2 id="shelf-h" class="h-l">{ar ? 'ثلاث قهوات على الرف.' : 'Three coffees on the shelf.'}</h2>
+        <p class="lead">{ar ? 'كيس لكل قهوة، والظروف تجعلها على طريقة أهلك.' : 'A bag for each coffee, and the packs make it your family’s way.'}</p>
       </div>
       <ul class="shelf">
-        {shelf.map(({ f, c, n }) => (
-          <li class={`rise shelf-${f}`}>
-            <a href={path(lang, 'shop') + `#${f}`}>
+        {shelf.map(({ l, c, bags, styles }) => (
+          <li class={`rise shelf-${LINES[l].fam}`}>
+            <a href={path(lang, 'shop') + `#${l}`}>
               <div class="shelf-bag"><Pouch coffee={c} lang={lang} label={false} /></div>
-              <h3 class="h-s">{FAMILIES[f].name[lang]}</h3>
-              <p class="muted">{FAMILIES[f].line[lang]}</p>
-              <p class="count">{ar ? `${n} ${n > 2 ? 'أنواع' : n === 1 ? 'نوع' : 'نوعان'}` : `${n} ${n === 1 ? 'kind' : 'kinds'}`}</p>
+              <h3 class="h-s">{LINES[l].name[lang]}</h3>
+              <p class="muted">{LINES[l].line[lang]}</p>
+              <p class="count">{[...bags, ...styles].map(x => x.name[lang]).join(' · ')}</p>
             </a>
           </li>
         ))}
@@ -200,14 +220,22 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
   /* ---------- shelf ---------- */
   .split-head { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 40px; align-items: end; margin-bottom: clamp(32px, 4vw, 56px); }
   @media (max-width: 800px) { .split-head { grid-template-columns: 1fr; } }
-  .shelf { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(16px, 3vw, 40px); align-items: end; }
+  .shelf { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(16px, 3vw, 40px); align-items: end; }
   .shelf a { display: grid; gap: 8px; text-decoration: none; }
   .shelf-bag { padding: 0 12% 18px; border-bottom: 3px solid var(--bunn); margin-bottom: 10px; transition: transform .45s var(--ease); }
   .shelf a:hover .shelf-bag { transform: translateY(-8px); }
   .shelf-husk .shelf-bag { padding-inline: 22%; }
   .shelf a:hover h3 { text-decoration: underline; text-underline-offset: .2em; }
   .count { font-size: 14px; font-weight: 600; color: var(--tamr); }
-  @media (max-width: 760px) { .shelf { grid-template-columns: 1fr 1fr; row-gap: 40px; } }
+  @media (max-width: 760px) { .shelf { grid-template-columns: 1fr; row-gap: 40px; } .shelf .shelf-bag { max-width: 50%; } }
+  .story-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: clamp(28px, 5vw, 72px); align-items: center; }
+  @media (max-width: 860px) { .story-grid { grid-template-columns: 1fr; } }
+  .story-text { display: grid; gap: 16px; }
+  .story-text .cta { display: flex; flex-wrap: wrap; gap: 10px; }
+  .story-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .story-steps li { display: grid; gap: 4px; padding: 16px 18px; border-radius: 22px; border-bottom-left-radius: 6px; background: var(--sheet); }
+  .story-steps b { font-family: var(--display); font-size: 20px; }
+  .story-steps span { color: var(--ink-2); font-size: 15.5px; }
 
   /* ---------- Ramadan window ---------- */
   .ramadan-cta { position: relative; min-height: clamp(560px, 70vw, 760px); display: grid; align-items: center; overflow: hidden; background: var(--bunn); }

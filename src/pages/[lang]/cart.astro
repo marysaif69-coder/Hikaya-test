@@ -26,7 +26,8 @@ const ar = lang === 'ar';
       </dl>
       <p class="muted small">{ar ? 'استلام مجاني، أو توصيل ٩ $ داخل كالغاري، مجاني فوق ٨٠ $.' : 'Free pickup, or $9 Calgary delivery, free over $80.'}</p>
       <p class="free" id="free"></p>
-      <a class="btn primary" href={path(lang, 'checkout')}>{ar ? 'أكمل الطلب المسبق' : 'Continue to pre-order'}</a>
+      <p class="free" id="unpriced" hidden>{ar ? 'في سلتك ما لم يُحدد سعره بعد. الطلب يفتح حين نعلن الأسعار.' : 'Something in your cart has no price yet. Ordering opens when we announce prices.'}</p>
+      <a class="btn primary" id="go" href={path(lang, 'checkout')}>{ar ? 'أكمل الطلب المسبق' : 'Continue to pre-order'}</a>
       <p class="muted small">{ar ? 'لا دفع الآن. نؤكد طلبك بالبريد.' : 'Nothing is paid now. We confirm your order by email.'}</p>
     </aside>
   </section>
@@ -54,10 +55,11 @@ const ar = lang === 'ar';
   dd { margin: 0; font-weight: 600; }
   .small { font-size: 14px; }
   .free { font-weight: 600; color: var(--tamr); font-size: 15px; }
+  .btn.off { opacity: .45; pointer-events: none; }
 </style>
 
 <script>
-  import { read, setQty, totals, describe } from '../../scripts/cart';
+  import { read, setQty, totals, describe, paintAdvice } from '../../scripts/cart';
   const lang = document.documentElement.lang as 'en' | 'ar';
   const $ = (id: string) => document.getElementById(id)!;
   const money = (n: number) => (lang === 'ar' ? `${n} $` : `$${n}`);
@@ -72,13 +74,18 @@ const ar = lang === 'ar';
       const li = document.createElement('li');
       li.innerHTML = `<div><div class="nm"></div><div class="op"></div></div>
         <div class="qty"><button type="button" data-d="-1" aria-label="${lang === 'ar' ? 'أنقص' : 'Less'}">−</button><span class="tnum">${l.qty}</span><button type="button" data-d="1" aria-label="${lang === 'ar' ? 'زد' : 'More'}">+</button></div>
-        <div class="lp tnum">${money(d.price * l.qty)}</div>`;
+        <div class="lp tnum">${d.priced ? money(d.price * l.qty) : (lang === 'ar' ? 'السعر قريباً' : 'Price coming')}</div>`;
       li.querySelector('.nm')!.textContent = d.name;
       li.querySelector('.op')!.textContent = d.opt;
       li.querySelectorAll<HTMLButtonElement>('[data-d]').forEach(b => b.addEventListener('click', () => { setQty(i, l.qty + Number(b.dataset.d)); paint(); }));
       $('lines').append(li);
     });
+    paintAdvice($('lines'), lang, paint);
     $('sub').textContent = money(sub);
+    const t = totals(lines);
+    $('unpriced').hidden = !t.unpriced;
+    ($('go') as HTMLAnchorElement).toggleAttribute('aria-disabled', t.unpriced > 0);
+    $('go').classList.toggle('off', t.unpriced > 0);
     $('free').textContent = sub >= 80 ? (lang === 'ar' ? 'التوصيل مجاني لهذا الطلب.' : 'Delivery is free on this order.') : sub > 0 ? (lang === 'ar' ? `أضف ${80 - sub} $ ليصبح التوصيل مجاناً.` : `Add $${80 - sub} for free delivery.`) : '';
   }
   paint();

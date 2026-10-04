@@ -3,12 +3,12 @@
 import { env } from './http';
 import { sql, one } from './db';
 import { HttpError } from './http';
-import { PRODUCTS } from '../../src/data/products';
+import { PRODUCTS, fileCents } from '../../src/data/products';
 
 export type Season = 'ramadan' | 'eid';
 export type Seasons = Record<Season, boolean>;
 /** shown = on the site; available = can be ordered (false shows "sold out"). */
-export type Live = { price_cents: number; visible: boolean; available: boolean; stock: number | null; season: Season | null; shown: boolean; changed: boolean };
+export type Live = { price_cents: number | null; visible: boolean; available: boolean; stock: number | null; season: Season | null; shown: boolean; changed: boolean };
 
 export const seasonOf = (id: string): Season | null => {
   const fam = PRODUCTS.find(p => p.id === id)?.fam;
@@ -35,7 +35,7 @@ export async function liveCatalog(): Promise<Record<string, Live>> {
     const season = seasonOf(p.id);
     const visible = r ? r.visible : true;
     const shown = visible && (!season || seasons[season]);
-    return [p.id, { price_cents: r?.price_cents ?? p.price * 100, visible, available: (r ? r.available : true) && shown, stock: r?.stock ?? null, dailyCap: r?.daily_cap ?? null, season, shown, changed: Boolean(r) }];
+    return [p.id, { price_cents: r?.price_cents ?? fileCents(p), visible, available: (r ? r.available : true) && shown, stock: r?.stock ?? null, dailyCap: r?.daily_cap ?? null, season, shown, changed: Boolean(r) }];
   }));
 }
 

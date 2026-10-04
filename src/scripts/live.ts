@@ -1,7 +1,7 @@
 // The pages are built once; prices, sold-out switches, hidden products and the Ramadan/Eid
 // seasons change from the admin desk. This applies the live values on every page: the last
 // known values straight away (from this browser), then fresh ones from /api/catalog.
-type LiveProduct = { price: number; shown: boolean; available: boolean; left: number | null };
+type LiveProduct = { price: number | null; shown: boolean; available: boolean; left: number | null };
 type Live = { seasons: { ramadan: boolean; eid: boolean }; products: Record<string, LiveProduct>; business?: { address: string; hours: string; phone: string } };
 
 const KEY = 'hikaya-live-v1';
@@ -9,8 +9,11 @@ const lang = () => (document.documentElement.lang === 'ar' ? 'ar' : 'en');
 const money = (n: number) => { const v = Number.isInteger(n) ? String(n) : n.toFixed(2); return lang() === 'ar' ? `${v} $` : `$${v}`; };
 
 let current: Live | null = null;
+const priceOr = (n: number | null) => (n == null ? (lang() === 'ar' ? 'السعر قريباً' : 'Price coming') : money(n));
 /** For scripts that show prices they build themselves (the box builder). */
-(window as any).hikayaPrice = (id: string) => current?.products[id] ? money(current.products[id].price) : undefined;
+/** For the style picker on a product page: can this id be ordered right now? (undefined = not known yet) */
+(window as any).hikayaOrderable = (id: string) => { const p = current?.products[id]; return p ? p.shown && p.available && p.price != null : undefined; };
+(window as any).hikayaPrice = (id: string) => current?.products[id] ? priceOr(current.products[id].price) : undefined;
 
 // The pickup address the owners set in the desk replaces "[address]" everywhere, including text
 // added later (orders in My account).
@@ -51,7 +54,7 @@ function apply(live: Live) {
   // Prices (a comma list shows the sum, e.g. a coffee plus a date box).
   document.querySelectorAll<HTMLElement>('[data-price-for]').forEach(el => {
     const ids = el.dataset.priceFor!.split(',');
-    if (ids.every(id => P[id])) el.textContent = money(ids.reduce((n, id) => n + P[id].price, 0));
+    if (ids.every(id => P[id])) el.textContent = ids.some(id => P[id].price == null) ? priceOr(null) : money(ids.reduce((n, id) => n + P[id].price!, 0));
   });
   // Product cards: hidden products disappear, sold-out ones say so.
   document.querySelectorAll<HTMLElement>('[data-product]').forEach(el => {
@@ -68,15 +71,17 @@ function apply(live: Live) {
   // Add buttons: off when any product they add can't be ordered.
   document.querySelectorAll<HTMLButtonElement>('[data-add]').forEach(b => {
     const ids = b.dataset.add!.split(',');
-    const off = ids.some(id => P[id] && (!P[id].shown || !P[id].available));
+    // Not priced yet: ordering is off and the button says so (the owners set prices in the desk).
+    const noPrice = ids.some(id => P[id] && P[id].shown && P[id].price == null);
+    const off = noPrice || ids.some(id => P[id] && (!P[id].shown || !P[id].available));
     b.disabled = off;
     let tag = b.parentElement?.querySelector<HTMLElement>('.sold-out-tag');
     if (off && !tag) { tag = document.createElement('span'); tag.className = 'sold-out-tag'; b.after(tag); }
-    if (tag) { tag.hidden = !off; tag.textContent = ids.some(id => P[id] && !P[id].shown) ? (lang() === 'ar' ? 'غير متوفر الآن' : 'Not available now') : (lang() === 'ar' ? 'نفد' : 'Sold out'); }
+    if (tag) { tag.hidden = !off; tag.textContent = noPrice ? (lang() === 'ar' ? 'الطلب يفتح قريباً' : 'Ordering opens soon') : ids.some(id => P[id] && !P[id].shown) ? (lang() === 'ar' ? 'غير متوفر الآن' : 'Not available now') : (lang() === 'ar' ? 'نفد' : 'Sold out'); }
     // On a product page, offer "Email me when it's back".
     const own = ids.length === 1 && document.querySelector('main [data-pdp]')?.getAttribute('data-pdp') === ids[0] && b.closest('main');
     let nf = b.parentElement?.querySelector<HTMLFormElement>('.notify-me');
-    if (off && own && !nf) { nf = notifyForm(ids[0]); b.parentElement!.append(nf); }
+    if (off && own && !nf && !noPrice) { nf = notifyForm(ids[0]); b.parentElement!.append(nf); }
     if (nf) nf.hidden = !off;
   });
   document.querySelectorAll<HTMLElement>('[data-notify]').forEach(el => { if (!el.firstChild) el.append(notifyForm(el.dataset.notify!)); });

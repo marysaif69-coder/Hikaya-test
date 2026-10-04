@@ -3,7 +3,7 @@
 import Base from '../../../layouts/Base.astro';
 import Pouch from '../../../components/Pouch.astro';
 import { BREW } from '../../../data/brew';
-import { COFFEES, FAMILIES, type Lang } from '../../../data/products';
+import { COFFEES, KITS, FAMILIES, type Lang } from '../../../data/products';
 import { path } from '../../../data/i18n';
 
 export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
@@ -12,10 +12,11 @@ const ar = lang === 'ar';
 const fams = ['palm', 'mountain', 'house', 'husk'] as const;
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 ---
-<Base lang={lang} title={ar ? 'طريقة التحضير' : 'How to brew'} current="brew" description={ar ? 'كيف تحضّر قهوة حكاية: الدلّة، الإبريق اليمني، الركوة، والقشر.' : 'How to brew Hikaya coffee: the dallah, the Yemeni pot, the rakweh, and qishr.'}>
+<Base lang={lang} title={ar ? 'طريقة التحضير' : 'How to brew'} current="brew" description={ar ? 'كيف تحضّر قهوة حكاية: الدلّة، الإبريق اليمني، الركوة، والقشر.' : 'How to brew Hikaya coffee: Gulf coffee in the dallah, Yemeni qahwa in the pot, Shami coffee in the rakwa, and qishr.'}>
   <section class="wrap brew-head">
     <h1 class="h-l">{ar ? 'من الكيس إلى الفنجان.' : 'From the bag to the cup.'}</h1>
-    <p class="lead">{ar ? 'اختر عائلة قهوتك. كل خطوة لها مؤقّت إن احتجته.' : 'Pick your coffee’s family. Every timed step has a timer if you need one.'}</p>
+    <p class="lead">{ar ? 'اختر قهوتك. كل خطوة لها مؤقّت إن احتجته.' : 'Pick your coffee. Every timed step has a timer if you need one.'}</p>
+    <p class="muted">{ar ? 'الكميات المكتوب عليها [يُحدد لاحقاً] نثبّتها بعد جلسات التذوق هذا الخريف.' : 'Amounts marked [TBD] are set after our tastings this autumn.'}</p>
     <div class="tabs" role="tablist">
       {fams.map((f, i) => (
         <a role="tab" href={`#${f}`} aria-selected={i === 0 ? 'true' : 'false'} data-tab={f}>
@@ -36,7 +37,7 @@ const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '
             <dl>
               <div><dt>{ar ? 'الأداة' : 'Vessel'}</dt><dd>{b.vessel[lang]}</dd></div>
               <div><dt>{ar ? 'يكفي' : 'Makes'}</dt><dd>{b.yields[lang]}</dd></div>
-              <div><dt>{ar ? 'القهوة' : 'Coffees'}</dt><dd>{COFFEES.filter(c => c.fam === f).map(c => <a href={path(lang, `shop/${c.id}`)}>{c.name[lang]}</a>)}</dd></div>
+              <div><dt>{ar ? 'القهوة' : 'Coffees'}</dt><dd>{[...COFFEES.filter(c => c.fam === f), ...KITS.filter(k => k.fam === f && !k.discovery)].map(c => <a href={path(lang, `shop/${c.id}`)}>{c.name[lang]}</a>)}</dd></div>
             </dl>
           </header>
           <ol class="steps">

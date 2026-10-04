@@ -222,7 +222,7 @@ import '../../styles/global.css';
       </div>
       <p class="muted" id="weekHead"></p>
       <div class="a-daygrid week">
-        <div><h2 class="h-s">Coffee to roast and grind</h2><table class="a-table mini-t" id="wkCoffee"></table><p class="ev" id="wkCoffeeTot"></p></div>
+        <div><h2 class="h-s">Coffee to roast and grind</h2><table class="a-table mini-t" id="wkCoffee"></table><p class="ev" id="wkCoffeeTot"></p><h2 class="h-s">Sealed packs to fill</h2><table class="a-table mini-t" id="wkPacks"></table></div>
         <div><h2 class="h-s">Dates</h2><table class="a-table mini-t" id="wkDates"></table><p class="ev">Pieces go in gift boxes (24 and 12). Grams are 500 g everyday boxes of one variety.</p></div>
         <div><h2 class="h-s">Packaging</h2><ul class="a-pack" id="wkPack"></ul></div>
         <div><h2 class="h-s">Orders by day</h2><ul class="a-pack" id="wkDays"></ul><h2 class="h-s" style="margin-top:10px">Everything ordered</h2><ul class="a-pack" id="wkItems"></ul></div>
@@ -1033,7 +1033,8 @@ import '../../styles/global.css';
   // One line in the "Change items" editor: product, its option (grind or date), quantity.
   function itemRow(pid: string, opt: string | null, qty: number) {
     const p = PRODUCTS.find(x => x.id === pid); if (!p) return '';
-    const opts = p.kind === 'coffee' ? p.grinds.map(g => [g, GRINDS[g].en]) : p.kind === 'box' && p.chooseDate ? Object.entries(DATES).map(([id, d]) => [id, d.name.en]) : [];
+    const g = p.kind === 'coffee' ? p.grinds : p.kind === 'kit' ? (PRODUCTS.find(x => x.id === p.base) as any)?.grinds ?? [] : [];
+    const opts = g.length ? g.map((x: keyof typeof GRINDS) => [x, GRINDS[x].en]) : p.kind === 'box' && p.chooseDate ? Object.entries(DATES).map(([id, d]) => [id, d.name.en]) : [];
     return `<div class="ei acts" data-pid="${p.id}"><span>${esc(p.name.en)}</span>${opts.length ? `<select>${opts.map(([v, l]) => `<option value="${v}" ${v === opt ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>` : ''}<input type="number" min="0" max="20" value="${qty}" style="width:70px" aria-label="Quantity" /></div>`;
   }
   const showPanel = (title: string, html: string) => {
@@ -1126,8 +1127,9 @@ import '../../styles/global.css';
     weekPick.value = d.from;
     loadSubs();
     $('weekHead').textContent = `${fmtDay(d.from)} to ${fmtDay(d.to)} · ${d.orders} order${d.orders === 1 ? '' : 's'} (cancelled orders left out)`;
-    $('wkCoffee').innerHTML = '<tr><th>Coffee</th><th>Grind</th><th>Pouches</th><th>Weight</th></tr>' + (d.coffee.map((c: any) => `<tr><td>${esc(c.name)}${c.inBoxes ? `<br><small>${c.inBoxes} in gift boxes</small>` : ''}</td><td>${esc(c.grind)}</td><td>${c.pouches}</td><td>${(c.grams / 1000).toFixed(2)} kg</td></tr>`).join('') || '<tr><td colspan="4" class="muted">No coffee this week.</td></tr>');
+    $('wkCoffee').innerHTML = '<tr><th>Coffee</th><th>Grind</th><th>Pouches</th><th>Weight</th></tr>' + (d.coffee.map((c: any) => `<tr><td>${esc(c.name)}${c.inBoxes ? `<br><small>${c.inBoxes} in styles, discovery packs or gift boxes</small>` : ''}</td><td>${esc(c.grind)}</td><td>${c.pouches}</td><td>${(c.grams / 1000).toFixed(2)} kg</td></tr>`).join('') || '<tr><td colspan="4" class="muted">No coffee this week.</td></tr>');
     $('wkCoffeeTot').textContent = `Total ground coffee: ${d.coffeeTotalKg} kg (add your roast loss on top).`;
+    $('wkPacks').innerHTML = '<tr><th>Pack</th><th>Full</th><th>Small</th></tr>' + ((d.packs ?? []).map((x: any) => `<tr><td>${esc(x.name)}${x.inKits ? `<br><small>${x.inKits} go with a bag or box</small>` : ''}</td><td>${x.full || ''}</td><td>${x.mini || ''}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">No packs this week.</td></tr>');
     $('wkDates').innerHTML = '<tr><th>Variety</th><th>Pieces</th><th>Grams</th></tr>' + (d.dates.map((x: any) => `<tr><td>${esc(x.name)}</td><td>${x.pieces || ''}</td><td>${x.grams ? `${(x.grams / 1000).toFixed(1)} kg` : ''}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">No dates this week.</td></tr>');
     const pk = d.packaging;
     $('wkPack').innerHTML = [['250 g pouches', pk.pouches250], ['100 g pouches (qishr)', pk.pouches100], ['Gift boxes · D24 insert', pk.giftBoxes.D24], ['Gift boxes · C12 insert', pk.giftBoxes.C12], ['Gift boxes · C2 insert', pk.giftBoxes.C2],
@@ -1279,7 +1281,7 @@ import '../../styles/global.css';
     (($('labelForm') as HTMLFormElement).elements.namedItem('lot') as HTMLSelectElement).innerHTML = l.lots.filter((x: any) => !x.usedUpOn).map((x: any) => `<option value="${esc(x.code)}">${esc(x.code)} · ${esc(x.name)}</option>`).join('') || '<option value="">No lots yet</option>';
     loadFoodSafety();
     const sel = ($('lotForm') as HTMLFormElement).elements.namedItem('item') as HTMLSelectElement;
-    if (!sel.options.length) sel.innerHTML = `<optgroup label="Coffee">${PRODUCT_LIST.filter(p => p.kind === 'coffee').map(p => `<option value="coffee|${p.id}">${esc(p.name)}</option>`).join('')}</optgroup><optgroup label="Dates">${DATE_LIST.map(d => `<option value="dates|${d.id}">${esc(d.name)}</option>`).join('')}</optgroup>`;
+    if (!sel.options.length) sel.innerHTML = `<optgroup label="Coffee bags and sealed packs">${PRODUCT_LIST.filter(p => p.kind === 'coffee' || p.kind === 'pack').map(p => `<option value="coffee|${p.id}">${esc(p.name)}</option>`).join('')}</optgroup><optgroup label="Dates">${DATE_LIST.map(d => `<option value="dates|${d.id}">${esc(d.name)}</option>`).join('')}</optgroup>`;
     $('lotTable').innerHTML = '<tr><th>Lot</th><th>What</th><th>Made</th><th>Best before</th><th>Quantity</th><th></th></tr>' + (l.lots.map((x: any) => `<tr class="${x.usedUpOn ? 'off' : ''}"><td class="ref">${esc(x.code)}</td><td>${esc(x.name)}${x.supplier ? `<br><small>${esc(x.supplier)}</small>` : ''}</td><td>${fmtDay(x.madeOn)}</td><td>${x.bestBefore ? fmtDay(x.bestBefore) : '–'}</td><td>${esc(x.quantity ?? '')}</td>
       <td>${x.usedUpOn ? `Used up ${fmtDay(x.usedUpOn)}` : `<button type="button" data-used="${esc(x.code)}">Used up</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No lots yet.</td></tr>');
     $('supTable').innerHTML = '<tr><th>Supply</th><th>On hand</th><th>Needed this week</th><th>Warn at</th><th></th></tr>' + sp.supplies.map((x: any) => `<tr data-sup="${esc(x.key)}" class="${x.short || x.low ? 'warn' : ''}"><td>${esc(x.name)}</td>
@@ -1299,8 +1301,8 @@ import '../../styles/global.css';
     const date = lot.kind === 'dates' ? (DATES as any)[lot.item] : null;
     const name = p ? p.name : date.name;
     const ing: [string, string] = p ? p.ingredients : ['Dates.', 'Dattes.'];
-    const common = p ? (p.id === 'qishr' ? ['Dried coffee cherry husk', 'Cascara séchée'] : ing[0] === 'Coffee.' ? ['Ground coffee', 'Café moulu'] : ['Spiced ground coffee', 'Café moulu épicé']) : [`${date.name.en} dates`, `Dattes ${date.name.en}`];
-    const net = v('net') || (p ? p.size : '');
+    const common = p ? (p.kind === 'pack' ? (p.id === 'pack-saffron' ? ['Saffron', 'Safran'] : ['Spice blend for coffee', 'Mélange pour café']) : p.id === 'qishr' ? ['Dried coffee cherry husk', 'Cascara séchée'] : ing[0] === 'Coffee.' ? ['Ground coffee', 'Café moulu'] : ['Spiced ground coffee', 'Café moulu épicé']) : [`${date.name.en} dates`, `Dattes ${date.name.en}`];
+    const net = v('net') || (p ? (typeof p.size === 'string' ? p.size : '') : '');
     const label = `<div class="lb"><div class="t"><b>${esc(name.en)}</b> <span dir="rtl">${esc(name.ar)}</span></div><div>${esc(common[0])} / ${esc(common[1])}</div>
       <div class="i"><b>Ingredients:</b> ${esc(ing[0])} <b>Ingrédients :</b> ${esc(ing[1])}</div>
       <div class="r"><span><b>${esc(net)}</b></span><span>${lot.bestBefore ? `BEST BEFORE / MEILLEUR AVANT <b>${bb(lot.bestBefore)}</b>` : ''}</span></div>
@@ -1502,7 +1504,7 @@ import '../../styles/global.css';
     document.querySelector('#products tbody')!.innerHTML = d.products.map((p: any) => `<tr data-pid="${esc(p.id)}" class="${p.shown ? '' : 'off'}">
       <td><b>${esc(p.name.en)}</b> <span lang="ar">${esc(p.name.ar)}</span>${p.season && !p.shown && p.visible ? `<br><small>Hidden: ${p.season} season is off</small>` : ''}</td>
       <td>${esc(p.family)}</td>
-      <td><input class="price-in" type="number" min="0" step="0.5" value="${(p.price_cents / 100).toFixed(2)}" aria-label="Price" />${p.price_cents !== p.defaultPrice ? `<br><small>File price ${money(p.defaultPrice)}</small>` : ''}</td>
+      <td><input class="price-in" type="number" min="0" step="0.5" value="${p.price_cents == null ? '' : (p.price_cents / 100).toFixed(2)}" placeholder="Not set" aria-label="Price" />${p.price_cents == null ? '<br><small>Not set: the site says “price coming” and it can’t be ordered</small>' : p.defaultPrice != null && p.price_cents !== p.defaultPrice ? `<br><small>File price ${money(p.defaultPrice)}</small>` : ''}</td>
       <td><input type="checkbox" class="vis" ${p.visible ? 'checked' : ''} aria-label="Shown on the site" /></td>
       <td><input type="checkbox" class="sold" ${p.available ? '' : (p.visible && (!p.season || d.seasons[p.season]) ? 'checked' : '')} aria-label="Sold out" /></td>
       <td><input class="stock-in" type="number" min="0" step="1" value="${p.stock ?? ''}" placeholder="No limit" aria-label="Stock left" /></td>
@@ -1514,7 +1516,7 @@ import '../../styles/global.css';
       tr.querySelector('.vis')!.addEventListener('change', e => save({ visible: (e.target as HTMLInputElement).checked }));
       tr.querySelector('.sold')!.addEventListener('change', e => save({ available: !(e.target as HTMLInputElement).checked }));
       tr.querySelector('.save')!.addEventListener('click', () => save({
-        price_cents: Math.round(Number((tr.querySelector('.price-in') as HTMLInputElement).value) * 100),
+        price_cents: (tr.querySelector('.price-in') as HTMLInputElement).value === '' ? null : Math.round(Number((tr.querySelector('.price-in') as HTMLInputElement).value) * 100),
         stock: (tr.querySelector('.stock-in') as HTMLInputElement).value === '' ? null : Number((tr.querySelector('.stock-in') as HTMLInputElement).value),
         daily_cap: (tr.querySelector('.cap-in') as HTMLInputElement).value === '' ? null : Number((tr.querySelector('.cap-in') as HTMLInputElement).value),
       }));

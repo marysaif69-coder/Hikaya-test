@@ -1,105 +1,53 @@
 {
-  "najdi": {
+  "gulf": {
     "name": {
-      "en": "Najdi",
-      "ar": "نجدية"
+      "en": "Gulf coffee",
+      "ar": "قهوة خليجية"
     },
     "taste": {
-      "en": "Golden · cardamom · saffron",
-      "ar": "ذهبية · هيل · زعفران"
+      "en": "Golden · cardamom · light",
+      "ar": "ذهبية · هيل · خفيفة"
     },
     "notes": {
-      "en": "Golden and light. Cardamom leads, with a touch of saffron.",
-      "ar": "ذهبية وخفيفة، الهيل أولاً ولمسة زعفران."
+      "en": "Blonde roast, coarse ground, cardamom already mixed in. Drink it as it is, or add the packs that make it the way your family does.",
+      "ar": "تحميص أشقر، طحنة خشنة، والهيل مخلوط فيها. اشربها كما هي، أو أضف الظروف التي تجعلها على طريقة أهلك."
     },
     "story": {
-      "en": "Najd's way: roasted light, poured from the dallah into a small cup, always with a date.",
-      "ar": "على طريقة نجد: تحميص فاتح، تُصبّ من الدلّة في فنجان صغير، ومعها تمرة دائماً."
+      "en": "The pale qahwa of Arabia, poured from the dallah into a small cup. This one bag is the start of every Gulf style we make; the packs do the rest.",
+      "ar": "قهوة الجزيرة الشقراء، تُصبّ من الدلّة في فنجان صغير. هذا الكيس بداية كل طريقة خليجية نصنعها، والظروف تكمل الباقي."
     },
     "bunn": {
-      "en": "Light, with cardamom and saffron.",
-      "ar": "فاتحة، فيها هيل وزعفران."
+      "en": "Cardamom only. Add what your family adds.",
+      "ar": "هيل فقط، وأضف ما يضيفه أهلك."
     },
     "why": {
-      "en": "Toffee-soft Khalas rounds the saffron.",
-      "ar": "خلاص الطرية تُليّن الزعفران."
+      "en": "Toffee-soft Khalas with a pale cup.",
+      "ar": "خلاص الطرية مع فنجان أشقر."
     }
   },
-  "khaleeji": {
+  "yemeni": {
     "name": {
-      "en": "Khaleeji",
-      "ar": "خليجية"
+      "en": "Yemeni qahwa",
+      "ar": "قهوة يمنية"
     },
     "taste": {
-      "en": "Floral · saffron · bright",
-      "ar": "زهرية · زعفران · مشرقة"
+      "en": "Warm · ginger · cardamom",
+      "ar": "دافئة · زنجبيل · هيل"
     },
     "notes": {
-      "en": "Heavy on saffron, floral and golden.",
-      "ar": "زعفران وافر، زهرية وذهبية."
+      "en": "Yemeni-style, from Ethiopian beans. Medium-light roast, fine ground, with hawaij (ginger and cardamom) mixed in.",
+      "ar": "على الطريقة اليمنية، من حبوب إثيوبية. تحميص متوسط فاتح، طحنة ناعمة، والحوائج (زنجبيل وهيل) مخلوطة فيها."
     },
     "story": {
-      "en": "The coast's qahwa: the same light roast, more saffron, a brighter, floral cup.",
-      "ar": "قهوة الساحل: التحميص الفاتح نفسه، بزعفران أكثر وفنجان أزهى."
+      "en": "Coffee the way Yemeni homes make it, in the pot with hawaij. On its own it is the everyday cup. With a pack it becomes Hadrami, Rada’i or Baydani.",
+      "ar": "القهوة كما تصنعها البيوت اليمنية، في الإبريق مع الحوائج. وحدها فنجان كل يوم، ومع ظرف تصير حضرمية أو رداعية أو بيضانية."
     },
     "bunn": {
-      "en": "More saffron than my brother.",
-      "ar": "زعفراني أكثر من أخي."
+      "en": "The hawaij is already in me.",
+      "ar": "الحوائج فيّ من الأصل."
     },
     "why": {
-      "en": "Sukkari’s caramel against a floral cup.",
-      "ar": "كراميل السكري مع فنجان زهري."
-    }
-  },
-  "shamaliyya": {
-    "name": {
-      "en": "Shamaliyya",
-      "ar": "شمالية"
-    },
-    "taste": {
-      "en": "Toasty · cardamom · round",
-      "ar": "محمّصة · هيل · مستديرة"
-    },
-    "notes": {
-      "en": "Northern style, a shade darker, cardamom only.",
-      "ar": "على طريقة الشمال، أغمق قليلاً، بالهيل فقط."
-    },
-    "story": {
-      "en": "From the north of Arabia: a touch more roast and nothing but cardamom.",
-      "ar": "من شمال الجزيرة: تحميص أعمق قليلاً ولا شيء غير الهيل."
-    },
-    "bunn": {
-      "en": "From the north. Cardamom, nothing else.",
-      "ar": "من الشمال، هيل ولا غيره."
-    },
-    "why": {
-      "en": "Firm Khudri for a deeper cup.",
-      "ar": "خضري متماسك لفنجان أعمق."
-    }
-  },
-  "radaey": {
-    "name": {
-      "en": "Rada'ey",
-      "ar": "رداعي"
-    },
-    "taste": {
-      "en": "Fruity · ginger · warm",
-      "ar": "فاكهية · زنجبيل · دافئة"
-    },
-    "notes": {
-      "en": "A lighter roast with ginger and cardamom.",
-      "ar": "تحميص فاتح مع الزنجبيل والهيل."
-    },
-    "story": {
-      "en": "From Rada'a in Yemen: bright coffee, warm ginger, made in the pot.",
-      "ar": "من رداع في اليمن: قهوة مشرقة وزنجبيل دافئ، تُصنع في الإبريق."
-    },
-    "bunn": {
-      "en": "Rada'a ginger, for the cold.",
-      "ar": "زنجبيل رداع، للبرد."
-    },
-    "why": {
-      "en": "Big, honeyed Medjool meets the ginger.",
+      "en": "Honeyed Medjool meets the ginger.",
       "ar": "مجهول العسلية تلاقي الزنجبيل."
     }
   },
@@ -109,15 +57,15 @@
       "ar": "جُبَني"
     },
     "taste": {
-      "en": "Dried cherry · ginger · round",
-      "ar": "كرز مجفف · زنجبيل · مستديرة"
+      "en": "Dried cherry · round",
+      "ar": "كرز مجفف · مستديرة"
     },
     "notes": {
-      "en": "Coffee, coffee husk, cardamom and ginger.",
-      "ar": "بُن وقشر وهيل وزنجبيل."
+      "en": "Yemeni-style coffee and its own dried husk, ground together. [TBD: with ginger or plain]",
+      "ar": "قهوة على الطريقة اليمنية مع قشرها المجفف، مطحونان معاً. [يُحدد لاحقاً: بالزنجبيل أو سادة]"
     },
     "story": {
-      "en": "The bean and its own husk in one pot, the way Juban makes it.",
+      "en": "The bean and its husk in one pot, the way Juban makes it.",
       "ar": "الحبّة وقشرها في إبريق واحد، على طريقة جُبَن."
     },
     "bunn": {
@@ -129,77 +77,51 @@
       "ar": "السكري يجاوب طعم الكرز المجفف."
     }
   },
-  "sanaani": {
+  "qishr": {
     "name": {
-      "en": "Sana'ani",
-      "ar": "صنعاني"
+      "en": "Qishr",
+      "ar": "قشر"
     },
     "taste": {
-      "en": "Cocoa · dark fruit · full",
-      "ar": "كاكاو · فاكهة داكنة · ممتلئة"
+      "en": "Cherry · ginger · light",
+      "ar": "كرز · زنجبيل · خفيفة"
     },
     "notes": {
-      "en": "A deeper roast, boiled with cardamom until it rises.",
-      "ar": "تحميص أعمق، يُغلى مع الهيل حتى يفور."
+      "en": "Qishr – dried coffee cherry husk, with ginger. Brewed in the pot like tea, light on caffeine. [TBD: roasted or raw husk]",
+      "ar": "القشر – قشر ثمرة البن المجفف، مع الزنجبيل. يُغلى في الإبريق مثل الشاي، قليل الكافيين. [يُحدد لاحقاً: قشر محمّص أو نيء]"
     },
     "story": {
-      "en": "Sana'a's coffee: brought up to a rise three times, strong and full.",
-      "ar": "قهوة صنعاء: تفور ثلاث مرات، قوية وممتلئة."
+      "en": "Yemen's oldest coffee drink, older than the roasted bean.",
+      "ar": "أقدم مشروبات البن في اليمن، أقدم من الحبّة المحمّصة."
     },
     "bunn": {
-      "en": "I rise three times.",
-      "ar": "أفور ثلاث مرات."
+      "en": "I was a husk before the bean.",
+      "ar": "كنتُ قشراً قبل البُن."
     },
     "why": {
-      "en": "Dark Ajwa holds up to a dark cup.",
-      "ar": "العجوة الداكنة تصمد أمام فنجان داكن."
+      "en": "Cherry and caramel.",
+      "ar": "كرز وكراميل."
     }
   },
-  "baydani": {
+  "shami": {
     "name": {
-      "en": "Baydani",
-      "ar": "بيضاني"
-    },
-    "taste": {
-      "en": "Nutty · sesame · warm spice",
-      "ar": "مكسرات · سمسم · بهار دافئ"
-    },
-    "notes": {
-      "en": "Coffee roasted with sesame, with ginger and cinnamon.",
-      "ar": "بُن محمّص مع السمسم، مع الزنجبيل والقرفة."
-    },
-    "story": {
-      "en": "Al-Bayda's way: sesame goes into the roaster with the beans.",
-      "ar": "على طريقة البيضاء: يدخل السمسم المحمصة مع الحبوب."
-    },
-    "bunn": {
-      "en": "They roasted me with sesame.",
-      "ar": "حمّصوني مع السمسم."
-    },
-    "why": {
-      "en": "Khalas toffee with toasted sesame.",
-      "ar": "توفي خلاص مع السمسم المحمّص."
-    }
-  },
-  "lev-cardamom": {
-    "name": {
-      "en": "Levantine, cardamom",
-      "ar": "شامية بالهيل"
+      "en": "Shami coffee with cardamom",
+      "ar": "قهوة شامية بالهيل"
     },
     "taste": {
       "en": "Thick · bittersweet · cardamom",
       "ar": "كثيفة · مُرّة حلوة · هيل"
     },
     "notes": {
-      "en": "Our family’s dark roast, ground to powder, with cardamom.",
-      "ar": "تحميص عائلتنا الغامق، مطحون ناعماً، بالهيل."
+      "en": "Brazilian beans, medium roast, ground to powder, with cardamom. The one most of our Shami customers choose.",
+      "ar": "حبوب برازيلية، تحميص متوسط، مطحونة كالبودرة، بالهيل. التي يختارها أكثر من يشرب الشامية."
     },
     "story": {
-      "en": "The Shami pot: fine, dark coffee boiled slowly, cardamom the way Syrian homes make it.",
-      "ar": "الركوة الشامية: قهوة ناعمة غامقة تُغلى على مهل، بالهيل كما في البيوت الشامية."
+      "en": "The Shami rakwa: powder-fine coffee boiled slowly, with cardamom, the way homes in the Levant make it.",
+      "ar": "الركوة الشامية: قهوة ناعمة كالبودرة تُغلى على مهل، بالهيل، كما في بيوت الشام."
     },
     "bunn": {
-      "en": "Fine, for the pot.",
+      "en": "Fine, for the rakwa.",
       "ar": "ناعمة، للركوة."
     },
     "why": {
@@ -207,18 +129,18 @@
       "ar": "مجهولة طرية بعد فنجان كثيف."
     }
   },
-  "lev-plain": {
+  "shami-sada": {
     "name": {
-      "en": "Levantine, plain",
-      "ar": "شامية سادة"
+      "en": "Shami sada",
+      "ar": "قهوة شامية سادة"
     },
     "taste": {
       "en": "Thick · bittersweet · plain",
       "ar": "كثيفة · مُرّة حلوة · سادة"
     },
     "notes": {
-      "en": "The same dark roast, nothing added.",
-      "ar": "التحميص الغامق نفسه، بلا إضافات."
+      "en": "The same Shami coffee, nothing added.",
+      "ar": "القهوة الشامية نفسها، بلا إضافات."
     },
     "story": {
       "en": "For those who take their coffee plain and their sweetness from the date.",
@@ -233,30 +155,296 @@
       "ar": "خذ تمرتين إذن."
     }
   },
-  "qishr": {
+  "najdi": {
     "name": {
-      "en": "Qishr",
-      "ar": "قشر"
+      "en": "Najdi",
+      "ar": "نجدية"
     },
     "taste": {
-      "en": "Cherry · honey · light",
-      "ar": "كرز · عسل · خفيفة"
+      "en": "Golden · cardamom · saffron",
+      "ar": "ذهبية · هيل · زعفران"
     },
     "notes": {
-      "en": "Dried coffee cherry husks. Brew hot with ginger, or cold over ice.",
-      "ar": "قشر ثمرة البن المجفف. ساخناً مع الزنجبيل أو بارداً على الثلج."
+      "en": "Gulf coffee and its saffron packet. Cardamom and saffron, golden and light.",
+      "ar": "قهوة خليجية مع ظرف الزعفران. هيل وزعفران، ذهبية وخفيفة."
     },
     "story": {
-      "en": "Yemen's oldest coffee drink, older than the roasted bean. Light on caffeine.",
-      "ar": "أقدم مشروبات البن في اليمن، أقدم من الحبّة المحمّصة. قليل الكافيين."
+      "en": "Najd's way: roasted pale, poured from the dallah into a small cup, always with a date. The saffron is what makes it Najdi, so it is always in the box.",
+      "ar": "على طريقة نجد: تحميص أشقر، تُصبّ من الدلّة في فنجان صغير، ومعها تمرة دائماً. الزعفران هو ما يجعلها نجدية، لذلك هو في العلبة دائماً."
     },
     "bunn": {
-      "en": "I was a husk before the bean.",
-      "ar": "كنتُ قشراً قبل البُن."
+      "en": "Cardamom and saffron.",
+      "ar": "هيل وزعفران."
     },
     "why": {
-      "en": "Cherry and caramel, hot or cold.",
-      "ar": "كرز وكراميل، ساخناً أو بارداً."
+      "en": "Toffee-soft Khalas rounds the saffron.",
+      "ar": "خلاص الطرية تُليّن الزعفران."
+    }
+  },
+  "qassimi": {
+    "name": {
+      "en": "Qassimi",
+      "ar": "قصيمية"
+    },
+    "taste": {
+      "en": "Rich · saffron · warm spice",
+      "ar": "غنية · زعفران · بهار دافئ"
+    },
+    "notes": {
+      "en": "Gulf coffee with the Qassim blend pack and the saffron packet.",
+      "ar": "قهوة خليجية مع الخلطة القصيمية وظرف الزعفران."
+    },
+    "story": {
+      "en": "The Qassim way: the same pale coffee, richer in the cup.",
+      "ar": "على طريقة القصيم: القهوة الشقراء نفسها، أغنى في الفنجان."
+    },
+    "bunn": {
+      "en": "Richer than my brothers.",
+      "ar": "أغنى من إخوتي."
+    },
+    "why": {
+      "en": "Sukkari, from Qassim too.",
+      "ar": "السكري، من القصيم أيضاً."
+    }
+  },
+  "hijazi": {
+    "name": {
+      "en": "Hijazi",
+      "ar": "حجازية"
+    },
+    "taste": {
+      "en": "Fragrant · saffron · spice",
+      "ar": "عطرة · زعفران · بهار"
+    },
+    "notes": {
+      "en": "Gulf coffee with the Hijazi blend pack and the saffron packet.",
+      "ar": "قهوة خليجية مع الخلطة الحجازية وظرف الزعفران."
+    },
+    "story": {
+      "en": "The Hijaz way: the same pale coffee, more fragrant in the cup.",
+      "ar": "على طريقة الحجاز: القهوة الشقراء نفسها، أعطر في الفنجان."
+    },
+    "bunn": {
+      "en": "From the west of Arabia.",
+      "ar": "من غرب الجزيرة."
+    },
+    "why": {
+      "en": "Ajwa, from Madinah.",
+      "ar": "العجوة، من المدينة."
+    }
+  },
+  "hadrami": {
+    "name": {
+      "en": "Hadrami",
+      "ar": "حضرمية"
+    },
+    "taste": {
+      "en": "[TBD]",
+      "ar": "[يُحدد لاحقاً]"
+    },
+    "notes": {
+      "en": "Yemeni qahwa with the Hadrami pack.",
+      "ar": "قهوة يمنية مع الخلطة الحضرمية."
+    },
+    "story": {
+      "en": "The Hadramawt way, made in the pot.",
+      "ar": "على طريقة حضرموت، تُصنع في الإبريق."
+    },
+    "bunn": {
+      "en": "From Hadramawt.",
+      "ar": "من حضرموت."
+    },
+    "why": {
+      "en": "Soft Khalas for a warm cup.",
+      "ar": "خلاص الطرية لفنجان دافئ."
+    }
+  },
+  "radai": {
+    "name": {
+      "en": "Rada’i",
+      "ar": "رداعية"
+    },
+    "taste": {
+      "en": "Nutty · sesame · warm",
+      "ar": "مكسرات · سمسم · دافئة"
+    },
+    "notes": {
+      "en": "Yemeni qahwa with the Rada’i pack of roasted sesame and almonds.",
+      "ar": "قهوة يمنية مع الخلطة الرداعية من السمسم المحمّص واللوز."
+    },
+    "story": {
+      "en": "From Rada’a: sesame and almonds in the pot with the coffee.",
+      "ar": "من رداع: السمسم واللوز في الإبريق مع القهوة."
+    },
+    "bunn": {
+      "en": "Sesame and almonds, for the cold.",
+      "ar": "سمسم ولوز، للبرد."
+    },
+    "why": {
+      "en": "Big, honeyed Medjool with the almonds.",
+      "ar": "مجهول العسلية مع اللوز."
+    }
+  },
+  "baydani": {
+    "name": {
+      "en": "Baydani",
+      "ar": "بيضانية"
+    },
+    "taste": {
+      "en": "Toasty · grain · warm",
+      "ar": "محمّصة · حبوب · دافئة"
+    },
+    "notes": {
+      "en": "Yemeni qahwa with the Baydani pack of roasted sorghum.",
+      "ar": "قهوة يمنية مع الخلطة البيضانية من الذرة الرفيعة المحمّصة."
+    },
+    "story": {
+      "en": "Al-Bayda's way: grain in the pot with the coffee.",
+      "ar": "على طريقة البيضاء: الحبوب في الإبريق مع القهوة."
+    },
+    "bunn": {
+      "en": "They brewed me with sorghum.",
+      "ar": "غلوني مع الذرة."
+    },
+    "why": {
+      "en": "Khalas toffee with a toasty cup.",
+      "ar": "توفي خلاص مع فنجان محمّص."
+    }
+  },
+  "taste-gulf": {
+    "name": {
+      "en": "Taste the Gulf",
+      "ar": "تذوّق الخليج"
+    },
+    "taste": {
+      "en": "Najdi · Qassimi · Hijazi",
+      "ar": "نجدية · قصيمية · حجازية"
+    },
+    "notes": {
+      "en": "One 250 g bag of Gulf coffee, a small Qassim pack, a small Hijazi pack and the saffron packet. Try each style, then choose yours.",
+      "ar": "كيس قهوة خليجية ٢٥٠ غ، وظرف قصيمي صغير، وظرف حجازي صغير، وظرف الزعفران. جرّب كل طريقة، ثم اختر طريقتك."
+    },
+    "story": {
+      "en": "For the first time, or for the friend who asks which one is yours.",
+      "ar": "للمرة الأولى، أو للصديق الذي يسأل: أيّها قهوتك؟"
+    },
+    "bunn": {
+      "en": "Three Gulf cups from one bag.",
+      "ar": "ثلاث قهوات خليجية من كيس واحد."
+    },
+    "why": {
+      "en": "Khalas goes with all three.",
+      "ar": "خلاص تناسب الثلاث."
+    }
+  },
+  "taste-yemen": {
+    "name": {
+      "en": "Taste Yemen",
+      "ar": "تذوّق اليمن"
+    },
+    "taste": {
+      "en": "Hadrami · Rada’i · Baydani",
+      "ar": "حضرمية · رداعية · بيضانية"
+    },
+    "notes": {
+      "en": "One 250 g bag of Yemeni qahwa with a small Hadrami, Rada’i and Baydani pack. Try each style, then choose yours.",
+      "ar": "كيس قهوة يمنية ٢٥٠ غ مع ظرف صغير حضرمي ورداعي وبيضاني. جرّب كل طريقة، ثم اختر طريقتك."
+    },
+    "story": {
+      "en": "Three towns, one pot at a time.",
+      "ar": "ثلاث بلدات، إبريق بعد إبريق."
+    },
+    "bunn": {
+      "en": "Three towns in one box.",
+      "ar": "ثلاث بلدات في علبة واحدة."
+    },
+    "why": {
+      "en": "Medjool sits well with all three.",
+      "ar": "المجهول يناسب الثلاث."
+    }
+  },
+  "pack-saffron": {
+    "name": {
+      "en": "Saffron packet",
+      "ar": "ظرف زعفران"
+    },
+    "notes": {
+      "en": "What makes Gulf coffee Najdi. Kept in its own sealed packet so it stays bright until the pot.",
+      "ar": "هو ما يجعل القهوة الخليجية نجدية. في ظرفه المختوم ليبقى زاهياً حتى الدلّة."
+    },
+    "contents": {
+      "en": "Saffron, sealed.",
+      "ar": "زعفران، مختوم."
+    }
+  },
+  "pack-qassim": {
+    "name": {
+      "en": "Qassim blend pack",
+      "ar": "خلطة قصيمية"
+    },
+    "notes": {
+      "en": "The Qassimi blend for Gulf coffee. Use it with the saffron packet.",
+      "ar": "الخلطة القصيمية للقهوة الخليجية، تُستعمل مع ظرف الزعفران."
+    },
+    "contents": {
+      "en": "Spices and milk powder. [TBD: full list]",
+      "ar": "بهارات وحليب مجفف. [يُحدد لاحقاً: القائمة الكاملة]"
+    }
+  },
+  "pack-hijazi": {
+    "name": {
+      "en": "Hijazi blend pack",
+      "ar": "خلطة حجازية"
+    },
+    "notes": {
+      "en": "The Hijazi blend for Gulf coffee. Use it with the saffron packet.",
+      "ar": "الخلطة الحجازية للقهوة الخليجية، تُستعمل مع ظرف الزعفران."
+    },
+    "contents": {
+      "en": "Hijazi spices. [TBD: full list, with or without mastic]",
+      "ar": "بهارات حجازية. [يُحدد لاحقاً: القائمة الكاملة، مع المستكة أو بدونها]"
+    }
+  },
+  "pack-hadrami": {
+    "name": {
+      "en": "Hadrami pack",
+      "ar": "خلطة حضرمية"
+    },
+    "notes": {
+      "en": "Turns Yemeni qahwa into Hadrami, the way Hadramawt makes it.",
+      "ar": "تجعل القهوة اليمنية حضرمية، كما تصنعها حضرموت."
+    },
+    "contents": {
+      "en": "[TBD: contents]",
+      "ar": "[يُحدد لاحقاً: المكونات]"
+    }
+  },
+  "pack-radai": {
+    "name": {
+      "en": "Rada’i pack",
+      "ar": "خلطة رداعية"
+    },
+    "notes": {
+      "en": "Roasted sesame and almonds, for Yemeni qahwa the way Rada’a makes it.",
+      "ar": "سمسم محمّص ولوز، للقهوة اليمنية على طريقة رداع."
+    },
+    "contents": {
+      "en": "Roasted sesame, almonds.",
+      "ar": "سمسم محمّص، لوز."
+    }
+  },
+  "pack-baydani": {
+    "name": {
+      "en": "Baydani pack",
+      "ar": "خلطة بيضانية"
+    },
+    "notes": {
+      "en": "Sorghum, for Yemeni qahwa the way Al-Bayda makes it.",
+      "ar": "ذرة رفيعة، للقهوة اليمنية على طريقة البيضاء."
+    },
+    "contents": {
+      "en": "Roasted sorghum. [TBD: the richer version]",
+      "ar": "ذرة رفيعة محمّصة. [يُحدد لاحقاً: النسخة الأغنى]"
     }
   },
   "date-box": {
@@ -305,8 +493,8 @@
       "ar": "قهوة واثنتا عشرة تمرة بالحزام الذهبي، لأي زيارة في أي وقت من السنة."
     },
     "contents": {
-      "en": "Gift box with Najdi coffee and 12 Khalas dates.",
-      "ar": "صندوق هدية فيه قهوة نجدية و١٢ تمرة خلاص."
+      "en": "Gift box with Najdi coffee (Gulf coffee and its saffron packet) and 12 Khalas dates.",
+      "ar": "صندوق هدية فيه قهوة نجدية (قهوة خليجية وظرف زعفرانها) و١٢ تمرة خلاص."
     },
     "size": {
       "en": "250 g + 12 dates",
@@ -319,12 +507,12 @@
       "ar": "ثنائي القهوة"
     },
     "notes": {
-      "en": "Najdi and Khaleeji side by side, for the house that pours all year.",
-      "ar": "نجدية وخليجية جنباً إلى جنب، للبيت الذي يصبّ طوال السنة."
+      "en": "Najdi and Yemeni qahwa side by side, for the house that pours all year.",
+      "ar": "نجدية ويمنية جنباً إلى جنب، للبيت الذي يصبّ طوال السنة."
     },
     "contents": {
-      "en": "Gift box, gold sleeve, two coffees: Najdi and Khaleeji.",
-      "ar": "صندوق هدية بالحزام الذهبي، قهوتان: نجدية وخليجية."
+      "en": "Gift box, gold sleeve, two coffees: Najdi (Gulf coffee with its saffron packet) and Yemeni qahwa.",
+      "ar": "صندوق هدية بالحزام الذهبي، قهوتان: نجدية (قهوة خليجية مع ظرف الزعفران) ويمنية."
     },
     "size": {
       "en": "2 × 250 g",
@@ -341,8 +529,8 @@
       "ar": "قهوة واثنتا عشرة تمرة، لأول فنجان بعد الغروب."
     },
     "contents": {
-      "en": "Gift box with Najdi coffee and 12 Khalas dates.",
-      "ar": "صندوق هدية فيه قهوة نجدية و١٢ تمرة خلاص."
+      "en": "Gift box with Najdi coffee (Gulf coffee and its saffron packet) and 12 Khalas dates.",
+      "ar": "صندوق هدية فيه قهوة نجدية (قهوة خليجية وظرف زعفرانها) و١٢ تمرة خلاص."
     },
     "size": {
       "en": "250 g + 12 dates",
@@ -409,8 +597,8 @@
       "ar": "ثنائي قهوة العيد"
     },
     "notes": {
-      "en": "Najdi and Khaleeji, for the house that pours all day.",
-      "ar": "نجدية وخليجية، للبيت الذي يصبّ طوال اليوم."
+      "en": "Najdi and Yemeni qahwa, for the house that pours all day.",
+      "ar": "نجدية ويمنية، للبيت الذي يصبّ طوال اليوم."
     },
     "contents": {
       "en": "Gold Eid band, two coffees.",

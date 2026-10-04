@@ -3,7 +3,7 @@
 // Days are the order's pickup or delivery day. Uses today's cost for every sale in the range.
 import { sql, one } from './db';
 import { HttpError } from './http';
-import { PRODUCTS } from '../../src/data/products';
+import { PRODUCTS, fileCents } from '../../src/data/products';
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -12,7 +12,7 @@ export async function listCosts() {
   const by = new Map(rows.map(r => [r.product_id as string, r]));
   return PRODUCTS.map(p => {
     const r = by.get(p.id);
-    return { id: p.id, name: p.name.en, price_cents: (r?.price_cents ?? Math.round(p.price * 100)) as number, cost_cents: (r?.cost_cents ?? null) as number | null };
+    return { id: p.id, name: p.name.en, price_cents: (r?.price_cents ?? fileCents(p)) as number | null, cost_cents: (r?.cost_cents ?? null) as number | null };
   });
 }
 

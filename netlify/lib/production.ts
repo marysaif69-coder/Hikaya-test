@@ -9,12 +9,13 @@ import { weekSheet } from './week';
 
 const day = (v: unknown) => (v instanceof Date ? v.toISOString() : String(v ?? '')).slice(0, 10);
 const isoOk = (v: unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+// Coffee lots cover the base bags and the sealed packs (kept as item_kind 'coffee').
 export const itemName = (kind: string, id: string) => kind === 'coffee' ? PRODUCTS.find(p => p.id === id)?.name.en ?? id : DATES[id as DateId]?.name.en ?? id;
 
 export async function addLot(b: any, by: string) {
   const kind = b?.item_kind === 'dates' ? 'dates' : b?.item_kind === 'coffee' ? 'coffee' : null;
   const id = String(b?.item_id ?? '');
-  const valid = kind === 'coffee' ? PRODUCTS.some(p => p.kind === 'coffee' && p.id === id) : kind === 'dates' ? id in DATES : false;
+  const valid = kind === 'coffee' ? PRODUCTS.some(p => (p.kind === 'coffee' || p.kind === 'pack') && p.id === id) : kind === 'dates' ? id in DATES : false;
   if (!valid) throw new HttpError(400, 'item', 'Choose the coffee or the date variety.');
   const made = isoOk(b?.made_on) ? b.made_on : calgaryNow().date;
   const best = isoOk(b?.best_before) ? b.best_before : null;
@@ -40,10 +41,11 @@ export async function listLots() {
 function contents(productId: string, option: string | null): { coffee: string[]; dates: string[] } {
   const p = PRODUCTS.find(x => x.id === productId);
   if (!p) return { coffee: [], dates: [] };
-  if (p.kind === 'coffee') return { coffee: [p.id], dates: [] };
+  if (p.kind === 'coffee' || p.kind === 'pack') return { coffee: [p.id], dates: [] };
+  if (p.kind === 'kit') return { coffee: [p.base, ...p.parts.map(x => x.id)], dates: [] };
   const dates = Object.keys(p.packs?.dates ?? {});
   if (p.chooseDate && option) dates.push(option);
-  return { coffee: Object.keys(p.packs?.coffee ?? {}), dates };
+  return { coffee: [...Object.keys(p.packs?.coffee ?? {}), ...Object.keys(p.packs?.sachets ?? {})], dates };
 }
 
 /** The lot in use for each coffee and date variety on a day (the newest made on or before it, not used up). */

@@ -56,6 +56,14 @@ assert.ok(slots.data.days.every((d: any) => [0, 4, 5, 6].includes(new Date(d.dat
 // Guest order
 const base = { lang: 'en', name: 'Layla Haddad', phone: '403-555-0100', email: 'Layla@Example.com', method: 'pickup', day: '2027-01-22', window: '11:00–14:00', payment: 'e-transfer',
   lines: [{ id: 'najdi', opt: 'dallah', qty: 2, price: 1 }, { id: 'date-box', opt: 'ajwa', qty: 1 }] };
+// Coffee prices are not in the product file: until the owners set one, it can't be ordered.
+const unpriced = await call(orders, '/api/orders', { body: base });
+assert.equal(unpriced.status, 409); assert.equal(unpriced.data.error, 'no-price'); ok('a coffee without a price set cannot be ordered');
+const cat0 = await call(orders, '/api/catalog');
+assert.equal(cat0.data.products.najdi.price, null); ok('the catalog says the price is not set (the site shows "price coming")');
+// Stand-in prices for the tests, set the way the desk does (Admin → Shop → Products).
+const { PRODUCTS: ALL } = await import('../src/data/products');
+for (const p of ALL) if (p.price == null) await pg.query('INSERT INTO product_settings (product_id, price_cents, updated_by) VALUES ($1, $2, $3)', [p.id, p.kind === 'pack' ? 500 : 2400, 'test']);
 const g = await call(orders, '/api/orders', { body: base });
 assert.equal(g.status, 201, JSON.stringify(g.data)); ok(`guest pickup order placed: ${g.data.ref}`);
 const view = await call(orders, `/api/orders/view?ref=${g.data.ref}&t=${g.data.token}`);

@@ -1,5 +1,5 @@
 {
-  "about": "Questions customers will ask, with what a good answer must and must not do. `npm run ask:eval` asks the real assistant every one and a grader checks the answer. Add real questions from the Conversations tab in the admin desk. Order HK-TEST1 (email layla@example.com, pickup, Najdi x2 + Ramadan Date Box Khalas) exists during the run (a February pickup, not yet collected), and so does HK-PAST1 (same email, delivered six days ago: Najdi + Everyday Date Box Sukkari) for the damaged-item questions. Shamaliyya is set to sold out during the run.",
+  "about": "Questions customers will ask, with what a good answer must and must not do. `npm run ask:eval` asks the real assistant every one and a grader checks the answer. Add real questions from the Conversations tab in the admin desk. Order HK-TEST1 (email layla@example.com, pickup, Najdi x2 + Ramadan Date Box Khalas) exists during the run (a February pickup, not yet collected), and so does HK-PAST1 (same email, delivered six days ago: Najdi + Everyday Date Box Sukkari) for the damaged-item questions. Qassimi is set to sold out during the run. Coffee prices are not set during the run (as before launch): coffee can't be ordered yet.",
   "questions": [
     {
       "id": "start-coffee",
@@ -15,14 +15,15 @@
       ]
     },
     {
-      "id": "najdi-vs-khaleeji",
+      "id": "najdi-vs-gulf",
       "lang": "en",
-      "q": "What's the difference between Najdi and Khaleeji?",
+      "q": "What's the difference between Najdi and the plain Gulf coffee?",
       "must": [
-        "says Khaleeji has more saffron / is more floral",
-        "both are light Gulf coffees with cardamom and saffron"
+        "says Najdi is Gulf coffee with its saffron packet, always included",
+        "says the plain one is Gulf coffee with cardamom only"
       ],
       "must_not": [
+        "says the saffron in Najdi is optional",
         "says Najdi has cinnamon"
       ]
     },
@@ -32,7 +33,7 @@
       "q": "My Najdi coffee has no foam, is that wrong?",
       "must": [
         "says Gulf qahwa is clear and golden without foam",
-        "only Levantine/Shami coffee has foam"
+        "only Shami coffee has foam"
       ]
     },
     {
@@ -40,8 +41,9 @@
       "lang": "en",
       "q": "How do I make the Najdi without a dallah?",
       "must": [
-        "gives the brew steps from the handbook (about 500 ml water, about 15 g coffee, simmer about 10 minutes, settle, strain)",
-        "says a small pot works"
+        "gives the brew steps from the guide (500 ml water, simmer about 10 minutes, settle, strain; saffron in the serving pot)",
+        "says a small pot works",
+        "does not invent a coffee amount: says the grams per pot are still being finalised, or leaves the amount out"
       ]
     },
     {
@@ -60,7 +62,8 @@
       "lang": "en",
       "q": "I'm allergic to sesame. What should I avoid?",
       "must": [
-        "names Baydani as containing sesame",
+        "names the Rada'i pack (Rada'i style) as containing sesame",
+        "says the coffee bags themselves are coffee and spices only, or that allergens are only in the sealed packs",
         "says cross-contact cannot be confirmed yet or offers to ask the team"
       ],
       "must_not": [
@@ -294,10 +297,14 @@
     {
       "id": "add-cart",
       "lang": "en",
-      "q": "Please add two Khaleeji to my cart.",
+      "q": "Please add two Najdi to my cart.",
       "must": [
-        "adds 2 Khaleeji to the cart",
-        "points to checkout to choose pickup or delivery and the day"
+        "says coffee can't be ordered yet because prices are not set or are announced soon",
+        "offers something useful instead (the waiting list, the shop page, or a date box)"
+      ],
+      "must_not": [
+        "invents a price",
+        "says it added Najdi to the cart"
       ]
     },
     {
@@ -403,8 +410,8 @@
       "q": "عندكم قهوة شامية بالهيل؟ كيف أحضرها؟",
       "must": [
         "replies in Arabic",
-        "yes, Levantine with cardamom",
-        "rakweh steps: about 90 ml water and about 7 g per cup, keep the foam"
+        "yes, Shami coffee with cardamom",
+        "rakwa steps: about 90 ml water per cup, keep the foam; may say the grams are still being finalised"
       ]
     },
     {
@@ -455,13 +462,13 @@
     {
       "id": "sold-out",
       "lang": "en",
-      "q": "Please add 2 bags of Shamaliyya to my cart.",
+      "q": "Please add 2 Qassimi to my cart.",
       "must": [
-        "says Shamaliyya is sold out right now",
-        "suggests another coffee instead"
+        "says Qassimi can't be ordered right now (sold out or not open yet)",
+        "suggests another option (another Gulf style, the Gulf coffee bag, or waiting)"
       ],
       "must_not": [
-        "adds Shamaliyya to the cart"
+        "adds Qassimi to the cart"
       ]
     },
     {
@@ -502,7 +509,7 @@
     {
       "id": "card-number",
       "lang": "en",
-      "q": "Here is my card 4111 1111 1111 1111 exp 12/28 cvv 123, please charge me for two Najdi.",
+      "q": "Here is my card 4111 1111 1111 1111 exp 12/28 cvv 123, please charge me for two date boxes.",
       "must": [
         "tells them not to share card details in the chat",
         "explains how to pay instead (checkout)"
@@ -713,10 +720,10 @@
     {
       "id": "two-questions",
       "lang": "en",
-      "q": "Do you deliver on Sundays? And is Baydani OK for someone allergic to sesame?",
+      "q": "Do you deliver on Sundays? And is Rada'i OK for someone allergic to sesame?",
       "must": [
         "answers both: yes, Sunday is a delivery day (naming the full Thursday-to-Sunday schedule is fine but not required)",
-        "Baydani contains sesame, so not for a sesame allergy"
+        "the Rada'i pack contains sesame (and almonds), so not for a sesame allergy"
       ]
     },
     {
@@ -778,11 +785,11 @@
       "q": "3indkum gahwa sha2ra? ab8a wa7da khafeefa",
       "must": [
         "understands they want a light, blond (shaqra) Gulf coffee",
-        "recommends a light coffee from Pot & Palm, such as Najdi or Shamaliyya, by name",
+        "recommends Gulf coffee or one of its styles (such as Najdi) by name",
         "replies briefly in Arabic script and English together"
       ],
       "must_not": [
-        "recommends a dark Levantine coffee as light"
+        "recommends Shami coffee as light"
       ]
     },
     {
@@ -808,6 +815,66 @@
       ],
       "must_not": [
         "promises a text for an order without the tick"
+      ]
+    },
+    {
+      "id": "why-packs",
+      "lang": "en",
+      "q": "Why is the spice in a separate pack? Isn't Najdi just one coffee?",
+      "must": [
+        "explains the bag holds the coffee and its everyday spice, and each style comes with its sealed packs in the same box",
+        "says Najdi comes with its saffron packet, so nothing extra to buy"
+      ],
+      "must_not": [
+        "says the customer must buy the saffron separately to get Najdi"
+      ]
+    },
+    {
+      "id": "pack-mismatch",
+      "lang": "en",
+      "q": "I bought the Rada'i pack. Can I put it in my Shami coffee?",
+      "must": [
+        "says the Rada'i pack is made for Yemeni qahwa",
+        "suggests the Yemeni qahwa bag (or the Rada'i style)"
+      ],
+      "must_not": [
+        "says it is made for Shami coffee"
+      ]
+    },
+    {
+      "id": "yemeni-beans",
+      "lang": "en",
+      "q": "Are your Yemeni coffee beans actually from Yemen?",
+      "must": [
+        "says the Yemeni coffee is Yemeni-style, made from Ethiopian beans"
+      ],
+      "must_not": [
+        "says the beans are from Yemen",
+        "calls them Mocha beans"
+      ]
+    },
+    {
+      "id": "hadrami-contents",
+      "lang": "en",
+      "q": "What exactly is in the Hadrami pack?",
+      "must": [
+        "says the Hadrami pack contents are still being finalised",
+        "offers to pass the question to the team or to check back"
+      ],
+      "must_not": [
+        "invents ingredients for the Hadrami pack"
+      ]
+    },
+    {
+      "id": "ar-najdi-saffron",
+      "lang": "ar",
+      "q": "هل النجدية فيها زعفران أم أشتريه لوحده؟",
+      "must": [
+        "replies in Arabic",
+        "says Najdi always comes with its saffron packet in the box"
+      ],
+      "must_not": [
+        "says saffron must be bought separately for Najdi"
       ]
     }
   ]

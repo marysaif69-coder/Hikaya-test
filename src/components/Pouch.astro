@@ -13,7 +13,7 @@ const BAND: Record<Coffee['fam'], string> = { palm: '#F3CF7E', mountain: '#8C5B3
 const band = BAND[coffee.fam];
 const dots = coffee.spices.length ? coffee.spices.slice(0, 3).map(s => SPICES[s].c) : ['#33211A', '#33211A', '#33211A'];
 const ringFirst = coffee.spices.length === 0 || coffee.spices.length < 3;
-const desc = { palm: ['Gulf-style ground coffee with spices', 'Café moulu à la façon du Golfe, aux épices'], mountain: ['Yemeni-style ground coffee with spices', 'Café moulu à la yéménite, aux épices'], house: ['Levantine-style ground coffee', 'Café moulu à la levantine'], husk: ['Dried coffee cherry husks', 'Écorces de cerises de café séchées'] }[coffee.fam];
+const desc = { palm: ['Gulf-style ground coffee with spices', 'Café moulu à la façon du Golfe, aux épices'], mountain: ['Yemeni-style ground coffee with spices', 'Café moulu à la yéménite, aux épices'], house: ['Shami-style ground coffee', 'Café moulu à la façon du Levant'], husk: ['Dried coffee cherry husk with ginger', 'Cascara séchée au gingembre'] }[coffee.fam];
 // Muted bubble print, staggered like the bag. Mostly pale; a few warm accents.
 const PALE = '#E6DCC6', ACC = ['#D4B08C', '#F1B7A0', '#B9A99B'];
 const print: [number, number, string, boolean][] = [];

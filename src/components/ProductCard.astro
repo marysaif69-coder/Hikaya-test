@@ -1,28 +1,41 @@
 ---
 import type { Product, Lang } from '../data/products';
-import { FAMILIES, DATES, money } from '../data/products';
+import { FAMILIES, DATES, priceText, baseOf, packOf, kitInside, allergyNote, COFFEES } from '../data/products';
 import { UI, path } from '../data/i18n';
 import Pouch from './Pouch.astro';
+import Sachet from './Sachet.astro';
 interface Props { p: Product; lang: Lang }
 const { p, lang } = Astro.props;
+const ar = lang === 'ar';
 const href = path(lang, `shop/${p.id}`);
-const sub = p.kind === 'coffee' ? `${FAMILIES[p.fam].name[lang]} · ${p.size}` : `${FAMILIES[p.fam].name[lang]} · ${p.size[lang]}`;
-const defaultOpt = p.kind === 'coffee' ? (p.grinds[0] ?? '') : p.chooseDate ? 'khalas' : '';
+const forBase = p.kind === 'pack' ? COFFEES.find(c => c.id === p.for) : null;
+const sub = p.kind === 'coffee' ? `${FAMILIES[p.fam].name[lang]} · ${p.size}`
+  : p.kind === 'kit' ? kitInside(p, lang)
+  : p.kind === 'pack' ? (ar ? `لـ${forBase?.name.ar}` : `For ${forBase?.name.en}`)
+  : `${FAMILIES[p.fam].name[lang]} · ${p.size[lang]}`;
+const defaultOpt = p.kind === 'coffee' ? (p.grinds[0] ?? '') : p.kind === 'kit' ? (baseOf(p).grinds[0] ?? '') : p.kind === 'box' && p.chooseDate ? 'khalas' : '';
+const allergy = p.kind === 'pack' || p.kind === 'kit' ? allergyNote(p, lang) : null;
+const unpriced = p.price == null;
 ---
 <article class={`pc pc-${p.kind}`} data-product={p.id}>
   <a href={href} class="pc-media" tabindex="-1" aria-hidden="true">
     {p.kind === 'coffee'
       ? <div class={`pc-pouch ${p.art ? 'has-back' : ''}`}><div class="face"><Pouch coffee={p} lang={lang} label={false} /></div>{p.art && <div class="face back"><img src={p.art.back} alt="" loading="lazy" width="800" height="1257" /></div>}</div>
+      : p.kind === 'kit'
+      ? <div class="pc-pouch pc-kit"><div class="face"><Pouch coffee={baseOf(p)} lang={lang} label={false} /></div><div class="kit-packs">{p.parts.map(x => <Sachet pack={packOf(x.id)!} lang={lang} mini={x.mini} />)}</div></div>
+      : p.kind === 'pack'
+      ? <div class="pc-pouch pc-pack"><Sachet pack={p} lang={lang} /></div>
       : <img src={p.img} alt="" loading="lazy" width="600" height="750" />}
   </a>
   <div class="pc-body">
     <h3><a href={href}>{p.name[lang]}</a>{lang === 'en' && <span lang="ar">{p.name.ar}</span>}</h3>
     <p class="pc-sub">{sub}</p>
-    {p.kind === 'coffee' && <p class="pc-taste">{p.taste[lang]}</p>}
-    {p.kind === 'coffee' && <p class="pc-with">{UI.withDate[lang]} <b>{DATES[p.date].name[lang]}</b></p>}
+    {(p.kind === 'coffee' || p.kind === 'kit') && <p class="pc-taste">{p.taste[lang]}</p>}
+    {allergy && (!allergy.none || p.kind === 'pack') && <p class={`allergy ${allergy.none ? 'none' : ''}`}>{allergy.text}</p>}
+    {(p.kind === 'coffee' || p.kind === 'kit') && <p class="pc-with">{UI.withDate[lang]} <b>{DATES[p.date].name[lang]}</b></p>}
     <div class="pc-row">
-      <span class="price" data-price-for={p.id}>{money(p.price, lang)}</span>
-      <button class="pc-add" type="button" data-add={p.id} data-opt={defaultOpt} aria-label={`${UI.add[lang]}: ${p.name[lang]}`}>
+      <span class="price" data-price-for={p.id}>{priceText(p.price, lang)}</span>
+      <button class="pc-add" type="button" data-add={p.id} data-opt={defaultOpt} disabled={unpriced} aria-label={`${UI.add[lang]}: ${p.name[lang]}`}>
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
         <span>{UI.add[lang]}</span>
       </button>
@@ -37,6 +50,12 @@ const defaultOpt = p.kind === 'coffee' ? (p.grinds[0] ?? '') : p.chooseDate ? 'k
   .pc-pouch .face { width: 100%; transition: opacity .35s ease, transform .5s var(--ease), filter .35s ease; }
   .pc-pouch .back { position: absolute; inset: 8% 14%; display: grid; place-items: center; opacity: 0; transform: translateY(8px) scale(.98); filter: blur(3px); }
   .pc-pouch .back img { width: 100%; height: auto; border-radius: 6px; box-shadow: 0 24px 34px -22px rgba(51, 33, 26, .5); }
+  .pc-kit { padding: 8% 30% 8% 12%; }
+  .kit-packs { position: absolute; inset-inline-end: 7%; bottom: 9%; width: 30%; display: grid; gap: 6px; }
+  .kit-packs :global(.sachet) { transform: rotate(6deg); }
+  .kit-packs :global(.sachet:nth-child(2)) { transform: rotate(-4deg); margin-top: -40%; }
+  .kit-packs :global(.sachet:nth-child(3)) { transform: rotate(3deg); margin-top: -40%; }
+  .pc-pack { padding: 14% 28%; }
   @media (hover: hover) and (pointer: fine) {
     .pc:hover .has-back .face:first-child { opacity: 0; transform: translateY(-6px) scale(.98); filter: blur(3px); }
     .pc:hover .has-back .back { opacity: 1; transform: none; filter: none; }
@@ -53,11 +72,12 @@ const defaultOpt = p.kind === 'coffee' ? (p.grinds[0] ?? '') : p.chooseDate ? 'k
   .pc-taste { font-size: 14px; font-weight: 600; color: var(--bunn); }
   .pc-with { font-size: 14.5px; }
   .pc-with b { color: var(--tamr); font-weight: 600; }
-  .pc-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+  .pc-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
   .pc-row .price { font-size: 18px; }
   .pc-add { display: inline-flex; align-items: center; gap: 6px; border: 0; background: var(--bunn); color: var(--paper); border-radius: 999px; border-bottom-right-radius: 5px; padding: 10px 15px 10px 12px; font-weight: 600; font-size: 14.5px; transition: background .15s, transform .15s var(--ease); }
   .pc-add svg { width: 16px; height: 16px; }
   .pc-add:hover { background: var(--bunn-2); }
   .pc-add:active { transform: scale(.96); }
+  .pc-add:disabled { opacity: .45; }
   .pc-add.done { background: var(--khalal); color: var(--bunn); }
 </style>

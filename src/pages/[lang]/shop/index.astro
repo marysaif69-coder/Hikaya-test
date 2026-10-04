@@ -2,35 +2,95 @@
 import Base from '../../../layouts/Base.astro';
 import ProductCard from '../../../components/ProductCard.astro';
 import Pair from '../../../components/Pair.astro';
-import { COFFEES, BOXES, FAMILIES, type Lang } from '../../../data/products';
+import { COFFEES, KITS, PACKS, BOXES, FAMILIES, LINES, type Lang, type CoffeeLine } from '../../../data/products';
+import { path } from '../../../data/i18n';
 
 export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
 const lang = Astro.params.lang as Lang;
 const ar = lang === 'ar';
-const groups = [
-  { id: 'palm', items: COFFEES.filter(c => c.fam === 'palm') },
-  { id: 'mountain', items: COFFEES.filter(c => c.fam === 'mountain') },
-  { id: 'house', items: COFFEES.filter(c => c.fam === 'house') },
-  { id: 'husk', items: COFFEES.filter(c => c.fam === 'husk') },
+// Three lines. Each starts with the bag; the family styles are the bag plus its packs.
+const lines = (['gulf', 'yemen', 'shami'] as CoffeeLine[]).map(l => ({
+  id: l, bases: COFFEES.filter(c => c.line === l), styles: KITS.filter(k => k.line === l && !k.discovery),
+}));
+const discovery = KITS.filter(k => k.discovery);
+const others = [
   { id: 'dates', items: BOXES.filter(b => b.fam === 'dates') },
   { id: 'ramadan', items: BOXES.filter(b => b.fam === 'ramadan') },
   { id: 'eid', items: BOXES.filter(b => b.fam === 'eid') },
 ] as const;
+const T = {
+  bag: { en: 'The bag', ar: 'الكيس' },
+  styles: { en: 'Make it the way your family does', ar: 'اصنعها على طريقة أهلك' },
+  stylesNote: { en: 'Each style is the same bag with its sealed packs, in one box at one price. The spices that carry allergens stay in their packs, never in the coffee.', ar: 'كل طريقة هي الكيس نفسه مع ظروفه المختومة، في علبة واحدة وبسعر واحد. البهارات التي فيها مسببات حساسية تبقى في ظروفها، لا في القهوة.' },
+};
 ---
 <Base lang={lang} title={ar ? 'المتجر' : 'Shop'} current="shop">
   <section class="wrap shop-head">
     <div>
       <h1 class="h-l">{ar ? 'القهوة والتمر' : 'Coffee & dates'}</h1>
-      <p class="lead">{ar ? 'محمّصة بكميات صغيرة في كالغاري. الحكاية على الملصق وتاريخ التحميص على الظهر. كل الطلبات الآن طلبات مسبقة، للاستلام أو التوصيل من ٢٢ يناير ٢٠٢٧.' : 'Roasted in small batches in Calgary. The story is on the label, the roast date on the back. Every order is a pre-order for now, for pickup or delivery from 22 January 2027.'}</p>
+      <p class="lead">{ar ? 'محمّصة بكميات صغيرة في كالغاري. اختر قهوتك، ثم اصنعها على طريقة أهلك. الأسعار تُعلن قريباً، والطلب المسبق يفتح قرابة عيد الميلاد، استعداداً لرمضان.' : 'Roasted in small batches in Calgary. Choose your coffee, then make it the way your family does. Prices are announced soon, and pre-orders open around Christmas, in time for Ramadan.'}</p>
     </div>
-    <Pair lang={lang} size="s" bunn={{ ar: 'من أين نبدأ؟', en: 'Where do we start?' }} tamr={{ ar: 'من الدلّة، ثم الجبل.', en: 'With the dallah, then the mountain.' }} />
+    <Pair lang={lang} size="s" bunn={{ ar: 'من أين نبدأ؟', en: 'Where do we start?' }} tamr={{ ar: 'من الكيس، ثم طريقة أهلك.', en: 'With the bag, then your family’s way.' }} />
   </section>
 
-  <nav class="wrap fam-nav" aria-label={ar ? 'العائلات' : 'Families'}>
-    {groups.map(g => <a href={`#${g.id}`} data-season={g.id === 'ramadan' || g.id === 'eid' ? g.id : undefined}>{FAMILIES[g.id].name[lang]}</a>)}
+  <section class="wrap how" aria-labelledby="how-h">
+    <h2 id="how-h" class="sr">{ar ? 'كيف يعمل' : 'How it works'}</h2>
+    <ol>
+      <li><b>{ar ? 'اختر قهوتك' : 'Choose your coffee'}</b><span>{ar ? 'خليجية أو يمنية أو شامية. كل كيس فيه القهوة وبهارها الأساسي فقط.' : 'Gulf, Yemeni or Shami. Each bag holds the coffee and its everyday spice, nothing more.'}</span></li>
+      <li><b>{ar ? 'اصنعها على طريقة أهلك' : 'Make it your family’s way'}</b><span>{ar ? 'نجدية أو قصيمية أو حجازية، حضرمية أو رداعية أو بيضانية: الكيس مع ظروفه، جاهزة معاً.' : 'Najdi, Qassimi or Hijazi; Hadrami, Rada’i or Baydani: the bag with its packs, ready together.'}</span></li>
+      <li><b>{ar ? 'ظرف لوحده حين ينقص' : 'Just the pack, for refills'}</b><span>{ar ? 'عندك كيس في البيت؟ خذ الظرف وحده.' : 'Have a bag at home? Take the pack on its own.'}</span></li>
+    </ol>
+    <a class="btn tamr" href={path(lang, 'find')}>{ar ? 'لست متأكداً؟ ثلاثة أسئلة' : 'Not sure? Three questions'}</a>
+  </section>
+
+  <nav class="wrap fam-nav" aria-label={ar ? 'الأقسام' : 'Sections'}>
+    {lines.map(l => <a href={`#${l.id}`}>{FAMILIES[LINES[l.id].fam].name[lang]}</a>)}
+    <a href="#start">{ar ? 'ابدأ من هنا' : 'Start here'}</a>
+    <a href="#packs">{ar ? 'الظرف وحده' : 'Just the pack'}</a>
+    {others.map(g => <a href={`#${g.id}`} data-season={g.id === 'ramadan' || g.id === 'eid' ? g.id : undefined}>{FAMILIES[g.id].name[lang]}</a>)}
   </nav>
 
-  {groups.map((g, gi) => (
+  {lines.map((l, i) => (
+    <section class={`fam ${i % 2 ? 'alt' : ''}`} id={l.id} aria-labelledby={`h-${l.id}`} data-group>
+      <div class="wrap">
+        <div class="fam-head">
+          <h2 id={`h-${l.id}`} class="h-m">{LINES[l.id].name[lang]}</h2>
+          <p class="muted">{LINES[l.id].line[lang]}</p>
+        </div>
+        <h3 class="step"><span>1</span>{T.bag[lang]}</h3>
+        <div class="grid">{l.bases.map(p => <ProductCard p={p} lang={lang} />)}</div>
+        {l.styles.length > 0 && (
+          <>
+            <h3 class="step"><span>2</span>{T.styles[lang]}</h3>
+            <p class="muted step-note">{T.stylesNote[lang]}</p>
+            <div class="grid">{l.styles.map(p => <ProductCard p={p} lang={lang} />)}</div>
+          </>
+        )}
+      </div>
+    </section>
+  ))}
+
+  <section class="fam start" id="start" aria-labelledby="h-start" data-group>
+    <div class="wrap">
+      <div class="fam-head">
+        <h2 id="h-start" class="h-m">{ar ? 'جديد عليها؟ ابدأ من هنا' : 'New to it? Start here'}</h2>
+        <p class="muted">{ar ? 'كيس واحد مع ظروف صغيرة: جرّب كل طريقة في بيتك، ثم اختر طريقتك.' : 'One bag with small packs: try each style at home, then choose yours.'}</p>
+      </div>
+      <div class="grid">{discovery.map(p => <ProductCard p={p} lang={lang} />)}</div>
+    </div>
+  </section>
+
+  <section class="fam alt" id="packs" aria-labelledby="h-packs" data-group>
+    <div class="wrap">
+      <div class="fam-head">
+        <h2 id="h-packs" class="h-m">{ar ? 'الظرف وحده' : 'Just the pack'}</h2>
+        <p class="muted">{ar ? 'للبيت الذي عنده كيس. كل ظرف مكتوب عليه الكيس الذي صُنع له.' : 'For the house that already has a bag. Each pack says which bag it is made for.'}</p>
+      </div>
+      <div class="grid">{PACKS.map(p => <ProductCard p={p} lang={lang} />)}</div>
+    </div>
+  </section>
+
+  {others.map((g, gi) => (
     <section class={`fam ${gi % 2 ? 'alt' : ''}`} id={g.id} aria-labelledby={`h-${g.id}`} data-group data-season={g.id === 'ramadan' || g.id === 'eid' ? g.id : undefined}>
       <div class="wrap">
         <div class="fam-head">
@@ -47,6 +107,13 @@ const groups = [
   .shop-head { display: grid; grid-template-columns: 1.3fr .7fr; gap: 24px 64px; align-items: end; padding-block: clamp(40px, 6vw, 80px) 28px; }
   .shop-head > div { display: grid; gap: 14px; }
   @media (max-width: 860px) { .shop-head { grid-template-columns: 1fr; } }
+  .how { display: grid; gap: 18px; padding-bottom: 28px; }
+  .how ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; counter-reset: s; }
+  @media (max-width: 760px) { .how ol { grid-template-columns: 1fr; } }
+  .how li { counter-increment: s; display: grid; gap: 4px; padding: 16px 18px; border-radius: 22px; border-bottom-left-radius: 6px; background: var(--sheet); }
+  .how li b::before { content: counter(s) '  '; color: var(--tamr); }
+  .how li span { font-size: 15px; color: var(--ink-2); }
+  .how .btn { justify-self: start; }
   .fam-nav { display: flex; gap: 8px; flex-wrap: wrap; padding-bottom: 28px; position: sticky; top: 72px; z-index: 5; background: var(--paper); padding-top: 12px; }
   .fam-nav a { text-decoration: none; font-weight: 500; font-size: 15px; padding: 8px 14px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--line); }
   .fam-nav a:hover { box-shadow: inset 0 0 0 1.5px var(--bunn); }
@@ -54,5 +121,9 @@ const groups = [
   .fam { padding-block: 48px 64px; scroll-margin-top: 140px; }
   .fam.alt { background: var(--paper-2); }
   .fam-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 24px; margin-bottom: 26px; }
+  .step { display: flex; align-items: center; gap: 10px; font-size: 19px; margin: 8px 0 16px; }
+  .step span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--bunn); color: var(--paper); font-size: 15px; }
+  .grid + .step { margin-top: 44px; }
+  .step-note { margin: -8px 0 18px; max-width: 70ch; font-size: 15px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 36px 24px; }
 </style>

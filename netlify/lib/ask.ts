@@ -8,7 +8,7 @@ import { sql, one, type Row } from './db';
 import { HttpError, env } from './http';
 import { hash, token, type Session } from './auth';
 import { HANDBOOK } from './handbook.gen';
-import { COFFEES, BOXES, DATES, GRINDS, FAMILIES, PRODUCTS } from '../../src/data/products';
+import { COFFEES, KITS, PACKS, BOXES, DATES, GRINDS, FAMILIES, PRODUCTS, LINES, fileCents, kitInside, allergyNote } from '../../src/data/products';
 import { BREW } from '../../src/data/brew';
 import { RAMADAN_START, EID } from '../../src/data/calendar';
 import { availability, calgaryNow } from './slots';
@@ -37,17 +37,34 @@ const create: Create = params => {
 };
 
 // ---------- what the assistant knows ----------
-const usd = (n: number) => `$${n}`;
+const usd = (n: number | null) => (n == null ? 'price not set yet (ordering not open)' : `$${n}`);
 function catalog() {
   const coffees = COFFEES.map(c => [
     `### ${c.name.en} (${c.name.ar}) · id: ${c.id}`,
-    `${FAMILIES[c.fam].name.en} / ${FAMILIES[c.fam].name.ar} · ${usd(c.price)} · ${c.size} · roast ${c.roast ? `${c.roast} of 4` : 'none (dried husk)'}`,
+    `Base bag · ${LINES[c.line].name.en} line · ${usd(c.price)} · ${c.size} · roast ${c.roast ? `${c.roast} of 4 (working plan until the tastings)` : 'none (dried husk)'}`,
     `Taste: ${c.taste.en} / ${c.taste.ar}`,
     `About: ${c.notes.en} ${c.story.en}`,
     `بالعربية: ${c.notes.ar} ${c.story.ar}`,
     `Ingredients: ${c.ingredients[0]}`,
     `Grind: ${c.grinds.length ? c.grinds.map(g => `${GRINDS[g].en} (option "${g}")`).join(', ') : 'whole dried husk, no grind option'}`,
     `Good with the date: ${DATES[c.date].name.en} (${DATES[c.date].name.ar}). ${c.why.en}`,
+  ].join('\n')).join('\n\n');
+  const kits = KITS.map(k => [
+    `### ${k.name.en} (${k.name.ar}) · id: ${k.id}`,
+    `${k.discovery ? 'Discovery pack' : 'Family style'} · ${LINES[k.line].name.en} line · ${usd(k.price)} · one box: ${kitInside(k, 'en')}`,
+    `Taste: ${k.taste.en} / ${k.taste.ar}`,
+    `About: ${k.notes.en} ${k.story.en}`,
+    `بالعربية: ${k.notes.ar} ${k.story.ar}`,
+    `Allergens: ${allergyNote(k, 'en').text}. The bag itself is coffee and spice only.`,
+    `Grind: that of its bag (option "${COFFEES.find(c => c.id === k.base)!.grinds[0]}").`,
+    `Good with the date: ${DATES[k.date].name.en} (${DATES[k.date].name.ar}). ${k.why.en}`,
+  ].join('\n')).join('\n\n');
+  const packs = PACKS.map(p => [
+    `### ${p.name.en} (${p.name.ar}) · id: ${p.id}`,
+    `Sealed pack on its own (refill) · made for ${COFFEES.find(c => c.id === p.for)!.name.en} · ${usd(p.price)} · ${p.size.en}`,
+    `${p.notes.en} Contents: ${p.contents.en}`,
+    `بالعربية: ${p.notes.ar} ${p.contents.ar}`,
+    `Allergens: ${allergyNote(p, 'en').text}.${p.maybe ? ` ${p.maybe.en}.` : ''}`,
   ].join('\n')).join('\n\n');
   const boxes = BOXES.map(b => [
     `### ${b.name.en} (${b.name.ar}) · id: ${b.id}`,
@@ -63,7 +80,7 @@ function catalog() {
     ...b.steps.map((s, i) => `${i + 1}. ${s.t.en}${s.secs ? ` (about ${s.secs >= 60 ? `${Math.round(s.secs / 60)} minutes` : `${s.secs} seconds`})` : ''}`),
     `Serve: ${b.serve.en}`,
   ].join('\n')).join('\n\n');
-  return `# Product list (from the website, always current)\n\nPrices are draft prices in CAD.\n\n## Coffees\n\n${coffees}\n\n## Dates and boxes\n\n${boxes}\n\n## Date varieties\n\n${dates}\n\n# How to brew (also on /en/brew/)\n\n${brew}`;
+  return `# Product list (from the website, always current)\n\nPrices are in CAD. Coffee prices are not set yet: until the team sets them, say prices are announced soon and coffee can't be ordered yet. Text marked [TBD] is not decided yet: say it is still being finalised, never guess.\n\nHow the coffee works: the customer picks a base bag (Gulf coffee, Yemeni qahwa, Jubani, qishr, Shami with cardamom or Shami sada), then can make it the way their family does with a family style: the same bag plus its sealed packs in one box at one price (Najdi, Qassimi, Hijazi for Gulf coffee; Hadrami, Rada'i, Baydani for Yemeni qahwa). Najdi is Gulf coffee with its saffron packet, always; plain Gulf coffee is "Gulf coffee, cardamom only". Packs are also sold on their own as refills for a bag the customer already has. Discovery packs (Taste the Gulf, Taste Yemen) are for newcomers. Allergens (milk, sesame, almonds, grain) are only in the sealed packs, never in the coffee bags.\n\n## Base bags\n\n${coffees}\n\n## Family styles and discovery packs\n\n${kits}\n\n## Packs on their own\n\n${packs}\n\n## Dates and boxes\n\n${boxes}\n\n## Date varieties\n\n${dates}\n\n# How to brew (also on /en/brew/)\n\n${brew}`;
 }
 
 const ROLE = `You are Ask Hikaya, the assistant on the Hikaya website (hikayacoffee.ca). You answer customers' questions about Hikaya's coffee, dates, orders, pickup and delivery in Calgary, and you hand anything you cannot settle to the Hikaya team by opening a request.
@@ -88,7 +105,8 @@ async function context(lang: 'en' | 'ar', s: Session | null) {
   const name = (id: string) => PRODUCTS.find(p => p.id === id)?.name.en ?? id;
   const notShown = Object.entries(live).filter(([, l]) => !l.shown).map(([id]) => name(id));
   const soldOut = Object.entries(live).filter(([, l]) => l.shown && (!l.available || l.stock === 0)).map(([id]) => name(id));
-  const priced = Object.entries(live).filter(([id, l]) => l.shown && l.price_cents !== (PRODUCTS.find(p => p.id === id)?.price ?? 0) * 100).map(([id, l]) => `${name(id)} $${(l.price_cents / 100).toFixed(l.price_cents % 100 ? 2 : 0)}`);
+  const fileOf = (id: string) => { const p = PRODUCTS.find(x => x.id === id); return p ? fileCents(p) : null; };
+  const priced = Object.entries(live).filter(([id, l]) => l.shown && l.price_cents != null && l.price_cents !== fileOf(id)).map(([id, l]) => `${name(id)} $${(l.price_cents! / 100).toFixed(l.price_cents! % 100 ? 2 : 0)}`);
   const fmt = (o: { date: string; hour: number }) => `${o.date} at ${o.hour}:00`;
   return [
     `Today in Calgary: ${now.date}.`,
@@ -125,7 +143,7 @@ export const TOOLS: BetaTool[] = [
     description: 'Check whether a postal code is inside our Calgary delivery area. The first three characters (e.g. T3A) are enough.',
     input_schema: S({ postal_code: { type: 'string' } }) },
   { name: 'add_to_cart', strict: true,
-    description: "Put products in the visitor's cart on this website. Use the product ids from the product list. option is the grind for coffees (e.g. \"dallah\" or \"fine\") or the date variety for boxes where the customer chooses one; null otherwise. Only use after the customer asked for it.",
+    description: "Put products in the visitor's cart on this website. Use the product ids from the product list. option is the grind for coffees and styles (\"dallah\", \"fine\" or \"powder\") or the date variety for boxes where the customer chooses one; null otherwise. Only use after the customer asked for it.",
     input_schema: S({ items: { type: 'array', items: S({ product_id: { type: 'string' }, option: nullable({ type: 'string' }), qty: { type: 'integer' } }) } }) },
   { name: 'open_request', strict: true,
     description: 'Send a request to the Hikaya team, who reply by email. Use for damaged, wrong, missing or late items, order changes and cancellations, large or event orders, complaints, a request for a person, and questions you cannot answer. The customer gets an email with the request number. For damaged, wrong or missing items, a photo upload button appears for the customer after it is opened.',

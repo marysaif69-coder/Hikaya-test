@@ -32,7 +32,7 @@ import { weekSheet, weekStart } from '../lib/week';
 import { sendBackInStock, waitingByProduct } from '../lib/alerts';
 import { listStats } from '../lib/list';
 import { numbers } from '../lib/visits';
-import { PRODUCTS, FAMILIES } from '../../src/data/products';
+import { PRODUCTS, FAMILIES, fileCents } from '../../src/data/products';
 import { send, ticketReply } from '../lib/email';
 
 const day = (v: unknown) => (v instanceof Date ? v.toISOString() : String(v ?? '')).slice(0, 10);
@@ -246,7 +246,7 @@ async function handle(req: Request) {
     if (parts[0] === 'products' && !parts[1] && req.method === 'GET') {
       const [live, waiting] = await Promise.all([liveCatalog(), waitingByProduct()]);
       return json({ seasons: await getSeasons(), products: PRODUCTS.map(p => ({
-        id: p.id, name: p.name, kind: p.kind, family: FAMILIES[p.fam].name.en, defaultPrice: p.price * 100, ...live[p.id], waiting: waiting[p.id] ?? 0,
+        id: p.id, name: p.name, kind: p.kind, family: FAMILIES[p.fam].name.en + (p.kind === 'coffee' ? ' · base bag' : p.kind === 'pack' ? ' · pack' : p.kind === 'kit' ? (p.discovery ? ' · discovery pack' : ' · style: bag + packs') : ''), defaultPrice: fileCents(p), ...live[p.id], waiting: waiting[p.id] ?? 0,
       })) });
     }
     if (parts[0] === 'products' && parts[1] && req.method === 'POST') {

@@ -1,6 +1,6 @@
 // Prices come from the same product file the website uses. The browser only sends ids,
 // options and quantities; every amount is recalculated here.
-import { PRODUCTS, GRINDS, DATES } from '../../src/data/products';
+import { PRODUCTS, GRINDS, DATES, fileCents } from '../../src/data/products';
 import { HttpError } from './http';
 import type { Live } from './catalog';
 import type { Applied } from './promos';
@@ -30,8 +30,15 @@ export function priceCart(lines: unknown, live?: Record<string, Live>): PricedLi
       if (!(raw.opt in DATES)) throw new HttpError(400, 'choose-date', 'Choose a date variety for the box.');
       option = raw.opt;
       label = DATES[raw.opt as keyof typeof DATES].name;
+    } else if (p.kind === 'kit') {
+      // A style or discovery pack takes the grind of its base bag.
+      const base = PRODUCTS.find(x => x.id === p.base);
+      if (base?.kind === 'coffee' && base.grinds.length) { option = base.grinds.includes(raw.opt) ? raw.opt : base.grinds[0]; label = GRINDS[option as keyof typeof GRINDS]; }
     }
-    return { product_id: p.id, name_en: p.name.en, name_ar: p.name.ar, option, option_en: label?.en ?? null, option_ar: label?.ar ?? null, qty, unit_cents: live?.[p.id]?.price_cents ?? p.price * 100 };
+    // Until the owners set a price in the desk, an item can't be ordered (never a $0 line).
+    const unit = live ? live[p.id]?.price_cents ?? null : fileCents(p);
+    if (unit == null) throw new HttpError(409, 'no-price', `${p.name.en} is not open for orders yet.`);
+    return { product_id: p.id, name_en: p.name.en, name_ar: p.name.ar, option, option_en: label?.en ?? null, option_ar: label?.ar ?? null, qty, unit_cents: unit };
   });
 }
 

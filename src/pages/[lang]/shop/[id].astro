@@ -1,9 +1,10 @@
 ---
 import Base from '../../../layouts/Base.astro';
 import Pouch from '../../../components/Pouch.astro';
+import Sachet from '../../../components/Sachet.astro';
 import Pair from '../../../components/Pair.astro';
 import ProductCard from '../../../components/ProductCard.astro';
-import { PRODUCTS, FAMILIES, SPICES, GRINDS, DATES, money, type Lang, type Product } from '../../../data/products';
+import { PRODUCTS, COFFEES, KITS, FAMILIES, SPICES, GRINDS, DATES, ALLERGENS, priceText, baseOf, packOf, stylesFor, allergyNote, kitInside, type Lang, type Product, type Coffee } from '../../../data/products';
 import { BREW } from '../../../data/brew';
 import { UI, path } from '../../../data/i18n';
 
@@ -13,28 +14,45 @@ export function getStaticPaths() {
 const lang = Astro.params.lang as Lang;
 const { p } = Astro.props as { p: Product };
 const ar = lang === 'ar';
-const img = p.kind === 'coffee' ? (p.art?.front ?? '/brand/logo.svg') : p.img;
+const L = (en: string, a: string) => (ar ? a : en);
+// The bag behind this page: itself, a style's base, or the bag a pack is made for.
+const bag: Coffee | null = p.kind === 'coffee' ? p : p.kind === 'kit' ? baseOf(p) : p.kind === 'pack' ? COFFEES.find(c => c.id === p.for) ?? null : null;
+const img = p.kind === 'box' ? p.img : p.kind === 'coffee' ? p.art?.front ?? '/brand/logo.svg' : '/brand/logo.svg';
 const pageUrl = new URL(path(lang, `shop/${p.id}`), Astro.site).href;
 const jsonld = {
   '@context': 'https://schema.org', '@type': 'Product', name: p.name[lang], alternateName: p.name[lang === 'en' ? 'ar' : 'en'],
   description: p.notes[lang], image: new URL(img, Astro.site).href, brand: { '@type': 'Brand', name: 'Hikaya' }, sku: p.id,
-  offers: { '@type': 'Offer', price: p.price.toFixed(2), priceCurrency: 'CAD', availability: 'https://schema.org/PreOrder', url: pageUrl,
-    areaServed: { '@type': 'City', name: 'Calgary' } },
+  ...(p.price != null ? { offers: { '@type': 'Offer', price: p.price.toFixed(2), priceCurrency: 'CAD', availability: 'https://schema.org/PreOrder', url: pageUrl, areaServed: { '@type': 'City', name: 'Calgary' } } } : {}),
 };
-const pairDate = p.kind === 'coffee' ? DATES[p.date] : null;
+const cup = p.kind === 'coffee' || p.kind === 'kit' ? p : null; // has a taste, a date and a Bunn line
+const pairDate = cup ? DATES[cup.date] : null;
 const dateBox = PRODUCTS.find(o => o.id === 'date-box')!;
-const related = PRODUCTS.filter(o => o.fam === p.fam && o.id !== p.id).slice(0, 4);
-const fill = related.length < 3 ? PRODUCTS.filter(o => o.kind !== p.kind && !related.includes(o)).slice(0, 3 - related.length) : [];
+// "Make it the way your family does": on a bag's page, the bag alone or one of its styles.
+const styles = p.kind === 'coffee' ? stylesFor(p.id) : [];
+const plain: Record<string, { en: string; ar: string }> = {
+  gulf: { en: 'Gulf coffee, cardamom only', ar: 'قهوة خليجية، بالهيل فقط' },
+  yemeni: { en: 'Yemeni qahwa, as it is', ar: 'قهوة يمنية، كما هي' },
+};
+const discoveryFor = p.kind === 'coffee' ? KITS.find(k => k.discovery && k.base === p.id) : null;
+const grinds = bag && p.kind !== 'pack' ? bag.grinds : [];
+const lineKey = p.kind === 'box' ? null : p.line;
+const related = p.kind === 'box'
+  ? PRODUCTS.filter(o => o.fam === p.fam && o.id !== p.id).slice(0, 4)
+  : PRODUCTS.filter(o => o.kind !== 'box' && o.line === lineKey && o.id !== p.id && (o.kind !== 'pack' || p.kind === 'pack')).slice(0, 4);
+const fill = related.length < 3 ? PRODUCTS.filter(o => o.kind === 'box' && o.fam === 'dates' && !related.includes(o)).slice(0, 3 - related.length) : [];
 const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { ar: string; en: string } }> = {
   dates: { bunn: { ar: 'علبة لكل بيت.', en: 'A box for every house.' }, tamr: { ar: 'وتمرة لكل جار.', en: 'And a date for every neighbour.' } },
   ramadan: { bunn: { ar: 'أنا لما بعد المغرب.', en: "I'm for after sunset." }, tamr: { ar: 'وأنا أوّل المائدة.', en: "I'm first on the table." } },
   eid: { bunn: { ar: 'من نزور أولاً؟', en: 'Who do we visit first?' }, tamr: { ar: 'الكبار دائماً.', en: 'The elders, always.' } },
 };
+const kitsUsing = p.kind === 'pack' ? KITS.filter(k => !k.discovery && k.parts.some(x => x.id === p.id)) : [];
+const brewFam = p.kind === 'coffee' || p.kind === 'kit' ? p.fam : null;
+const sizeText = p.kind === 'coffee' ? p.size : p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
 ---
 <Base season={p.fam === 'ramadan' || p.fam === 'eid' ? p.fam : undefined} alertFor={p.id} lang={lang} title={p.name[lang]} current="shop" description={p.notes[lang]} jsonld={jsonld} image={img}>
   <nav class="wrap crumbs" aria-label={ar ? 'المسار' : 'Breadcrumb'}>
     <a href={path(lang, 'shop')}>{UI.nav.shop[lang]}</a><span aria-hidden="true">/</span>
-    <a href={path(lang, 'shop') + `#${p.fam}`}>{FAMILIES[p.fam].name[lang]}</a><span aria-hidden="true">/</span>
+    <a href={path(lang, 'shop') + `#${p.kind === 'pack' ? 'packs' : p.kind === 'kit' && p.discovery ? 'start' : p.kind === 'box' ? p.fam : p.line}`}>{p.kind === 'pack' ? L('Just the pack', 'الظرف وحده') : p.kind === 'kit' && p.discovery ? L('Start here', 'ابدأ من هنا') : FAMILIES[p.fam].name[lang]}</a><span aria-hidden="true">/</span>
     <span aria-current="page">{p.name[lang]}</span>
   </nav>
 
@@ -46,37 +64,69 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
               <div class="slide on" data-slide="0"><Pouch coffee={p} lang={lang} /></div>
               {p.art && <div class="slide" data-slide="1"><Pouch coffee={p} lang={lang} side="back" /></div>}
             </div>
-            {p.art && (
-              <div class="thumbs" role="tablist" aria-label={ar ? 'صور الكيس' : 'Bag views'}>
-                <button type="button" role="tab" aria-selected="true" data-go="0"><img src={p.art.front} alt={ar ? 'الوجه الأمامي' : 'Front'} width="80" height="159" /></button>
-                <button type="button" role="tab" aria-selected="false" data-go="1"><img src={p.art.back} alt={ar ? 'الظهر: طريقة التحضير والقيم الغذائية' : 'Back: how to brew and nutrition facts'} width="80" height="126" /></button>
-              </div>
-            )}
           </div>
+        : p.kind === 'kit'
+        ? <div class="pdp-pouch kit-media"><div class="kit-bag"><Pouch coffee={baseOf(p)} lang={lang} /></div><div class="kit-packs">{p.parts.map(x => <Sachet pack={packOf(x.id)!} lang={lang} mini={x.mini} />)}</div></div>
+        : p.kind === 'pack'
+        ? <div class="pdp-pouch pack-media"><Sachet pack={p} lang={lang} /></div>
         : <img src={p.img} alt={p.name[lang]} width="1000" height="1250" />}
     </div>
 
     <div class="pdp-info">
       <h1 class="h-l">{p.name[lang]}{lang === 'en' && <span lang="ar">{p.name.ar}</span>}</h1>
-      <p class="pdp-price"><span class="price" data-price-for={p.id}>{money(p.price, lang)}</span> <span class="draft">· {UI.draftPrice[lang]}</span> <span class="muted">· {p.kind === 'coffee' ? p.size : p.size[lang]} · {FAMILIES[p.fam].name[lang]}</span></p>
+      <p class="pdp-price"><span class="price" data-price-for={p.id} id="mainPrice">{priceText(p.price, lang)}</span> {p.price != null && <span class="draft">· {UI.draftPrice[lang]}</span>} <span class="muted">· {sizeText}</span></p>
       <p class="pdp-notes">{p.notes[lang]}</p>
-      {p.kind === 'coffee' && <p class="taste"><span class="label">{ar ? 'الطعم' : 'Tastes like'}</span> {p.taste[lang]}</p>}
+      {cup && <p class="taste"><span class="label">{ar ? 'الطعم' : 'Tastes like'}</span> {cup.taste[lang]}</p>}
 
-      {p.kind === 'coffee' ? (
+      {cup ? (
         <>
-          <Pair lang={lang} size="m" bunn={p.bunn} tamr={{ ar: `خذ معها ${DATES[p.date].name.ar}.`, en: `Take ${DATES[p.date].name.en} with it.` }} />
-          <div class="facts">
-            {p.spices.length > 0 && <div class="spices">{p.spices.map(s => <span><i style={`background:${SPICES[s].c}`}></i>{SPICES[s].name[lang]}</span>)}</div>}
-            {p.roast > 0 && <p class="roast"><span class="label">{UI.roast[lang]}</span> <span class="roastbar" role="img" aria-label={`${p.roast} / 4`}>{[1, 2, 3, 4].map(i => <i class={i <= p.roast ? 'on' : ''}></i>)}</span></p>}
-          </div>
+          <Pair lang={lang} size="m" bunn={cup.bunn} tamr={{ ar: `خذ معها ${DATES[cup.date].name.ar}.`, en: `Take ${DATES[cup.date].name.en} with it.` }} />
+          {p.kind === 'coffee' && (
+            <div class="facts">
+              {p.spices.length > 0 && <div class="spices">{p.spices.map(s => <span><i style={`background:${SPICES[s].c}`}></i>{SPICES[s].name[lang]}</span>)}</div>}
+              {p.roast > 0 && <p class="roast"><span class="label">{UI.roast[lang]}</span> <span class="roastbar" role="img" aria-label={`${p.roast} / 4`}>{[1, 2, 3, 4].map(i => <i class={i <= p.roast ? 'on' : ''}></i>)}</span> <small class="muted">{L('working plan', 'خطة مبدئية')}</small></p>}
+            </div>
+          )}
         </>
-      ) : (
+      ) : p.kind === 'box' ? (
         <Pair lang={lang} size="m" bunn={occasionPair[p.fam].bunn} tamr={occasionPair[p.fam].tamr} />
+      ) : null}
+
+      {p.kind === 'kit' && (
+        <div class="inbox">
+          <h2 class="h-s">{L('In the box', 'في العلبة')}</h2>
+          <ul>
+            <li><a href={path(lang, `shop/${p.base}`)}>{baseOf(p).name[lang]}</a> <span class="muted">{baseOf(p).size} · {L('coffee and spice only', 'قهوة وبهار فقط')}</span></li>
+            {p.parts.map(x => { const k = packOf(x.id)!; return <li><a href={path(lang, `shop/${k.id}`)}>{x.mini ? L('Small ', 'ظرف صغير: ') : ''}{k.name[lang]}</a> <span class={`allergy ${allergyNote(k, lang).none ? 'none' : ''}`}>{allergyNote(k, lang).text}</span>{k.maybe && <small class="muted"> · {k.maybe[lang]}</small>}</li>; })}
+          </ul>
+          {p.parts.some(x => x.id === 'pack-saffron') && <p class="muted">{L('The saffron is part of the recipe, so it is always in the box. It comes in its own packet so it stays bright until the pot.', 'الزعفران جزء من الوصفة، لذلك هو في العلبة دائماً. يأتي في ظرفه ليبقى زاهياً حتى الدلّة.')}</p>}
+        </div>
+      )}
+
+      {p.kind === 'pack' && bag && (
+        <div class="inbox">
+          <h2 class="h-s">{L('Made for', 'مصنوعة لـ')} <a href={path(lang, `shop/${bag.id}`)}>{bag.name[lang]}</a></h2>
+          <p>{p.contents[lang]}</p>
+          <p class={`allergy ${allergyNote(p, lang).none ? 'none' : ''}`}>{allergyNote(p, lang).text}</p>
+          {p.maybe && <p class="muted">{p.maybe[lang]}</p>}
+          <p class="muted">{L(`This is the pack on its own, for a bag you already have. New to it? ${kitsUsing.map(k => k.name.en).join(' and ')} come${kitsUsing.length === 1 ? 's' : ''} with the bag and the pack together.`, `هذا الظرف وحده، لكيس عندك من قبل. جديد عليها؟ ${kitsUsing.map(k => k.name.ar).join(' و')} تأتي مع الكيس والظرف معاً.`)}</p>
+          <p class="kit-links">{kitsUsing.map(k => <a class="btn ghost" href={path(lang, `shop/${k.id}`)}>{k.name[lang]}</a>)}</p>
+        </div>
       )}
 
       <form class="buy" onsubmit="return false">
-        {p.kind === 'coffee' && p.grinds.length > 0 && (
-          <p class="grind-line"><span class="label">{UI.grind[lang]}</span> {GRINDS[p.grinds[0]][lang]}<input type="hidden" name="opt" value={p.grinds[0]} /></p>
+        {styles.length > 0 && (
+          <fieldset class="styles" id="styles">
+            <legend>{L('Make it the way your family does', 'اصنعها على طريقة أهلك')}</legend>
+            <label><input type="radio" name="style" value={p.id} checked data-priced={p.price != null ? '1' : ''} data-price-text={priceText(p.price, lang)} /><span><b>{plain[p.id]?.[lang] ?? p.name[lang]}</b><small>{L('Just the bag', 'الكيس وحده')}</small></span></label>
+            {styles.map(k => (
+              <label><input type="radio" name="style" value={k.id} data-priced={k.price != null ? '1' : ''} data-price-text={priceText(k.price, lang)} /><span><b>{k.name[lang]}</b><small>{L('The bag + ', 'الكيس + ')}{k.parts.map(x => packOf(x.id)!.name[lang]).join(' + ')}</small><small class={`allergy ${allergyNote(k, lang).none ? 'none' : ''}`}>{allergyNote(k, lang).text}</small></span></label>
+            ))}
+            {discoveryFor && <p class="muted try">{L('Not sure which? ', 'لست متأكداً؟ ')}<a href={path(lang, `shop/${discoveryFor.id}`)}>{discoveryFor.name[lang]}</a>{L(' has a small pack of each.', ' فيها ظرف صغير من كل طريقة.')}</p>}
+          </fieldset>
+        )}
+        {grinds.length > 0 && (
+          <p class="grind-line"><span class="label">{UI.grind[lang]}</span> {GRINDS[grinds[0]][lang]}<input type="hidden" name="opt" value={grinds[0]} /></p>
         )}
         {p.kind === 'box' && p.chooseDate && (
           <fieldset class="choice">
@@ -88,19 +138,19 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
           <label class="qty"><span class="sr">{UI.qty[lang]}</span>
             <select name="qty">{[1, 2, 3, 4, 5, 6].map(n => <option value={n}>{n}</option>)}</select>
           </label>
-          <button class="btn primary grow" type="button" data-add={p.id} data-opt=""><span>{UI.add[lang]} · <span data-price-for={p.id}>{money(p.price, lang)}</span></span></button>
+          <button class="btn primary grow" type="button" id="mainAdd" data-add={p.id} data-opt="" disabled={p.price == null}><span>{UI.add[lang]} · <span data-price-for={p.id} id="addPrice">{priceText(p.price, lang)}</span></span></button>
         </div>
       </form>
 
-      {p.kind === 'coffee' && pairDate && (
+      {cup && pairDate && (
         <div class="pour-with">
           <svg class="pw-date" viewBox="-26 -46 52 92" aria-hidden="true"><path fill={pairDate.c} d="M-2 -42c13 0 22 12 22 40c0 27-9 44-22 44c-12 0-21-15-21-43c0-29 8-41 21-41z" /><path d="M-12 -18q6 3 11 0M-14 4q7 4 14 0M-11 24q6 3 12-1M4 -30q5 2 9-1" stroke="#33211A" stroke-opacity=".3" stroke-width="2" fill="none" stroke-linecap="round" /></svg>
           <div class="pw-text">
             <p class="label">{UI.withDate[lang]}</p>
             <p class="pw-name">{pairDate.name[lang]} <span>· {pairDate.region[lang]}</span></p>
-            <p class="muted">{p.why[lang]}</p>
+            <p class="muted">{cup.why[lang]}</p>
           </div>
-          <button class="btn tamr pw-add" type="button" data-add="date-box" data-opt={p.date}><span>{ar ? 'أضف ٥٠٠ غ · ' : 'Add 500 g · '}<span data-price-for="date-box">{money(dateBox.price, lang)}</span></span></button>
+          <button class="btn tamr pw-add" type="button" data-add="date-box" data-opt={cup.date}><span>{ar ? 'أضف ٥٠٠ غ · ' : 'Add 500 g · '}<span data-price-for="date-box">{priceText(dateBox.price, lang)}</span></span></button>
         </div>
       )}
 
@@ -113,24 +163,27 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
       <div class="acc">
         <details open>
           <summary>{ar ? 'الحكاية' : 'The story'}</summary>
-          <p>{p.kind === 'coffee' ? p.story[lang] : p.contents[lang]}</p>
+          <p>{p.kind === 'coffee' || p.kind === 'kit' ? p.story[lang] : p.kind === 'pack' ? p.notes[lang] : p.contents[lang]}</p>
         </details>
-        {p.kind === 'coffee' && (
+        {brewFam && (
           <details>
             <summary>{UI.howToBrew[lang]}</summary>
-            <ol>{BREW[p.fam].steps.map(s => <li>{s.t[lang]}</li>)}</ol>
-            <a href={path(lang, 'brew') + `#${p.fam}`}>{ar ? 'الدليل مع المؤقّت' : 'The guide, with a timer'}</a>
+            <ol>{BREW[brewFam].steps.map(s => <li>{s.t[lang]}</li>)}</ol>
+            <a href={path(lang, 'brew') + `#${brewFam}`}>{ar ? 'الدليل مع المؤقّت' : 'The guide, with a timer'}</a>
           </details>
         )}
-        {p.kind === 'coffee' && (
+        {p.kind !== 'box' && (
           <details>
             <summary>{UI.ingredients[lang]} · English / Français</summary>
-            <div class="label-box">
-              <p><b>Ingredients:</b> {p.ingredients[0]}</p>
-              <p lang="fr"><b>Ingrédients :</b> {p.ingredients[1]}</p>
-              <p><b>Net weight / Poids net:</b> {p.size}</p>
-              <p>Roasted in Calgary by Hikaya Coffee Ltd., [address], Calgary, AB · Torréfié à Calgary.</p>
-            </div>
+            {(p.kind === 'kit' ? [baseOf(p), ...p.parts.map(x => packOf(x.id)!)] : [p]).map(x => (
+              <div class="label-box">
+                {p.kind === 'kit' && <p><b>{x.name.en}</b></p>}
+                <p><b>Ingredients:</b> {x.ingredients[0]}</p>
+                <p lang="fr"><b>Ingrédients :</b> {x.ingredients[1]}</p>
+                {x.kind === 'coffee' && <p><b>Net weight / Poids net:</b> {x.size}</p>}
+                <p>Made in Calgary by Hikaya Coffee Ltd., [address], Calgary, AB · Fait à Calgary.</p>
+              </div>
+            ))}
           </details>
         )}
       </div>
@@ -138,7 +191,7 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
   </section>
 
   <div class="sticky-buy" id="stickyBuy" aria-hidden="true">
-    <div><b>{p.name[lang]}</b><span class="price" data-price-for={p.id}>{money(p.price, lang)}</span></div>
+    <div><b>{p.name[lang]}</b><span class="price" data-price-for={p.id}>{priceText(p.price, lang)}</span></div>
     <button class="btn primary" type="button" id="stickyAdd" tabindex="-1">{UI.add[lang]}</button>
   </div>
 
@@ -155,8 +208,26 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
     slides.forEach(s => s.classList.toggle('on', s.dataset.slide === b.dataset.go));
     document.querySelectorAll('.thumbs [data-go]').forEach(t => t.setAttribute('aria-selected', String(t === b)));
   }));
+  // "Make it the way your family does": the add button follows the chosen style.
+  const main = document.querySelector<HTMLButtonElement>('#mainAdd');
+  const styleBox = document.getElementById('styles');
+  if (styleBox && main) {
+    const sync = () => {
+      const r = styleBox.querySelector<HTMLInputElement>('input[name=style]:checked');
+      if (!r) return;
+      main.dataset.add = r.value;
+      const live = (window as any).hikayaPrice?.(r.value) as string | undefined;
+      const text = live ?? r.dataset.priceText ?? '';
+      for (const id of ['addPrice', 'mainPrice']) { const el = document.getElementById(id); if (el) { el.dataset.priceFor = r.value; el.textContent = text; } }
+      const ok = (window as any).hikayaOrderable?.(r.value) as boolean | undefined;
+      main.disabled = ok === undefined ? !r.dataset.priced : !ok;
+      const tag = main.parentElement?.querySelector<HTMLElement>('.sold-out-tag');
+      if (tag) tag.hidden = !main.disabled;
+    };
+    styleBox.addEventListener('change', sync);
+    document.addEventListener('catalog:live', sync);
+  }
   // Sticky add-to-cart on phones once the main button scrolls away.
-  const main = document.querySelector<HTMLButtonElement>('.buy [data-add]');
   const bar = document.getElementById('stickyBuy');
   if (main && bar) {
     let ticking = false;
@@ -196,6 +267,30 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
     .sticky-buy b { font-family: var(--display); font-size: 19px; display: block; line-height: 1.1; }
     .sticky-buy .price { font-size: 15px; color: var(--ink-2); }
   }
+  .kit-media { position: relative; }
+  .kit-media .kit-bag { width: 46%; transform: translateX(-12%); }
+  html[dir='rtl'] .kit-media .kit-bag { transform: translateX(12%); }
+  .kit-media .kit-packs { position: absolute; inset-inline-end: 12%; bottom: 14%; width: 22%; display: grid; }
+  .kit-media .kit-packs :global(.sachet:nth-child(n+2)) { margin-top: -36%; }
+  .kit-media .kit-packs :global(.sachet:nth-child(2)) { transform: rotate(-6deg); }
+  .kit-media .kit-packs :global(.sachet:nth-child(3)) { transform: rotate(5deg); }
+  .pack-media :global(.sachet) { width: 42%; }
+  .inbox { display: grid; gap: 10px; padding: 18px 20px; border-radius: 24px; border-bottom-left-radius: 6px; background: var(--sheet); }
+  .inbox ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .inbox li { display: grid; gap: 2px; }
+  .inbox a { font-weight: 600; color: var(--bunn); }
+  .inbox p { margin: 0; }
+  .kit-links { display: flex; flex-wrap: wrap; gap: 8px; }
+  .styles { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .styles legend { font-family: var(--display); font-weight: 700; font-size: 21px; margin-bottom: 10px; }
+  .styles label { position: relative; }
+  .styles input { position: absolute; opacity: 0; }
+  .styles label > span { display: grid; gap: 2px; padding: 12px 16px; border-radius: 18px; box-shadow: inset 0 0 0 1.5px var(--line); cursor: pointer; }
+  .styles small { font-size: 14px; color: var(--ink-2); }
+  .styles input:checked + span { box-shadow: inset 0 0 0 2px var(--bunn); background: var(--sheet); border-bottom-right-radius: 5px; }
+  .styles input:focus-visible + span { outline: 2.5px solid var(--tamr); outline-offset: 3px; }
+  .styles .try { font-size: 14.5px; margin-top: 4px; }
+  .styles .try a { color: var(--tamr); font-weight: 600; }
   .pdp-media img { border-radius: 40px; border-bottom-left-radius: 8px; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
   .pdp-info { display: grid; gap: 20px; align-content: start; }
   .fam { font-weight: 600; color: var(--tamr); }

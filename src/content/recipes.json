@@ -1,8 +1,8 @@
 {
   "palm": {
     "title": {
-      "en": "The dallah, Gulf way",
-      "ar": "الدلّة على طريقة الخليج"
+      "en": "Gulf coffee in the dallah",
+      "ar": "القهوة الخليجية في الدلّة"
     },
     "vessel": {
       "en": "Dallah or small pot",
@@ -21,10 +21,16 @@
       },
       {
         "t": {
-          "en": "Add 2 heaped tablespoons (about 15 g) of coffee. Simmer gently.",
-          "ar": "أضف ملعقتين كبيرتين ممتلئتين (نحو ١٥ غ) من القهوة، واتركها تغلي بهدوء."
+          "en": "Add the coffee: [TBD] g for this pot. Simmer gently.",
+          "ar": "أضف القهوة: [يُحدد لاحقاً] غ لهذا الإبريق، واتركها تغلي بهدوء."
         },
         "secs": 600
+      },
+      {
+        "t": {
+          "en": "Making a style? Add its pack now: the Qassim or Hijazi blend. [TBD: amount and timing]",
+          "ar": "تصنع طريقة أهلك؟ أضف ظرفها الآن: الخلطة القصيمية أو الحجازية. [يُحدد لاحقاً: الكمية والتوقيت]"
+        }
       },
       {
         "t": {
@@ -35,8 +41,8 @@
       },
       {
         "t": {
-          "en": "Pour through a fine filter into the serving dallah.",
-          "ar": "صبّها عبر مصفاة ناعمة في دلّة التقديم."
+          "en": "Put the saffron in the serving dallah (Najdi, Qassimi and Hijazi), then pour through a fine filter onto it. [TBD: amount]",
+          "ar": "ضع الزعفران في دلّة التقديم (للنجدية والقصيمية والحجازية)، ثم صبّ القهوة عليه عبر مصفاة ناعمة. [يُحدد لاحقاً: الكمية]"
         }
       }
     ],
@@ -47,8 +53,8 @@
   },
   "mountain": {
     "title": {
-      "en": "The Yemeni pot",
-      "ar": "الإبريق اليمني"
+      "en": "Yemeni qahwa in the pot",
+      "ar": "القهوة اليمنية في الإبريق"
     },
     "vessel": {
       "en": "Small pot",
@@ -67,8 +73,8 @@
       },
       {
         "t": {
-          "en": "Add 2 tablespoons (about 14 g) of coffee and let it rise (mufawar).",
-          "ar": "أضف ملعقتين كبيرتين (نحو ١٤ غ) من القهوة ودعها تفور."
+          "en": "Add the coffee ([TBD] g) and, for a style, its pack: Hadrami, Rada’i or Baydani ([TBD] g). Let it rise (mufawar).",
+          "ar": "أضف القهوة ([يُحدد لاحقاً] غ)، ومع طريقة أهلك ظرفها: حضرمية أو رداعية أو بيضانية ([يُحدد لاحقاً] غ). دعها تفور."
         },
         "secs": 180
       },
@@ -82,7 +88,7 @@
       {
         "t": {
           "en": "Rest so the grounds settle, then pour.",
-          "ar": "اتركها لتهدأ الحبيبات، ثم صبّ."
+          "ar": "اتركها لترسب القهوة، ثم صبّ."
         },
         "secs": 60
       }
@@ -94,11 +100,11 @@
   },
   "house": {
     "title": {
-      "en": "The Shami pot (rakweh)",
-      "ar": "الركوة الشامية"
+      "en": "Shami coffee in the rakwa",
+      "ar": "القهوة الشامية في الركوة"
     },
     "vessel": {
-      "en": "Rakweh",
+      "en": "Rakwa",
       "ar": "ركوة"
     },
     "yields": {
@@ -108,8 +114,8 @@
     "steps": [
       {
         "t": {
-          "en": "Per cup: 90 ml of cold water and 1 heaped teaspoon (about 7 g) of coffee. Sugar now, if you take it.",
-          "ar": "لكل فنجان: ٩٠ مل ماء بارد وملعقة صغيرة ممتلئة (نحو ٧ غ) من القهوة. والسكر الآن إن كنت تشربها حلوة."
+          "en": "Per cup: 90 ml of cold water and [TBD] g of coffee. Sugar now, if you take it.",
+          "ar": "لكل فنجان: ٩٠ مل ماء بارد و[يُحدد لاحقاً] غ من القهوة. والسكر الآن إن كنت تشربها محلّاة."
         }
       },
       {
@@ -141,41 +147,29 @@
   },
   "husk": {
     "title": {
-      "en": "Qishr, hot or cold",
-      "ar": "القشر ساخناً أو بارداً"
+      "en": "Qishr, in the pot",
+      "ar": "القشر، في الإبريق"
     },
     "vessel": {
-      "en": "Pot, or a jar for cold",
-      "ar": "إبريق، أو مرطبان للبارد"
+      "en": "Small pot",
+      "ar": "إبريق صغير"
     },
     "yields": {
-      "en": "2 cups hot, 1 litre cold",
-      "ar": "فنجانان ساخناً، لتر بارداً"
+      "en": "About 2 cups",
+      "ar": "نحو فنجانين"
     },
     "steps": [
       {
         "t": {
-          "en": "Hot: 2 tablespoons (about 10 g) of husk and a slice of ginger in 500 ml of water. Simmer.",
-          "ar": "ساخناً: ملعقتان كبيرتان (نحو ١٠ غ) من القشر وشريحة زنجبيل في ٥٠٠ مل ماء، على نار هادئة."
+          "en": "Hot: [TBD] g of qishr (the ginger is already in it) in 500 ml of water. Simmer.",
+          "ar": "ساخناً: [يُحدد لاحقاً] غ من القشر (الزنجبيل فيه من الأصل) في ٥٠٠ مل من الماء، واتركه يغلي بهدوء."
         },
         "secs": 600
       },
       {
         "t": {
           "en": "Strain. Sweeten lightly if you like.",
-          "ar": "صفِّه، وحلِّه قليلاً إن شئت."
-        }
-      },
-      {
-        "t": {
-          "en": "Cold: steep 20 g of husk in 1 litre of cold water in the fridge for 12 hours.",
-          "ar": "بارداً: انقع ٢٠ غ من القشر في لتر ماء بارد في الثلاجة ١٢ ساعة."
-        }
-      },
-      {
-        "t": {
-          "en": "Strain over ice. Add peach, hibiscus, pomegranate or mango.",
-          "ar": "صفِّه على الثلج، وأضف الخوخ أو الكركديه أو الرمان أو المانجو."
+          "ar": "صفّه، وحلّه قليلاً إن أحببت."
         }
       }
     ],

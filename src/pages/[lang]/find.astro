@@ -1,0 +1,168 @@
+---
+// "Find your coffee": three questions, one answer. The cup you grew up with, how your family makes
+// it, and allergies at home. Newcomers are pointed to a discovery pack.
+import Base from '../../layouts/Base.astro';
+import Pair from '../../components/Pair.astro';
+import { PRODUCTS, kitInside, allergyNote, type Lang } from '../../data/products';
+import { path } from '../../data/i18n';
+
+export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
+const lang = Astro.params.lang as Lang;
+const ar = lang === 'ar';
+const L = (en: string, a: string) => (ar ? a : en);
+type Opt = { v: string; t: string; s?: string };
+const Q1: Opt[] = [
+  { v: 'gulf', t: L('Gulf qahwa', 'القهوة الخليجية'), s: L('Pale and golden, poured from the dallah', 'شقراء وذهبية، تُصبّ من الدلّة') },
+  { v: 'yemen', t: L('Yemeni coffee', 'القهوة اليمنية'), s: L('From the pot, warm with ginger', 'من الإبريق، دافئة بالزنجبيل') },
+  { v: 'shami', t: L('Shami coffee', 'القهوة الشامية'), s: L('Thick, with its foam, from the rakwa', 'كثيفة برغوتها، من الركوة') },
+  { v: 'new', t: L('None yet, I am new to it', 'لا شيء بعد، أنا جديد عليها') },
+];
+const Q2: Record<string, Opt[]> = {
+  gulf: [
+    { v: 'najdi', t: L('With saffron', 'بالزعفران'), s: L('Najdi', 'نجدية') },
+    { v: 'gulf', t: L('Cardamom only', 'بالهيل فقط'), s: L('Gulf coffee, cardamom only', 'قهوة خليجية، بالهيل فقط') },
+    { v: 'qassimi', t: L('Richer, the Qassim way', 'أغنى، على طريقة القصيم'), s: L('Qassimi', 'قصيمية') },
+    { v: 'hijazi', t: L('More fragrant, the Hijaz way', 'أعطر، على طريقة الحجاز'), s: L('Hijazi', 'حجازية') },
+    { v: 'taste-gulf', t: L('Not sure, I want to try', 'لست متأكداً، أريد أن أجرّب') },
+  ],
+  yemen: [
+    { v: 'yemeni', t: L('With hawaij, as it is', 'بالحوائج، كما هي'), s: L('Yemeni qahwa', 'قهوة يمنية') },
+    { v: 'hadrami', t: L('The Hadramawt way', 'على طريقة حضرموت'), s: L('Hadrami', 'حضرمية') },
+    { v: 'radai', t: L('With sesame and almonds', 'بالسمسم واللوز'), s: L('Rada’i', 'رداعية') },
+    { v: 'baydani', t: L('With sorghum', 'بالذرة'), s: L('Baydani', 'بيضانية') },
+    { v: 'jubani', t: L('Coffee with its husk', 'البن مع قشره'), s: L('Jubani', 'جُبَني') },
+    { v: 'qishr', t: L('Light, like tea: the husk', 'خفيفة مثل الشاي: القشر'), s: L('Qishr', 'قشر') },
+    { v: 'taste-yemen', t: L('Not sure, I want to try', 'لست متأكداً، أريد أن أجرّب') },
+  ],
+  shami: [
+    { v: 'shami', t: L('With cardamom', 'بالهيل'), s: L('Shami coffee with cardamom', 'قهوة شامية بالهيل') },
+    { v: 'shami-sada', t: L('Plain', 'سادة'), s: L('Shami sada', 'قهوة شامية سادة') },
+  ],
+  new: [
+    { v: 'taste-gulf', t: L('Light and golden', 'خفيفة وذهبية'), s: L('Start with Taste the Gulf', 'ابدأ بتذوّق الخليج') },
+    { v: 'taste-yemen', t: L('Warm and spiced', 'دافئة ومبهّرة'), s: L('Start with Taste Yemen', 'ابدأ بتذوّق اليمن') },
+    { v: 'shami', t: L('Thick and strong', 'كثيفة وقوية'), s: L('Start with Shami coffee', 'ابدأ بالقهوة الشامية') },
+  ],
+};
+const Q3: Opt[] = [
+  { v: '', t: L('No allergies', 'لا حساسية') },
+  { v: 'sesame', t: L('Sesame', 'سمسم') },
+  { v: 'nuts', t: L('Tree nuts', 'مكسرات') },
+  { v: 'milk', t: L('Milk', 'حليب') },
+  { v: 'grain', t: L('Grain', 'حبوب') },
+];
+// Everything the answer needs, from the product file.
+const data = Object.fromEntries(PRODUCTS.filter(p => p.kind === 'coffee' || p.kind === 'kit').map(p => {
+  const packs = p.kind === 'kit' ? p.parts.map(x => PRODUCTS.find(y => y.id === x.id)).filter(Boolean) as any[] : [];
+  return [p.id, {
+    name: p.name[lang], notes: p.notes[lang], href: path(lang, `shop/${p.id}`),
+    inside: p.kind === 'kit' ? kitInside(p, lang) : `${p.name[lang]} ${p.size}`,
+    allergens: [...new Set(packs.flatMap(x => x.allergens))], tbd: packs.some(x => x.maybe),
+    allergy: p.kind === 'kit' ? allergyNote(p, lang).text : L('Coffee and spice only', 'قهوة وبهار فقط'),
+    base: p.kind === 'kit' ? p.base : p.id,
+  }];
+}));
+const words = {
+  avoid: L('{name} has {what} in its pack, so it is not for your house. Try this instead:', '{name} فيها {what} في ظرفها، فهي ليست لبيتكم. جرّب هذه بدلاً منها:'),
+  tbd: L('The allergens in one of its packs are still being confirmed. Ask us before you order.', 'مسببات الحساسية في أحد ظروفها ما زالت تُؤكد. اسألنا قبل أن تطلب.'),
+  packs: L('Already have a bag at home? Take just the pack.', 'عندك كيس في البيت؟ خذ الظرف وحده.'),
+};
+const allergenName: Record<string, string> = { sesame: L('sesame', 'سمسم'), nuts: L('almonds', 'لوز'), milk: L('milk', 'حليب'), grain: L('grain', 'حبوب') };
+---
+<Base lang={lang} title={ar ? 'اعثر على قهوتك' : 'Find your coffee'} current="shop" description={ar ? 'ثلاثة أسئلة لتجد قهوتك عند حكاية.' : 'Three questions to find your Hikaya coffee.'}>
+  <section class="wrap find">
+    <div class="find-head">
+      <h1 class="h-l">{ar ? 'اعثر على قهوتك' : 'Find your coffee'}</h1>
+      <Pair lang={lang} size="s" bunn={{ ar: 'ثلاثة أسئلة فقط.', en: 'Only three questions.' }} tamr={{ ar: 'وأنا أختار التمرة بعدها.', en: 'Then I choose the date.' }} />
+    </div>
+
+    <form class="qs" id="find" onsubmit="return false">
+      <fieldset data-q="1">
+        <legend><span>1</span>{ar ? 'أي فنجان كبرت معه؟' : 'Which cup did you grow up with?'}</legend>
+        <div class="opts">{Q1.map(o => <label><input type="radio" name="q1" value={o.v} /><span><b>{o.t}</b>{o.s && <small>{o.s}</small>}</span></label>)}</div>
+      </fieldset>
+      {Object.entries(Q2).map(([k, opts]) => (
+        <fieldset data-q="2" data-for={k} hidden>
+          <legend><span>2</span>{k === 'new' ? (ar ? 'ما الذي يناسبك؟' : 'What sounds good?') : (ar ? 'كيف يصنعها أهلك؟' : 'How does your family make it?')}</legend>
+          <div class="opts">{opts.map(o => <label><input type="radio" name={`q2-${k}`} value={o.v} /><span><b>{o.t}</b>{o.s && <small>{o.s}</small>}</span></label>)}</div>
+        </fieldset>
+      ))}
+      <fieldset data-q="3" hidden>
+        <legend><span>3</span>{ar ? 'هل في البيت حساسية من شيء؟' : 'Any allergies at home?'}</legend>
+        <div class="opts">{Q3.map(o => <label><input type="radio" name="q3" value={o.v} /><span><b>{o.t}</b></span></label>)}</div>
+      </fieldset>
+    </form>
+
+    <div class="result" id="result" hidden aria-live="polite">
+      <p class="label">{ar ? 'قهوتك' : 'Your coffee'}</p>
+      <p class="warn" id="rWarn" hidden></p>
+      <h2 class="h-m" id="rName"></h2>
+      <p id="rNotes"></p>
+      <p class="muted" id="rInside"></p>
+      <p class="allergy" id="rAllergy"></p>
+      <p class="muted" id="rTbd" hidden>{words.tbd}</p>
+      <div class="cta">
+        <a class="btn primary" id="rGo" href="#">{ar ? 'إلى القهوة' : 'See this coffee'}</a>
+        <a class="btn ghost" href={path(lang, 'shop') + '#packs'}>{words.packs}</a>
+      </div>
+      <button type="button" class="again" id="again">{ar ? 'ابدأ من جديد' : 'Start again'}</button>
+    </div>
+  </section>
+  <script type="application/json" id="findData" set:html={JSON.stringify({ data, words, allergenName })} />
+</Base>
+
+<script>
+  const { data, words, allergenName } = JSON.parse(document.getElementById('findData')!.textContent || '{}');
+  const form = document.getElementById('find') as HTMLFormElement;
+  const $ = (id: string) => document.getElementById(id)!;
+  const val = (n: string) => (form.querySelector<HTMLInputElement>(`input[name="${n}"]:checked`)?.value ?? null);
+  // A safe alternative when the house has an allergy: the plain bag of the same line.
+  function pick() {
+    const q1 = val('q1'); if (!q1) return null;
+    const q2 = val(`q2-${q1}`); if (!q2) return null;
+    const q3 = val('q3'); if (q3 === null) return null;
+    let id = q2, warn = '';
+    const p = data[id];
+    if (q3 && p.allergens.includes(q3)) {
+      warn = words.avoid.replace('{name}', p.name).replace('{what}', allergenName[q3]);
+      id = p.base;
+    }
+    return { id, warn };
+  }
+  function show() {
+    const q1 = val('q1');
+    form.querySelectorAll<HTMLElement>('[data-q="2"]').forEach(f => { f.hidden = f.dataset.for !== q1; });
+    (form.querySelector('[data-q="3"]') as HTMLElement).hidden = !(q1 && val(`q2-${q1}`));
+    const r = pick();
+    $('result').hidden = !r;
+    if (!r) return;
+    const p = data[r.id];
+    $('rWarn').hidden = !r.warn; $('rWarn').textContent = r.warn;
+    $('rName').textContent = p.name; $('rNotes').textContent = p.notes; $('rInside').textContent = p.inside;
+    $('rAllergy').textContent = p.allergy; $('rTbd').hidden = !p.tbd;
+    ($('rGo') as HTMLAnchorElement).href = p.href;
+    $('result').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+  }
+  form.addEventListener('change', show);
+  $('again').addEventListener('click', () => { form.reset(); show(); window.scrollTo({ top: 0 }); });
+</script>
+
+<style>
+  .find { display: grid; gap: 28px; padding-block: clamp(40px, 6vw, 80px); max-width: 860px; }
+  .find-head { display: grid; gap: 18px; }
+  .qs { display: grid; gap: 26px; }
+  .qs fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .qs legend { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 700; font-size: 22px; margin-bottom: 12px; }
+  .qs legend span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--bunn); color: var(--paper); font-size: 15px; }
+  .opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 10px; }
+  .opts label { position: relative; }
+  .opts input { position: absolute; opacity: 0; }
+  .opts span { display: grid; gap: 2px; height: 100%; padding: 12px 16px; border-radius: 18px; box-shadow: inset 0 0 0 1.5px var(--line); cursor: pointer; }
+  .opts small { color: var(--ink-2); font-size: 14px; }
+  .opts input:checked + span { box-shadow: inset 0 0 0 2px var(--bunn); background: var(--sheet); border-bottom-right-radius: 5px; }
+  .opts input:focus-visible + span { outline: 2.5px solid var(--tamr); outline-offset: 3px; }
+  .result { display: grid; gap: 10px; padding: 24px; border-radius: 32px; border-bottom-right-radius: 6px; background: var(--sheet); }
+  .result .warn { margin: 0; padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, var(--khalal) 22%, var(--sheet)); font-weight: 600; }
+  .result .cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+  .again { justify-self: start; border: 0; background: none; padding: 6px 0; color: var(--tamr); font-weight: 600; text-decoration: underline; }
+</style>
