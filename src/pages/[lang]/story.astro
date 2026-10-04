@@ -39,6 +39,17 @@ const STAGES = [
       <h1 id="s-h" class="h-xl">{ar ? 'حكاية' : 'Hikaya means “a story”.'}</h1>
       <p class="lead">{ar ? 'وكل حكاية تحتاج اثنين.' : 'And every story needs two.'}</p>
     </div>
+    <div class="film" id="film">
+    <div class="stage" id="stage" hidden>
+      <svg viewBox="-100 0 798 650" aria-hidden="true"><g transform={lG}>
+        <path class="st-tamr" fill="#A93B28" d={lTamr} />
+        <path class="st-bunn" fill="#33211A" d={lBunn} />
+        <path class="st-dash" fill="none" stroke="#F5EFE3" stroke-width="1" stroke-dasharray="2.5 2" d={lSeed} />
+        <g class="st-gold"><path fill="#CF9C0C" d={lSeed} /><path fill="#33211A" d={lGroove} /></g>
+        <path class="st-dots" fill="#F5EFE3" d={lDots} />
+      </g></svg>
+      <div class="cap" aria-hidden="true"><span class="n"></span><h2></h2><p></p></div>
+    </div>
     <ol class="steps">
       {STEPS.map((st, i) => (
         <li style={`--i:${i}`}>
@@ -49,11 +60,14 @@ const STAGES = [
             {st.lens === 'gold' && <><path fill="#CF9C0C" d={lSeed} /><path fill="#33211A" d={lGroove} /></>}
             {st.dots && <path fill="#F5EFE3" d={lDots} />}
           </g></svg>
-          <h2><span class="n">{ar ? ['١', '٢', '٣', '٤', '٥'][i] : `0${i + 1}`}</span>{st.t[lang]}</h2>
+          <h2><span class="n">{ar ? ['١', '٢', '٣', '٤', '٥'][i] : `0${i + 1}`}</span><span class="t">{st.t[lang]}</span></h2>
           <p>{st.d[lang]}</p>
         </li>
       ))}
     </ol>
+    </div>
+    <script is:inline>if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { document.currentScript.closest('section').classList.add('playing'); }</script>
+    <button type="button" class="again" id="again" hidden>{ar ? 'شاهدها مرة أخرى' : 'Watch again'}</button>
   </section>
 
   <section class="chars">
@@ -118,6 +132,65 @@ const STAGES = [
   </section>
 </Base>
 
+<script>
+  // Story page: the logo builds itself step by step, then settles into the five frames.
+  const hero = document.querySelector<HTMLElement>('.s-hero');
+  const stage = document.getElementById('stage');
+  const again = document.getElementById('again');
+  if (hero && stage && again && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const frames = [...hero.querySelectorAll<HTMLElement>('.steps li')];
+    const cap = stage.querySelector<HTMLElement>('.cap')!;
+    const art = stage.querySelector<SVGElement>('svg')!;
+    const BEATS = [300, 1700, 3100, 4600, 6000];
+    const END = 7600;
+    let timers: number[] = [];
+    let running = false;
+    const show = (n: number) => {
+      const f = frames[n - 1];
+      cap.classList.add('out');
+      timers.push(window.setTimeout(() => {
+        cap.querySelector('.n')!.textContent = f.querySelector('.n')!.textContent;
+        cap.querySelector('h2')!.textContent = f.querySelector('.t')!.textContent;
+        cap.querySelector('p')!.textContent = f.querySelector('p')!.textContent;
+        cap.classList.remove('out');
+      }, n === 1 ? 0 : 300));
+      stage.classList.add(`on-${n}`);
+    };
+    const finish = () => {
+      if (!running) return;
+      running = false;
+      timers.forEach(clearTimeout); timers = [];
+      for (let n = 1; n <= 5; n++) stage.classList.add(`on-${n}`);
+      const last = frames[frames.length - 1].querySelector('svg')!;
+      const a = art.getBoundingClientRect(), b = last.getBoundingClientRect();
+      const visible = b.left >= 0 && b.right <= innerWidth;
+      const done = () => { stage.hidden = true; hero.classList.remove('playing'); hero.classList.add('settle'); again.hidden = false; };
+      cap.classList.add('out');
+      if (visible && a.width) {
+        art.style.transformOrigin = '0 0';
+        art.animate([{ transform: 'none' }, { transform: `translate(${b.left - a.left}px, ${b.top - a.top}px) scale(${b.width / a.width})` }],
+          { duration: 700, easing: 'cubic-bezier(.5, 0, .2, 1)', fill: 'forwards' }).finished.then(done);
+      } else {
+        stage.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: 'forwards' }).finished.then(done);
+      }
+    };
+    const play = () => {
+      running = true;
+      hero.classList.remove('settle');
+      hero.classList.add('playing');
+      again.hidden = true;
+      stage.getAnimations({ subtree: true }).forEach(x => x.cancel());
+      stage.className = 'stage';
+      stage.hidden = false;
+      BEATS.forEach((t, i) => timers.push(window.setTimeout(() => show(i + 1), t)));
+      timers.push(window.setTimeout(finish, END));
+    };
+    stage.addEventListener('click', finish);
+    again.addEventListener('click', play);
+    play();
+  }
+</script>
+
 <style>
   .why { display: grid; gap: 18px; }
   .bt-link { margin-top: 20px; }
@@ -138,8 +211,37 @@ const STAGES = [
     .steps { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 62%; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 16px; padding-bottom: 12px; margin-inline: -16px; padding-inline: 16px; }
     .steps li { scroll-snap-align: start; }
   }
-  @media (prefers-reduced-motion: no-preference) {
-    .steps li { animation: rise .6s ease-out both; animation-delay: calc(.15s + var(--i) * .35s); }
+  .film { position: relative; }
+  .stage { position: absolute; inset: 0; z-index: 1; display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: clamp(24px, 4vw, 64px); align-items: center; cursor: pointer; }
+  .stage[hidden] { display: none; }
+  .stage svg { width: 100%; height: auto; display: block; }
+  .playing .steps { visibility: hidden; }
+  .playing .film { min-height: clamp(380px, 34vw, 440px); }
+  .cap { display: grid; gap: 10px; max-width: 34ch; transition: opacity .35s; }
+  .cap.out { opacity: 0; }
+  .cap h2 { font-size: clamp(30px, 3.4vw, 48px); }
+  .cap p { margin: 0; color: var(--ink-2); font-size: 19px; }
+  .cap .n { font: 600 14px/1 var(--body); color: var(--ink-2); letter-spacing: .06em; }
+  .stage path, .stage g { transition: opacity .6s ease, transform .9s cubic-bezier(.3, .8, .3, 1); }
+  .st-bunn { transform-box: fill-box; transform-origin: center; transform: scale(.7); }
+  .st-bunn, .st-tamr, .st-dash, .st-gold, .st-dots { opacity: 0; }
+  .st-tamr { transform: translate(-22px, 14px); }
+  .on-1 .st-bunn { opacity: 1; transform: none; }
+  .on-2 .st-tamr { opacity: 1; }
+  .on-3 .st-tamr { transform: none; }
+  .on-3 .st-dash { opacity: 1; transition-delay: .7s; }
+  .on-4 .st-dash { opacity: 0; transition-delay: 0s; }
+  .on-4 .st-gold, .on-5 .st-dots { opacity: 1; }
+  .settle .steps li { animation: rise .5s ease-out both; animation-delay: calc(var(--i) * .12s); }
+  .settle .steps li:last-child { animation: none; }
+  .again { justify-self: start; background: none; border: 0; padding: 4px 0; font: 600 15px var(--body); color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .again[hidden] { display: none; }
+  @media (max-width: 900px) {
+    .stage { grid-template-columns: 1fr; align-content: start; justify-items: center; text-align: center; }
+    .stage svg { max-width: 300px; }
+    .cap { justify-items: center; width: 100%; max-width: none; }
+    .cap p { font-size: 17px; }
+    .playing .film { min-height: 470px; }
   }
   @keyframes rise { from { opacity: 0; translate: 0 10px; } }
   .chars { padding-bottom: 24px; }
