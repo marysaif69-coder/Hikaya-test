@@ -237,7 +237,7 @@ export async function missed(s: Session, ref: string, why: string) {
 // ---------- owners: the drivers, assignments and cash ----------
 export async function teamList() {
   const people = await sql`SELECT m.*, (SELECT COUNT(*)::int FROM orders o WHERE o.delivered_by = m.email AND o.delivered_at > NOW() - INTERVAL '7 days') AS week,
-      (SELECT COUNT(*)::int FROM orders o WHERE o.delivered_by = m.email AND o.delivered_at > date_trunc('month', NOW())) AS month,
+      (SELECT COUNT(*)::int FROM orders o WHERE o.delivered_by = m.email AND o.delivered_at > date_trunc('month', NOW(), 'America/Edmonton')) AS month,
       (SELECT COALESCE(SUM(collected_cents), 0)::int FROM orders o WHERE o.collected_by = m.email AND o.collected_method = 'cash' AND o.cash_handed_in_at IS NULL) AS cash
     FROM team_members m ORDER BY m.status = 'off', m.created_at`;
   const d = (v: unknown) => (v ? (v instanceof Date ? v.toISOString() : String(v)).slice(0, 10) : null);

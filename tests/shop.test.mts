@@ -1216,4 +1216,11 @@ await call(admin, '/api/admin/settings', { cookie: adm, body: { closedDates: [..
 assert.equal((await call(orders, '/api/my/orders/move', { cookie: await login('closedday@example.com'), body: { ref: clO.data.ref, day: '2027-07-16', window: '11:00–14:00' } })).status, 200);
 await call(admin, '/api/admin/settings', { cookie: adm, body: { closedDates: clSet } }); ok('a day closed after booking: the customer can still move the order to an open day');
 
+// ---------- the monthly report counts months in Calgary time ----------
+const tz = await order({ email: 'lastevening@example.com', day: '2027-07-22' });
+await pg.query(`UPDATE orders SET created_at = '2027-02-01T03:00:00Z' WHERE ref = $1`, [tz.data.ref]); // 31 Jan, 8 pm in Calgary
+const { monthlyReport } = await import('../netlify/lib/report');
+assert.equal((await monthlyReport('2027-02-01')).numbers.orders, 1); assert.equal((await monthlyReport('2027-03-01')).numbers.orders, 0);
+ok('an order on the last evening of January (Calgary time) counts in January');
+
 console.log(`\n${pass} checks passed`);

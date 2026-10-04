@@ -9,20 +9,21 @@ const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&a
 const monthStart = (date: string) => date.slice(0, 7) + '-01';
 const prevMonth = (first: string) => monthStart(addDays(first, -1));
 
+// Months start at midnight Calgary time, not UTC, so a last-evening order counts in its own month.
 async function numbersFor(from: string, to: string) {
   const s: any = await one`SELECT COUNT(*)::int AS orders, COALESCE(SUM(total_cents + gift_card_cents - GREATEST(refunded_cents - GREATEST(paid_cents - total_cents, 0), 0)), 0)::int AS sales, COALESCE(SUM(refunded_cents), 0)::int AS refunds,
       COALESCE(SUM(discount_cents), 0)::int AS discounts, COUNT(*) FILTER (WHERE method = 'delivery')::int AS deliveries, COUNT(DISTINCT email)::int AS customers
-    FROM orders WHERE NOT is_sample AND status <> 'cancelled' AND created_at >= ${from}::date AND created_at < ${to}::date`;
-  const repeat = await one`SELECT COUNT(*)::int AS n FROM (SELECT email FROM orders WHERE NOT is_sample AND status <> 'cancelled' AND created_at >= ${from}::date AND created_at < ${to}::date
-      AND email IN (SELECT email FROM orders WHERE NOT is_sample AND status <> 'cancelled' AND created_at < ${from}::date) GROUP BY email) x`;
+    FROM orders WHERE NOT is_sample AND status <> 'cancelled' AND created_at >= (${from}::date::timestamp AT TIME ZONE 'America/Edmonton') AND created_at < (${to}::date::timestamp AT TIME ZONE 'America/Edmonton')`;
+  const repeat = await one`SELECT COUNT(*)::int AS n FROM (SELECT email FROM orders WHERE NOT is_sample AND status <> 'cancelled' AND created_at >= (${from}::date::timestamp AT TIME ZONE 'America/Edmonton') AND created_at < (${to}::date::timestamp AT TIME ZONE 'America/Edmonton')
+      AND email IN (SELECT email FROM orders WHERE NOT is_sample AND status <> 'cancelled' AND created_at < (${from}::date::timestamp AT TIME ZONE 'America/Edmonton')) GROUP BY email) x`;
   const top = await sql`SELECT i.name_en AS name, SUM(i.qty)::int AS qty FROM order_items i JOIN orders o ON o.id = i.order_id
-    WHERE NOT o.is_sample AND o.status <> 'cancelled' AND o.created_at >= ${from}::date AND o.created_at < ${to}::date GROUP BY 1 ORDER BY qty DESC LIMIT 5`;
-  const gc = await one`SELECT COUNT(*)::int AS n, COALESCE(SUM(amount_cents), 0)::int AS cents FROM gift_cards WHERE paid_at >= ${from}::date AND paid_at < ${to}::date`;
-  const list = await one`SELECT COUNT(*)::int AS n FROM subscribers WHERE confirmed_at >= ${from}::date AND confirmed_at < ${to}::date AND unsubscribed_at IS NULL`;
+    WHERE NOT o.is_sample AND o.status <> 'cancelled' AND o.created_at >= (${from}::date::timestamp AT TIME ZONE 'America/Edmonton') AND o.created_at < (${to}::date::timestamp AT TIME ZONE 'America/Edmonton') GROUP BY 1 ORDER BY qty DESC LIMIT 5`;
+  const gc = await one`SELECT COUNT(*)::int AS n, COALESCE(SUM(amount_cents), 0)::int AS cents FROM gift_cards WHERE paid_at >= (${from}::date::timestamp AT TIME ZONE 'America/Edmonton') AND paid_at < (${to}::date::timestamp AT TIME ZONE 'America/Edmonton')`;
+  const list = await one`SELECT COUNT(*)::int AS n FROM subscribers WHERE confirmed_at >= (${from}::date::timestamp AT TIME ZONE 'America/Edmonton') AND confirmed_at < (${to}::date::timestamp AT TIME ZONE 'America/Edmonton') AND unsubscribed_at IS NULL`;
   const visits = await one`SELECT COALESCE(SUM(n), 0)::int AS n FROM page_views WHERE day >= ${from}::date AND day < ${to}::date`;
   const regular = await one`SELECT COUNT(*)::int AS n FROM subscriptions WHERE status = 'active'`;
-  const ask = await one`SELECT COUNT(*)::int AS n FROM chats WHERE created_at >= ${from}::date AND created_at < ${to}::date`;
-  const help = await one`SELECT COUNT(*)::int AS n FROM tickets WHERE created_at >= ${from}::date AND created_at < ${to}::date`;
+  const ask = await one`SELECT COUNT(*)::int AS n FROM chats WHERE created_at >= (${from}::date::timestamp AT TIME ZONE 'America/Edmonton') AND created_at < (${to}::date::timestamp AT TIME ZONE 'America/Edmonton')`;
+  const help = await one`SELECT COUNT(*)::int AS n FROM tickets WHERE created_at >= (${from}::date::timestamp AT TIME ZONE 'America/Edmonton') AND created_at < (${to}::date::timestamp AT TIME ZONE 'America/Edmonton')`;
   return { ...s!, repeat: repeat!.n, top, giftCards: gc!, newSubscribers: list!.n, visits: visits!.n, regular: regular!.n, ask: ask?.n ?? 0, help: help?.n ?? 0 };
 }
 
