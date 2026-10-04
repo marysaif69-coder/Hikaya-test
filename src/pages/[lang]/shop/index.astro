@@ -444,9 +444,8 @@ const DATE_PICKS = [
   /* Speech-bubble cards: one tightened tail corner (DESIGN.md). */
   .ed, .beans-facts li { border-bottom-left-radius: 6px; }
   /* Yemeni beans: the page stays light; the boxes carry the black, with gold accents. */
-  #view-beans :global(.pc-media) { background: #1C1714; }
-  #view-beans :global(.black-box > rect:first-child) { fill: #1C1714; }
-  #view-beans :global(.black-box > ellipse) { opacity: .35; }
+  /* Light card so the black box stands out (a black box on black got lost). */
+  #view-beans :global(.pc-media) { background: #EFE7DA; }
   #view-beans .slogan { color: #A67C0A; }
   #view-beans .beans-facts li { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, #CF9C0C 45%, var(--line)); }
   #view-beans .beans-facts b { color: #33211A; }
