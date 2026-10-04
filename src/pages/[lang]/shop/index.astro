@@ -14,7 +14,11 @@ const ar = lang === 'ar';
 // Three lines. Each starts with the bag; the family styles are the bag plus its packs.
 const lines = (['gulf', 'yemen', 'shami'] as CoffeeLine[]).map(l => ({
   id: l, bases: COFFEES.filter(c => c.line === l), styles: KITS.filter(k => k.line === l && !k.discovery),
-}));
+})).map(l => l.styles.length
+  // Where a line has styles, its other bags (Jubani, Qishr) are ways of their own and stand with
+  // the styles; only the main bag stays under "Or the bag on its own".
+  ? { ...l, bases: l.bases.slice(0, 1), ways: [...l.styles, ...l.bases.slice(1)] }
+  : { ...l, ways: [] as typeof l.bases });
 const discovery = KITS.filter(k => k.discovery);
 const others = [
   { id: 'dates', items: BOXES.filter(b => b.fam === 'dates') },
@@ -28,6 +32,7 @@ const PICK_LINE: Record<CoffeeLine, { en: string; ar: string }> = {
   shami: { en: 'Powder-fine, with foam, from the rakwa', ar: 'ناعمة برغوتها، من الركوة' },
 };
 const T = {
+  yemenNote: { en: 'Hadrami, Rada’i and Baydani are the Yemeni bag with its sealed pack, ginger included, in one box at one price. Jubani (the coffee with its own husk) and Qishr (the husk alone, with ginger) are bags of their own.', ar: 'الحضرمية والرداعية والبيضانية هي الكيس اليمني مع ظرفه المختوم، وفيه الزنجبيل، في علبة واحدة وبسعر واحد. والجُبَني (القهوة مع قشرها) والقشر (القشر وحده مع الزنجبيل) كيسان قائمان بذاتهما.' },
   bag: { en: 'The bag', ar: 'الكيس' },
   styles: { en: 'Make it the way your family does', ar: 'اصنعها على طريقة أهلك' },
   stylesNote: { en: 'Each style is the same bag with its sealed packs, in one box at one price. The spices that carry allergens stay in their packs, never in the coffee.', ar: 'كل طريقة هي الكيس نفسه مع ظروفه المختومة، في علبة واحدة وبسعر واحد. البهارات التي فيها مسببات حساسية تبقى في ظروفها، لا في القهوة.' },
@@ -72,7 +77,7 @@ const T = {
           <span class="pick-txt">
             <b>{LINES[l.id].name[lang]}</b>
             <small>{PICK_LINE[l.id][lang]}</small>
-            <em>{[...l.bases, ...l.styles].map(p => p.name[lang]).join(' · ')}</em>
+            <em>{[...l.bases, ...l.ways].map(p => p.name[lang]).join(' · ')}</em>
           </span>
         </button>
       ))}
@@ -94,8 +99,8 @@ const T = {
             <h2 class="h-m">{LINES[l.id].name[lang]}</h2>
             <p class="muted">{LINES[l.id].line[lang]}</p>
           </div>
-          <h3 class="step"><span>2</span>{l.styles.length ? T.styles[lang] : (ar ? 'اختر كيسك' : 'Choose your bag')}</h3>
-          {l.styles.length > 0 && <p class="muted step-note">{T.stylesNote[lang]}</p>}
+          <h3 class="step"><span>2</span>{l.ways.length ? T.styles[lang] : (ar ? 'اختر كيسك' : 'Choose your bag')}</h3>
+          {l.ways.length > 0 && <p class="muted step-note">{l.id === 'yemen' ? T.yemenNote[lang] : T.stylesNote[lang]}</p>}
           {discovery.filter(k => k.line === l.id).map(k => (
             <a class="try-box" href={path(lang, `shop/${k.id}`)}>
               <span class="try-pics">{k.parts.map(x => <Sachet pack={packOf(x.id)!} lang={lang} mini={x.mini} />)}</span>
@@ -103,8 +108,8 @@ const T = {
               <span class="try-go" aria-hidden="true">{ar ? '←' : '→'}</span>
             </a>
           ))}
-          {l.styles.length > 0 && <div class="grid">{l.styles.map(p => <ProductCard p={p} lang={lang} />)}</div>}
-          {l.styles.length > 0 && <h4 class="sub-h">{ar ? 'أو الكيس وحده' : 'Or the bag on its own'}</h4>}
+          {l.ways.length > 0 && <div class="grid">{l.ways.map(p => <ProductCard p={p} lang={lang} />)}</div>}
+          {l.ways.length > 0 && <h4 class="sub-h">{ar ? 'أو الكيس وحده' : 'Or the bag on its own'}</h4>}
           <div class="grid">{l.bases.map(p => <ProductCard p={p} lang={lang} />)}</div>
         </div>
       </section>

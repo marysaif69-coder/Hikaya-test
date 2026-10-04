@@ -29,6 +29,8 @@ const pairDate = cup ? DATES[cup.date] : null;
 const dateBox = PRODUCTS.find(o => o.id === 'date-box')!;
 // "Make it the way your family does": on a bag's page, the bag alone or one of its styles.
 const styles = p.kind === 'coffee' ? stylesFor(p.id) : [];
+// Other bags of the same line that are ways of their own (Jubani, Qishr on the Yemeni page).
+const ownWays = styles.length ? COFFEES.filter(c => c.line === (p as Coffee).line && c.id !== p.id) : [];
 const plain: Record<string, { en: string; ar: string }> = {
   gulf: { en: 'Gulf coffee, cardamom only', ar: 'قهوة خليجية، بالهيل فقط' },
   yemeni: { en: 'Yemeni qahwa, as it is', ar: 'قهوة يمنية، كما هي' },
@@ -121,6 +123,9 @@ const sizeText = p.kind === 'coffee' ? p.size : p.kind === 'kit' ? kitInside(p, 
             <label><input type="radio" name="style" value={p.id} checked data-priced={p.price != null ? '1' : ''} data-price-text={priceText(p.price, lang)} /><span><b>{plain[p.id]?.[lang] ?? p.name[lang]}</b><small>{L('Just the bag', 'الكيس وحده')}</small></span></label>
             {styles.map(k => (
               <label><input type="radio" name="style" value={k.id} data-priced={k.price != null ? '1' : ''} data-price-text={priceText(k.price, lang)} /><span><b>{k.name[lang]}</b><small>{L('The bag + ', 'الكيس + ')}{k.parts.map(x => packOf(x.id)!.name[lang]).join(' + ')}</small><small class={`allergy ${allergyNote(k, lang).none ? 'none' : ''}`}>{allergyNote(k, lang).text}</small></span></label>
+            ))}
+            {ownWays.map(c => (
+              <label><input type="radio" name="style" value={c.id} data-priced={c.price != null ? '1' : ''} data-price-text={priceText(c.price, lang)} /><span><b>{c.name[lang]}</b><small>{L('A bag of its own: ', 'كيس قائم بذاته: ')}{c.notes[lang]}</small></span></label>
             ))}
             {discoveryFor && <p class="muted try">{L('Not sure which? ', 'لست متأكداً؟ ')}<a href={path(lang, `shop/${discoveryFor.id}`)}>{discoveryFor.name[lang]}</a>{L(' has a small pack of each.', ' فيها ظرف صغير من كل طريقة.')}</p>}
           </fieldset>
