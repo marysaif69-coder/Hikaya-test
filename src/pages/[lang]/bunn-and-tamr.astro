@@ -1,0 +1,78 @@
+---
+// Bunn and Tamr talking, each line inside its own bubble from the logo (no seed, no dots), white on
+// the bubble's colour. One card per conversation, each can be saved as a 1080 × 1350 image for
+// Instagram. The lines live in src/content/conversations.json.
+import fs from 'node:fs';
+import Base from '../../layouts/Base.astro';
+import CONVOS from '../../content/conversations.json';
+import type { Lang } from '../../data/products';
+import { path } from '../../data/i18n';
+
+export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
+const lang = Astro.params.lang as Lang;
+const ar = lang === 'ar';
+const svg = fs.readFileSync('public/brand/logo.svg', 'utf8');
+const [tamr, , bunn] = [...svg.matchAll(/<path fill="(#[0-9A-F]+)" d="([^"]+)"\/>/g)].map(m => m[2]);
+const vb = svg.match(/viewBox="([^"]+)"/)![1];
+const g = svg.match(/<g transform="([^"]+)">/)![1];
+// Longer lines get a smaller size so they always fit inside the bubble.
+const size = (t: string) => (t.length <= 12 ? 1 : t.length <= 18 ? .86 : t.length <= 24 ? .74 : .64);
+---
+<Base lang={lang} title={ar ? 'بُن وتمر' : 'Bunn & Tamr'} current="story" description={ar ? 'حوارات بُن وتمر.' : 'Bunn and Tamr, talking.'}>
+  <section class="wrap bt-head">
+    <h1 class="h-l">{ar ? 'بُن وتمر' : 'Bunn & Tamr'}</h1>
+    <p class="lead">{ar ? 'بُن يتكلم أولاً، وتمر تردّ دائماً.' : 'Bunn speaks first. Tamr always answers.'}</p>
+    <p class="muted small">{ar ? 'احفظ أي حوار كصورة لإنستغرام.' : 'Save any conversation as an image for Instagram.'} <a href={path(lang, 'story')}>{ar ? 'من هما؟' : 'Who are they?'}</a></p>
+  </section>
+  <section class="wrap bt-grid">
+    {CONVOS.map((c, i) => (
+      <figure class="bt">
+        <div class="card" id={`bt-${i}`}>
+          <div class="art">
+            <svg viewBox={vb} aria-hidden="true"><g transform={g}><path fill="#A93B28" d={tamr} /><path fill="#33211A" d={bunn} /></g></svg>
+            <p class="line l-bunn" style={`--s:${size(c.bunn.ar)}`}><span lang="ar" dir="rtl">{c.bunn.ar}</span>{!ar && <small>{c.bunn.en}</small>}</p>
+            <p class="line l-tamr" style={`--s:${size(c.tamr.ar)}`}><span lang="ar" dir="rtl">{c.tamr.ar}</span>{!ar && <small>{c.tamr.en}</small>}</p>
+          </div>
+          <p class="mark"><b>حكاية</b><small>HIKAYA · @hikaya.yyc</small></p>
+        </div>
+        <figcaption><button type="button" class="save" data-save={i}>{ar ? 'احفظ الصورة' : 'Save image'}</button></figcaption>
+      </figure>
+    ))}
+  </section>
+</Base>
+
+<script>
+  import { toPng } from 'html-to-image';
+  document.querySelectorAll<HTMLButtonElement>('[data-save]').forEach(b => b.addEventListener('click', async () => {
+    const card = document.getElementById(`bt-${b.dataset.save}`)!;
+    b.disabled = true;
+    try {
+      await document.fonts.ready;
+      // Instagram portrait: 1080 × 1350.
+      const url = await toPng(card, { pixelRatio: 1, canvasWidth: 1080, canvasHeight: 1350, backgroundColor: '#F5EFE3', style: { borderRadius: '0', boxShadow: 'none' } });
+      const a = document.createElement('a'); a.href = url; a.download = `hikaya-bunn-tamr-${Number(b.dataset.save) + 1}.png`; a.click();
+    } finally { b.disabled = false; }
+  }));
+</script>
+
+<style>
+  .bt-head { display: grid; gap: 10px; padding-block: clamp(36px, 5vw, 64px) 24px; }
+  .small { font-size: 15px; }
+  .small a { color: var(--tamr); font-weight: 600; }
+  .bt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 28px; padding-bottom: 72px; }
+  .bt { margin: 0; display: grid; gap: 10px; }
+  .card { aspect-ratio: 4 / 5; background: var(--paper); border-radius: 24px; display: grid; grid-template-rows: 1fr auto; align-items: center; padding: 10% 8% 7%; box-shadow: inset 0 0 0 1.5px var(--line); container-type: inline-size; }
+  .art { position: relative; }
+  .art svg { width: 100%; height: auto; display: block; }
+  /* The lines sit where each bubble's body is (Bunn high right, Tamr low left), in white. */
+  .line { position: absolute; margin: 0; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: .3em; width: 36%; text-align: center; color: #F5EFE3; line-height: 1.25; }
+  .line span { font-family: var(--display); font-weight: 700; font-size: calc(7.6cqi * var(--s)); }
+  .line small { font: 500 calc(3.3cqi * var(--s))/1.25 var(--body); opacity: .85; }
+  .l-bunn { left: 69%; top: 35%; }
+  .l-tamr { left: 31%; top: 60%; }
+  .mark { margin: 0; display: grid; justify-items: center; gap: 4px; line-height: 1; }
+  .mark b { font-family: var(--display); font-size: 8cqi; color: var(--bunn); }
+  .mark small { font: 600 2.6cqi/1 var(--body); letter-spacing: .3em; color: var(--ink-2); }
+  .save { justify-self: start; border: 0; background: var(--bunn); color: var(--paper); border-radius: 999px; border-bottom-right-radius: 5px; padding: 9px 16px; font-weight: 600; font-size: 14.5px; cursor: pointer; }
+  .save:disabled { opacity: .5; }
+</style>

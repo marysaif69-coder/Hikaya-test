@@ -17,6 +17,7 @@
     "@netlify/functions": "^6.0.2",
     "@types/web-push": "^3.6.4",
     "astro": "^7.3.5",
+    "html-to-image": "^1.11.13",
     "web-push": "^3.6.7"
   },
   "devDependencies": {
