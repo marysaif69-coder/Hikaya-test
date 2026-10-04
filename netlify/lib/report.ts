@@ -3,6 +3,7 @@ import { sql, one } from './db';
 import { send, monthlyReportEmails } from './email';
 import { dollars } from './pricing';
 import { addDays } from './slots';
+import { env } from './http';
 
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const monthStart = (date: string) => date.slice(0, 7) + '-01';
@@ -44,12 +45,15 @@ export async function monthlyReport(today: string) {
   return { month: from.slice(0, 7), name, html, text, numbers: m };
 }
 
-/** On the 1st (Calgary time), once per month. */
+/** On the 1st (Calgary time), once per month; on the 2nd or 3rd if it didn't go out on the 1st. */
 export async function sendMonthlyReport(today: string, force = false) {
-  if (!force && today.slice(8, 10) !== '01') return null;
+  if (!force && Number(today.slice(8, 10)) > 3) return null;
   const r = await monthlyReport(today);
+  // Claimed before sending, so two runs can't both send it; given up again if nothing went out.
   const fresh = await one`INSERT INTO reports_sent (month) VALUES (${r.month}) ON CONFLICT (month) DO NOTHING RETURNING month`;
   if (!fresh && !force) return null;
-  for (const m of monthlyReportEmails(r.name, r.html, r.text)) await send(m);
+  const statuses: string[] = [];
+  for (const m of monthlyReportEmails(r.name, r.html, r.text)) statuses.push(await send(m));
+  if (fresh && env('RESEND_API_KEY') && !statuses.includes('sent')) { await sql`DELETE FROM reports_sent WHERE month = ${r.month}`; return null; }
   return r.month;
 }

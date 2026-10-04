@@ -132,12 +132,14 @@ export const items = (orderId: number) => sql`SELECT product_id, name_en, name_a
 export const viewUrl = (o: Row, req?: Request, guestToken?: string) =>
   guestToken ? `${siteUrl(req)}/${o.lang}/account/?order=${o.ref}&t=${guestToken}` : `${siteUrl(req)}/${o.lang}/account/?order=${o.ref}`;
 
+/** Emails the customer about their order; returns 'sent', 'failed' or 'skipped'. */
 export async function notify(kind: OrderMailKind, o: Row, req?: Request, guestToken?: string) {
   // Sample orders only email a team address, never a made-up customer.
-  if (o.is_sample && !isAdminEmail(o.email)) { await event(o.id, 'email', `${kind}: not sent (sample order)`, 'system'); return; }
+  if (o.is_sample && !isAdminEmail(o.email)) { await event(o.id, 'email', `${kind}: not sent (sample order)`, 'system'); return 'skipped'; }
   const its = await items(o.id);
   const status = await send(orderEmail(kind, mailShape(o), its as any, viewUrl(o, req, guestToken), siteUrl(req)));
   await event(o.id, 'email', `${kind}: ${status}`, 'system');
+  return status;
 }
 export async function notifyTeam(o: Row, req?: Request) {
   if (o.is_sample) return;

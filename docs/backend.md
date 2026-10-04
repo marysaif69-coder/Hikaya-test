@@ -20,7 +20,7 @@ Everything runs on Netlify: the website, the server code (Netlify Functions in `
 - Conversations: every Ask Hikaya chat, with "helpful?" answers, to see what people ask and where answers fall short.
 
 ## Emails sent automatically (in the customer's language)
-Order received (with the gift details and any discount) · confirmed · ready for pickup · out for delivery · completed · cancelled · reminder the evening before (5–6 pm Calgary) · login codes · new-order alert to the team · help request received (to the customer) · help request alert (to the team) · replies written in the Inbox · back in stock ("email me when it's back") · mailing list confirmation · Google review request (when `GOOGLE_REVIEW_URL` is set).
+Order received (with the gift details and any discount) · confirmed · ready for pickup · out for delivery · completed · cancelled · reminder the evening before (at the order-by hour, 8 pm Calgary by default) · login codes · new-order alert to the team · help request received (to the customer) · help request alert (to the team) · replies written in the Inbox · back in stock ("email me when it's back") · mailing list confirmation · Google review request (when `GOOGLE_REVIEW_URL` is set).
 All sent through Resend from the site itself; no n8n or Zapier needed. Admin → Settings → Connections shows the last email and has "Send me a test email".
 
 ## Gift cards, regular orders, texts, monthly report

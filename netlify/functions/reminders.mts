@@ -1,10 +1,13 @@
-// Every evening (00:00 UTC, which is late afternoon or early evening in Calgary): reminders for
-// tomorrow's orders (email, and a text for those who asked), review requests, regular orders
-// coming up, tomorrow's run sheet to the team, and on the 1st the monthly report to the owners.
+// Once a day, at the hour orders for tomorrow close (the order-by hour set in the desk, Calgary
+// time): the monthly report on the 1st (or the next two days if it didn't go), tomorrow's run sheet
+// to the team, shift reminders, reminders for tomorrow's orders (email, and a text for those who
+// asked), regular orders coming up, papers about to expire, then review requests. Each step runs on
+// its own, so one failing doesn't stop the rest. The function itself runs every hour and only does
+// the work at that hour, once per date.
 import type { Config } from '@netlify/functions';
 import { loadOverrides } from '../lib/business';
-import { sql } from '../lib/db';
-import { calgaryNow, addDays } from '../lib/slots';
+import { sql, one } from '../lib/db';
+import { calgaryNow, addDays, getSettings } from '../lib/slots';
 import { notify, event } from '../lib/orders';
 import { send, reviewEmail, refillEmail } from '../lib/email';
 import { PRODUCTS } from '../../src/data/products';
@@ -15,46 +18,68 @@ import { sendMonthlyReport } from '../lib/report';
 import { tomorrowEmail } from '../lib/tomorrow';
 import { shiftReminders, paperReminders } from '../lib/team';
 
+/** Runs one step; if it throws, logs it and carries on with the next. */
+async function step<T>(name: string, fn: () => Promise<T>, fallback: T): Promise<T> {
+  try { return await fn(); } catch (e) { console.error(`daily: ${name} failed`, e); return fallback; }
+}
+// An email counts as done once it went out, or when email isn't set up at all (skipped);
+// a failed one is tried again on the next run.
+const done = (status: string | undefined) => status === 'sent' || status === 'skipped';
+
 export async function daily(today = calgaryNow().date) {
   await loadOverrides(true);
   const tomorrow = addDays(today, 1);
-  const rows = await sql`SELECT * FROM orders WHERE slot_date = ${tomorrow} AND status IN ('received', 'confirmed') AND reminded_at IS NULL AND NOT is_sample`;
-  for (const o of rows) {
-    await notify('reminder', o);
-    await sql`UPDATE orders SET reminded_at = NOW() WHERE id = ${o.id}`;
-  }
-  let texts = 0;
-  if (smsEnabled()) {
+  // The date-critical steps first.
+  const report = await step('monthly report', () => sendMonthlyReport(today), null);
+  const team = await step('run sheet', () => tomorrowEmail(tomorrow), 0);
+  const shifts = await step('shift reminders', () => shiftReminders(today), { reminded: 0, gaps: 0 } as Awaited<ReturnType<typeof shiftReminders>>);
+  const reminders = await step('order reminders', async () => {
+    const rows = await sql`SELECT * FROM orders WHERE slot_date = ${tomorrow} AND status IN ('received', 'confirmed') AND reminded_at IS NULL AND NOT is_sample`;
+    for (const o of rows) if (done(await notify('reminder', o))) await sql`UPDATE orders SET reminded_at = NOW() WHERE id = ${o.id}`;
+    return rows.length;
+  }, 0);
+  const texts = await step('text reminders', async () => {
+    let n = 0;
+    if (!smsEnabled()) return n;
     const sms = await sql`SELECT * FROM orders WHERE slot_date = ${tomorrow} AND status IN ('received', 'confirmed', 'ready') AND sms_ok AND sms_reminded_at IS NULL AND NOT is_sample`;
     for (const o of sms) {
       const status = await sendSms(o.phone, reminderText(o as any));
       await sql`UPDATE orders SET sms_reminded_at = NOW() WHERE id = ${o.id}`;
       await event(o.id, 'sms', `reminder: ${status}`, 'system');
-      if (status === 'sent') texts++;
+      if (status === 'sent') n++;
     }
-  }
-
+    return n;
+  }, 0);
+  const regular = await step('regular orders', () => runSubscriptions(undefined, today), 0 as Awaited<ReturnType<typeof runSubscriptions>>);
+  const papers = await step('paper reminders', () => paperReminders(today), 0 as Awaited<ReturnType<typeof paperReminders>>);
   // A few days after a completed order, ask for a Google review (only once GOOGLE_REVIEW_URL is set).
-  let reviews = 0;
-  const reviewUrl = env('GOOGLE_REVIEW_URL');
-  if (reviewUrl) {
-    const done = await sql`SELECT * FROM orders WHERE status = 'completed' AND NOT is_sample AND review_asked_at IS NULL
-      AND slot_date BETWEEN ${addDays(today, -10)} AND ${addDays(today, -3)} LIMIT 200`;
-    for (const o of done) {
-      await send(reviewEmail({ ...o, slot_date: String(o.slot_date) } as any, reviewUrl, siteUrl()));
-      await sql`UPDATE orders SET review_asked_at = NOW() WHERE id = ${o.id}`;
-    }
-    reviews = done.length;
-  }
-  const refills = REFILLS_ON ? await sendRefills(today) : 0;
-  const regular = await runSubscriptions(undefined, today);
-  const team = await tomorrowEmail(tomorrow);
-  const shifts = await shiftReminders(today);
-  const papers = await paperReminders(today);
-  const report = await sendMonthlyReport(today);
-  const out = { reminders: rows.length, texts, reviews, refills, regular, team, shifts, papers, report };
+  // A failed email is tried again the next day, within the same 7-day window.
+  const reviews = await step('review requests', async () => {
+    const reviewUrl = env('GOOGLE_REVIEW_URL');
+    if (!reviewUrl) return 0;
+    const due = await sql`SELECT * FROM orders WHERE status = 'completed' AND NOT is_sample AND review_asked_at IS NULL
+      AND slot_date BETWEEN ${addDays(today, -10)} AND ${addDays(today, -3)} ORDER BY id LIMIT 40`;
+    let n = 0;
+    for (const o of due) if (done(await send(reviewEmail({ ...o, slot_date: String(o.slot_date) } as any, reviewUrl, siteUrl())))) { await sql`UPDATE orders SET review_asked_at = NOW() WHERE id = ${o.id}`; n++; }
+    return n;
+  }, 0);
+  const refills = REFILLS_ON ? await step('refill emails', () => sendRefills(today), 0) : 0;
+  const out = { reminders, texts, reviews, refills, regular, team, shifts, papers, report };
   console.log('daily', tomorrow, out);
   return out;
+}
+
+/** Every hour: runs daily() at the hour orders for tomorrow close (Calgary time), once per date.
+ * Orders placed up to that hour are then on the run sheet and get their reminder. */
+export async function hourly(now = new Date()) {
+  const c = calgaryNow(now);
+  const s = await getSettings();
+  if (c.hour !== s.ordering.cutoffHour) return null;
+  // Once per date, even if the owners move the order-by hour during the day.
+  const first = await one`INSERT INTO settings (key, value) VALUES ('daily-ran', ${JSON.stringify(c.date)}::jsonb)
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value WHERE settings.value IS DISTINCT FROM EXCLUDED.value RETURNING key`;
+  if (!first) return null;
+  return daily(c.date);
 }
 
 // The "Running low?" email is switched off until the owners decide how people agree to it: the
@@ -87,6 +112,6 @@ export async function sendRefills(today: string) {
   return refills;
 }
 
-export default async () => { await daily(); };
+export default async () => { await hourly(); };
 
-export const config: Config = { schedule: '0 0 * * *' };
+export const config: Config = { schedule: '0 * * * *' };

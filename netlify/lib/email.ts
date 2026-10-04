@@ -19,15 +19,22 @@ export async function send(m: Mail) {
   const from = env('EMAIL_FROM') || 'Hikaya <orders@hikayacoffee.ca>';
   let status = 'skipped', error: string | null = null;
   if (key) {
-    try {
-      const r = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-        body: JSON.stringify({ from, to: [m.to], subject: m.subject, html: m.html, text: m.text, reply_to: m.replyTo || env('EMAIL_REPLY_TO') || undefined, headers: m.headers }),
-      });
-      status = r.ok ? 'sent' : 'failed';
-      if (!r.ok) error = (await r.text()).slice(0, 500);
-    } catch (e) { status = 'failed'; error = String(e).slice(0, 500); }
+    // Too many requests (429) or a hiccup at Resend (5xx): try again up to twice, waiting what
+    // Resend asks (at most 2 seconds), so a busy evening doesn't lose reminders.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const r = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+          body: JSON.stringify({ from, to: [m.to], subject: m.subject, html: m.html, text: m.text, reply_to: m.replyTo || env('EMAIL_REPLY_TO') || undefined, headers: m.headers }),
+        });
+        status = r.ok ? 'sent' : 'failed';
+        error = r.ok ? null : (await r.text()).slice(0, 500);
+        if (r.ok || !(r.status === 429 || r.status >= 500) || attempt === 2) break;
+        const wait = Number(r.headers.get('retry-after'));
+        await new Promise(res => setTimeout(res, Math.min(Number.isFinite(wait) && wait >= 0 ? wait * 1000 : 1000, 2000)));
+      } catch (e) { status = 'failed'; error = String(e).slice(0, 500); break; }
+    }
   }
   await sql`INSERT INTO email_log (to_email, subject, kind, order_id, status, error) VALUES (${m.to}, ${m.subject}, ${m.kind}, ${m.orderId ?? null}, ${status}, ${error})`;
   return status;

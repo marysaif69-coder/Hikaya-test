@@ -1115,4 +1115,35 @@ assert.deepEqual([pmDown.status, pmDown.data.error], [409, 'promo-min']); assert
 assert.equal((await call(admin, `/api/admin/orders/${pm.data.ref}/items`, { cookie: adm, body: { lines: [{ id: 'najdi', opt: 'dallah', qty: 4 }] } })).status, 200);
 assert.equal((await pmRow()).discount_cents, 2000); ok('a change that stays above the minimum keeps the discount');
 
+// ---------- the daily job: when it runs, retries, one step failing ----------
+const { hourly } = await import('../netlify/functions/reminders.mts');
+await call(admin, '/api/admin/settings', { cookie: adm, body: { cutoffMode: 'day-before', cutoffHour: 20 } });
+assert.equal(await hourly(atCalgary('2027-06-03', 19)), null);
+assert.ok(await hourly(atCalgary('2027-06-03', 20)));
+assert.equal(await hourly(atCalgary('2027-06-03', 20)), null); ok('the daily job runs at the order-by hour (Calgary time), once per date');
+const { send: sendMail } = await import('../netlify/lib/email');
+let rCalls = 0; const fR = globalThis.fetch;
+globalThis.fetch = (async (url: string, init: any) => { if (String(url).includes('resend')) { rCalls++; if (rCalls === 1) return new Response('slow down', { status: 429, headers: { 'retry-after': '0' } }); } return fR(url, init); }) as any;
+assert.equal(await sendMail({ to: 'retry@example.com', subject: 'Retry test', html: '<p>x</p>', text: 'x', kind: 'test' }), 'sent'); assert.equal(rCalls, 2);
+globalThis.fetch = fR; ok('an email refused with "too many requests" is tried again');
+process.env.GOOGLE_REVIEW_URL = 'https://g.page/r/test';
+const rv = await order({ email: 'review-retry@example.com', day: '2027-06-10' });
+await pg.query(`UPDATE orders SET status = 'completed', review_asked_at = NULL WHERE ref = $1`, [rv.data.ref]);
+await pg.query(`UPDATE orders SET review_asked_at = NOW() WHERE ref <> $1 AND review_asked_at IS NULL`, [rv.data.ref]);
+const fRv = globalThis.fetch;
+globalThis.fetch = (async (url: string, init: any) => { if (String(url).includes('resend') && JSON.parse(init.body).to[0] === 'review-retry@example.com') return new Response('down', { status: 500, headers: { 'retry-after': '0' } }); return fRv(url, init); }) as any;
+await daily('2027-06-14');
+assert.equal((await pg.query(`SELECT review_asked_at FROM orders WHERE ref = $1`, [rv.data.ref])).rows[0].review_asked_at, null);
+globalThis.fetch = fRv;
+const rvM = sent.length; await daily('2027-06-15');
+assert.ok(sent.slice(rvM).some(m => m.to[0] === 'review-retry@example.com' && m.subject === 'How was it?'));
+assert.ok((await pg.query(`SELECT review_asked_at FROM orders WHERE ref = $1`, [rv.data.ref])).rows[0].review_asked_at); ok('a review request that failed is sent on the next run, not marked done');
+delete process.env.GOOGLE_REVIEW_URL;
+const fRp = globalThis.fetch;
+globalThis.fetch = (async (url: string, init: any) => { if (String(url).includes('resend') && /month in numbers/.test(JSON.parse(init.body).subject)) return new Response('down', { status: 500, headers: { 'retry-after': '0' } }); return fRp(url, init); }) as any;
+await daily('2027-05-01');
+globalThis.fetch = fRp;
+const rpM = sent.length; await daily('2027-05-02'); await daily('2027-05-03');
+assert.equal(sent.slice(rpM).filter(m => /month in numbers \(April 2027\)/.test(m.subject)).length, 1); ok('if the monthly report fails on the 1st, it goes out on the 2nd, once');
+
 console.log(`\n${pass} checks passed`);
