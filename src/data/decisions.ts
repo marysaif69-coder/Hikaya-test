@@ -6,6 +6,29 @@ export type Decision = { id: string; topic: string; question: string; context: s
 
 export const DECISIONS: Decision[] = [
   {
+    id: 'lotus-name', topic: 'Dates · Stuffed', asked: '2026-10-04',
+    question: 'Do we call the biscuit filling “Lotus cream / كريمة اللوتس” (the brand name) or “Biscuit cream / كريمة البسكويت”?',
+    context: 'Lotus is a trademark. Using it says exactly what is inside, but the brand owner may object. Until you answer the site says “Biscuit cream / كريمة البسكويت”. Its allergens (wheat, soy) come from the jar’s label [TBD].',
+    options: ['Lotus cream (brand name)', 'Biscuit cream (plain name)'],
+  },
+  {
+    id: 'reserve-mixed', topic: 'Dates · Reserve box', asked: '2026-10-04',
+    question: 'Is a Reserve box one variety (the customer picks Mufattal, Ajwa or Medjool), or a mix of the three?',
+    context: 'Built as one variety per box, chosen by the customer. A mixed box would be one fixed box (e.g. 4 of each in the 12).',
+    options: ['One variety, the customer chooses', 'A mix of the three', 'Both (two products)'],
+  },
+  {
+    id: 'four-palms-fourth', topic: 'Dates · Four Palms and Eid Dates', asked: '2026-10-04',
+    question: 'Khudri is no longer sold. Which date replaces it in Four Palms and Eid Dates?',
+    context: 'Until you answer, both boxes stay on sale and the packing sheet counts 6 Sukkari, 6 Khalas and 6 Ajwa; the box text says the fourth variety is [TBD].',
+    options: ['Royal Sukkari Mufattal', 'Medjool', 'Make them three varieties, 8 of each', 'Something else (write it below)'],
+  },
+  {
+    id: 'date-packaging', topic: 'Dates · Packaging', asked: '2026-10-04',
+    question: 'Which packaging do we buy for the new dates: 250 g and 1 kg trays (500 g we have), and individual seals for stuffed dates?',
+    context: 'Once confirmed, they are added to Supplies (Desk → Production) so the week sheet warns when you are short. Not added until you confirm the sizes.',
+  },
+  {
     id: 'privacy-wording', topic: 'Privacy page', asked: '2026-10-04',
     question: 'Approve the new privacy wording (Visit → Privacy)?',
     context: 'Today it says “We don’t sell or share them”, but names, emails, addresses and messages do go to the services that run the shop (Netlify hosting, Resend email, Twilio texts, Square card payments, Google Maps routes, Anthropic for Ask Hikaya), some outside Canada; Alberta’s privacy law expects us to say so. Draft, Arabic first: «نحتفظ باسمك وهاتفك وبريدك وعنوانك لتجهيز طلبك وتوصيله، ولمراسلتك إن اشتركت في قائمتنا. لا نبيع معلوماتك. نشاركها فقط مع الخدمات التي تشغّل المتجر: الاستضافة، والبريد، والرسائل النصية، والدفع بالبطاقة، وخرائط مسارات التوصيل، ومساعد «اسأل حكاية»، وبعضها يعالج البيانات خارج كندا. نحتفظ بالمحادثات وطلبات المساعدة ليردّ عليك الفريق. لطلب الاطلاع على معلوماتك أو تصحيحها أو حذفها، استخدم نموذج المساعدة.» / “We keep your name, phone, email and address to prepare and deliver your order, and to write to you if you join our list. We don’t sell your information. We share it only with the services that run the shop: hosting, email, text messages, card payments, maps for delivery routes and the Ask Hikaya assistant; some of them process data outside Canada. We keep chats and help requests so the team can reply. To see, correct or delete your information, use the help form.”',

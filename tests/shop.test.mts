@@ -1474,4 +1474,75 @@ assert.equal(errorText({ error: 'slot-full', message: 'That time is full. Please
 ok('slot, deadline and stock errors read in Arabic on the Arabic pages');
 await call(admin, '/api/admin/products/qishr', { cookie: adm, body: { stock: null } });
 
+// ---------- dates: three tiers (round 3) ----------
+{
+  const P = await import('../src/data/products');
+  const TEXT = JSON.parse(fs.readFileSync('src/content/products.json', 'utf8'));
+  const boxes = P.BOXES;
+  assert.ok(boxes.every(b => (b.varieties ?? []).every(v => v in P.DATES))); ok('every variety a box offers is in DATES');
+  assert.ok(boxes.every(b => !(b.varieties ?? []).includes('khudri') && !('khudri' in (b.packs?.dates ?? {})))); assert.ok('khudri' in P.DATES); ok('no product offers khudri (it stays in DATES for old orders)');
+  assert.deepEqual(['dates-250', 'date-box', 'dates-1kg'].map(id => (P.byId(id) as any).grams), [250, 500, 1000]); ok('Everyday by weight: 250 g, 500 g, 1 kg');
+  for (const id of ['dates-250', 'date-box', 'dates-1kg', 'reserve-12', 'reserve-24', 'stuffed-12', 'stuffed-24']) {
+    const t = TEXT[id]; assert.ok(t, id);
+    for (const k of ['name', 'notes', 'contents', 'size']) assert.ok(t[k]?.en?.trim() && t[k]?.ar?.trim(), `${id}.${k}`);
+    assert.equal((P.byId(id) as any).price, null, `${id} has no price until the owners set one`);
+  }
+  ok('every new dates id has its words in products.json (Arabic and English) and no price yet');
+  const words = [...boxes.filter(b => b.fam === 'dates').flatMap(b => [b.name, b.notes, b.contents, b.size]), ...Object.values(P.DATES).flatMap(d => [d.name, d.notes, d.region]), ...Object.values(P.FILLINGS).flatMap(f => [f.name, ...(f.maybe ? [f.maybe] : [])]), P.FAMILIES.dates.name, P.FAMILIES.dates.line];
+  for (const w of words) for (const x of [w.en, w.ar]) assert.doesNotMatch(x, /premium|\bbest\b|أفضل|فاخر|!/i, x);
+  ok('no "premium", "best" or exclamation marks in the dates words');
+  assert.ok(P.FILLINGS['caramel-almond'].hold); assert.ok(boxes.every(b => !(b.fillings ?? []).includes('caramel-almond'))); ok('caramel with almonds is on hold: no box offers it');
+  assert.ok(P.COFFEES.every(c => !c.date) && P.KITS.every(k => !k.date)); ok('no date pairing is set before the tasting');
+}
+await call(admin, '/api/admin/products/date-box', { cookie: adm, body: { stock: null } });
+assert.equal((await order({ day: '2027-09-03', email: 'kg@example.com', lines: [{ id: 'dates-1kg', opt: 'sukkari', qty: 1 }] })).status, 201); ok('dates-1kg with Sukkari Qassimi: placed');
+assert.equal((await order({ day: '2027-09-03', lines: [{ id: 'dates-250', opt: 'ajwa', qty: 1 }] })).data.error, 'choose-date'); ok('Ajwa is not an Everyday variety: choose-date');
+assert.equal((await order({ day: '2027-09-03', lines: [{ id: 'date-box', opt: 'khudri', qty: 1 }] })).data.error, 'choose-date'); ok('khudri is not sold any more');
+assert.equal((await order({ day: '2027-09-03', email: 'res@example.com', lines: [{ id: 'reserve-12', opt: 'mufattal', qty: 1 }] })).status, 201); ok('reserve-12 with Royal Sukkari Mufattal: placed');
+assert.equal((await order({ day: '2027-09-03', lines: [{ id: 'stuffed-12', opt: 'caramel-almond', qty: 1 }] })).status, 400); ok('stuffed with caramel (on hold): refused');
+assert.equal((await order({ day: '2027-09-03', lines: [{ id: 'stuffed-12', qty: 1 }] })).data.error, 'choose-filling'); ok('a stuffed box needs a filling');
+const stO = await order({ day: '2027-09-03', email: 'st@example.com', lines: [{ id: 'stuffed-24', opt: 'pistachio', qty: 1 }, { id: 'dates-250', opt: 'khalas', qty: 2 }] });
+assert.equal(stO.status, 201);
+assert.equal((await pg.query('SELECT i.option_en FROM order_items i JOIN orders o ON o.id = i.order_id WHERE o.ref = $1 ORDER BY i.id', [stO.data.ref])).rows[0].option_en, 'Pistachio stuffed'); ok('the order keeps the readable filling');
+{
+  const w = (await call(admin, '/api/admin/week?from=2027-09-02', { cookie: adm })).data;
+  const dr = (id: string) => w.dates.find((d: any) => d.id === id) ?? { pieces: 0, grams: 0 };
+  assert.equal(dr('sukkari').grams, 1000); assert.equal(dr('khalas').grams, 500); assert.equal(dr('mufattal').pieces, 12); assert.equal(dr('mufattal').grams, 0);
+  assert.deepEqual(w.stuffed, [{ id: 'pistachio', name: 'Pistachio stuffed', pieces: 24 }]);
+  assert.deepEqual(w.packaging.datePacks, { g250: 2, g500: 0, g1000: 1 }); assert.equal(w.packaging.giftBoxes.C12, 1); assert.equal(w.packaging.giftBoxes.D24, 1);
+  ok('week sheet: grams for dates by weight, pieces for Reserve, stuffed per filling, packs by size');
+}
+{
+  const l1 = (await call(admin, '/api/admin/lots', { cookie: adm, body: { item_kind: 'dates', item_id: 'mufattal', made_on: '2027-09-01' } })).data.code;
+  const l2 = (await call(admin, '/api/admin/lots', { cookie: adm, body: { item_kind: 'stuffed', item_id: 'pistachio', made_on: '2027-09-01' } })).data.code;
+  const l3 = (await call(admin, '/api/admin/lots', { cookie: adm, body: { item_kind: 'stuffed', item_id: 'pistachio-dipped', made_on: '2027-09-01' } })).data.code;
+  assert.match(l1, /^MUFATT-270901-\d+$/); assert.match(l2, /^PISTAC-270901-\d+$/); assert.match(l3, /^PISDIP-270901-\d+$/);
+  assert.equal((await call(admin, '/api/admin/lots', { cookie: adm, body: { item_kind: 'stuffed', item_id: 'nope' } })).status, 400);
+  const rc = (await call(admin, `/api/admin/recall?code=${l2}`, { cookie: adm })).data;
+  assert.deepEqual(rc.orders.map((o: any) => o.ref), [stO.data.ref]);
+  ok('lots per variety (MUFATT-…) and per filling (PISTAC-…, PISDIP-…); recall finds the stuffed order');
+}
+// The gift-box limit counts Reserve and stuffed boxes (C12, D24), not Everyday packs.
+await call(admin, '/api/admin/settings', { cookie: adm, body: { caps: { dailyOrders: null, giftBoxesPerDay: 1, stopsPerDriver: null, deliveryFromShifts: false } } });
+assert.equal((await order({ day: '2027-09-11', email: 'g1@example.com', lines: [{ id: 'guest-box', qty: 1 }] })).status, 201);
+assert.equal((await order({ day: '2027-09-11', email: 'g2@example.com', lines: [{ id: 'dates-1kg', opt: 'khalas', qty: 2 }] })).status, 201);
+assert.equal((await order({ day: '2027-09-11', email: 'g3@example.com', lines: [{ id: 'reserve-24', opt: 'ajwa', qty: 1 }] })).data.error, 'day-limit');
+ok('gift-box limit: Everyday dates do not count, a Reserve box does');
+await call(admin, '/api/admin/settings', { cookie: adm, body: { caps: { dailyOrders: null, giftBoxesPerDay: null, stopsPerDriver: null, deliveryFromShifts: false } } });
+// A regular order holding a variety no longer sold fails politely: an email, no crash.
+for (const [i, gone] of ['medjool', 'khudri'].entries()) {
+  const email = `old-date-${i}@example.com`;
+  assert.equal((await order({ repeat: 2, email, day: '2027-09-16', lines: [{ id: 'date-box', opt: 'khalas', qty: 1 }] })).status, 201);
+  await pg.query(`UPDATE subscriptions SET lines = $1::jsonb WHERE email = $2`, [JSON.stringify([{ id: 'date-box', opt: gone, qty: 1 }]), email]);
+}
+const mailsB = sent.length;
+await daily('2027-09-23');
+for (const i of [0, 1]) {
+  const s = (await pg.query(`SELECT * FROM subscriptions WHERE email = $1`, [`old-date-${i}@example.com`])).rows[0] as any;
+  assert.match(s.last_note, /^Not placed for 2027-09-30/);
+  assert.equal((await pg.query(`SELECT COUNT(*)::int AS n FROM orders WHERE subscription_id = $1`, [s.id])).rows[0].n, 1);
+  assert.ok(sent.slice(mailsB).some(m => m.to?.includes(`old-date-${i}@example.com`) && /no longer offered/.test(m.html + m.text)));
+}
+ok('a regular order with Medjool or khudri in the Everyday box is not placed; the customer gets an email');
+
 console.log(`\n${pass} checks passed`);

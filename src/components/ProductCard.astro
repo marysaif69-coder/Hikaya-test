@@ -2,7 +2,7 @@
 // A product in a grid. Kept short on purpose: name, one line, price. Everything else is on the
 // product page. `row` is the slim version for "the bag on its own".
 import type { Product, Lang } from '../data/products';
-import { FAMILIES, SPICES, priceText, baseOf, packOf, COFFEES, allergyNote } from '../data/products';
+import { FAMILIES, SPICES, priceText, baseOf, packOf, COFFEES, allergyNote, boxOptions } from '../data/products';
 import { UI, path } from '../data/i18n';
 import Pouch from './Pouch.astro';
 import Sachet from './Sachet.astro';
@@ -18,7 +18,7 @@ const line = p.kind === 'kit' ? '+ ' + p.parts.map(x => (x.mini ? (ar ? 'ظرف 
   : p.kind === 'coffee' && row && p.spices.length ? (ar ? `بال${p.spices.map(x => SPICES[x].name.ar).join(' وال')} فقط` : `With ${p.spices.map(x => SPICES[x].name.en.toLowerCase()).join(' and ')} only`)
   : p.kind === 'coffee' ? p.taste[lang]
   : `${FAMILIES[p.fam].name[lang]} · ${p.size[lang]}`;
-const defaultOpt = p.kind === 'coffee' ? (p.grinds[0] ?? '') : p.kind === 'kit' ? (baseOf(p).grinds[0] ?? '') : p.kind === 'box' && p.chooseDate ? 'khalas' : '';
+const defaultOpt = p.kind === 'coffee' ? (p.grinds[0] ?? '') : p.kind === 'kit' ? (baseOf(p).grinds[0] ?? '') : p.kind === 'box' ? (boxOptions(p)[0] ?? '') : '';
 // Packs and styles always say what they contain, including "to be confirmed": a card with no line
 // must mean no known allergens, not "not checked yet".
 const note = p.kind === 'pack' || p.kind === 'kit' ? allergyNote(p, lang) : null;

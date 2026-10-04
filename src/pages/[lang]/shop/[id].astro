@@ -4,7 +4,7 @@ import Pouch from '../../../components/Pouch.astro';
 import Sachet from '../../../components/Sachet.astro';
 import Pair from '../../../components/Pair.astro';
 import ProductCard from '../../../components/ProductCard.astro';
-import { PRODUCTS, COFFEES, KITS, PACKS, FAMILIES, SPICES, GRINDS, DATES, ALLERGENS, priceText, baseOf, packOf, stylesFor, allergyNote, kitInside, type Lang, type Product, type Coffee } from '../../../data/products';
+import { PRODUCTS, COFFEES, KITS, PACKS, FAMILIES, SPICES, GRINDS, DATES, FILLINGS, ALLERGENS, boxOptions, priceText, baseOf, packOf, stylesFor, allergyNote, kitInside, type Lang, type Product, type Coffee } from '../../../data/products';
 import { BREW } from '../../../data/brew';
 import { UI, path } from '../../../data/i18n';
 
@@ -24,8 +24,9 @@ const jsonld = {
   description: p.notes[lang], image: new URL(img, Astro.site).href, brand: { '@type': 'Brand', name: 'Hikaya' }, sku: p.id,
   ...(p.price != null ? { offers: { '@type': 'Offer', price: p.price.toFixed(2), priceCurrency: 'CAD', availability: 'https://schema.org/PreOrder', url: pageUrl, areaServed: { '@type': 'City', name: 'Calgary' } } } : {}),
 };
-const cup = p.kind === 'coffee' || p.kind === 'kit' ? p : null; // has a taste, a date and a Bunn line
-const pairDate = cup ? DATES[cup.date] : null;
+const cup = p.kind === 'coffee' || p.kind === 'kit' ? p : null; // has a taste and a Bunn line (and a date once paired)
+// Pairings come after the tasting: until a coffee has its date, no pairing shows.
+const pairDate = cup?.date ? DATES[cup.date] : null;
 const dateBox = PRODUCTS.find(o => o.id === 'date-box')!;
 // "Make it the way your family does": on a bag's page, the bag alone or one of its styles.
 const styles = p.kind === 'coffee' ? stylesFor(p.id) : [];
@@ -84,7 +85,7 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
 
       {cup ? (
         <>
-          <Pair lang={lang} size="m" bunn={cup.bunn} tamr={{ ar: `خذ معها ${DATES[cup.date].name.ar}.`, en: `Take ${DATES[cup.date].name.en} with it.` }} />
+          {pairDate && <Pair lang={lang} size="m" bunn={cup.bunn} tamr={{ ar: `خذ معها ${pairDate.name.ar}.`, en: `Take ${pairDate.name.en} with it.` }} />}
           {p.kind === 'coffee' && (
             <div class="facts">
               {p.spices.length > 0 && <div class="spices">{p.spices.map(s => <span><i style={`background:${SPICES[s].c}`}></i>{SPICES[s].name[lang]}</span>)}</div>}
@@ -143,10 +144,16 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
         {grinds.length > 0 && (
           <p class="grind-line"><span class="label">{UI.grind[lang]}</span> {GRINDS[grinds[0]][lang]}<input type="hidden" name="opt" value={grinds[0]} /></p>
         )}
-        {p.kind === 'box' && p.chooseDate && (
+        {p.kind === 'box' && p.fillings && (
+          <fieldset class="choice">
+            <legend>{L('Filling', 'الحشوة')}</legend>
+            {p.fillings.map((k, i) => { const f = FILLINGS[k]; return <label><input type="radio" name="opt" value={k} checked={i === 0} /><span>{f.name[lang]} <small class="allergy">{L('Contains: ', 'يحتوي على: ')}{f.allergens.map(a => ALLERGENS[a][lang]).join(L(', ', '، '))}{f.maybe && ` ${f.maybe[lang]}`}</small></span></label>; })}
+          </fieldset>
+        )}
+        {p.kind === 'box' && !p.fillings && boxOptions(p).length > 0 && (
           <fieldset class="choice">
             <legend>{UI.date[lang]}</legend>
-            {Object.entries(DATES).map(([k, d], i) => <label><input type="radio" name="opt" value={k} checked={i === 1} /><span><i class="dot" style={`background:${d.c}`}></i>{d.name[lang]}</span></label>)}
+            {boxOptions(p).map((k, i) => { const d = DATES[k as keyof typeof DATES]; return <label><input type="radio" name="opt" value={k} checked={i === 0} /><span><i class="dot" style={`background:${d.c}`}></i>{d.name[lang]}</span></label>; })}
           </fieldset>
         )}
         <div class="buy-row">

@@ -22,7 +22,8 @@ const shelf = [
   { id: 'qishr', name: { en: 'Qishr', ar: 'القشر' }, line: { en: 'From Yemen: the dried coffee cherry husk, brewed like tea.', ar: 'من اليمن: قشر ثمرة البن المجفف، يُغلى مثل الشاي.' }, fam: 'husk', c: COFFEES.find(c => c.id === 'qishr')!, items: [] as { name: { en: string; ar: string } }[] },
 ];
 // What people actually drink: the styles, then Jubani, Shami with cardamom and Qishr.
-const cups: (Kit | Coffee)[] = [...KITS.filter(k => !k.discovery), ...COFFEES.filter(c => ['jubani', 'shami', 'qishr'].includes(c.id))];
+// Only coffees with a date chosen (after the tasting); with none, the pairing section is not shown.
+const cups: (Kit | Coffee)[] = [...KITS.filter(k => !k.discovery), ...COFFEES.filter(c => ['jubani', 'shami', 'qishr'].includes(c.id))].filter(c => c.date);
 const bagOf = (c: Kit | Coffee) => (c.kind === 'kit' ? baseOf(c) : c);
 const tasting = KITS.filter(k => k.discovery);
 const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
@@ -129,7 +130,7 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
   </section>
 
   <!-- Signature: choose a coffee, Tamr answers with its date. Works without JS via :checked. -->
-  <section class="pairing" aria-labelledby="pairing-h">
+  {cups.length > 0 && <section class="pairing" aria-labelledby="pairing-h">
     <div class="wrap">
       <div class="pairing-head">
         <h2 id="pairing-h" class="h-l">{ar ? 'اختر قهوتك، وتمر تردّ.' : 'Choose a coffee. Tamr answers.'}</h2>
@@ -143,7 +144,7 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
       </fieldset>
       <div class="panels">
         {cups.map((c, i) => {
-          const d = DATES[c.date];
+          const d = DATES[c.date!];
           const bag = bagOf(c);
           return (
             <div class="panel" data-for={c.id} hidden={i !== 0}>
@@ -165,7 +166,7 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
         })}
       </div>
     </div>
-  </section>
+  </section>}
 
   <BoxBuilder lang={lang} />
 

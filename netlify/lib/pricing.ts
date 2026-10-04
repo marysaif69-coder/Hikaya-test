@@ -1,6 +1,6 @@
 // Prices come from the same product file the website uses. The browser only sends ids,
 // options and quantities; every amount is recalculated here.
-import { PRODUCTS, GRINDS, DATES, fileCents } from '../../src/data/products';
+import { PRODUCTS, GRINDS, DATES, FILLINGS, varietiesOf, fileCents, type DateId, type FillingId } from '../../src/data/products';
 import { HttpError } from './http';
 import type { Live } from './catalog';
 import type { Applied } from './promos';
@@ -26,10 +26,16 @@ export function priceCart(lines: unknown, live?: Record<string, Live>): PricedLi
     if (p.kind === 'coffee' && p.grinds.length) {
       option = p.grinds.includes(raw.opt) ? raw.opt : p.grinds[0];
       label = GRINDS[option as keyof typeof GRINDS];
-    } else if (p.kind === 'box' && p.chooseDate) {
-      if (typeof raw.opt !== 'string' || !Object.hasOwn(DATES, raw.opt)) throw new HttpError(400, 'choose-date', 'Choose a date variety for the box.');
+    } else if (p.kind === 'box' && p.fillings) {
+      // Stuffed: one filling per box, only those on sale (a filling on hold is never in the list).
+      if (typeof raw.opt !== 'string' || !p.fillings.includes(raw.opt as FillingId)) throw new HttpError(400, 'choose-filling', 'Choose a filling for the box.');
       option = raw.opt;
-      label = DATES[raw.opt as keyof typeof DATES].name;
+      label = FILLINGS[raw.opt as FillingId].name;
+    } else if (p.kind === 'box' && p.chooseDate) {
+      // Only the varieties this box offers (Everyday or Reserve), not every date we have ever had.
+      if (typeof raw.opt !== 'string' || !varietiesOf(p).includes(raw.opt as DateId)) throw new HttpError(400, 'choose-date', 'Choose a date variety for the box.');
+      option = raw.opt;
+      label = DATES[raw.opt as DateId].name;
     } else if (p.kind === 'kit') {
       // A style or discovery pack takes the grind of its base bag.
       const base = PRODUCTS.find(x => x.id === p.base);

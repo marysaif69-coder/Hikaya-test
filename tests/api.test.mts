@@ -55,7 +55,7 @@ assert.ok(slots.data.days.every((d: any) => [0, 4, 5, 6].includes(new Date(d.dat
 
 // Guest order
 const base = { lang: 'en', name: 'Layla Haddad', phone: '403-555-0100', email: 'Layla@Example.com', method: 'pickup', day: '2027-01-22', window: '11:00–14:00', payment: 'e-transfer',
-  lines: [{ id: 'najdi', opt: 'dallah', qty: 2, price: 1 }, { id: 'date-box', opt: 'ajwa', qty: 1 }] };
+  lines: [{ id: 'najdi', opt: 'dallah', qty: 2, price: 1 }, { id: 'date-box', opt: 'khalas', qty: 1 }] };
 // Coffee prices are not in the product file: until the owners set one, it can't be ordered.
 const unpriced = await call(orders, '/api/orders', { body: base });
 assert.equal(unpriced.status, 409); assert.equal(unpriced.data.error, 'no-price'); ok('a coffee without a price set cannot be ordered');
@@ -67,8 +67,8 @@ for (const p of ALL) if (p.price == null) await pg.query('INSERT INTO product_se
 const g = await call(orders, '/api/orders', { body: base });
 assert.equal(g.status, 201, JSON.stringify(g.data)); ok(`guest pickup order placed: ${g.data.ref}`);
 const view = await call(orders, `/api/orders/view?ref=${g.data.ref}&t=${g.data.token}`);
-assert.equal(view.data.order.total, 2 * 2400 + 3400); ok('server recalculated price ($82), client price ignored');
-assert.equal(view.data.order.items[1].option_en, 'Ajwa'); ok('date box keeps chosen variety');
+assert.equal(view.data.order.total, 3 * 2400); ok('server recalculated price ($72), client price ignored');
+assert.equal(view.data.order.items[1].option_en, 'Khalas'); ok('date box keeps chosen variety');
 assert.equal((await call(orders, `/api/orders/view?ref=${g.data.ref}&t=wrong`)).status, 404); ok('guest link needs the secret token');
 const mails = sent.filter(m => m.subject.includes(g.data.ref));
 assert.ok(mails.some(m => m.to[0] === 'layla@example.com' && m.subject.startsWith('We have your order'))); ok('customer got "order received" email');

@@ -3,25 +3,28 @@
 // got a lot. Supplies (packaging) on hand are compared with what the week needs.
 import { sql, one, type Row } from './db';
 import { HttpError } from './http';
-import { PRODUCTS, DATES, type DateId } from '../../src/data/products';
+import { PRODUCTS, DATES, FILLINGS, type DateId, type FillingId } from '../../src/data/products';
 import { addDays, calgaryNow } from './slots';
 import { weekSheet } from './week';
 import { randomUUID } from 'node:crypto';
 
 const day = (v: unknown) => (v instanceof Date ? v.toISOString() : String(v ?? '')).slice(0, 10);
 const isoOk = (v: unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
-// Coffee lots cover the base bags and the sealed packs (kept as item_kind 'coffee').
-export const itemName = (kind: string, id: string) => kind === 'coffee' ? PRODUCTS.find(p => p.id === id)?.name.en ?? id : DATES[id as DateId]?.name.en ?? id;
+// Coffee lots cover the base bags and the sealed packs (kept as item_kind 'coffee'). Date lots are per
+// variety; stuffed lots (item_kind 'stuffed') are per filling.
+export const itemName = (kind: string, id: string) => kind === 'coffee' ? PRODUCTS.find(p => p.id === id)?.name.en ?? id : kind === 'stuffed' ? `Stuffed dates · ${FILLINGS[id as FillingId]?.name.en ?? id}` : DATES[id as DateId]?.name.en ?? id;
+// MUFATT-…, KHALAS-…; a two-word filling takes three letters of each (PISDIP, CARALM).
+const lotStem = (id: string) => (id.includes('-') && id in FILLINGS ? id.split('-').map(w => w.slice(0, 3)).join('') : id.replace(/[^a-z]/gi, '').slice(0, 6)).toUpperCase();
 
 export async function addLot(b: any, by: string) {
-  const kind = b?.item_kind === 'dates' ? 'dates' : b?.item_kind === 'coffee' ? 'coffee' : null;
+  const kind = b?.item_kind === 'dates' ? 'dates' : b?.item_kind === 'coffee' ? 'coffee' : b?.item_kind === 'stuffed' ? 'stuffed' : null;
   const id = String(b?.item_id ?? '');
-  const valid = kind === 'coffee' ? PRODUCTS.some(p => (p.kind === 'coffee' || p.kind === 'pack') && p.id === id) : kind === 'dates' ? id in DATES : false;
+  const valid = kind === 'coffee' ? PRODUCTS.some(p => (p.kind === 'coffee' || p.kind === 'pack') && p.id === id) : kind === 'dates' ? Object.hasOwn(DATES, id) : kind === 'stuffed' ? Object.hasOwn(FILLINGS, id) : false;
   if (!valid) throw new HttpError(400, 'item', 'Choose the coffee or the date variety.');
   const made = isoOk(b?.made_on) ? b.made_on : calgaryNow().date;
   const best = isoOk(b?.best_before) ? b.best_before : null;
   if (best && best <= made) throw new HttpError(400, 'best-before', 'Best before must be after the day it was made.');
-  const stem = `${id.replace(/[^a-z]/gi, '').slice(0, 6).toUpperCase()}-${made.slice(2).replace(/-/g, '')}`;
+  const stem = `${lotStem(id)}-${made.slice(2).replace(/-/g, '')}`;
   const n = await one`SELECT COUNT(*)::int AS n FROM lots WHERE code LIKE ${stem + '-%'}`;
   const code = `${stem}-${(n?.n ?? 0) + 1}`;
   await sql`INSERT INTO lots (code, item_kind, item_id, made_on, best_before, quantity, supplier, note, made_by)
@@ -38,15 +41,16 @@ export async function listLots() {
   return rows.map(r => ({ code: r.code, kind: r.item_kind, item: r.item_id, name: itemName(r.item_kind, r.item_id), madeOn: day(r.made_on), bestBefore: r.best_before ? day(r.best_before) : null, quantity: r.quantity, supplier: r.supplier, note: r.note, madeBy: r.made_by, usedUpOn: r.used_up_on ? day(r.used_up_on) : null }));
 }
 
-/** What goes into an order line, for traceability: coffees and date varieties. */
-function contents(productId: string, option: string | null): { coffee: string[]; dates: string[] } {
+/** What goes into an order line, for traceability: coffees, date varieties and stuffed fillings. */
+function contents(productId: string, option: string | null): { coffee: string[]; dates: string[]; stuffed: string[] } {
   const p = PRODUCTS.find(x => x.id === productId);
-  if (!p) return { coffee: [], dates: [] };
-  if (p.kind === 'coffee' || p.kind === 'pack') return { coffee: [p.id], dates: [] };
-  if (p.kind === 'kit') return { coffee: [p.base, ...p.parts.map(x => x.id)], dates: [] };
+  if (!p) return { coffee: [], dates: [], stuffed: [] };
+  if (p.kind === 'coffee' || p.kind === 'pack') return { coffee: [p.id], dates: [], stuffed: [] };
+  if (p.kind === 'kit') return { coffee: [p.base, ...p.parts.map(x => x.id)], dates: [], stuffed: [] };
   const dates = Object.keys(p.packs?.dates ?? {});
+  const stuffed = p.fillings && option ? [option] : [];
   if (p.chooseDate && option) dates.push(option);
-  return { coffee: [...Object.keys(p.packs?.coffee ?? {}), ...Object.keys(p.packs?.sachets ?? {})], dates };
+  return { coffee: [...Object.keys(p.packs?.coffee ?? {}), ...Object.keys(p.packs?.sachets ?? {})], dates, stuffed };
 }
 
 /** The lot in use for each coffee and date variety on a day (the newest made on or before it, not used up). */
@@ -61,6 +65,7 @@ export function lotsForLines(lots: Awaited<ReturnType<typeof lotsOn>>, lines: { 
     const c = contents(l.product_id, l.option);
     for (const id of c.coffee) { const x = lots.get(`coffee|${id}`); if (x) out.add(x.code); }
     for (const id of c.dates) { const x = lots.get(`dates|${id}`); if (x) out.add(x.code); }
+    for (const id of c.stuffed) { const x = lots.get(`stuffed|${id}`); if (x) out.add(x.code); }
   }
   return [...out];
 }
@@ -75,7 +80,7 @@ export async function recall(code: string) {
   const hit = new Map<string, Row>();
   for (const r of rows) {
     const c = contents(r.product_id, r.option);
-    if ((lot.item_kind === 'coffee' ? c.coffee : c.dates).includes(lot.item_id)) hit.set(r.ref, r);
+    if ((lot.item_kind === 'coffee' ? c.coffee : lot.item_kind === 'stuffed' ? c.stuffed : c.dates).includes(lot.item_id)) hit.set(r.ref, r);
   }
   return { lot: { code: lot.code, name: itemName(lot.item_kind, lot.item_id), madeOn: from, usedUpOn: lot.used_up_on ? day(lot.used_up_on) : null }, orders: [...hit.values()].map(r => ({ ref: r.ref, name: r.name, email: r.email, phone: r.phone, day: day(r.slot_date), method: r.method, status: r.status })) };
 }

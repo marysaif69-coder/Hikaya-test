@@ -1,6 +1,10 @@
 # Held changes (not on the website)
 
-Saved but not published, at Maryam's request. Apply with `git apply notes/held/<file>.patch` when approved.
+Saved but not published, at the owners' request. Apply with `git apply notes/held/<file>.patch` when approved.
 
-- `dates-sweetness-no-khudri.patch`: dates ordered by sweetness (Sukkari sweetest, then Medjool, Khalas, Ajwa least sweet; all natural sugar and fibre), Khudri removed from sale, Four Palms becomes Sukkari, Medjool, Khalas and Ajwa, Shamaliyya pairs with Ajwa.
-  Still to do when applying: show the sweetness ranking on the story page and the date picker.
+Nothing is held at the moment.
+
+- `dates-sweetness-no-khudri.patch` was removed in round 3 (October 2026). Maryam approved the new
+  date line-up instead: three tiers (Everyday by weight, Reserve boxes, Stuffed boxes) in
+  `src/data/products.ts`. The old patch was stale and would have put back the wrong Arabic name for
+  Medjool, so it was not applied. Its sweetness ranking idea can come back with the tasting notes.

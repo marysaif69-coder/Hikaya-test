@@ -2,7 +2,7 @@
 // orders (Thursday to Wednesday by default, so a whole Thursday–Sunday service week is one sheet).
 import { sql } from './db';
 import { addDays, calgaryNow, weekday } from './slots';
-import { PRODUCTS, DATES, GRINDS, type DateId } from '../../src/data/products';
+import { PRODUCTS, DATES, GRINDS, FILLINGS, type DateId, type FillingId } from '../../src/data/products';
 
 type PackRow = { id: string; name: string; full: number; mini: number; inKits: number };
 
@@ -45,6 +45,8 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
   };
   const datePieces: Partial<Record<DateId, number>> = {};
   const dateGrams: Partial<Record<DateId, number>> = {};
+  const stuffed: Partial<Record<FillingId, number>> = {};
+  const datePacks = { g250: 0, g500: 0, g1000: 0 };
   const boxes = { D24: 0, C12: 0, C2: 0, everyday: 0 };
   const sleeves = { regular: 0, ramadan: 0, eid: 0 };
   const products = new Map<string, { name: string; option: string; qty: number }>();
@@ -55,7 +57,7 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
     if (!p) continue;
     const d = days.get(r.day) ?? { day: r.day, pickup: new Set(), delivery: new Set() };
     d[r.method === 'delivery' ? 'delivery' : 'pickup'].add(r.ref); days.set(r.day, d);
-    const optName = p.kind === 'coffee' || p.kind === 'kit' ? (r.option ? GRINDS[r.option as keyof typeof GRINDS]?.en ?? r.option : '') : r.option ? DATES[r.option as DateId]?.name.en ?? r.option : '';
+    const optName = !r.option ? '' : p.kind === 'coffee' || p.kind === 'kit' ? GRINDS[r.option as keyof typeof GRINDS]?.en ?? r.option : p.kind === 'box' && p.fillings ? FILLINGS[r.option as FillingId]?.name.en ?? r.option : DATES[r.option as DateId]?.name.en ?? r.option;
     const pk = `${p.id}|${r.option ?? ''}`;
     const pr = products.get(pk) ?? { name: p.name.en, option: optName, qty: 0 }; pr.qty += r.qty; products.set(pk, pr);
     if (p.kind === 'coffee') { addCoffee(p.id, r.option, r.qty, false); continue; }
@@ -70,7 +72,11 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
     for (const [cid, n] of Object.entries(p.packs?.coffee ?? {})) addCoffee(cid, null, n * r.qty, true);
     for (const [sid, n] of Object.entries(p.packs?.sachets ?? {})) addPack(sid, n * r.qty, false, true);
     for (const [did, n] of Object.entries(p.packs?.dates ?? {})) datePieces[did as DateId] = (datePieces[did as DateId] ?? 0) + (n ?? 0) * r.qty;
-    if (p.chooseDate && r.option) dateGrams[r.option as DateId] = (dateGrams[r.option as DateId] ?? 0) + 500 * r.qty;
+    // By weight: grams of the chosen variety. Reserve: pieces of the chosen variety. Stuffed: pieces per filling.
+    if (p.fillings && r.option) stuffed[r.option as FillingId] = (stuffed[r.option as FillingId] ?? 0) + (p.count ?? 0) * r.qty;
+    else if (p.chooseDate && r.option && p.count) datePieces[r.option as DateId] = (datePieces[r.option as DateId] ?? 0) + p.count * r.qty;
+    else if (p.chooseDate && r.option) dateGrams[r.option as DateId] = (dateGrams[r.option as DateId] ?? 0) + (p.grams ?? 500) * r.qty;
+    if (p.grams === 250) datePacks.g250 += r.qty; else if (p.grams === 500) datePacks.g500 += r.qty; else if (p.grams === 1000) datePacks.g1000 += r.qty;
   }
 
   const coffeeRows = [...coffee.values()].sort((a, b) => b.grams - a.grams);
@@ -83,11 +89,13 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
     packs: [...packs.values()].sort((a, b) => b.full + b.mini - a.full - a.mini),
     coffeeTotalKg: Math.round(coffeeRows.reduce((n, r) => n + r.grams, 0) / 100) / 10,
     dates: dateRows,
+    stuffed: (Object.keys(stuffed) as FillingId[]).map(id => ({ id, name: FILLINGS[id].name.en, pieces: stuffed[id] ?? 0 })).filter(r => r.pieces),
     packaging: {
       pouches250: coffeeRows.filter(r => r.grams / Math.max(1, r.pouches) === 250).reduce((n, r) => n + r.pouches, 0),
       pouches100: coffeeRows.filter(r => r.grams / Math.max(1, r.pouches) === 100).reduce((n, r) => n + r.pouches, 0),
       giftBoxes: { D24: boxes.D24, C12: boxes.C12, C2: boxes.C2 },
       everydayTrays: boxes.everyday,
+      datePacks,
       sleeves,
       paperCups: boxes.D24 * 24 + boxes.C12 * 12,
     },

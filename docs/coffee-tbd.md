@@ -64,3 +64,6 @@ the server refuses the order until a price is set:
   bag, per pot, or in the cup). Shadi (4 Oct): the Rada'i nuts are for the cup, not the coffee;
   maybe the customer supplies the nuts and we supply only the mix; maybe start with Rada'i only.
   Until then the site says "decided at our tasting [TBD]" and the allergen lines stay as they are.
+- Pairings: after the tasting; tell the website session which date goes with each coffee. Until
+  then no coffee has a `date` in `src/data/products.ts`, so no pairing shows on the site (product
+  pages, the homepage pairing section, Ask Hikaya). The `why` lines in `products.json` wait for it.

@@ -324,7 +324,7 @@ import { DECISIONS } from '../../data/decisions';
       <div class="promo-form">
         <h2 class="h-s">Labels</h2>
         <p class="muted">Print labels for a lot: English and French, ingredients and allergens, net quantity, best before and lot code. <b>Check the wording with the CFIA before selling</b>; the address shows as [address] until it's set. 10 labels per letter-size sheet (2 × 4 in).</p>
-        <form class="acts" id="labelForm"><select name="lot"></select><label>Net quantity <input name="net" placeholder="250 g" style="width:90px" /></label><label>How many <input name="n" type="number" min="1" max="200" value="10" style="width:70px" /></label><button class="btn line sm" type="submit">Print labels</button></form>
+        <form class="acts" id="labelForm"><select name="lot"></select><label>Net quantity <input name="net" placeholder="250 g" list="netList" style="width:90px" /></label><datalist id="netList"><option value="250 g"></option><option value="500 g"></option><option value="1 kg"></option><option value="12 dates"></option><option value="24 dates"></option></datalist><label>How many <input name="n" type="number" min="1" max="200" value="10" style="width:70px" /></label><button class="btn line sm" type="submit">Print labels</button></form>
       </div>
       <div class="promo-form">
         <div class="a-dayhead"><h2 class="h-s">Food safety log</h2><a class="btn line sm owner-only" id="fsEdit">Edit the checklists</a></div>
@@ -798,9 +798,12 @@ import { DECISIONS } from '../../data/decisions';
   import { mountLogin, logout } from '../../scripts/login';
   import { askWho, whoLabel } from '../../scripts/whois';
   import { calgaryToIso, isoToCalgary } from '../../scripts/calgary-time';
-  import { PRODUCTS, DATES, GRINDS } from '../../data/products';
+  import { PRODUCTS, DATES, FILLINGS, ALLERGENS, GRINDS, boxOptions, optionName } from '../../data/products';
   const PRODUCT_LIST = PRODUCTS.map(p => ({ id: p.id, kind: p.kind, name: p.name.en }));
   const DATE_LIST = Object.entries(DATES).map(([id, d]) => ({ id, name: d.name.en }));
+  const FILLING_LIST = Object.entries(FILLINGS).map(([id, f]) => ({ id, name: `Stuffed · ${f.name.en}${f.hold ? ' (on hold)' : ''}` }));
+  // French for the label's allergen line (CFIA: "Contains" in English and French).
+  const ALLERGEN_FR: Record<string, string> = { milk: 'lait', sesame: 'sésame', nuts: 'amandes', grain: 'sorgho', pistachio: 'pistaches', cashew: 'noix de cajou', gluten: 'blé (gluten)', soy: 'soja' };
   const $ = (id: string) => document.getElementById(id)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
   const money = (c: number) => `$${(c / 100).toFixed(c % 100 ? 2 : 0)}`;
@@ -1101,7 +1104,9 @@ import { DECISIONS } from '../../data/decisions';
   function itemRow(pid: string, opt: string | null, qty: number) {
     const p = PRODUCTS.find(x => x.id === pid); if (!p) return '';
     const g = p.kind === 'coffee' ? p.grinds : p.kind === 'kit' ? (PRODUCTS.find(x => x.id === p.base) as any)?.grinds ?? [] : [];
-    const opts = g.length ? g.map((x: keyof typeof GRINDS) => [x, GRINDS[x].en]) : p.kind === 'box' && p.chooseDate ? Object.entries(DATES).map(([id, d]) => [id, d.name.en]) : [];
+    const opts = g.length ? g.map((x: keyof typeof GRINDS) => [x, GRINDS[x].en]) : p.kind === 'box' ? boxOptions(p).map(id => [id, optionName(p, id, 'en')]) : [];
+    // An old order may hold an option no longer offered (khudri, medjool in the Everyday box): keep it listed.
+    if (opt && opts.length && !opts.some(([v]: string[]) => v === opt)) opts.push([opt, p.kind === 'box' ? optionName(p, opt, 'en') : opt]);
     return `<div class="ei acts" data-pid="${p.id}"><span>${esc(p.name.en)}</span>${opts.length ? `<select>${opts.map(([v, l]) => `<option value="${v}" ${v === opt ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>` : ''}<input type="number" min="0" max="20" value="${qty}" style="width:70px" aria-label="Quantity" /></div>`;
   }
   const showPanel = (title: string, html: string) => {
@@ -1202,9 +1207,10 @@ import { DECISIONS } from '../../data/decisions';
     $('wkCoffeeTot').textContent = `Total ground coffee: ${d.coffeeTotalKg} kg (add your roast loss on top).`;
     $('wkPacks').innerHTML = '<tr><th>Pack</th><th>Full</th><th>Small</th></tr>' + ((d.packs ?? []).map((x: any) => `<tr><td>${esc(x.name)}${x.inKits ? `<br><small>${x.inKits} go with a bag or box</small>` : ''}</td><td>${x.full || ''}</td><td>${x.mini || ''}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">No packs this week.</td></tr>');
     $('wkDates').innerHTML = '<tr><th>Variety</th><th>Pieces</th><th>Grams</th></tr>' + (d.dates.map((x: any) => `<tr><td>${esc(x.name)}</td><td>${x.pieces || ''}</td><td>${x.grams ? `${(x.grams / 1000).toFixed(1)} kg` : ''}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">No dates this week.</td></tr>');
+    if (d.stuffed?.length) $('wkDates').innerHTML += d.stuffed.map((x: any) => `<tr><td>Stuffed · ${esc(x.name)}</td><td>${x.pieces}</td><td></td></tr>`).join('');
     const pk = d.packaging;
     $('wkPack').innerHTML = [['250 g pouches', pk.pouches250], ['100 g pouches (qishr)', pk.pouches100], ['Gift boxes · D24 insert', pk.giftBoxes.D24], ['Gift boxes · C12 insert', pk.giftBoxes.C12], ['Gift boxes · C2 insert', pk.giftBoxes.C2],
-      ['Everyday 500 g trays', pk.everydayTrays], ['Gold sleeves', pk.sleeves.regular], ['Ramadan sleeves', pk.sleeves.ramadan], ['Eid sleeves', pk.sleeves.eid], ['Paper cups for dates', pk.paperCups]]
+      ['Everyday trays · 250 g', pk.datePacks?.g250], ['Everyday trays · 500 g', pk.datePacks?.g500], ['Everyday trays · 1 kg', pk.datePacks?.g1000], ['Gold sleeves', pk.sleeves.regular], ['Ramadan sleeves', pk.sleeves.ramadan], ['Eid sleeves', pk.sleeves.eid], ['Paper cups for dates', pk.paperCups]]
       .filter(([, n]) => n).map(([k, n]) => `<li><span>${k}</span><b>${n}</b></li>`).join('') || '<li class="muted">Nothing to pack.</li>';
     $('wkDays').innerHTML = d.days.map((x: any) => `<li><span>${fmtDay(x.day)}</span><b>${x.pickup} pickup · ${x.delivery} delivery</b></li>`).join('') || '<li class="muted">No orders.</li>';
     $('wkItems').innerHTML = d.products.map((x: any) => `<li><span>${esc(x.name)}${x.option ? ` <small>(${esc(x.option)})</small>` : ''}</span><b>${x.qty}</b></li>`).join('');
@@ -1354,7 +1360,7 @@ import { DECISIONS } from '../../data/decisions';
     (($('labelForm') as HTMLFormElement).elements.namedItem('lot') as HTMLSelectElement).innerHTML = l.lots.filter((x: any) => !x.usedUpOn).map((x: any) => `<option value="${esc(x.code)}">${esc(x.code)} · ${esc(x.name)}</option>`).join('') || '<option value="">No lots yet</option>';
     loadFoodSafety();
     const sel = ($('lotForm') as HTMLFormElement).elements.namedItem('item') as HTMLSelectElement;
-    if (!sel.options.length) sel.innerHTML = `<optgroup label="Coffee bags and sealed packs">${PRODUCT_LIST.filter(p => p.kind === 'coffee' || p.kind === 'pack').map(p => `<option value="coffee|${p.id}">${esc(p.name)}</option>`).join('')}</optgroup><optgroup label="Dates">${DATE_LIST.map(d => `<option value="dates|${d.id}">${esc(d.name)}</option>`).join('')}</optgroup>`;
+    if (!sel.options.length) sel.innerHTML = `<optgroup label="Coffee bags and sealed packs">${PRODUCT_LIST.filter(p => p.kind === 'coffee' || p.kind === 'pack').map(p => `<option value="coffee|${p.id}">${esc(p.name)}</option>`).join('')}</optgroup><optgroup label="Dates">${DATE_LIST.map(d => `<option value="dates|${d.id}">${esc(d.name)}</option>`).join('')}</optgroup><optgroup label="Stuffed dates (one lot per filling)">${FILLING_LIST.map(d => `<option value="stuffed|${d.id}">${esc(d.name)}</option>`).join('')}</optgroup>`;
     $('lotTable').innerHTML = '<tr><th>Lot</th><th>What</th><th>Made</th><th>Best before</th><th>Quantity</th><th></th></tr>' + (l.lots.map((x: any) => `<tr class="${x.usedUpOn ? 'off' : ''}"><td class="ref">${esc(x.code)}</td><td>${esc(x.name)}${x.supplier ? `<br><small>${esc(x.supplier)}</small>` : ''}</td><td>${fmtDay(x.madeOn)}</td><td>${x.bestBefore ? fmtDay(x.bestBefore) : '–'}</td><td>${esc(x.quantity ?? '')}</td>
       <td>${x.usedUpOn ? `Used up ${fmtDay(x.usedUpOn)}` : `<button type="button" data-used="${esc(x.code)}">Used up</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No lots yet.</td></tr>');
     $('supTable').innerHTML = '<tr><th>Supply</th><th>On hand</th><th>Needed this week</th><th>Warn at</th><th></th></tr>' + sp.supplies.map((x: any) => `<tr data-sup="${esc(x.key)}" class="${x.short || x.low ? 'warn' : ''}"><td>${esc(x.name)}</td>
@@ -1371,13 +1377,17 @@ import { DECISIONS } from '../../data/decisions';
     e.preventDefault(); const f = e.target as HTMLFormElement, v = (k: string) => (f.elements.namedItem(k) as HTMLInputElement).value;
     const lot = LOTS.find(x => x.code === v('lot')); if (!lot) { alert('Add a lot first (above).'); return; }
     const p = lot.kind === 'coffee' ? PRODUCTS.find(x => x.id === lot.item) as any : null;
-    const date = lot.kind === 'dates' ? (DATES as any)[lot.item] : null;
+    const fill = lot.kind === 'stuffed' ? (FILLINGS as any)[lot.item] : null;
+    const date = lot.kind === 'dates' ? (DATES as any)[lot.item] : fill ? { name: { en: `Stuffed dates · ${fill.name.en}`, ar: `تمر محشي · ${fill.name.ar}` } } : null;
+    if (!p && !date) { alert('This lot’s item is no longer in the product file.'); return; }
     const name = p ? p.name : date.name;
-    const ing: [string, string] = p ? p.ingredients : ['Dates.', 'Dattes.'];
-    const common = p ? (p.kind === 'pack' ? (p.id === 'pack-saffron' ? ['Saffron', 'Safran'] : ['Spice blend for coffee', 'Mélange pour café']) : p.id === 'qishr' ? ['Dried coffee cherry husk', 'Cascara séchée'] : ing[0] === 'Coffee.' ? ['Ground coffee', 'Café moulu'] : ['Spiced ground coffee', 'Café moulu épicé']) : [`${date.name.en} dates`, `Dattes ${date.name.en}`];
+    // Stuffed: the ingredients wait for the supplier's sheet; the allergen line comes from FILLINGS.
+    const ing: [string, string] = p ? p.ingredients : fill ? ['Dates, [TBD: filling ingredients].', 'Dattes, [à confirmer : ingrédients de la garniture].'] : ['Dates.', 'Dattes.'];
+    const contains = fill ? `<div class="i"><b>Contains:</b> ${esc(fill.allergens.map((a: string) => (ALLERGENS as any)[a].en).join(', '))}. <b>Contient :</b> ${esc(fill.allergens.map((a: string) => ALLERGEN_FR[a] ?? a).join(', '))}.${fill.maybe ? ` ${esc(fill.maybe.en)}` : ''}</div>` : '';
+    const common = p ? (p.kind === 'pack' ? (p.id === 'pack-saffron' ? ['Saffron', 'Safran'] : ['Spice blend for coffee', 'Mélange pour café']) : p.id === 'qishr' ? ['Dried coffee cherry husk', 'Cascara séchée'] : ing[0] === 'Coffee.' ? ['Ground coffee', 'Café moulu'] : ['Spiced ground coffee', 'Café moulu épicé']) : fill ? ['Stuffed dates', 'Dattes fourrées'] : [`${date.name.en} dates`, `Dattes ${date.name.en}`];
     const net = v('net') || (p ? (p.kind === 'coffee' ? p.size.en : '') : '');
     const label = `<div class="lb"><div class="t"><b>${esc(name.en)}</b> <span dir="rtl">${esc(name.ar)}</span></div><div>${esc(common[0])} / ${esc(common[1])}</div>
-      <div class="i"><b>Ingredients:</b> ${esc(ing[0])} <b>Ingrédients :</b> ${esc(ing[1])}</div>
+      <div class="i"><b>Ingredients:</b> ${esc(ing[0])} <b>Ingrédients :</b> ${esc(ing[1])}</div>${contains}
       <div class="r"><span><b>${esc(net)}</b></span><span>${lot.bestBefore ? `BEST BEFORE / MEILLEUR AVANT <b>${bb(lot.bestBefore)}</b>` : ''}</span></div>
       <div class="r"><span style="white-space:nowrap">Lot ${esc(lot.code)}</span><span>Store in a cool, dry place. / Conserver dans un endroit frais et sec.</span></div>
       <div class="a">Hikaya Coffee Ltd., ${esc(BIZ_ADDRESS || '[address], Calgary, AB')}</div></div>`;

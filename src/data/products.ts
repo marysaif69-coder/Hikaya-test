@@ -8,9 +8,11 @@ export type Family = 'palm' | 'mountain' | 'house' | 'husk' | 'dates' | 'ramadan
 /** The three coffee lines on the shop: Gulf (palm), Yemeni (mountain, with Jubani and qishr) and Shami (house). */
 export type CoffeeLine = 'gulf' | 'yemen' | 'shami';
 export type Spice = 'saffron' | 'cardamom' | 'ginger' | 'husk' | 'sesame' | 'cinnamon';
-export type DateId = 'sukkari' | 'khalas' | 'khudri' | 'ajwa' | 'medjool';
+export type DateId = 'sukkari' | 'khalas' | 'khudri' | 'ajwa' | 'medjool' | 'mufattal';
+/** What a stuffed date is filled or dipped with (the customer chooses one per box). */
+export type FillingId = 'pistachio' | 'pistachio-dipped' | 'biscuit' | 'cashew' | 'caramel-almond';
 export type Grind = 'dallah' | 'fine' | 'powder';
-export type Allergen = 'milk' | 'sesame' | 'nuts' | 'grain';
+export type Allergen = 'milk' | 'sesame' | 'nuts' | 'grain' | 'pistachio' | 'cashew' | 'gluten' | 'soy';
 
 /** A base bag: the coffee itself, with only the spice that belongs in every cup of that line. */
 export interface Coffee {
@@ -37,7 +39,8 @@ export interface Coffee {
   art?: { front: string; back: string };
   /** Bunn speaks first; Tamr answers with the date that goes with this cup. */
   bunn: L;
-  date: DateId;
+  /** The date that goes with it. Not set until the tasting: then no pairing shows anywhere. */
+  date?: DateId;
   why: L;
 }
 
@@ -78,7 +81,8 @@ export interface Kit {
   story: L;
   taste: L;
   bunn: L;
-  date: DateId;
+  /** Not set until the tasting (see Coffee.date). */
+  date?: DateId;
   why: L;
 }
 
@@ -96,6 +100,16 @@ export interface Box {
   contents: L;
   chooseDate?: boolean;
   preorder: true;
+  /** Everyday dates sold by weight: grams in the pack. */
+  grams?: number;
+  /** Reserve and stuffed boxes: dates in the box. */
+  count?: number;
+  /** The varieties the customer can choose from (chooseDate boxes). */
+  varieties?: DateId[];
+  /** Stuffed boxes: the fillings the customer can choose from (one per box). */
+  fillings?: FillingId[];
+  allergens?: Allergen[];
+  tier?: 'everyday' | 'reserve' | 'stuffed' | 'gift';
   /** What goes inside, for the weekly roast and pack sheet: 250 g base bags, sealed packs, dates by variety (pieces). */
   packs?: { coffee?: Record<string, number>; sachets?: Record<string, number>; dates?: Partial<Record<DateId, number>> };
 }
@@ -107,7 +121,7 @@ export const FAMILIES: Record<Family, { name: L; line: L }> = {
   mountain: { name: { en: 'Yemen', ar: 'اليمن' }, line: { en: 'Yemeni-style coffee from Ethiopian beans, with cardamom. The ginger and each town’s additions come in the packs.', ar: 'قهوة على الطريقة اليمنية من حبوب إثيوبية، بالهيل. والزنجبيل وإضافة كل بلدة في الظروف.' } },
   house: { name: { en: 'Shami', ar: 'الشام' }, line: { en: 'Shami coffee, ground to powder and boiled in the rakwa.', ar: 'القهوة الشامية، مطحونة كالبودرة وتُغلى في الركوة.' } },
   husk: { name: { en: 'Qishr', ar: 'القشر' }, line: { en: 'Qishr – dried coffee cherry husk, with ginger.', ar: 'القشر – قشر ثمرة البن المجفف، مع الزنجبيل.' } },
-  dates: { name: { en: 'Dates & boxes', ar: 'التمر والصناديق' }, line: { en: 'Chosen by variety, region and harvest.', ar: 'نختاره بالصنف والمنطقة والموسم.' } },
+  dates: { name: { en: 'Dates', ar: 'التمر' }, line: { en: 'Everyday dates by weight; Reserve and stuffed in boxes.', ar: 'تمر كل يوم بالوزن، والنخبة والمحشي في علب.' } },
   ramadan: { name: { en: 'Ramadan', ar: 'رمضان' }, line: { en: 'For the table at sunset.', ar: 'لمائدة الغروب.' } },
   eid: { name: { en: 'Eid edition', ar: 'إصدار العيد' }, line: { en: 'For the visits, not for wrapping paper.', ar: 'للزيارات، لا لورق الهدايا.' } },
 };
@@ -139,15 +153,41 @@ export const ALLERGENS: Record<Allergen, L> = {
   sesame: { en: 'Sesame', ar: 'سمسم' },
   nuts: { en: 'Tree nuts (almonds)', ar: 'مكسرات (لوز)' },
   grain: { en: 'Grain (sorghum)', ar: 'حبوب (ذرة رفيعة)' },
+  pistachio: { en: 'Tree nuts (pistachio)', ar: 'مكسرات (فستق)' },
+  cashew: { en: 'Tree nuts (cashew)', ar: 'مكسرات (كاجو)' },
+  gluten: { en: 'Wheat (gluten)', ar: 'قمح (غلوتين)' },
+  soy: { en: 'Soy', ar: 'صويا' },
 };
 
 export const DATES: Record<DateId, { name: L; region: L; c: string; sweet: number; notes: L }> = {
-  sukkari: { name: { en: 'Sukkari', ar: 'سكري' }, region: { en: 'Qassim', ar: 'القصيم' }, c: '#C98A3A', sweet: 95, notes: { en: 'Very sweet, soft to crisp, caramel.', ar: 'حلو جداً، طري إلى مقرمش، كراميل.' } },
+  sukkari: { name: { en: 'Sukkari Qassimi', ar: 'سكري قصيمي' }, region: { en: 'Qassim', ar: 'القصيم' }, c: '#C98A3A', sweet: 95, notes: { en: 'Very sweet, soft to crisp, caramel.', ar: 'حلو جداً، طري إلى مقرمش، كراميل.' } },
   khalas: { name: { en: 'Khalas', ar: 'خلاص' }, region: { en: 'Al-Ahsa', ar: 'الأحساء' }, c: '#8E4A22', sweet: 80, notes: { en: 'Toffee and caramel, soft and moist.', ar: 'توفي وكراميل، طري ورطب.' } },
-  medjool: { name: { en: 'Medjool', ar: 'مجدول' }, region: { en: 'Jordan Valley', ar: 'وادي الأردن' }, c: '#6E3420', sweet: 85, notes: { en: 'Large and fleshy, honey-caramel.', ar: 'كبيرة ولحمية، عسل وكراميل.' } },
+  medjool: { name: { en: 'Medjool', ar: 'مجدول' }, region: { en: '[TBD: the supplier’s origin]', ar: '[يُحدد لاحقاً: منشأ المورّد]' }, c: '#6E3420', sweet: 85, notes: { en: 'Large and fleshy, honey-caramel.', ar: 'كبيرة ولحمية، عسل وكراميل.' } },
   khudri: { name: { en: 'Khudri', ar: 'خضري' }, region: { en: 'Arabia', ar: 'الجزيرة العربية' }, c: '#5B2E17', sweet: 55, notes: { en: 'Firmer and darker, less sweet.', ar: 'أصلب وأغمق، أقل حلاوة.' } },
   ajwa: { name: { en: 'Ajwa', ar: 'عجوة' }, region: { en: 'Madinah', ar: 'المدينة' }, c: '#2B1710', sweet: 50, notes: { en: 'Small and near-black, gentle fruit.', ar: 'صغيرة شبه سوداء، فاكهية رقيقة.' } },
+  mufattal: { name: { en: 'Royal Sukkari Mufattal', ar: 'سكري ملكي مفتّل' }, region: { en: 'Qassim', ar: 'القصيم' }, c: '#B57A34', sweet: 95, notes: { en: '[TBD]', ar: '[يُحدد لاحقاً]' } },
 };
+// Khudri stays in DATES so old orders, regular orders and lots still read, but no product offers it.
+
+/** The three date tiers. Varieties may change with what arrives: change them here. */
+export const EVERYDAY: DateId[] = ['khalas', 'sukkari'];
+export const RESERVE: DateId[] = ['mufattal', 'ajwa', 'medjool'];
+/** The varieties a box lets the customer choose, and the one picked first. */
+export const varietiesOf = (b: Box) => b.varieties ?? [];
+export const defaultVariety = (b: Box) => varietiesOf(b)[0] ?? '';
+
+/** Stuffed-date fillings. `hold`: not sold until the owners decide (caramel with almonds: milk). */
+export const FILLINGS: Record<FillingId, { name: L; allergens: Allergen[]; maybe?: L; hold?: boolean }> = {
+  pistachio: { name: { en: 'Pistachio stuffed', ar: 'محشي بالفستق' }, allergens: ['pistachio'] },
+  'pistachio-dipped': { name: { en: 'Dipped in pistachio', ar: 'مغطّى بالفستق' }, allergens: ['pistachio'], maybe: { en: '[TBD: the coating; milk and soy if chocolate]', ar: '[يُحدد لاحقاً: الغلاف؛ حليب وصويا إن كان شوكولاتة]' } },
+  // Brand name "Lotus" waits for the owners (Settings → Decisions); until then the plain name.
+  biscuit: { name: { en: 'Biscuit cream', ar: 'كريمة البسكويت' }, allergens: ['gluten', 'soy'], maybe: { en: '[TBD: from the jar’s label]', ar: '[يُحدد لاحقاً: من ملصق العلبة]' } },
+  cashew: { name: { en: 'Cashew stuffed', ar: 'محشي بالكاجو' }, allergens: ['cashew'] },
+  'caramel-almond': { name: { en: 'Caramel with almonds', ar: 'كراميل باللوز' }, allergens: ['nuts', 'milk'], hold: true },
+};
+export const FILLINGS_ON_SALE = (Object.keys(FILLINGS) as FillingId[]).filter(f => !FILLINGS[f].hold);
+/** What the customer chooses for a box: a filling (stuffed) or a variety (chooseDate); empty when nothing. */
+export const boxOptions = (b: Box): string[] => b.fillings ?? (b.chooseDate ? varietiesOf(b) : []);
 
 const C = (c: Omit<Coffee, 'kind' | 'size' | 'price'> & { size?: L; price?: number | null }): Coffee => ({ kind: 'coffee', size: { en: '250 g', ar: '٢٥٠ غ' }, price: null, ...c });
 
@@ -160,42 +200,42 @@ export const COFFEES: Coffee[] = [
     notes: { en: 'Blonde roast, coarse ground, cardamom already mixed in. Drink it as it is, or add the packs that make it the way you take it at home.', ar: 'تحميص أشقر، طحنة خشنة، والهيل مخلوط فيها. اشربها كما هي، أو أضف الظروف التي تجعلها كما تشربها في بيتك.' },
     story: { en: 'The pale qahwa of Arabia, poured from the dallah into a small cup. This one bag is the start of every Gulf style we make; the packs do the rest.', ar: 'قهوة الجزيرة الشقراء، تُصبّ من الدلّة في فنجان صغير. هذا الكيس بداية كل طريقة خليجية نصنعها، والظروف تكمل الباقي.' },
     ingredients: ['Coffee, cardamom.', 'Café, cardamome.'],
-    bunn: { en: 'Cardamom only. Add what you like.', ar: 'هيل فقط، وأضف ما تحبه.' }, date: 'khalas',
+    bunn: { en: 'Cardamom only. Add what you like.', ar: 'هيل فقط، وأضف ما تحبه.' },
     why: { en: 'Toffee-soft Khalas with a pale cup.', ar: 'خلاص الطرية مع فنجان أشقر.' } }),
   C({ id: 'yemeni', line: 'yemen', fam: 'mountain', name: { en: 'Yemeni qahwa', ar: 'قهوة يمنية' }, roast: 2, spices: ['cardamom'], grinds: ['fine'],
     taste: { en: 'Soft · fruity · cardamom', ar: 'ناعمة · فاكهية · هيل' },
     notes: { en: 'Yemeni-style, from Ethiopian beans. Medium-light roast, fine ground, with cardamom mixed in. The ginger comes in the packs.', ar: 'على الطريقة اليمنية، من حبوب إثيوبية. تحميص متوسط فاتح، طحنة ناعمة، والهيل مخلوط فيها. والزنجبيل يأتي في الظروف.' },
     story: { en: 'Coffee the way Yemeni homes make it, in the pot. On its own it is a clean cardamom cup. With a pack, ginger and all, it becomes Hadrami, Rada’i or Baydani.', ar: 'القهوة كما تصنعها البيوت اليمنية، في الإبريق. وحدها فنجان صافٍ بالهيل، ومع ظرف، بزنجبيله وكل ما فيه، تصير حضرمية أو رداعية أو بيضانية.' },
     ingredients: ['Coffee, cardamom.', 'Café, cardamome.'],
-    bunn: { en: 'Cardamom in me. The ginger waits in the pack.', ar: 'فيّ الهيل، والزنجبيل ينتظر في الظرف.' }, date: 'medjool',
+    bunn: { en: 'Cardamom in me. The ginger waits in the pack.', ar: 'فيّ الهيل، والزنجبيل ينتظر في الظرف.' },
     why: { en: 'Honeyed Medjool with a cardamom cup.', ar: 'المجدول العسلي مع فنجان الهيل.' } }),
   C({ id: 'jubani', line: 'yemen', fam: 'mountain', name: { en: 'Jubani', ar: 'جُبَني' }, roast: 2, spices: ['husk'], grinds: ['fine'],
     taste: { en: 'Dried fruit · soft · sweet', ar: 'فاكهة مجففة · ناعمة · حلوة' },
     notes: { en: 'Yemeni-style coffee with qishr, its own dried husk, ground together in one bag. [TBD: with ginger or plain]', ar: 'قهوة على الطريقة اليمنية مع القشر، قشرها المجفف، مطحونان معاً في كيس واحد. [يُحدد لاحقاً: بالزنجبيل أو سادة]' },
     story: { en: 'The bean and its husk in one pot, the way Juban makes it.', ar: 'الحبّة وقشرها في إبريق واحد، على طريقة جُبَن.' },
     ingredients: ['Coffee, coffee cherry husk. [TBD: ginger]', 'Café, cascara. [TBD : gingembre]'],
-    bunn: { en: 'Me, and my own husk.', ar: 'أنا، ومعي قشري.' }, date: 'sukkari',
+    bunn: { en: 'Me, and my own husk.', ar: 'أنا، ومعي قشري.' },
     why: { en: 'Sukkari answers the dried-fruit note.', ar: 'السكري يجاوب طعم الفاكهة المجففة.' } }),
   C({ id: 'qishr', line: 'yemen', fam: 'husk', name: { en: 'Qishr', ar: 'قشر' }, size: { en: '100 g', ar: '١٠٠ غ' }, roast: 0, spices: ['husk', 'ginger'], grinds: [],
     taste: { en: 'Cherry · ginger · light', ar: 'كرز · زنجبيل · خفيفة' },
     notes: { en: 'Qishr – dried coffee cherry husk, with ginger. Brewed in the pot like tea, light on caffeine. [TBD: roasted or raw husk]', ar: 'القشر – قشر ثمرة البن المجفف، مع الزنجبيل. يُغلى في الإبريق مثل الشاي، قليل الكافيين. [يُحدد لاحقاً: قشر محمّص أو نيء]' },
     story: { en: "Yemen's oldest coffee drink, older than the roasted bean.", ar: 'أقدم مشروبات البن في اليمن، أقدم من الحبّة المحمّصة.' },
     ingredients: ['Coffee cherry husk, ginger.', 'Cascara, gingembre.'],
-    bunn: { en: 'I was a husk before the bean.', ar: 'كنتُ قشراً قبل البُن.' }, date: 'sukkari',
+    bunn: { en: 'I was a husk before the bean.', ar: 'كنتُ قشراً قبل البُن.' },
     why: { en: 'Cherry and caramel.', ar: 'كرز وكراميل.' } }),
   C({ id: 'shami', popular: true, line: 'shami', fam: 'house', name: { en: 'Shami coffee with cardamom', ar: 'شامية بالهيل' }, roast: 3, spices: ['cardamom'], grinds: ['powder'],
     taste: { en: 'Thick · bittersweet · cardamom', ar: 'كثيفة · مُرّة حلوة · هيل' },
     notes: { en: 'Brazilian beans, medium roast, ground to powder, with cardamom. The everyday Shami cup.', ar: 'حبوب برازيلية، تحميص متوسط، مطحونة كالبودرة، بالهيل. فنجان الشامية لكل يوم.' },
     story: { en: 'The Shami rakwa: powder-fine coffee boiled slowly, with cardamom, the way homes in the Levant make it.', ar: 'الركوة الشامية: قهوة ناعمة كالبودرة تُغلى على مهل، بالهيل، كما في بيوت الشام.' },
     ingredients: ['Coffee, cardamom.', 'Café, cardamome.'],
-    bunn: { en: 'Fine, for the rakwa.', ar: 'ناعمة، للركوة.' }, date: 'medjool',
+    bunn: { en: 'Fine, for the rakwa.', ar: 'ناعمة، للركوة.' },
     why: { en: 'A soft Medjool after a thick cup.', ar: 'مجدول طري بعد فنجان كثيف.' } }),
   C({ id: 'shami-sada', line: 'shami', fam: 'house', name: { en: 'Shami sada', ar: 'شامية سادة' }, roast: 3, spices: [], grinds: ['powder'],
     taste: { en: 'Thick · chocolatey · plain', ar: 'كثيفة · شوكولاتية · سادة' },
     notes: { en: 'The same Shami coffee, nothing added.', ar: 'القهوة الشامية نفسها، بلا إضافات.' },
     story: { en: 'For those who take their coffee plain and their sweetness from the date.', ar: 'لمن يشرب قهوته سادة ويأخذ حلاوته من التمرة.' },
     ingredients: ['Coffee.', 'Café.'],
-    bunn: { en: "I'm bitter today.", ar: 'أنا مُرّ اليوم.' }, date: 'medjool',
+    bunn: { en: "I'm bitter today.", ar: 'أنا مُرّ اليوم.' },
     why: { en: 'Then take two dates.', ar: 'خذ تمرتين إذن.' } }),
 ];
 
@@ -238,79 +278,99 @@ export const KITS: Kit[] = [
     taste: { en: 'Golden · cardamom · saffron', ar: 'ذهبية · هيل · زعفران' },
     notes: { en: 'Gulf coffee and its saffron packet. Cardamom and saffron, golden and light.', ar: 'قهوة خليجية مع ظرف الزعفران. هيل وزعفران، ذهبية وخفيفة.' },
     story: { en: "Najd's way: roasted pale, poured from the dallah into a small cup, always with a date. The saffron is what makes it Najdi, so it is always in the box.", ar: 'على طريقة نجد: تحميص أشقر، تُصبّ من الدلّة في فنجان صغير، ومعها تمرة دائماً. الزعفران هو ما يجعلها نجدية، لذلك هو في العلبة دائماً.' },
-    bunn: { en: 'Cardamom and saffron.', ar: 'هيل وزعفران.' }, date: 'khalas', why: { en: 'Toffee-soft Khalas rounds the saffron.', ar: 'خلاص الطرية تُليّن الزعفران.' } }),
+    bunn: { en: 'Cardamom and saffron.', ar: 'هيل وزعفران.' }, why: { en: 'Toffee-soft Khalas rounds the saffron.', ar: 'خلاص الطرية تُليّن الزعفران.' } }),
   K({ id: 'qassimi', origin: { en: 'The Qassim way: velvety with evaporated milk, warm with spice', ar: 'على طريقة القصيم: قوام مخملي بالحليب المبخّر، ودفء البهار' }, line: 'gulf', fam: 'palm', base: 'gulf', parts: [{ id: 'pack-qassim' }, { id: 'pack-saffron' }], name: { en: 'Qassimi', ar: 'قصيمية' },
     taste: { en: 'Velvety · warm spice · saffron', ar: 'مخملية · بهار دافئ · زعفران' },
     notes: { en: 'Gulf coffee with the Qassim spice blend and the saffron packet. Add evaporated milk as you make it (we tell you how much).', ar: 'قهوة خليجية مع خلطة البهار القصيمية وظرف الزعفران. وتضيف الحليب المبخّر عند التحضير (ونخبرك بالمقدار).' },
     story: { en: 'The Qassim way: the same pale coffee with warm spice, and evaporated milk added at home for a velvety cup.', ar: 'على طريقة القصيم: القهوة الشقراء نفسها بدفء البهار، ويُضاف الحليب المبخّر في البيت لقوام مخملي.' },
-    bunn: { en: 'Add the evaporated milk. I’ll do the rest.', ar: 'أضف الحليب المبخّر، وأنا أكمل الباقي.' }, date: 'sukkari', why: { en: 'Sukkari, from Qassim too.', ar: 'السكري، من القصيم أيضاً.' } }),
+    bunn: { en: 'Add the evaporated milk. I’ll do the rest.', ar: 'أضف الحليب المبخّر، وأنا أكمل الباقي.' }, why: { en: 'Sukkari, from Qassim too.', ar: 'السكري، من القصيم أيضاً.' } }),
   K({ id: 'hijazi', origin: { en: 'The Hijaz way: fragrant and aromatic', ar: 'على طريقة الحجاز: عطرة وزكية' }, line: 'gulf', fam: 'palm', base: 'gulf', parts: [{ id: 'pack-hijazi' }, { id: 'pack-saffron' }], name: { en: 'Hijazi', ar: 'حجازية' },
     taste: { en: 'Fragrant · aromatic spice · saffron', ar: 'عطرة · بهار زكي · زعفران' },
     notes: { en: 'Gulf coffee with the Hijazi blend pack and the saffron packet.', ar: 'قهوة خليجية مع الخلطة الحجازية وظرف الزعفران.' },
     story: { en: 'The Hijaz way: the same pale coffee, more fragrant in the cup.', ar: 'على طريقة الحجاز: القهوة الشقراء نفسها، أعطر في الفنجان.' },
-    bunn: { en: 'From the west of Arabia.', ar: 'من غرب الجزيرة.' }, date: 'ajwa', why: { en: 'Ajwa, from Madinah.', ar: 'العجوة، من المدينة.' } }),
+    bunn: { en: 'From the west of Arabia.', ar: 'من غرب الجزيرة.' }, why: { en: 'Ajwa, from Madinah.', ar: 'العجوة، من المدينة.' } }),
   K({ id: 'hadrami', origin: { en: 'The Hadramawt way: warm with ginger', ar: 'على طريقة حضرموت: دافئة بالزنجبيل' }, line: 'yemen', fam: 'mountain', base: 'yemeni', parts: [{ id: 'pack-hadrami' }], name: { en: 'Hadrami', ar: 'حضرمية' },
     taste: { en: 'Warm · ginger · spice', ar: 'دافئة · زنجبيل · بهار' },
     notes: { en: 'Yemeni qahwa with the Hadrami pack: ginger and the Hadrami additions.', ar: 'قهوة يمنية مع الخلطة الحضرمية: الزنجبيل وإضافات حضرموت.' },
     story: { en: 'The Hadramawt way, made in the pot.', ar: 'على طريقة حضرموت، تُصنع في الإبريق.' },
-    bunn: { en: 'From Hadramawt.', ar: 'من حضرموت.' }, date: 'khalas', why: { en: 'Soft Khalas for a warm cup.', ar: 'خلاص الطرية لفنجان دافئ.' } }),
+    bunn: { en: 'From Hadramawt.', ar: 'من حضرموت.' }, why: { en: 'Soft Khalas for a warm cup.', ar: 'خلاص الطرية لفنجان دافئ.' } }),
   K({ id: 'radai', origin: { en: 'From Rada’a: nutty and toasty, warm with ginger', ar: 'من رداع: بطعم المكسرات المحمّصة ودفء الزنجبيل' }, line: 'yemen', fam: 'mountain', base: 'yemeni', parts: [{ id: 'pack-radai' }], name: { en: 'Rada’i', ar: 'رداعية' },
     taste: { en: 'Nutty · toasted sesame · ginger', ar: 'مكسرات · سمسم محمّص · زنجبيل' },
     notes: { en: 'Yemeni qahwa with the Rada’i pack: ginger, roasted sesame and almonds.', ar: 'قهوة يمنية مع الخلطة الرداعية: زنجبيل وسمسم محمّص ولوز.' },
     story: { en: 'From Rada’a: sesame and almonds in the pot with the coffee.', ar: 'من رداع: السمسم واللوز في الإبريق مع القهوة.' },
-    bunn: { en: 'Sesame and almonds, for the cold.', ar: 'سمسم ولوز، للبرد.' }, date: 'medjool', why: { en: 'Big, honeyed Medjool with the almonds.', ar: 'المجدول العسلي مع اللوز.' } }),
+    bunn: { en: 'Sesame and almonds, for the cold.', ar: 'سمسم ولوز، للبرد.' }, why: { en: 'Big, honeyed Medjool with the almonds.', ar: 'المجدول العسلي مع اللوز.' } }),
   K({ id: 'baydani', origin: { en: 'From Al-Bayda: toasty and lightly sweet, warm with ginger', ar: 'من البيضاء: محمّصة وحلوة قليلاً، بدفء الزنجبيل' }, line: 'yemen', fam: 'mountain', base: 'yemeni', parts: [{ id: 'pack-baydani' }], name: { en: 'Baydani', ar: 'بيضانية' },
     taste: { en: 'Toasty · lightly sweet · ginger', ar: 'محمّصة · حلوة قليلاً · زنجبيل' },
     notes: { en: 'Yemeni qahwa with the Baydani pack: ginger and roasted sorghum, toasty and lightly sweet.', ar: 'قهوة يمنية مع الخلطة البيضانية: زنجبيل وذرة رفيعة محمّصة، محمّصة وحلوة قليلاً.' },
     story: { en: "Al-Bayda's way: toasty and lightly sweet, warm with ginger.", ar: 'على طريقة البيضاء: محمّصة وحلوة قليلاً، بدفء الزنجبيل.' },
-    bunn: { en: 'Al-Bayda’s warmth in my cup.', ar: 'دفء البيضاء في فنجاني.' }, date: 'khalas', why: { en: 'Khalas toffee with a toasty cup.', ar: 'توفي خلاص مع فنجان محمّص.' } }),
+    bunn: { en: 'Al-Bayda’s warmth in my cup.', ar: 'دفء البيضاء في فنجاني.' }, why: { en: 'Khalas toffee with a toasty cup.', ar: 'توفي خلاص مع فنجان محمّص.' } }),
   K({ id: 'taste-gulf', discovery: true, line: 'gulf', fam: 'palm', base: 'gulf', parts: [{ id: 'pack-qassim', mini: true }, { id: 'pack-hijazi', mini: true }, { id: 'pack-saffron' }], name: { en: 'Taste the Gulf', ar: 'تذوّق النكهة الخليجية' },
     taste: { en: 'Najdi · Qassimi · Hijazi', ar: 'نجدية · قصيمية · حجازية' },
     notes: { en: 'One 250 g bag of Gulf coffee, a small Qassim pack, a small Hijazi pack and the saffron packet. Try each style, then choose yours.', ar: 'كيس قهوة خليجية ٢٥٠ غ، وظرف قصيمي صغير، وظرف حجازي صغير، وظرف الزعفران. جرّب كل طريقة، ثم اختر طريقتك.' },
     story: { en: 'For the first time, or for the friend who asks which one is yours.', ar: 'للمرة الأولى، أو للصديق الذي يسأل: أيّها قهوتك؟' },
-    bunn: { en: 'Three Gulf cups from one bag.', ar: 'ثلاث قهوات خليجية من كيس واحد.' }, date: 'khalas', why: { en: 'Khalas goes with all three.', ar: 'خلاص تناسب الثلاث.' } }),
+    bunn: { en: 'Three Gulf cups from one bag.', ar: 'ثلاث قهوات خليجية من كيس واحد.' }, why: { en: 'Khalas goes with all three.', ar: 'خلاص تناسب الثلاث.' } }),
   K({ id: 'taste-yemen', discovery: true, line: 'yemen', fam: 'mountain', base: 'yemeni', parts: [{ id: 'pack-hadrami', mini: true }, { id: 'pack-radai', mini: true }, { id: 'pack-baydani', mini: true }], name: { en: 'Taste Yemen', ar: 'تذوّق النكهة اليمنية' },
     taste: { en: 'Hadrami · Rada’i · Baydani', ar: 'حضرمية · رداعية · بيضانية' },
     notes: { en: 'One 250 g bag of Yemeni qahwa with a small Hadrami, Rada’i and Baydani pack. Try each style, then choose yours.', ar: 'كيس قهوة يمنية ٢٥٠ غ مع ظرف صغير حضرمي ورداعي وبيضاني. جرّب كل طريقة، ثم اختر طريقتك.' },
     story: { en: 'Three towns, one pot at a time.', ar: 'ثلاث بلدات، إبريق بعد إبريق.' },
-    bunn: { en: 'Three towns in one box.', ar: 'ثلاث بلدات في علبة واحدة.' }, date: 'medjool', why: { en: 'Medjool sits well with all three.', ar: 'المجدول يناسب الثلاث.' } }),
+    bunn: { en: 'Three towns in one box.', ar: 'ثلاث بلدات في علبة واحدة.' }, why: { en: 'Medjool sits well with all three.', ar: 'المجدول يناسب الثلاث.' } }),
 ];
 
 export const BOXES: Box[] = [
-  { kind: 'box', id: 'date-box', fam: 'dates', name: { en: 'The Everyday Date Box', ar: 'علبة التمر اليومية' }, price: 34, size: { en: '500 g', ar: '٥٠٠ غ' }, img: '/media/img/giftbox.webp',
-    insert: 'everyday', sleeve: 'regular', chooseDate: true,
-    notes: { en: 'One variety, chosen by you. For the house, not for wrapping.', ar: 'صنف واحد تختاره. للبيت، لا للتغليف.' },
-    contents: { en: '500 g of one date variety in a clear tray.', ar: '٥٠٠ غ من صنف واحد في علبة شفافة.' }, preorder: true },
-  { kind: 'box', id: 'four-palms', fam: 'dates', name: { en: 'Four Palms', ar: 'أربع نخلات' }, price: 44, size: { en: '24 dates', ar: '٢٤ تمرة' }, img: '/media/img/ramadan-date.webp',
-    insert: 'D24', sleeve: 'regular', packs: { dates: { sukkari: 6, khalas: 6, khudri: 6, ajwa: 6 } },
+  // Everyday dates, sold by weight. One id per size: each size has its own price, and the server prices by id.
+  ...([250, 500, 1000] as const).map((g): Box => {
+    const ar = g === 1000 ? '١ كغ' : g === 500 ? '٥٠٠ غ' : '٢٥٠ غ';
+    const en = g === 1000 ? '1 kg' : `${g} g`;
+    return { kind: 'box', id: g === 500 ? 'date-box' : g === 1000 ? 'dates-1kg' : 'dates-250', fam: 'dates', tier: 'everyday',
+      name: { en: `Everyday dates, ${en}`, ar: `تمر كل يوم ${ar}` }, price: null, size: { en, ar }, img: '/media/img/giftbox.webp',
+      insert: 'everyday', sleeve: 'regular', chooseDate: true, grams: g, varieties: EVERYDAY,
+      notes: { en: 'Good dates at an everyday price: Khalas or Sukkari Qassimi.', ar: 'تمر طيّب بسعر كل يوم: خلاص أو سكري قصيمي.' },
+      contents: { en: `${en} of one variety in a clear tray.`, ar: `${ar} من صنف واحد في علبة شفافة.` }, preorder: true };
+  }),
+  // Reserve: one variety per box (a mixed box waits for the owners, Settings → Decisions).
+  ...([12, 24] as const).map((n): Box => ({ kind: 'box', id: `reserve-${n}`, fam: 'dates', tier: 'reserve',
+    name: { en: `Reserve box, ${n} dates`, ar: `علبة النخبة، ${n === 12 ? '١٢' : '٢٤'} تمرة` }, price: null,
+    size: { en: `${n} dates`, ar: `${n === 12 ? '١٢' : '٢٤'} تمرة` }, img: '/media/img/ramadan-date.webp',
+    insert: n === 12 ? 'C12' : 'D24', sleeve: 'regular', chooseDate: true, count: n, varieties: RESERVE,
+    notes: { en: 'Royal Sukkari Mufattal, Ajwa or Medjool. Larger, hand-picked, each date in its own cup [TBD: confirm with the supplier]. The ones we recommend.', ar: 'سكري ملكي مفتّل أو عجوة أو مجدول. أكبر حجماً، منتقاة باليد، كل تمرة في كوبها [TBD: confirm with the supplier]. وهي ما ننصح به.' },
+    contents: { en: `Gift box, ${n} dates of one variety in paper cups.`, ar: `صندوق هدية، ${n === 12 ? '١٢' : '٢٤'} تمرة من صنف واحد في أكواب ورقية.` }, preorder: true })),
+  // Stuffed: one filling per box; each date sealed on its own. Allergens follow the filling (FILLINGS).
+  ...([12, 24] as const).map((n): Box => ({ kind: 'box', id: `stuffed-${n}`, fam: 'dates', tier: 'stuffed',
+    name: { en: `Stuffed dates, ${n}`, ar: `تمر محشي، ${n === 12 ? '١٢' : '٢٤'} تمرة` }, price: null,
+    size: { en: `${n} dates`, ar: `${n === 12 ? '١٢' : '٢٤'} تمرة` }, img: '/media/img/eid-dates.webp',
+    insert: n === 12 ? 'C12' : 'D24', sleeve: 'regular', count: n, fillings: FILLINGS_ON_SALE,
+    notes: { en: 'Each date sealed on its own, with its allergen label.', ar: 'كل تمرة مغلّفة وحدها، مع ملصق مسببات الحساسية.' },
+    contents: { en: `Gift box, ${n} stuffed dates, one filling, each sealed.`, ar: `صندوق هدية، ${n === 12 ? '١٢' : '٢٤'} تمرة محشية بحشوة واحدة، كل تمرة مغلّفة.` }, preorder: true })),
+  { kind: 'box', id: 'four-palms', tier: 'gift', fam: 'dates', name: { en: 'Four Palms', ar: 'أربع نخلات' }, price: 44, size: { en: '24 dates', ar: '٢٤ تمرة' }, img: '/media/img/ramadan-date.webp',
+    insert: 'D24', sleeve: 'regular', packs: { dates: { sukkari: 6, khalas: 6, ajwa: 6 } },
     notes: { en: 'Sukkari, Khalas, Khudri and Ajwa, six of each, side by side.', ar: 'سكري وخلاص وخضري وعجوة، ست من كل صنف، جنباً إلى جنب.' },
     contents: { en: 'Gift box, 24 dates in paper cups, four varieties.', ar: 'صندوق هدية، ٢٤ تمرة في أكواب ورقية، أربعة أصناف.' }, preorder: true },
   // Year-round gift boxes in the regular gold sleeve: they stay when Ramadan and Eid are switched off.
-  { kind: 'box', id: 'guest-box', fam: 'dates', name: { en: 'The Guest Box', ar: 'صندوق الضيف' }, price: 54, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/giftbox.webp',
+  { kind: 'box', id: 'guest-box', tier: 'gift', fam: 'dates', name: { en: 'The Guest Box', ar: 'صندوق الضيف' }, price: 54, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/giftbox.webp',
     insert: 'C12', sleeve: 'regular', packs: { coffee: { gulf: 1 }, sachets: { 'pack-saffron': 1 }, dates: { khalas: 12 } },
     notes: { en: 'One coffee and twelve dates in the gold sleeve, for any visit, any time of year.', ar: 'قهوة واثنتا عشرة تمرة بالحزام الذهبي، لأي زيارة في أي وقت من السنة.' },
     contents: { en: 'Gift box with Najdi coffee (Gulf coffee and its saffron packet) and 12 Khalas dates.', ar: 'صندوق هدية فيه قهوة نجدية (قهوة خليجية وظرف زعفرانها) و١٢ تمرة خلاص.' }, preorder: true },
-  { kind: 'box', id: 'coffee-duo', fam: 'dates', name: { en: 'The Coffee Duo', ar: 'ثنائي القهوة' }, price: 46, size: { en: '2 × 250 g', ar: '٢ × ٢٥٠ غ' }, img: '/media/img/giftbox.webp',
+  { kind: 'box', id: 'coffee-duo', tier: 'gift', fam: 'dates', name: { en: 'The Coffee Duo', ar: 'ثنائي القهوة' }, price: 46, size: { en: '2 × 250 g', ar: '٢ × ٢٥٠ غ' }, img: '/media/img/giftbox.webp',
     insert: 'C2', sleeve: 'regular', packs: { coffee: { gulf: 1, yemeni: 1 }, sachets: { 'pack-saffron': 1 } },
     notes: { en: 'Najdi and Yemeni qahwa side by side, for the house that pours all year.', ar: 'نجدية ويمنية جنباً إلى جنب، للبيت الذي يصبّ طوال السنة.' },
     contents: { en: 'Gift box, gold sleeve, two coffees: Najdi (Gulf coffee with its saffron packet) and Yemeni qahwa.', ar: 'صندوق هدية بالحزام الذهبي، قهوتان: نجدية (قهوة خليجية مع ظرف الزعفران) ويمنية.' }, preorder: true },
-  { kind: 'box', id: 'iftar-pair', fam: 'ramadan', name: { en: 'The Iftar Pair', ar: 'ثنائي الإفطار' }, price: 54, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/iftar-pair.webp',
+  { kind: 'box', id: 'iftar-pair', tier: 'gift', fam: 'ramadan', name: { en: 'The Iftar Pair', ar: 'ثنائي الإفطار' }, price: 54, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/iftar-pair.webp',
     insert: 'C12', sleeve: 'ramadan', packs: { coffee: { gulf: 1 }, sachets: { 'pack-saffron': 1 }, dates: { khalas: 12 } },
     notes: { en: 'One coffee and twelve dates, for the first cup after sunset.', ar: 'قهوة واثنتا عشرة تمرة، لأول فنجان بعد الغروب.' },
     contents: { en: 'Gift box with Najdi coffee (Gulf coffee and its saffron packet) and 12 Khalas dates.', ar: 'صندوق هدية فيه قهوة نجدية (قهوة خليجية وظرف زعفرانها) و١٢ تمرة خلاص.' }, preorder: true },
-  { kind: 'box', id: 'ramadan-box', fam: 'ramadan', name: { en: 'Ramadan Date Box', ar: 'صندوق تمر رمضان' }, price: 34, size: { en: '500 g', ar: '٥٠٠ غ' }, img: '/media/img/giftbox.webp',
-    insert: 'everyday', sleeve: 'ramadan', chooseDate: true,
+  { kind: 'box', id: 'ramadan-box', tier: 'everyday', fam: 'ramadan', name: { en: 'Ramadan Date Box', ar: 'صندوق تمر رمضان' }, price: 34, size: { en: '500 g', ar: '٥٠٠ غ' }, img: '/media/img/giftbox.webp',
+    insert: 'everyday', sleeve: 'ramadan', chooseDate: true, grams: 500, varieties: EVERYDAY,
     notes: { en: 'The everyday box in its Ramadan sleeve.', ar: 'العلبة اليومية بحزام رمضان.' },
     contents: { en: '500 g of one variety, Ramadan sleeve.', ar: '٥٠٠ غ من صنف واحد، بحزام رمضان.' }, preorder: true },
-  { kind: 'box', id: 'eid-coffee-dates', fam: 'eid', name: { en: 'Eid Coffee & Dates', ar: 'قهوة وتمر العيد' }, price: 56, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/eid-coffee-dates.webp',
+  { kind: 'box', id: 'eid-coffee-dates', tier: 'gift', fam: 'eid', name: { en: 'Eid Coffee & Dates', ar: 'قهوة وتمر العيد' }, price: 56, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/eid-coffee-dates.webp',
     insert: 'C12', sleeve: 'eid', packs: { coffee: { gulf: 1 }, sachets: { 'pack-saffron': 1 }, dates: { khalas: 12 } },
     notes: { en: 'For the first house you visit. The elders, always.', ar: 'لأول بيت تزورونه. الكبار دائماً.' },
     contents: { en: 'Gold Eid band, Najdi coffee and 12 dates.', ar: 'حزام العيد الذهبي، قهوة نجدية و١٢ تمرة.' }, preorder: true },
-  { kind: 'box', id: 'eid-dates', fam: 'eid', name: { en: 'Eid Dates', ar: 'تمر العيد' }, price: 58, size: { en: '24 dates', ar: '٢٤ تمرة' }, img: '/media/img/eid-dates.webp',
-    insert: 'D24', sleeve: 'eid', packs: { dates: { sukkari: 6, khalas: 6, khudri: 6, ajwa: 6 } },
+  { kind: 'box', id: 'eid-dates', tier: 'gift', fam: 'eid', name: { en: 'Eid Dates', ar: 'تمر العيد' }, price: 58, size: { en: '24 dates', ar: '٢٤ تمرة' }, img: '/media/img/eid-dates.webp',
+    insert: 'D24', sleeve: 'eid', packs: { dates: { sukkari: 6, khalas: 6, ajwa: 6 } },
     notes: { en: 'Four varieties for the table that fills all day.', ar: 'أربعة أصناف لمائدة تمتلئ طوال اليوم.' },
     contents: { en: 'Gold Eid band, 24 dates, four varieties.', ar: 'حزام العيد الذهبي، ٢٤ تمرة، أربعة أصناف.' }, preorder: true },
-  { kind: 'box', id: 'eid-duo', fam: 'eid', name: { en: 'Eid Coffee Duo', ar: 'ثنائي قهوة العيد' }, price: 46, size: { en: '2 × 250 g', ar: '٢ × ٢٥٠ غ' }, img: '/media/img/eid-coffee.webp',
+  { kind: 'box', id: 'eid-duo', tier: 'gift', fam: 'eid', name: { en: 'Eid Coffee Duo', ar: 'ثنائي قهوة العيد' }, price: 46, size: { en: '2 × 250 g', ar: '٢ × ٢٥٠ غ' }, img: '/media/img/eid-coffee.webp',
     insert: 'C2', sleeve: 'eid', packs: { coffee: { gulf: 1, yemeni: 1 }, sachets: { 'pack-saffron': 1 } },
     notes: { en: 'Najdi and Yemeni qahwa, for the house that pours all day.', ar: 'نجدية ويمنية، للبيت الذي يصبّ طوال اليوم.' },
     contents: { en: 'Gold Eid band, two coffees.', ar: 'حزام العيد الذهبي، قهوتان.' }, preorder: true },
@@ -321,6 +381,12 @@ export const PRODUCTS: Product[] = [...COFFEES, ...KITS, ...PACKS, ...BOXES];
 // to src/content/products.json. That file wins over the text written above.
 for (const p of PRODUCTS) Object.assign(p, (TEXT as Record<string, Partial<Record<string, L>>>)[p.id] ?? {});
 export const byId = (id: string) => PRODUCTS.find(p => p.id === id);
+/** Dates sold by weight (Everyday sizes, the Ramadan box). */
+export const BY_WEIGHT = BOXES.filter(b => b.grams);
+/** A box's allergens: its own, or the chosen filling's for stuffed boxes. */
+export const boxAllergens = (b: Box, filling?: string) => [...new Set([...(b.allergens ?? []), ...(filling && FILLINGS[filling as FillingId] ? FILLINGS[filling as FillingId].allergens : [])])];
+/** The readable name of a box option: a date variety or a filling. */
+export const optionName = (b: Box, opt: string, lang: Lang) => (b.fillings ? FILLINGS[opt as FillingId]?.name[lang] : DATES[opt as DateId]?.name[lang]) ?? opt;
 
 export const money = (n: number, lang: Lang) => (lang === 'ar' ? `${n} $` : `$${n}`);
 /** A price, or "price coming" while the owners have not set it. */

@@ -580,7 +580,7 @@
       "q": "salam, 3andkom tamr sukkari?",
       "must": [
         "understands they ask about Sukkari dates",
-        "says yes: Sukkari can be chosen in the date box (with the price)"
+        "says yes: Sukkari Qassimi can be chosen in the Everyday dates (250 g, 500 g or 1 kg)"
       ]
     },
     {

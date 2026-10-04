@@ -471,22 +471,130 @@
       "ar": "زنجبيل، ذرة رفيعة محمّصة. [يُحدد لاحقاً: النسخة الأغنى]"
     }
   },
-  "date-box": {
+  "dates-250": {
     "name": {
-      "en": "The Everyday Date Box",
-      "ar": "علبة التمر اليومية"
+      "en": "Everyday dates, 250 g",
+      "ar": "تمر كل يوم ٢٥٠ غ"
     },
     "notes": {
-      "en": "One variety, chosen by you. For the house, not for wrapping.",
-      "ar": "صنف واحد تختاره. للبيت، لا للتغليف."
+      "en": "Good dates at an everyday price: Khalas or Sukkari Qassimi.",
+      "ar": "تمر طيّب بسعر كل يوم: خلاص أو سكري قصيمي."
     },
     "contents": {
-      "en": "500 g of one date variety in a clear tray.",
+      "en": "250 g of one variety in a clear tray.",
+      "ar": "٢٥٠ غ من صنف واحد في علبة شفافة."
+    },
+    "size": {
+      "en": "250 g",
+      "ar": "٢٥٠ غ"
+    }
+  },
+  "date-box": {
+    "name": {
+      "en": "Everyday dates, 500 g",
+      "ar": "تمر كل يوم ٥٠٠ غ"
+    },
+    "notes": {
+      "en": "Good dates at an everyday price: Khalas or Sukkari Qassimi.",
+      "ar": "تمر طيّب بسعر كل يوم: خلاص أو سكري قصيمي."
+    },
+    "contents": {
+      "en": "500 g of one variety in a clear tray.",
       "ar": "٥٠٠ غ من صنف واحد في علبة شفافة."
     },
     "size": {
       "en": "500 g",
       "ar": "٥٠٠ غ"
+    }
+  },
+  "dates-1kg": {
+    "name": {
+      "en": "Everyday dates, 1 kg",
+      "ar": "تمر كل يوم ١ كغ"
+    },
+    "notes": {
+      "en": "Good dates at an everyday price: Khalas or Sukkari Qassimi.",
+      "ar": "تمر طيّب بسعر كل يوم: خلاص أو سكري قصيمي."
+    },
+    "contents": {
+      "en": "1 kg of one variety in a clear tray.",
+      "ar": "١ كغ من صنف واحد في علبة شفافة."
+    },
+    "size": {
+      "en": "1 kg",
+      "ar": "١ كغ"
+    }
+  },
+  "reserve-12": {
+    "name": {
+      "en": "Reserve box, 12 dates",
+      "ar": "علبة النخبة، ١٢ تمرة"
+    },
+    "notes": {
+      "en": "Royal Sukkari Mufattal, Ajwa or Medjool. Larger, hand-picked, each date in its own cup [TBD: confirm with the supplier]. The ones we recommend.",
+      "ar": "سكري ملكي مفتّل أو عجوة أو مجدول. أكبر حجماً، منتقاة باليد، كل تمرة في كوبها [TBD: confirm with the supplier]. وهي ما ننصح به."
+    },
+    "contents": {
+      "en": "Gift box, 12 dates of one variety in paper cups.",
+      "ar": "صندوق هدية، ١٢ تمرة من صنف واحد في أكواب ورقية."
+    },
+    "size": {
+      "en": "12 dates",
+      "ar": "١٢ تمرة"
+    }
+  },
+  "reserve-24": {
+    "name": {
+      "en": "Reserve box, 24 dates",
+      "ar": "علبة النخبة، ٢٤ تمرة"
+    },
+    "notes": {
+      "en": "Royal Sukkari Mufattal, Ajwa or Medjool. Larger, hand-picked, each date in its own cup [TBD: confirm with the supplier]. The ones we recommend.",
+      "ar": "سكري ملكي مفتّل أو عجوة أو مجدول. أكبر حجماً، منتقاة باليد، كل تمرة في كوبها [TBD: confirm with the supplier]. وهي ما ننصح به."
+    },
+    "contents": {
+      "en": "Gift box, 24 dates of one variety in paper cups.",
+      "ar": "صندوق هدية، ٢٤ تمرة من صنف واحد في أكواب ورقية."
+    },
+    "size": {
+      "en": "24 dates",
+      "ar": "٢٤ تمرة"
+    }
+  },
+  "stuffed-12": {
+    "name": {
+      "en": "Stuffed dates, 12",
+      "ar": "تمر محشي، ١٢ تمرة"
+    },
+    "notes": {
+      "en": "Each date sealed on its own, with its allergen label.",
+      "ar": "كل تمرة مغلّفة وحدها، مع ملصق مسببات الحساسية."
+    },
+    "contents": {
+      "en": "Gift box, 12 stuffed dates, one filling, each sealed.",
+      "ar": "صندوق هدية، ١٢ تمرة محشية بحشوة واحدة، كل تمرة مغلّفة."
+    },
+    "size": {
+      "en": "12 dates",
+      "ar": "١٢ تمرة"
+    }
+  },
+  "stuffed-24": {
+    "name": {
+      "en": "Stuffed dates, 24",
+      "ar": "تمر محشي، ٢٤ تمرة"
+    },
+    "notes": {
+      "en": "Each date sealed on its own, with its allergen label.",
+      "ar": "كل تمرة مغلّفة وحدها، مع ملصق مسببات الحساسية."
+    },
+    "contents": {
+      "en": "Gift box, 24 stuffed dates, one filling, each sealed.",
+      "ar": "صندوق هدية، ٢٤ تمرة محشية بحشوة واحدة، كل تمرة مغلّفة."
+    },
+    "size": {
+      "en": "24 dates",
+      "ar": "٢٤ تمرة"
     }
   },
   "four-palms": {
@@ -495,12 +603,12 @@
       "ar": "أربع نخلات"
     },
     "notes": {
-      "en": "Sukkari, Khalas, Khudri and Ajwa, six of each, side by side.",
-      "ar": "سكري وخلاص وخضري وعجوة، ست من كل صنف، جنباً إلى جنب."
+      "en": "Sukkari Qassimi, Khalas and Ajwa, six of each, side by side; the fourth variety [TBD].",
+      "ar": "سكري قصيمي وخلاص وعجوة، ست من كل صنف، جنباً إلى جنب؛ والصنف الرابع [يُحدد لاحقاً]."
     },
     "contents": {
-      "en": "Gift box, 24 dates in paper cups, four varieties.",
-      "ar": "صندوق هدية، ٢٤ تمرة في أكواب ورقية، أربعة أصناف."
+      "en": "Gift box, dates in paper cups, four varieties [TBD: the fourth].",
+      "ar": "صندوق هدية، تمر في أكواب ورقية، أربعة أصناف [يُحدد لاحقاً: الرابع]."
     },
     "size": {
       "en": "24 dates",
@@ -607,8 +715,8 @@
       "ar": "أربعة أصناف لمائدة تمتلئ طوال اليوم."
     },
     "contents": {
-      "en": "Gold Eid band, 24 dates, four varieties.",
-      "ar": "حزام العيد الذهبي، ٢٤ تمرة، أربعة أصناف."
+      "en": "Gold Eid band, dates in paper cups, four varieties [TBD: the fourth].",
+      "ar": "حزام العيد الذهبي، تمر في أكواب ورقية، أربعة أصناف [يُحدد لاحقاً: الرابع]."
     },
     "size": {
       "en": "24 dates",

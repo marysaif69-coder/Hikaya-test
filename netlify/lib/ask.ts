@@ -8,7 +8,7 @@ import { sql, one, type Row } from './db';
 import { HttpError, env } from './http';
 import { hash, token, type Session } from './auth';
 import { HANDBOOK } from './handbook.gen';
-import { COFFEES, KITS, PACKS, BOXES, DATES, GRINDS, FAMILIES, PRODUCTS, LINES, fileCents, kitInside, allergyNote } from '../../src/data/products';
+import { COFFEES, KITS, PACKS, BOXES, DATES, GRINDS, FAMILIES, FILLINGS, ALLERGENS, PRODUCTS, LINES, fileCents, kitInside, allergyNote, varietiesOf } from '../../src/data/products';
 import { BREW } from '../../src/data/brew';
 import { RAMADAN_START, EID } from '../../src/data/calendar';
 import { availability, calgaryNow } from './slots';
@@ -48,7 +48,7 @@ function catalog() {
     `بالعربية: ${c.notes.ar} ${c.story.ar}`,
     `Ingredients: ${c.ingredients[0]}`,
     `Grind: ${c.grinds.length ? c.grinds.map(g => `${GRINDS[g].en} (option "${g}")`).join(', ') : 'whole dried husk, no grind option'}`,
-    `Good with the date: ${DATES[c.date].name.en} (${DATES[c.date].name.ar}). ${c.why.en}`,
+    c.date ? `Good with the date: ${DATES[c.date].name.en} (${DATES[c.date].name.ar}). ${c.why.en}` : 'Date pairing: not decided yet; we choose after our tasting. Do not name a pairing.',
   ].join('\n')).join('\n\n');
   const kits = KITS.map(k => [
     `### ${k.name.en} (${k.name.ar}) · id: ${k.id}`,
@@ -58,7 +58,7 @@ function catalog() {
     `بالعربية: ${k.notes.ar} ${k.story.ar}`,
     `Allergens: ${allergyNote(k, 'en').text}. The bag itself is coffee and spice only.`,
     `Grind: that of its bag (option "${COFFEES.find(c => c.id === k.base)!.grinds[0]}").`,
-    `Good with the date: ${DATES[k.date].name.en} (${DATES[k.date].name.ar}). ${k.why.en}`,
+    k.date ? `Good with the date: ${DATES[k.date].name.en} (${DATES[k.date].name.ar}). ${k.why.en}` : 'Date pairing: not decided yet; we choose after our tasting. Do not name a pairing.',
   ].join('\n')).join('\n\n');
   const packs = PACKS.map(p => [
     `### ${p.name.en} (${p.name.ar}) · id: ${p.id}`,
@@ -72,16 +72,21 @@ function catalog() {
     `${FAMILIES[b.fam].name.en} · ${usd(b.price)} · ${b.size.en} · pre-order`,
     `${b.notes.en} ${b.contents.en}`,
     `بالعربية: ${b.notes.ar} ${b.contents.ar}`,
-    b.chooseDate ? `The customer chooses one date variety (option): ${Object.entries(DATES).map(([k, d]) => `"${k}" ${d.name.en}`).join(', ')}.` : '',
+    b.tier ? `Tier: ${b.tier === 'everyday' ? 'Everyday (تمر كل يوم), sold by weight' : b.tier === 'reserve' ? 'Reserve (تمر النخبة), our pick' : b.tier === 'stuffed' ? 'Stuffed (تمر محشي), each date sealed on its own' : 'gift box'}.` : '',
+    b.fillings ? `The customer chooses one filling (option): ${b.fillings.map(f => `"${f}" ${FILLINGS[f].name.en} (${FILLINGS[f].name.ar}), contains ${FILLINGS[f].allergens.map(a => ALLERGENS[a].en).join(', ')}${FILLINGS[f].maybe ? ` ${FILLINGS[f].maybe!.en}` : ''}`).join('; ')}.` : '',
+    b.chooseDate ? `The customer chooses one date variety (option): ${varietiesOf(b).map(k => `"${k}" ${DATES[k].name.en}`).join(', ')}.` : '',
   ].filter(Boolean).join('\n')).join('\n\n');
-  const dates = Object.entries(DATES).map(([k, d]) => `- ${d.name.en} (${d.name.ar}), from ${d.region.en}: ${d.notes.en}`).join('\n');
+  // Only the varieties a product offers (khudri stays in DATES for old orders but is not sold).
+  const sold = new Set(BOXES.flatMap(b => [...varietiesOf(b), ...Object.keys(b.packs?.dates ?? {})]));
+  const dates = Object.entries(DATES).filter(([k]) => sold.has(k as keyof typeof DATES)).map(([k, d]) => `- ${d.name.en} (${d.name.ar}), from ${d.region.en}: ${d.notes.en}`).join('\n');
+  const onHold = Object.values(FILLINGS).filter(f => f.hold).map(f => `${f.name.en} (${f.name.ar})`).join(', ');
   const brew = Object.entries(BREW).map(([fam, b]) => [
     `### ${b.title.en} (${b.title.ar}) — for ${FAMILIES[fam as keyof typeof FAMILIES].name.en}`,
     `Vessel: ${b.vessel.en}. Makes: ${b.yields.en}.`,
     ...b.steps.map((s, i) => `${i + 1}. ${s.t.en}${s.secs ? ` (about ${s.secs >= 60 ? `${Math.round(s.secs / 60)} minutes` : `${s.secs} seconds`})` : ''}`),
     `Serve: ${b.serve.en}`,
   ].join('\n')).join('\n\n');
-  return `# Product list (from the website, always current)\n\nPrices are in CAD. Coffee prices are not set yet: until the team sets them, say prices are announced soon and coffee can't be ordered yet. Text marked [TBD] is not decided yet: say it is still being finalised, never guess.\n\nHow the coffee works: the customer picks a base bag (Gulf coffee, Yemeni qahwa, Jubani, qishr, Shami with cardamom or Shami sada), then can make it the way their family does with a family style: the same bag plus its sealed packs in one box at one price (Najdi, Qassimi, Hijazi for Gulf coffee; Hadrami, Rada'i, Baydani for Yemeni qahwa). Najdi is Gulf coffee with its saffron packet, always; plain Gulf coffee is "Gulf coffee, cardamom only". A pack goes into the bag once (saffron never does: it is soaked and added to the serving dallah at the end of each pot). Packs are also sold on their own, for a fresh plain bag (not a top-up: a bag running low already has its pack). Discovery packs (Taste the Gulf, Taste Yemen) are for newcomers: one small pack per pot, one style at a time. Allergens (sesame, almonds, grain) are only in the sealed packs, never in the coffee bags. No pack contains milk: for Qassimi the customer adds evaporated milk.\n\n## Base bags\n\n${coffees}\n\n## Family styles and discovery packs\n\n${kits}\n\n## Packs on their own\n\n${packs}\n\n## Dates and boxes\n\n${boxes}\n\n## Date varieties\n\n${dates}\n\n# How to brew (also on /en/brew/)\n\n${brew}`;
+  return `# Product list (from the website, always current)\n\nPrices are in CAD. Coffee prices are not set yet: until the team sets them, say prices are announced soon and coffee can't be ordered yet. Text marked [TBD] is not decided yet: say it is still being finalised, never guess.\n\nHow the coffee works: the customer picks a base bag (Gulf coffee, Yemeni qahwa, Jubani, qishr, Shami with cardamom or Shami sada), then can make it the way their family does with a family style: the same bag plus its sealed packs in one box at one price (Najdi, Qassimi, Hijazi for Gulf coffee; Hadrami, Rada'i, Baydani for Yemeni qahwa). Najdi is Gulf coffee with its saffron packet, always; plain Gulf coffee is "Gulf coffee, cardamom only". A pack goes into the bag once (saffron never does: it is soaked and added to the serving dallah at the end of each pot). Packs are also sold on their own, for a fresh plain bag (not a top-up: a bag running low already has its pack). Discovery packs (Taste the Gulf, Taste Yemen) are for newcomers: one small pack per pot, one style at a time. Allergens (sesame, almonds, grain) are only in the sealed packs, never in the coffee bags. No pack contains milk: for Qassimi the customer adds evaporated milk.\n\n## Base bags\n\n${coffees}\n\n## Family styles and discovery packs\n\n${kits}\n\n## Packs on their own\n\n${packs}\n\n## Dates and boxes\n\n${boxes}\n\n## Date varieties\n\nThree tiers: Everyday (Khalas, Sukkari Qassimi) sold by weight in 250 g, 500 g and 1 kg; Reserve (Royal Sukkari Mufattal, Ajwa, Medjool) in gift boxes of 12 or 24, our pick; Stuffed, in the same boxes, each date sealed on its own with its allergen label. Not sold yet (waiting for the owners' tasting): ${onHold}. Which date goes with which coffee is decided after our tasting: do not suggest a pairing.\n\n${dates}\n\n# How to brew (also on /en/brew/)\n\n${brew}`;
 }
 
 const ROLE = `You are Ask Hikaya, the assistant on the Hikaya website (hikayacoffee.ca). You answer customers' questions about Hikaya's coffee, dates, orders, pickup and delivery in Calgary, and you hand anything you cannot settle to the Hikaya team by opening a request.

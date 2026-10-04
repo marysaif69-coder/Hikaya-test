@@ -48,7 +48,11 @@ export async function runSubscriptions(req?: Request, today = calgaryNow().date)
       await sql`UPDATE subscriptions SET next_date = ${after}, last_note = ${`Placed ${made.order.ref}`}, updated_at = NOW() WHERE id = ${sub.id}`;
       placed++;
     } catch (e: any) {
-      const why = lang(sub) === 'ar' ? 'أحد المنتجات غير متوفر أو الموعد ممتلئ.' : (e?.message ?? 'Something in it is not available.');
+      // A date variety or filling we no longer sell (khudri, Medjool in the Everyday box): say so plainly.
+      const gone = e?.code === 'choose-date' || e?.code === 'choose-filling';
+      const why = gone
+        ? (lang(sub) === 'ar' ? 'صنف التمر في طلبك لم يعد متوفراً. ردّ على هذه الرسالة لنختار معك صنفاً آخر.' : 'The date in it is no longer offered. Reply to this email and we will choose another with you.')
+        : lang(sub) === 'ar' ? 'أحد المنتجات غير متوفر أو الموعد ممتلئ.' : (e?.message ?? 'Something in it is not available.');
       await sql`UPDATE subscriptions SET next_date = ${after}, last_note = ${`Not placed for ${day}: ${String(e?.message ?? e).slice(0, 200)}`}, updated_at = NOW() WHERE id = ${sub.id}`;
       await send(subscriptionEmail('not-placed', sub.email, lang(sub), { every: sub.every_weeks, next: after, why }, siteUrl(req)));
     }
