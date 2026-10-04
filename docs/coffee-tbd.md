@@ -60,3 +60,7 @@ the server refuses the order until a price is set:
   and drivers use their own email. A shared invite is tied to the login the owner is using when they
   add someone, so add shared people while logged in as hello@. Revisit (one configured shared
   address, finer permissions) when the team grows.
+- Rada'i and Baydani (round 2 item 2), decided at the tasting: how their packs are used (into the
+  bag, per pot, or in the cup). Shadi (4 Oct): the Rada'i nuts are for the cup, not the coffee;
+  maybe the customer supplies the nuts and we supply only the mix; maybe start with Rada'i only.
+  Until then the site says "decided at our tasting [TBD]" and the allergen lines stay as they are.
