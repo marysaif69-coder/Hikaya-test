@@ -1166,4 +1166,15 @@ assert.equal((await order({ email: 'cap-kit1@example.com', day: '2027-06-18', li
 assert.equal((await order({ email: 'cap-kit2@example.com', day: '2027-06-18', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] })).data.error, 'day-limit'); ok("the Gulf bag's daily limit counts the Najdi orders that day");
 await call(admin, '/api/admin/products/gulf', { cookie: adm, body: { daily_cap: null } });
 
+// ---------- reused ids lose the old bags' saved price ----------
+const nPrice = (await pg.query(`SELECT price_cents FROM product_settings WHERE product_id = 'najdi'`)).rows[0].price_cents;
+await pg.query(`UPDATE product_settings SET price_cents = 2400, stock = 9, updated_at = '2026-10-01' WHERE product_id = 'najdi'`);
+await pg.query(`UPDATE product_settings SET price_cents = 3100, updated_at = '2026-10-05' WHERE product_id = 'baydani'`);
+await pg.exec(fs.readFileSync('netlify/database/migrations/017_reset-reused-ids/migration.sql', 'utf8'));
+const reCat = (await call(orders, '/api/catalog')).data.products;
+assert.equal(reCat.najdi.price, null); assert.equal(reCat.baydani.price, 31);
+assert.equal((await order({ email: 'reused@example.com', day: '2027-06-24', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] })).data.error, 'no-price');
+ok('Najdi no longer carries the old bag\'s price from before the restructure; a price set since is kept');
+await pg.query(`UPDATE product_settings SET price_cents = $1, updated_at = NOW() WHERE product_id = 'najdi'`, [nPrice]);
+
 console.log(`\n${pass} checks passed`);
