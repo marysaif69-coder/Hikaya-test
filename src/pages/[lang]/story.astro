@@ -33,26 +33,31 @@ const STAGES = [
 ];
 ---
 <Base lang={lang} title={ar ? 'حكايتنا' : 'Our story'} current="story">
-  <!-- The logo builds itself one step at a time; one caption, and a step bar to go back to any step. -->
+  <!-- The logo builds itself one step at a time and stays; point at (or tap) a part to read it again. -->
   <section class="wrap s-hero" aria-labelledby="s-h">
     <div class="s-copy">
       <h1 id="s-h" class="h-xl">{ar ? 'حكاية' : 'Hikaya means “a story”.'}</h1>
       <p class="lead">{ar ? 'وكل حكاية تحتاج اثنين.' : 'And every story needs two.'}</p>
     </div>
-    <div class="stage on-1 on-2 on-3 on-4 on-5" id="stage">
-      <svg viewBox="-100 0 798 650" aria-hidden="true"><g transform={lG}>
-        <path class="st-tamr part" data-part="2" fill="#A93B28" d={lTamr} />
-        <path class="st-bunn part" data-part="1" fill="#33211A" d={lBunn} />
-        <path class="st-dash" fill="none" stroke="#F5EFE3" stroke-width="1" stroke-dasharray="2.5 2" d={lSeed} />
-        <g class="st-gold part" data-part="4"><path fill="#CF9C0C" d={lSeed} /><path fill="#33211A" d={lGroove} /></g>
-        <path class="st-dots part" data-part="5" fill="#F5EFE3" d={lDots} />
-      </g></svg>
+    <div class="stage done" id="stage">
+      <div class="art">
+        <svg viewBox={lVb} aria-hidden="true"><g transform={lG}>
+          <path class="st-tamr part" data-part="2" fill="#A93B28" d={lTamr} />
+          <path class="st-bunn part" data-part="1" fill="#33211A" d={lBunn} />
+          <g class="st-gold part" data-part="4"><path fill="#CF9C0C" d={lSeed} /><path fill="#33211A" d={lGroove} /></g>
+          <path class="st-dots part" data-part="5" fill="#F5EFE3" d={lDots} />
+        </g></svg>
+        <p class="w w-bunn" lang="ar" aria-hidden="true">بُن</p>
+        <p class="w w-tamr" lang="ar" aria-hidden="true">تمر</p>
+      </div>
       <div class="side">
-        <div class="cap" aria-live="polite"><h2>{STEPS[4].t[lang]}</h2><p>{STEPS[4].d[lang]}</p></div>
+        <div class="cap">
+          {STEPS.map((st, i) => <div class:list={['cap-l', { on: i === 4 }]} aria-hidden={i === 4 ? undefined : 'true'}><h2>{st.t[lang]}</h2><p>{st.d[lang]}</p></div>)}
+        </div>
         <p class="hint"><button type="button" class="again" id="again">{ar ? 'شاهدها مرة أخرى' : 'Watch again'}</button> <span>{ar ? 'أو اختر أي جزء من الشعار.' : 'Or point at any part of the logo.'}</span></p>
-        <script type="application/json" id="steps-data" set:html={JSON.stringify(STEPS.map(st => ({ t: st.t[lang], d: st.d[lang] })))} />
       </div>
     </div>
+    <script is:inline>if (!matchMedia('(prefers-reduced-motion: reduce)').matches) document.getElementById('stage').classList.remove('done');</script>
   </section>
 
   <section class="chars">
@@ -118,38 +123,34 @@ const STAGES = [
 </Base>
 
 <script>
-  // Story page: the logo builds itself step by step and stays; point at (or tap) a part to read it again.
+  // Story page: opens like the site intro (the words بُن and تمر bloom into the bubbles), builds the logo
+  // with one caption at a time, and stays. Point at (or tap) a part to read it again.
   const stage = document.getElementById('stage');
   const again = document.getElementById('again');
-  const data = document.getElementById('steps-data');
-  if (stage && again && data) {
-    const STEPS: { t: string; d: string }[] = JSON.parse(data.textContent!);
-    const cap = stage.querySelector<HTMLElement>('.cap')!;
+  if (stage && again) {
+    const caps = [...stage.querySelectorAll<HTMLElement>('.cap-l')];
+    const STATES = ['s-w1', 's-b1', 's-w2', 's-b2', 's-meet', 's-gold', 's-dots', 'done'];
+    // [time, state, caption]: each motion runs into the next, no dead pauses.
+    const TIMELINE: [number, string, number][] = [[150, 's-w1', 1], [800, 's-b1', 0], [1500, 's-w2', 2], [2100, 's-b2', 0], [2900, 's-meet', 3], [4000, 's-gold', 4], [5200, 's-dots', 5]];
     let timers: number[] = [];
-    let shown = 5;
     const stop = () => { timers.forEach(clearTimeout); timers = []; };
-    const say = (n: number, fade = true) => {
-      if (n === shown && fade) return;
-      shown = n;
-      const set = () => { cap.querySelector('h2')!.textContent = STEPS[n - 1].t; cap.querySelector('p')!.textContent = STEPS[n - 1].d; cap.classList.remove('out'); };
-      if (!fade) return set();
-      cap.classList.add('out');
-      timers.push(window.setTimeout(set, 250));
-    };
-    const build = (n: number) => { for (let k = 1; k <= 5; k++) stage.classList.toggle(`on-${k}`, k <= n); };
+    const say = (n: number) => caps.forEach((c, i) => { c.classList.toggle('on', i === n - 1); c.toggleAttribute('aria-hidden', i !== n - 1); });
+    const finish = () => { stage.classList.remove(...STATES); stage.classList.add('done'); };
     const play = () => {
       stop();
       stage.removeAttribute('data-hl');
-      build(0);
-      [300, 2000, 3700, 5400, 7100].forEach((t, i) => timers.push(window.setTimeout(() => { build(i + 1); say(i + 1); }, t)));
+      stage.classList.remove(...STATES);
+      say(0);
+      TIMELINE.forEach(([t, st, n]) => timers.push(window.setTimeout(() => { stage.classList.add(st); if (n) say(n); }, t)));
+      timers.push(window.setTimeout(finish, 6400));
     };
-    const point = (n: number) => { stop(); build(5); stage.dataset.hl = String(n); say(n); };
+    const point = (n: number) => { stop(); finish(); stage.dataset.hl = String(n); say(n); };
     const rest = () => { stage.removeAttribute('data-hl'); say(5); };
     stage.querySelectorAll<SVGElement>('.part').forEach(el => {
       const n = Number(el.dataset.part);
       el.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') point(n); });
       el.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') rest(); });
-      el.addEventListener('click', e => { e.stopPropagation(); stage.dataset.hl === String(n) ? rest() : point(n); });
+      el.addEventListener('click', e => { if ((e as PointerEvent).pointerType === 'mouse') return; e.stopPropagation(); stage.dataset.hl === String(n) ? rest() : point(n); });
     });
     document.addEventListener('click', e => { if (stage.dataset.hl && !(e.target as Element).closest('.part')) rest(); });
     again.addEventListener('click', e => { e.stopPropagation(); play(); });
@@ -166,33 +167,39 @@ const STAGES = [
   .s-hero { display: grid; gap: clamp(20px, 3vw, 40px); padding-block: clamp(32px, 5vw, 72px); }
   .s-copy { display: grid; gap: 10px; }
   .s-copy h1 { font-size: clamp(44px, 5.4vw, 80px); }
-  .stage { display: grid; grid-template-columns: minmax(0, 460px) minmax(0, 1fr); gap: clamp(24px, 5vw, 80px); align-items: center; }
-  .stage svg { width: 100%; height: auto; display: block; }
-  .side { display: grid; gap: 22px; max-width: 460px; }
-  .cap { display: grid; gap: 10px; min-height: 9.5em; align-content: end; transition: opacity .3s; }
-  .cap.out { opacity: 0; }
-  .cap h2 { font-size: clamp(30px, 3.4vw, 46px); }
-  .cap p { margin: 0; color: var(--ink-2); font-size: 19px; }
+  .stage { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: clamp(28px, 5vw, 72px); align-items: center; }
+  .stage svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .side { display: grid; gap: 18px; max-width: 440px; }
+  .cap { display: grid; }
+  .cap-l { grid-area: 1 / 1; display: grid; gap: 8px; align-content: center; opacity: 0; translate: 0 6px; transition: opacity .7s ease, translate .7s ease; pointer-events: none; }
+  .cap-l.on { opacity: 1; translate: 0 0; }
+  .cap h2 { font-size: clamp(26px, 2.8vw, 38px); }
+  .cap p { margin: 0; color: var(--ink-2); font-size: 18px; }
   .hint { margin: 0; font-size: 14px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
   .part { cursor: pointer; }
   .stage.stage[data-hl] .part { opacity: .22; }
   .stage.stage[data-hl="1"] .st-bunn, .stage.stage[data-hl="2"] .st-tamr, .stage.stage[data-hl="4"] .st-gold, .stage.stage[data-hl="5"] .st-dots, .stage.stage[data-hl="5"] .st-tamr { opacity: 1; }
   .again { background: none; border: 0; padding: 2px 0; font: 600 14px var(--body); color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-  .stage path, .stage g { transition: opacity .6s ease, transform .9s cubic-bezier(.3, .8, .3, 1); }
-  .st-bunn { transform-box: fill-box; transform-origin: center; transform: scale(.7); }
-  .st-bunn, .st-tamr, .st-dash, .st-gold, .st-dots { opacity: 0; }
-  .st-tamr { transform: translate(-22px, 14px); }
-  .on-1 .st-bunn { opacity: 1; transform: none; }
-  .on-2 .st-tamr { opacity: 1; }
-  .on-3 .st-tamr { transform: none; }
-  .on-3 .st-dash { opacity: 1; transition-delay: .7s; }
-  .on-4 .st-dash { opacity: 0; transition-delay: 0s; }
-  .on-4 .st-gold, .on-5 .st-dots { opacity: 1; }
+  /* Same opening as the site intro: the words appear, the bubbles bloom under them, the words turn light and go. */
+  .art { position: relative; container-type: inline-size; }
+  .w { position: absolute; margin: 0; translate: -50% -50%; font: 700 13cqi/1 var(--display); opacity: 0; filter: blur(4px); pointer-events: none; transition: opacity .6s cubic-bezier(.23, 1, .32, 1), filter .6s ease, color .45s ease, scale .5s ease; }
+  .w-bunn { left: 70%; top: 36%; color: #33211A; }
+  .w-tamr { left: 30%; top: 62%; color: #A93B28; }
+  .s-w1 .w-bunn, .s-w2 .w-tamr { opacity: 1; filter: none; }
+  .s-b1 .w-bunn, .s-b2 .w-tamr { color: #F5EFE3; }
+  .stage.s-meet .w, .stage.done .w { opacity: 0; scale: .92; }
+  .stage .part { transform-box: fill-box; transform-origin: center; transition: opacity .7s ease, scale .9s cubic-bezier(.2, .9, .3, 1.08), clip-path .9s steps(3, end); }
+  .st-bunn, .st-tamr, .st-gold, .st-dots { opacity: 0; }
+  .st-bunn, .st-tamr { scale: .25; }
+  .st-gold { scale: .6; }
+  .st-dots { clip-path: inset(0 100% 0 0); }
+  .s-b1 .st-bunn, .s-b2 .st-tamr, .done .st-bunn, .done .st-tamr { opacity: 1; scale: 1; }
+  .s-gold .st-gold, .done .st-gold { opacity: 1; scale: 1; }
+  .s-dots .st-dots, .done .st-dots { opacity: 1; clip-path: inset(0 0 0 0); }
   @media (max-width: 820px) {
     .stage { grid-template-columns: 1fr; justify-items: center; }
-    .stage svg { max-width: 340px; translate: -6% 0; }
-    .side { width: 100%; }
-    .cap { min-height: 7.5em; }
+    .art { width: 100%; max-width: 260px; }
+    .side { width: 100%; justify-items: center; text-align: center; }
     .cap p { font-size: 17px; }
   }
   .chars { padding-bottom: 24px; }
