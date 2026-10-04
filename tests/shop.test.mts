@@ -1075,4 +1075,15 @@ const olRow = await pc(ol.data.ref);
 assert.deepEqual([olRow.paid_cents, olRow.payment_status], [2600, 'unpaid']); ok('a payment on the older link still counts, and the rest is still owed');
 globalThis.fetch = fS2; delete process.env.SQUARE_ACCESS_TOKEN; delete process.env.SQUARE_LOCATION_ID; delete process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
+// ---------- a code with a minimum, after the team changes the order ----------
+await call(admin, '/api/admin/promos', { cookie: adm, body: { code: 'MIN70', kind: 'amount', value: 2000, min_subtotal_cents: 7000 } });
+const pm = await order({ email: 'promomin@example.com', day: '2027-03-18', promo: 'MIN70', lines: [{ id: 'najdi', opt: 'dallah', qty: 3 }] });
+assert.equal(pm.status, 201, JSON.stringify(pm.data));
+const pmRow = async () => (await pg.query(`SELECT subtotal_cents, discount_cents, total_cents, (SELECT SUM(qty) FROM order_items i WHERE i.order_id = o.id)::int AS qty FROM orders o WHERE ref = $1`, [pm.data.ref])).rows[0] as any;
+const pmBefore = await pmRow();
+const pmDown = await call(admin, `/api/admin/orders/${pm.data.ref}/items`, { cookie: adm, body: { lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] } });
+assert.deepEqual([pmDown.status, pmDown.data.error], [409, 'promo-min']); assert.deepEqual(await pmRow(), pmBefore); ok('a change that drops an order below its code\'s minimum is refused, and nothing changes');
+assert.equal((await call(admin, `/api/admin/orders/${pm.data.ref}/items`, { cookie: adm, body: { lines: [{ id: 'najdi', opt: 'dallah', qty: 4 }] } })).status, 200);
+assert.equal((await pmRow()).discount_cents, 2000); ok('a change that stays above the minimum keeps the discount');
+
 console.log(`\n${pass} checks passed`);

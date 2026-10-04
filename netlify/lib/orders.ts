@@ -223,6 +223,10 @@ export async function editOrder(ref: string, rawLines: unknown, actor: string, r
   const keep = new Set(before.map(i => i.product_id));
   const relaxed = Object.fromEntries(Object.entries(live).map(([id, l]) => [id, keep.has(id) ? { ...l, shown: true, available: true } : l]));
   const lines = priceCart(rawLines, relaxed as any);
+  // The order's code is applied again; a code with a minimum only stays while the order meets it.
+  const sub = lines.reduce((n, l) => n + l.unit_cents * l.qty, 0);
+  const p = o.promo_code ? await one`SELECT * FROM promo_codes WHERE code = ${o.promo_code}` : null;
+  if (p && sub < (p.min_subtotal_cents ?? 0)) throw new HttpError(409, 'promo-min', `This order used code ${p.code}, which needs $${(p.min_subtotal_cents / 100).toFixed(0)} or more. Keep the order at or above that, or cancel and re-place it.`);
   const day = String(o.slot_date instanceof Date ? o.slot_date.toISOString() : o.slot_date).slice(0, 10);
   await assertDayLimits(day, lines, (await getSettings()).caps.giftBoxesPerDay, o.id);
   // Stock: give back what the order had, then take the new lines; on failure put it all back.
@@ -230,8 +234,6 @@ export async function editOrder(ref: string, rawLines: unknown, actor: string, r
   let taken: [string, number][] = [];
   try { if (!o.is_sample) taken = await takeStock(lines); }
   catch (e) { if (!o.is_sample) await takeStock(before.map(i => ({ product_id: i.product_id, qty: i.qty }))).catch(() => null); throw e; }
-  const sub = lines.reduce((n, l) => n + l.unit_cents * l.qty, 0);
-  const p = o.promo_code ? await one`SELECT * FROM promo_codes WHERE code = ${o.promo_code}` : null;
   const t = totals(lines, o.method, p ? shape(p, sub) : null);
   // The gift card can only cover up to the new total; anything above goes back on the card.
   const gc = Math.min(o.gift_card_cents ?? 0, t.total_cents);
