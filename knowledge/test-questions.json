@@ -690,7 +690,7 @@
       "q": "أبي أرسل هدية لأمي بالعيد، وش تنصحني؟",
       "must": [
         "replies in Arabic",
-        "suggests an Eid product with its price"
+        "suggests a gift box for Eid (with the Eid sticker) and its price, or says its price is not set yet"
       ]
     },
     {
