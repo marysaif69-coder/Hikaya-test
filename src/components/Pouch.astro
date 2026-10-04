@@ -7,7 +7,7 @@ import { SPICES } from '../data/products';
 
 interface Props { coffee: Coffee; lang: Lang; class?: string; label?: boolean; side?: 'front' | 'back' }
 const { coffee, lang, class: cls = '', label = true, side = 'front' } = Astro.props;
-const alt = `${coffee.name[lang]} · ${coffee.size}`;
+const alt = `${coffee.name[lang]} · ${coffee.size[lang]}`;
 const uid = `p${coffee.id.replace(/[^a-z]/g, '')}${Math.random().toString(36).slice(2, 6)}`;
 const BAND: Record<Coffee['fam'], string> = { palm: '#F3CF7E', mountain: '#8C5B33', house: '#3A2620', husk: '#A93B28' };
 const band = BAND[coffee.fam];
@@ -74,7 +74,7 @@ for (let r = 0; r < 17; r++) for (let c = 0; c < 8; c++) {
         {[1, 2, 3, 4].map(i => <rect x={26 + (i - 1) * 13} y="-2.6" width="11" height="5.4" rx="2.7" fill={i <= coffee.roast ? '#33211A' : 'none'} stroke="#33211A" stroke-width=".8" />)}
       </g>
     )}
-    <text x="168" y="170" text-anchor="end" font-family="IBM Plex Sans, sans-serif" font-weight="600" font-size="10" fill="#33211A">{coffee.size}</text>
+    <text x="168" y="170" text-anchor="end" font-family="IBM Plex Sans, sans-serif" font-weight="600" font-size="10" fill="#33211A">{coffee.size.en}</text>
   </g>
 </svg>
 )}

@@ -51,7 +51,7 @@ const occasionPair: Record<string, { bunn: { ar: string; en: string }; tamr: { a
 };
 const kitsUsing = p.kind === 'pack' ? KITS.filter(k => !k.discovery && k.parts.some(x => x.id === p.id)) : [];
 const brewFam = p.kind === 'coffee' || p.kind === 'kit' ? p.fam : null;
-const sizeText = p.kind === 'coffee' ? p.size : p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
+const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
 ---
 <Base season={p.fam === 'ramadan' || p.fam === 'eid' ? p.fam : undefined} alertFor={p.id} lang={lang} title={p.name[lang]} current="shop" description={p.notes[lang]} jsonld={jsonld} image={img}>
   <nav class="wrap crumbs" aria-label={ar ? 'المسار' : 'Breadcrumb'}>
@@ -100,7 +100,7 @@ const sizeText = p.kind === 'coffee' ? p.size : p.kind === 'kit' ? kitInside(p, 
         <div class="inbox">
           <h2 class="h-s">{L('In the box', 'في العلبة')}</h2>
           <ul>
-            <li><a href={path(lang, `shop/${p.base}`)}>{baseOf(p).name[lang]}</a> <span class="muted">{baseOf(p).size} · {L('coffee and spice only', 'قهوة وبهار فقط')}</span></li>
+            <li><a href={path(lang, `shop/${p.base}`)}>{baseOf(p).name[lang]}</a> <span class="muted">{baseOf(p).size[lang]} · {L('coffee and spice only', 'قهوة وبهار فقط')}</span></li>
             {p.parts.map(x => { const k = packOf(x.id)!; return <li><a href={path(lang, `shop/${k.id}`)}>{x.mini ? L('Small ', 'ظرف صغير: ') : ''}{k.name[lang]}</a> <span class={`allergy ${allergyNote(k, lang).none ? 'none' : ''}`}>{allergyNote(k, lang).text}</span>{k.maybe && <small class="muted"> · {k.maybe[lang]}</small>}</li>; })}
           </ul>
           {/* Tasting boxes: one small pack per pot, one style at a time. Full styles: the pack goes into the bag; saffron never does (it is soaked and added at the end). */}
@@ -195,7 +195,7 @@ const sizeText = p.kind === 'coffee' ? p.size : p.kind === 'kit' ? kitInside(p, 
                 {p.kind === 'kit' && <p><b>{x.name.en}</b></p>}
                 <p><b>Ingredients:</b> {x.ingredients[0]}</p>
                 <p lang="fr"><b>Ingrédients :</b> {x.ingredients[1]}</p>
-                {x.kind === 'coffee' && <p><b>Net weight / Poids net:</b> {x.size}</p>}
+                {x.kind === 'coffee' && <p><b>Net weight / Poids net:</b> {x.size.en}</p>}
                 <p>Made in Calgary by Hikaya Coffee Ltd., [address], Calgary, AB · Fait à Calgary.</p>
               </div>
             ))}

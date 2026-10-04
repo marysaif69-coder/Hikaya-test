@@ -21,7 +21,8 @@ export interface Coffee {
   name: L;
   /** null = the owners have not set a price yet: the site shows "price coming" and it can't be ordered. */
   price: number | null;
-  size: string;
+  /** The bag's weight, in each language (Arabic pages show ٢٥٠ غ). */
+  size: L;
   roast: number; // 1–4, as printed on the bag; 0 = not roasted (qishr) or not decided
   spices: Spice[];
   /** Every coffee is sold ground; the grind is set with the roaster. Qishr is whole husk. */
@@ -148,7 +149,7 @@ export const DATES: Record<DateId, { name: L; region: L; c: string; sweet: numbe
   ajwa: { name: { en: 'Ajwa', ar: 'عجوة' }, region: { en: 'Madinah', ar: 'المدينة' }, c: '#2B1710', sweet: 50, notes: { en: 'Small and near-black, gentle fruit.', ar: 'صغيرة شبه سوداء، فاكهية رقيقة.' } },
 };
 
-const C = (c: Omit<Coffee, 'kind' | 'size' | 'price'> & { size?: string; price?: number | null }): Coffee => ({ kind: 'coffee', size: '250 g', price: null, ...c });
+const C = (c: Omit<Coffee, 'kind' | 'size' | 'price'> & { size?: L; price?: number | null }): Coffee => ({ kind: 'coffee', size: { en: '250 g', ar: '٢٥٠ غ' }, price: null, ...c });
 
 // Prices are not set yet ([TBD]): the owners set each one in Admin → Shop → Products, and until then
 // the site says "price coming" and the item can't be ordered. Roast levels are the working plan until
@@ -174,8 +175,8 @@ export const COFFEES: Coffee[] = [
     story: { en: 'The bean and its husk in one pot, the way Juban makes it.', ar: 'الحبّة وقشرها في إبريق واحد، على طريقة جُبَن.' },
     ingredients: ['Coffee, coffee cherry husk. [TBD: ginger]', 'Café, cascara. [TBD : gingembre]'],
     bunn: { en: 'Me, and my own husk.', ar: 'أنا، ومعي قشري.' }, date: 'sukkari',
-    why: { en: 'Sukkari answers the dried-cherry note.', ar: 'السكري يجاوب طعم الكرز المجفف.' } }),
-  C({ id: 'qishr', line: 'yemen', fam: 'husk', name: { en: 'Qishr', ar: 'قشر' }, size: '100 g', roast: 0, spices: ['husk', 'ginger'], grinds: [],
+    why: { en: 'Sukkari answers the dried-fruit note.', ar: 'السكري يجاوب طعم الفاكهة المجففة.' } }),
+  C({ id: 'qishr', line: 'yemen', fam: 'husk', name: { en: 'Qishr', ar: 'قشر' }, size: { en: '100 g', ar: '١٠٠ غ' }, roast: 0, spices: ['husk', 'ginger'], grinds: [],
     taste: { en: 'Cherry · ginger · light', ar: 'كرز · زنجبيل · خفيفة' },
     notes: { en: 'Qishr – dried coffee cherry husk, with ginger. Brewed in the pot like tea, light on caffeine. [TBD: roasted or raw husk]', ar: 'القشر – قشر ثمرة البن المجفف، مع الزنجبيل. يُغلى في الإبريق مثل الشاي، قليل الكافيين. [يُحدد لاحقاً: قشر محمّص أو نيء]' },
     story: { en: "Yemen's oldest coffee drink, older than the roasted bean.", ar: 'أقدم مشروبات البن في اليمن، أقدم من الحبّة المحمّصة.' },
@@ -345,4 +346,4 @@ export function allergyNote(x: Pack | Kit, lang: Lang) {
 }
 
 /** "Gulf coffee 250 g + saffron packet" */
-export const kitInside = (k: Kit, lang: Lang) => [`${baseOf(k).name[lang]} ${baseOf(k).size}`, ...k.parts.map(x => (x.mini ? (lang === 'ar' ? 'ظرف صغير: ' : 'small ') : '') + (packOf(x.id)?.name[lang] ?? x.id))].join(' + ');
+export const kitInside = (k: Kit, lang: Lang) => [`${baseOf(k).name[lang]} ${baseOf(k).size[lang]}`, ...k.parts.map(x => (x.mini ? (lang === 'ar' ? 'ظرف صغير: ' : 'small ') : '') + (packOf(x.id)?.name[lang] ?? x.id))].join(' + ');

@@ -1375,7 +1375,7 @@ import { DECISIONS } from '../../data/decisions';
     const name = p ? p.name : date.name;
     const ing: [string, string] = p ? p.ingredients : ['Dates.', 'Dattes.'];
     const common = p ? (p.kind === 'pack' ? (p.id === 'pack-saffron' ? ['Saffron', 'Safran'] : ['Spice blend for coffee', 'Mélange pour café']) : p.id === 'qishr' ? ['Dried coffee cherry husk', 'Cascara séchée'] : ing[0] === 'Coffee.' ? ['Ground coffee', 'Café moulu'] : ['Spiced ground coffee', 'Café moulu épicé']) : [`${date.name.en} dates`, `Dattes ${date.name.en}`];
-    const net = v('net') || (p ? (typeof p.size === 'string' ? p.size : '') : '');
+    const net = v('net') || (p ? (p.kind === 'coffee' ? p.size.en : '') : '');
     const label = `<div class="lb"><div class="t"><b>${esc(name.en)}</b> <span dir="rtl">${esc(name.ar)}</span></div><div>${esc(common[0])} / ${esc(common[1])}</div>
       <div class="i"><b>Ingredients:</b> ${esc(ing[0])} <b>Ingrédients :</b> ${esc(ing[1])}</div>
       <div class="r"><span><b>${esc(net)}</b></span><span>${lot.bestBefore ? `BEST BEFORE / MEILLEUR AVANT <b>${bb(lot.bestBefore)}</b>` : ''}</span></div>

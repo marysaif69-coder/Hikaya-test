@@ -64,7 +64,7 @@ const STAGES = [
     <div class="wrap c-grid">
       {(['bunn', 'tamr'] as const).map(k => (
         <article class={`char ${k}`}>
-          <h2><span lang="ar">{CH[k].name}</span><small>{CH[k].en}</small></h2>
+          <h2><span lang="ar">{CH[k].name}</span>{!ar && <small lang="en">{CH[k].en}</small>}</h2>
           <ul>{CH[k].pts[lang].map(p => <li>{p}</li>)}</ul>
         </article>
       ))}

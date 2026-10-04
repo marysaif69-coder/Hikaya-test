@@ -36,7 +36,9 @@ export const UI = {
   howToBrew: { en: 'How to brew it', ar: 'طريقة التحضير' },
   withDate: { en: 'Good with', ar: 'تليق بها' },
   inside: { en: "What's inside", ar: 'ماذا في الداخل' },
-  footLine: { en: '[address], Calgary · Coffee from Yemen, the Gulf and the Levant, and dates for the table.', ar: '[العنوان]، كالغاري · قهوة اليمن والخليج والشام، وتمرٌ للمائدة.' },
+  footLine: { en: '[address], Calgary · Gulf, Yemeni-style and Shami coffee, and dates for the table.', ar: '[العنوان]، كالغاري · قهوة خليجية ويمنية وشامية، وتمرٌ للمائدة.' },
+  // Meta and link previews: no address (crawlers don't run the script that fills it in).
+  metaLine: { en: 'Calgary · Gulf, Yemeni-style and Shami coffee, and dates for the table.', ar: 'كالغاري · قهوة خليجية ويمنية وشامية، وتمرٌ للمائدة.' },
   open: { en: 'وللحكاية بقية', ar: 'وللحكاية بقية' },
   openEn: { en: 'And the story goes on.', ar: '' },
   email: { en: 'Email', ar: 'البريد الإلكتروني' },

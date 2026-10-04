@@ -14,7 +14,7 @@ const eid = BOXES.filter(b => b.fam === 'eid');
   <section class="e-hero">
     <div class="wrap e-grid">
       <div class="e-copy">
-        <h1 class="h-xl">{ar ? 'عيدكم مبارك' : 'Eid Mubarak'}{lang === 'en' && <span lang="ar">عيدكم مبارك</span>}</h1>
+        <h1 class="h-xl">{ar ? 'عيدكم مبارك' : <><span lang="ar">عيدكم مبارك</span><span class="en">Eid Mubarak</span></>}</h1>
         <p class="lead">{ar ? 'العيد زيارات قبل أن يكون هدايا. إصدار العيد بحزامه الذهبي، لأول بيت تطرقون بابه.' : 'Eid is about visiting before it is about gifts. The Eid edition wears a gold band, for the first door you knock on.'}</p>
         <div class="cta"><a class="btn primary" href="#eid-boxes">{ar ? 'صناديق العيد' : 'The Eid boxes'}</a></div>
       </div>
@@ -53,7 +53,8 @@ const eid = BOXES.filter(b => b.fam === 'eid');
   .e-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: clamp(28px, 5vw, 80px); align-items: center; }
   @media (max-width: 860px) { .e-grid { grid-template-columns: 1fr; } }
   .e-copy { display: grid; gap: 20px; }
-  .e-copy h1 span { display: block; font-size: .55em; color: var(--tamr-2); margin-top: 8px; }
+  .e-copy h1 span { display: block; }
+  .e-copy h1 .en { font-size: .55em; color: var(--tamr-2); margin-top: 8px; }
   .e-copy .lead { color: var(--bunn); }
   .cta { display: flex; gap: 12px; }
   .e-film { all: unset; cursor: pointer; position: relative; border-radius: 34px; border-bottom-right-radius: 8px; overflow: hidden; max-width: 340px; justify-self: center; box-shadow: 0 30px 60px -30px rgba(51, 33, 26, .7); }

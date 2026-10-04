@@ -19,7 +19,7 @@ const dateBox = BOXES.find(b => b.id === 'date-box')!;
 const shelf = [
   ...(['gulf', 'yemen', 'shami'] as CoffeeLine[]).map(l => ({ id: l, name: LINES[l].name, line: LINES[l].line, fam: LINES[l].fam, c: COFFEES.find(c => c.line === l)!, items: [...COFFEES.filter(c => c.line === l && c.id !== 'qishr'), ...KITS.filter(k => k.line === l && !k.discovery)] })),
   // Qishr is a drink of its own, as in the shop.
-  { id: 'qishr', name: { en: 'Qishr', ar: 'القشر' }, line: { en: 'From Yemen: the coffee cherry, brewed like tea.', ar: 'من اليمن: ثمرة البن، تُغلى مثل الشاي.' }, fam: 'husk', c: COFFEES.find(c => c.id === 'qishr')!, items: [] as { name: { en: string; ar: string } }[] },
+  { id: 'qishr', name: { en: 'Qishr', ar: 'القشر' }, line: { en: 'From Yemen: the dried coffee cherry husk, brewed like tea.', ar: 'من اليمن: قشر ثمرة البن المجفف، يُغلى مثل الشاي.' }, fam: 'husk', c: COFFEES.find(c => c.id === 'qishr')!, items: [] as { name: { en: string; ar: string } }[] },
 ];
 // What people actually drink: the styles, then Jubani, Shami with cardamom and Qishr.
 const cups: (Kit | Coffee)[] = [...KITS.filter(k => !k.discovery), ...COFFEES.filter(c => ['jubani', 'shami', 'qishr'].includes(c.id))];
@@ -38,7 +38,7 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
           tamr={{ ar: 'مكانك محفوظ، والتمرة جاهزة.', en: 'Your seat is kept, the date is ready.' }} />
         <div class="hero-copy">
           <h1 class="h-m">{ar ? 'لكل بيت فنجانه. اختر فنجانك.' : 'Every home has its cup. Find yours.'}</h1>
-          <p class="lead">{ar ? 'قهوة الخليج واليمن والشام، محمّصة بكميات صغيرة في كالغاري، وتمرٌ لمن يحبّه معها. استلام من الخميس إلى الأحد، أو نوصلها لبيتك.' : 'Gulf, Yemeni and Shami coffee, roasted in small batches in Calgary, and dates for those who take one with it. Pick up Thursday to Sunday, or we bring it to your door.'}</p>
+          <p class="lead">{ar ? 'قهوة خليجية ويمنية وشامية، محمّصة بكميات صغيرة في كالغاري، وتمرٌ لمن يحبّه معها. استلام من الخميس إلى الأحد، أو نوصلها لبيتك.' : 'Gulf, Yemeni and Shami coffee, roasted in small batches in Calgary, and dates for those who take one with it. Pick up Thursday to Sunday, or we bring it to your door.'}</p>
           <div class="cta">
             <a class="btn primary" href={path(lang, 'find')}>{ar ? 'اعثر على فنجانك' : 'Find your cup'}</a>
             <a class="btn ghost" href={path(lang, 'shop')}>{ar ? 'تسوّق القهوة والتمر' : 'Shop coffee & dates'}</a>
@@ -213,6 +213,8 @@ const firstIftar = hhmm(sunsetMinutes(RAMADAN_START));
   .t-packs :global(.sachet:nth-child(n+2)) { margin-top: -40%; }
   .pack-pouch { position: absolute; width: 44%; inset-inline-start: 6%; bottom: 3%; filter: drop-shadow(0 22px 22px rgba(51, 33, 26, .28)); }
   html[dir='rtl'] .pack-pouch { inset-inline-start: auto; left: 6%; }
+  /* Keep the saffron packet where it sits in English, inside the panel. */
+  html[dir='rtl'] .pack-sachet { inset-inline-end: auto; right: -22%; }
   .js .hero-pair .say { opacity: 0; transform: translateY(10px) scale(.98); animation: say .7s var(--ease) forwards; }
   .js .hero-pair .say.tamr { animation-delay: .55s; }
   .js .pack-pouch { animation: stand .9s .25s var(--ease) both; }

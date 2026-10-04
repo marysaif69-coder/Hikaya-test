@@ -14,7 +14,7 @@ const SUB: Record<string, { en: string; ar: string }> = {
   gulf: { en: 'Pale and golden, from the dallah', ar: 'شقراء وذهبية، من الدلّة' },
   yemen: { en: 'From the pot, ginger in the packs', ar: 'من الإبريق، والزنجبيل في الظروف' },
   shami: { en: 'Powder-fine, with foam, from the rakwa', ar: 'ناعمة برغوتها، من الركوة' },
-  qishr: { en: 'From Yemen: the coffee cherry, brewed like tea', ar: 'من اليمن: ثمرة البن، تُغلى مثل الشاي' },
+  qishr: { en: 'From Yemen: the dried coffee cherry husk, brewed like tea', ar: 'من اليمن: قشر ثمرة البن المجفف، يُغلى مثل الشاي' },
 };
 const lines = (['gulf', 'yemen', 'shami'] as CoffeeLine[]).map(l => ({
   id: l as string, name: LINES[l].name, sub: SUB[l],

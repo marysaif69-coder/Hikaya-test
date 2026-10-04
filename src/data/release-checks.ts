@@ -6,6 +6,16 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: '2-4', title: 'Round 2 · batch 4: naming, “from Yemen”, [address], Arabic text', date: '2026-10-04',
+    checks: [
+      { id: 'footer-line', text: 'Footer on any page: “Gulf, Yemeni-style and Shami coffee, and dates for the table” (no “Coffee from Yemen”).', links: [{ label: 'Home (AR)', href: '/ar/' }, { label: 'Home (EN)', href: '/en/' }] },
+      { id: 'link-preview', text: 'Send the shop link in WhatsApp: the preview text does not start with “[address]”.', links: [{ label: 'Shop (EN)', href: '/en/shop/' }] },
+      { id: 'arabic-sizes', text: 'Arabic pages: bag sizes read ٢٥٠ غ and ١٠٠ غ (Gulf coffee, Qishr, tasting boxes).', links: [{ label: 'Gulf coffee (AR)', href: '/ar/shop/gulf/' }, { label: 'Qishr (AR)', href: '/ar/shop/qishr/' }] },
+      { id: 'saffron-hero', text: 'Arabic homepage: the saffron packet next to the Najdi bag is fully visible, not cut at the edge.', links: [{ label: 'Home (AR)', href: '/ar/' }] },
+      { id: 'eid-heading', text: 'English Eid page: عيدكم مبارك first and large, “Eid Mubarak” smaller under it.', links: [{ label: 'Eid (EN)', href: '/en/eid/' }] },
+    ],
+  },
+  {
     id: '2-3', title: 'Round 2 · batch 3: shop page behaviour', date: '2026-10-04',
     checks: [
       { id: 'sticky-style', text: 'On a phone, Gulf coffee page: scroll down; the bar at the bottom names the style that will be added (Najdi) and its price, and changes when you pick another.', links: [{ label: 'Gulf coffee (AR)', href: '/ar/shop/gulf/' }, { label: 'Gulf coffee (EN)', href: '/en/shop/gulf/' }] },

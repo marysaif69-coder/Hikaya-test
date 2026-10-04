@@ -30,7 +30,7 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
     const g = grind ?? p.grinds[0] ?? 'whole';
     const key = `${id}|${g}`;
     const row = coffee.get(key) ?? { id, name: p.name.en, grind: g === 'whole' ? 'Whole husk' : GRINDS[g as keyof typeof GRINDS]?.en ?? g, pouches: 0, grams: 0, inBoxes: 0 };
-    row.pouches += n; row.grams += n * grams(p.size); if (fromBox) row.inBoxes += n; // in gift boxes, styles and discovery packs
+    row.pouches += n; row.grams += n * grams(p.size.en); if (fromBox) row.inBoxes += n; // in gift boxes, styles and discovery packs
     coffee.set(key, row);
   };
   // Sealed packs to fill: full size (one bag's worth) and the small ones in the discovery packs.

@@ -9,7 +9,7 @@ import TeamBar from '../components/TeamBar.astro';
 import { CONSENT } from '../../netlify/lib/consent';
 
 interface Props { alertFor?: string; season?: 'ramadan' | 'eid'; lang: Lang; title: string; description?: string; current?: keyof typeof UI.nav; sleeve?: 'regular' | 'ramadan' | 'eid'; intro?: boolean; jsonld?: object; image?: string }
-const { alertFor, season, lang, title, description = UI.footLine[lang], current, sleeve = 'regular', intro = false, jsonld, image = '/media/img/eid-coffee-dates.jpg' } = Astro.props;
+const { alertFor, season, lang, title, description = UI.metaLine[lang], current, sleeve = 'regular', intro = false, jsonld, image = '/media/img/eid-coffee-dates.jpg' } = Astro.props;
 // The business, on every page. No street address until it is confirmed.
 const org = { '@context': 'https://schema.org', '@type': 'Store', name: 'Hikaya Coffee & Dates', alternateName: 'حكاية', url: new URL(`/${lang}/`, Astro.site).href, logo: new URL('/brand/logo.svg', Astro.site).href, areaServed: { '@type': 'City', name: 'Calgary' }, sameAs: ['https://www.instagram.com/hikaya.yyc/'] };
 const alt = other(lang);

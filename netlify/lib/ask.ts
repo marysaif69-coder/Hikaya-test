@@ -42,7 +42,7 @@ const usd = (n: number | null) => (n == null ? 'price not set yet (ordering not 
 function catalog() {
   const coffees = COFFEES.map(c => [
     `### ${c.name.en} (${c.name.ar}) · id: ${c.id}`,
-    `Base bag · ${LINES[c.line].name.en} line · ${usd(c.price)} · ${c.size} · roast ${c.roast ? `${c.roast} of 4 (working plan until the tastings)` : 'none (dried husk)'}`,
+    `Base bag · ${LINES[c.line].name.en} line · ${usd(c.price)} · ${c.size.en} · roast ${c.roast ? `${c.roast} of 4 (working plan until the tastings)` : 'none (dried husk)'}`,
     `Taste: ${c.taste.en} / ${c.taste.ar}`,
     `About: ${c.notes.en} ${c.story.en}`,
     `بالعربية: ${c.notes.ar} ${c.story.ar}`,
