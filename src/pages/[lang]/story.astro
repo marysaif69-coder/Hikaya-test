@@ -18,11 +18,11 @@ const [lTamr, lSeed, lBunn, lGroove, lDots] = [...LOGO.matchAll(/<path fill="(#[
 const lVb = LOGO.match(/viewBox="([^"]+)"/)![1];
 const lG = LOGO.match(/<g transform="([^"]+)">/)![1];
 const STEPS = [
-  { tamr: false, t: { ar: 'بُن', en: 'Bunn' }, d: { ar: 'القهوة. يتكلم أولاً، كما تُصبّ القهوة أولاً للضيف.', en: 'The coffee. He speaks first, the way coffee is poured first for a guest.' } },
-  { tamr: true, apart: true, t: { ar: 'تمر', en: 'Tamr' }, d: { ar: 'التمرة. تردّ، كما تكون التمرة بجانب الفنجان.', en: 'The date. She answers, the way a date sits beside the cup.' } },
-  { tamr: true, lens: 'dash', t: { ar: 'يلتقيان', en: 'They meet' }, d: { ar: 'فنجان وتمرة، والحديث بينهما.', en: 'A cup and a date, and the talk between them.' } },
-  { tamr: true, lens: 'gold', t: { ar: 'هنا تحدث الحكاية', en: 'The hikaya happens here' }, d: { ar: 'حيث يلتقيان: حبّة بن بلون الخلال، أول ذهب التمر.', en: 'Where they meet: a coffee bean in the gold of khalal, the date’s first colour.' } },
-  { tamr: true, lens: 'gold', dots: true, t: { ar: 'وللحكاية بقية', en: 'The story goes on' }, d: { ar: 'تمر ما زالت تكتب.', en: 'Tamr is still typing.' } },
+  { tamr: false, t: { ar: 'بُن', en: 'Bunn' }, s: { ar: 'بُن', en: 'Bunn' }, d: { ar: 'القهوة. يتكلم أولاً، كما تُصبّ القهوة أولاً للضيف.', en: 'The coffee. He speaks first, the way coffee is poured first for a guest.' } },
+  { tamr: true, apart: true, t: { ar: 'تمر', en: 'Tamr' }, s: { ar: 'تمر', en: 'Tamr' }, d: { ar: 'التمرة. تردّ، كما تكون التمرة بجانب الفنجان.', en: 'The date. She answers, the way a date sits beside the cup.' } },
+  { tamr: true, lens: 'dash', t: { ar: 'يلتقيان', en: 'They meet' }, s: { ar: 'يلتقيان', en: 'They meet' }, d: { ar: 'فنجان وتمرة، والحديث بينهما.', en: 'A cup and a date, and the talk between them.' } },
+  { tamr: true, lens: 'gold', t: { ar: 'هنا تحدث الحكاية', en: 'The hikaya happens here' }, s: { ar: 'الحكاية', en: 'The hikaya' }, d: { ar: 'حيث يلتقيان: حبّة بن بلون الخلال، أول ذهب التمر.', en: 'Where they meet: a coffee bean in the gold of khalal, the date’s first colour.' } },
+  { tamr: true, lens: 'gold', dots: true, t: { ar: 'وللحكاية بقية', en: 'The story goes on' }, s: { ar: 'بقية', en: 'Goes on' }, d: { ar: 'تمر ما زالت تكتب.', en: 'Tamr is still typing.' } },
 ] as const;
 const STAGES = [
   { t: { en: 'Now', ar: 'الآن' }, d: { en: 'Setting up in Calgary: roasting, tasting, packaging.', ar: 'نؤسس في كالغاري: تحميص وتذوق وتغليف.' }, on: true },
@@ -33,41 +33,26 @@ const STAGES = [
 ];
 ---
 <Base lang={lang} title={ar ? 'حكايتنا' : 'Our story'} current="story">
-  <!-- The logo, broken down one step at a time (like an architect's concept diagram). -->
+  <!-- The logo builds itself one step at a time; one caption, and a step bar to go back to any step. -->
   <section class="wrap s-hero" aria-labelledby="s-h">
     <div class="s-copy">
       <h1 id="s-h" class="h-xl">{ar ? 'حكاية' : 'Hikaya means “a story”.'}</h1>
       <p class="lead">{ar ? 'وكل حكاية تحتاج اثنين.' : 'And every story needs two.'}</p>
     </div>
-    <div class="film" id="film">
-    <div class="stage" id="stage" hidden>
+    <div class="stage on-1 on-2 on-3 on-4 on-5" id="stage">
       <svg viewBox="-100 0 798 650" aria-hidden="true"><g transform={lG}>
-        <path class="st-tamr" fill="#A93B28" d={lTamr} />
-        <path class="st-bunn" fill="#33211A" d={lBunn} />
+        <path class="st-tamr part" data-part="2" fill="#A93B28" d={lTamr} />
+        <path class="st-bunn part" data-part="1" fill="#33211A" d={lBunn} />
         <path class="st-dash" fill="none" stroke="#F5EFE3" stroke-width="1" stroke-dasharray="2.5 2" d={lSeed} />
-        <g class="st-gold"><path fill="#CF9C0C" d={lSeed} /><path fill="#33211A" d={lGroove} /></g>
-        <path class="st-dots" fill="#F5EFE3" d={lDots} />
+        <g class="st-gold part" data-part="4"><path fill="#CF9C0C" d={lSeed} /><path fill="#33211A" d={lGroove} /></g>
+        <path class="st-dots part" data-part="5" fill="#F5EFE3" d={lDots} />
       </g></svg>
-      <div class="cap" aria-hidden="true"><span class="n"></span><h2></h2><p></p></div>
+      <div class="side">
+        <div class="cap" aria-live="polite"><h2>{STEPS[4].t[lang]}</h2><p>{STEPS[4].d[lang]}</p></div>
+        <p class="hint"><button type="button" class="again" id="again">{ar ? 'شاهدها مرة أخرى' : 'Watch again'}</button> <span>{ar ? 'أو اختر أي جزء من الشعار.' : 'Or point at any part of the logo.'}</span></p>
+        <script type="application/json" id="steps-data" set:html={JSON.stringify(STEPS.map(st => ({ t: st.t[lang], d: st.d[lang] })))} />
+      </div>
     </div>
-    <ol class="steps">
-      {STEPS.map((st, i) => (
-        <li style={`--i:${i}`}>
-          <svg viewBox="-100 0 798 650" aria-hidden="true"><g transform={lG}>
-            {st.tamr && <path fill="#A93B28" d={lTamr} transform={st.apart ? 'translate(-22 14)' : undefined} />}
-            <path fill="#33211A" d={lBunn} />
-            {st.lens === 'dash' && <path fill="none" stroke="#F5EFE3" stroke-width="1" stroke-dasharray="2.5 2" d={lSeed} />}
-            {st.lens === 'gold' && <><path fill="#CF9C0C" d={lSeed} /><path fill="#33211A" d={lGroove} /></>}
-            {st.dots && <path fill="#F5EFE3" d={lDots} />}
-          </g></svg>
-          <h2><span class="n">{ar ? ['١', '٢', '٣', '٤', '٥'][i] : `0${i + 1}`}</span><span class="t">{st.t[lang]}</span></h2>
-          <p>{st.d[lang]}</p>
-        </li>
-      ))}
-    </ol>
-    </div>
-    <script is:inline>if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { document.currentScript.closest('section').classList.add('playing'); }</script>
-    <button type="button" class="again" id="again" hidden>{ar ? 'شاهدها مرة أخرى' : 'Watch again'}</button>
   </section>
 
   <section class="chars">
@@ -133,61 +118,42 @@ const STAGES = [
 </Base>
 
 <script>
-  // Story page: the logo builds itself step by step, then settles into the five frames.
-  const hero = document.querySelector<HTMLElement>('.s-hero');
+  // Story page: the logo builds itself step by step and stays; point at (or tap) a part to read it again.
   const stage = document.getElementById('stage');
   const again = document.getElementById('again');
-  if (hero && stage && again && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const frames = [...hero.querySelectorAll<HTMLElement>('.steps li')];
+  const data = document.getElementById('steps-data');
+  if (stage && again && data) {
+    const STEPS: { t: string; d: string }[] = JSON.parse(data.textContent!);
     const cap = stage.querySelector<HTMLElement>('.cap')!;
-    const art = stage.querySelector<SVGElement>('svg')!;
-    const BEATS = [300, 1700, 3100, 4600, 6000];
-    const END = 7600;
     let timers: number[] = [];
-    let running = false;
-    const show = (n: number) => {
-      const f = frames[n - 1];
+    let shown = 5;
+    const stop = () => { timers.forEach(clearTimeout); timers = []; };
+    const say = (n: number, fade = true) => {
+      if (n === shown && fade) return;
+      shown = n;
+      const set = () => { cap.querySelector('h2')!.textContent = STEPS[n - 1].t; cap.querySelector('p')!.textContent = STEPS[n - 1].d; cap.classList.remove('out'); };
+      if (!fade) return set();
       cap.classList.add('out');
-      timers.push(window.setTimeout(() => {
-        cap.querySelector('.n')!.textContent = f.querySelector('.n')!.textContent;
-        cap.querySelector('h2')!.textContent = f.querySelector('.t')!.textContent;
-        cap.querySelector('p')!.textContent = f.querySelector('p')!.textContent;
-        cap.classList.remove('out');
-      }, n === 1 ? 0 : 300));
-      stage.classList.add(`on-${n}`);
+      timers.push(window.setTimeout(set, 250));
     };
-    const finish = () => {
-      if (!running) return;
-      running = false;
-      timers.forEach(clearTimeout); timers = [];
-      for (let n = 1; n <= 5; n++) stage.classList.add(`on-${n}`);
-      const last = frames[frames.length - 1].querySelector('svg')!;
-      const a = art.getBoundingClientRect(), b = last.getBoundingClientRect();
-      const visible = b.left >= 0 && b.right <= innerWidth;
-      const done = () => { stage.hidden = true; hero.classList.remove('playing'); hero.classList.add('settle'); again.hidden = false; };
-      cap.classList.add('out');
-      if (visible && a.width) {
-        art.style.transformOrigin = '0 0';
-        art.animate([{ transform: 'none' }, { transform: `translate(${b.left - a.left}px, ${b.top - a.top}px) scale(${b.width / a.width})` }],
-          { duration: 700, easing: 'cubic-bezier(.5, 0, .2, 1)', fill: 'forwards' }).finished.then(done);
-      } else {
-        stage.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: 'forwards' }).finished.then(done);
-      }
-    };
+    const build = (n: number) => { for (let k = 1; k <= 5; k++) stage.classList.toggle(`on-${k}`, k <= n); };
     const play = () => {
-      running = true;
-      hero.classList.remove('settle');
-      hero.classList.add('playing');
-      again.hidden = true;
-      stage.getAnimations({ subtree: true }).forEach(x => x.cancel());
-      stage.className = 'stage';
-      stage.hidden = false;
-      BEATS.forEach((t, i) => timers.push(window.setTimeout(() => show(i + 1), t)));
-      timers.push(window.setTimeout(finish, END));
+      stop();
+      stage.removeAttribute('data-hl');
+      build(0);
+      [300, 2000, 3700, 5400, 7100].forEach((t, i) => timers.push(window.setTimeout(() => { build(i + 1); say(i + 1); }, t)));
     };
-    stage.addEventListener('click', finish);
-    again.addEventListener('click', play);
-    play();
+    const point = (n: number) => { stop(); build(5); stage.dataset.hl = String(n); say(n); };
+    const rest = () => { stage.removeAttribute('data-hl'); say(5); };
+    stage.querySelectorAll<SVGElement>('.part').forEach(el => {
+      const n = Number(el.dataset.part);
+      el.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') point(n); });
+      el.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') rest(); });
+      el.addEventListener('click', e => { e.stopPropagation(); stage.dataset.hl === String(n) ? rest() : point(n); });
+    });
+    document.addEventListener('click', e => { if (stage.dataset.hl && !(e.target as Element).closest('.part')) rest(); });
+    again.addEventListener('click', e => { e.stopPropagation(); play(); });
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) play();
   }
 </script>
 
@@ -197,31 +163,21 @@ const STAGES = [
   .why-note { max-width: 680px; display: grid; gap: 14px; padding: 24px 26px; border-radius: 28px; border-bottom-right-radius: 6px; background: var(--sheet); font-size: 18px; }
   .why-note p { margin: 0; }
   .why-note .sign { font-family: var(--display); font-weight: 700; color: var(--tamr); }
-  .s-hero { display: grid; gap: clamp(28px, 4vw, 56px); padding-block: clamp(32px, 5vw, 72px); }
+  .s-hero { display: grid; gap: clamp(20px, 3vw, 40px); padding-block: clamp(32px, 5vw, 72px); }
   .s-copy { display: grid; gap: 10px; }
   .s-copy h1 { font-size: clamp(44px, 5.4vw, 80px); }
-  .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: clamp(16px, 2vw, 32px); }
-  .steps li { display: grid; gap: 8px; align-content: start; padding-top: 18px; border-top: 1.5px solid var(--line); }
-  .steps svg { width: 100%; height: auto; display: block; margin-bottom: 8px; }
-  .steps h2 { font-size: 20px; display: flex; gap: 10px; align-items: baseline; }
-  .steps .n { font: 600 13px/1 var(--body); color: var(--ink-2); letter-spacing: .06em; }
-  .steps p { margin: 0; color: var(--ink-2); font-size: 16px; }
-  .steps li:nth-child(4) { border-top-color: #CF9C0C; }
-  @media (max-width: 900px) {
-    .steps { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 62%; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 16px; padding-bottom: 12px; margin-inline: -16px; padding-inline: 16px; }
-    .steps li { scroll-snap-align: start; }
-  }
-  .film { position: relative; }
-  .stage { position: absolute; inset: 0; z-index: 1; display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: clamp(24px, 4vw, 64px); align-items: center; cursor: pointer; }
-  .stage[hidden] { display: none; }
+  .stage { display: grid; grid-template-columns: minmax(0, 460px) minmax(0, 1fr); gap: clamp(24px, 5vw, 80px); align-items: center; }
   .stage svg { width: 100%; height: auto; display: block; }
-  .playing .steps { visibility: hidden; }
-  .playing .film { min-height: clamp(380px, 34vw, 440px); }
-  .cap { display: grid; gap: 10px; max-width: 34ch; transition: opacity .35s; }
+  .side { display: grid; gap: 22px; max-width: 460px; }
+  .cap { display: grid; gap: 10px; min-height: 9.5em; align-content: end; transition: opacity .3s; }
   .cap.out { opacity: 0; }
-  .cap h2 { font-size: clamp(30px, 3.4vw, 48px); }
+  .cap h2 { font-size: clamp(30px, 3.4vw, 46px); }
   .cap p { margin: 0; color: var(--ink-2); font-size: 19px; }
-  .cap .n { font: 600 14px/1 var(--body); color: var(--ink-2); letter-spacing: .06em; }
+  .hint { margin: 0; font-size: 14px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+  .part { cursor: pointer; }
+  .stage.stage[data-hl] .part { opacity: .22; }
+  .stage.stage[data-hl="1"] .st-bunn, .stage.stage[data-hl="2"] .st-tamr, .stage.stage[data-hl="4"] .st-gold, .stage.stage[data-hl="5"] .st-dots, .stage.stage[data-hl="5"] .st-tamr { opacity: 1; }
+  .again { background: none; border: 0; padding: 2px 0; font: 600 14px var(--body); color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
   .stage path, .stage g { transition: opacity .6s ease, transform .9s cubic-bezier(.3, .8, .3, 1); }
   .st-bunn { transform-box: fill-box; transform-origin: center; transform: scale(.7); }
   .st-bunn, .st-tamr, .st-dash, .st-gold, .st-dots { opacity: 0; }
@@ -232,18 +188,13 @@ const STAGES = [
   .on-3 .st-dash { opacity: 1; transition-delay: .7s; }
   .on-4 .st-dash { opacity: 0; transition-delay: 0s; }
   .on-4 .st-gold, .on-5 .st-dots { opacity: 1; }
-  .settle .steps li { animation: rise .5s ease-out both; animation-delay: calc(var(--i) * .12s); }
-  .settle .steps li:last-child { animation: none; }
-  .again { justify-self: start; background: none; border: 0; padding: 4px 0; font: 600 15px var(--body); color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-  .again[hidden] { display: none; }
-  @media (max-width: 900px) {
-    .stage { grid-template-columns: 1fr; align-content: start; justify-items: center; text-align: center; }
-    .stage svg { max-width: 300px; }
-    .cap { justify-items: center; width: 100%; max-width: none; }
+  @media (max-width: 820px) {
+    .stage { grid-template-columns: 1fr; justify-items: center; }
+    .stage svg { max-width: 340px; translate: -6% 0; }
+    .side { width: 100%; }
+    .cap { min-height: 7.5em; }
     .cap p { font-size: 17px; }
-    .playing .film { min-height: 470px; }
   }
-  @keyframes rise { from { opacity: 0; translate: 0 10px; } }
   .chars { padding-bottom: 24px; }
   .c-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   @media (max-width: 760px) { .c-grid { grid-template-columns: 1fr; } }
