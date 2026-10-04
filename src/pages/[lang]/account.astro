@@ -108,7 +108,8 @@ const ar = lang === 'ar';
     const idx = steps.findIndex(s => s[0] === o.status);
     const where = o.method === 'pickup' ? (ar ? 'استلام · [العنوان]، كالغاري' : 'Pickup · [address], Calgary') : `${ar ? 'توصيل إلى' : 'Delivery to'} ${esc(o.street)}, ${esc(o.postal)}`;
     const its = o.items.map((i: any) => `<li><span>${i.qty} × ${esc(ar ? i.name_ar : i.name_en)}${i.option_en ? `<br><small>${esc(ar ? i.option_ar : i.option_en)}</small>` : ''}</span><span class="tnum">${money(i.unit_cents * i.qty)}</span></li>`).join('');
-    const canCancel = o.status === 'received' && o.paymentStatus === 'unpaid' && !q.has('t');
+    const canCancel = o.status === 'received' && o.paymentStatus === 'unpaid' && !o.paid && !q.has('t');
+    const rest = o.paid > 0 && o.total > o.paid ? o.total - o.paid : 0;
     const canMove = !q.has('t') && ['received', 'confirmed'].includes(o.status);
     const canAgain = !q.has('t') && o.items.some((i: any) => catalog().items[i.product_id]);
     return `<article class="ord${q.get('order') === o.ref ? ' hl' : ''}" id="o-${esc(o.ref)}">
@@ -120,8 +121,8 @@ const ar = lang === 'ar';
       <ul class="its">${its}${o.delivery ? `<li><span>${ar ? 'التوصيل' : 'Delivery'}</span><span class="tnum">${money(o.delivery)}</span></li>` : ''}</ul>
       ${o.giftCard ? `<p class="its"><span>${ar ? 'بطاقة هدية' : 'Gift card'}: −${money(o.giftCard)}</span></p>` : ''}
       <p class="tot"><span>${ar ? 'الإجمالي' : 'Total'}</span><span class="tnum">${money(o.total)}</span></p>
-      <p class="pay">${o.total === 0 && o.giftCard ? (ar ? 'دُفع ببطاقة هدية' : 'Paid with a gift card') : PAY[o.payment] ?? ''} · ${o.paymentStatus === 'paid' ? `<b>${ar ? 'مدفوع' : 'Paid'}</b>` : (ar ? 'لم يُدفع بعد' : 'Not paid yet')}</p>
-      <div class="acts">${o.payUrl ? `<a class="btn tamr" href="${esc(o.payUrl)}">${ar ? 'ادفع الآن' : 'Pay now'}</a>` : ''}${canCancel ? `<button class="btn line" type="button" data-cancel="${esc(o.ref)}">${ar ? 'إلغاء الطلب' : 'Cancel order'}</button>` : ''}${canMove ? `<button class="btn line" type="button" data-move="${esc(o.ref)}">${ar ? 'غيّر الموعد' : 'Change day'}</button>` : ''}${canAgain ? `<button class="btn primary again" type="button" data-again="${esc(o.ref)}">${ar ? 'اطلبه مرة أخرى' : 'Order again'}</button>` : ''}</div>
+      <p class="pay">${o.total === 0 && o.giftCard ? (ar ? 'دُفع ببطاقة هدية' : 'Paid with a gift card') : PAY[o.payment] ?? ''} · ${o.paymentStatus === 'paid' ? `<b>${ar ? 'مدفوع' : 'Paid'}</b>` : rest ? (ar ? `الباقي <span class="tnum">${money(rest)}</span>` : `<span class="tnum">${money(rest)}</span> still to pay`) : (ar ? 'لم يُدفع بعد' : 'Not paid yet')}</p>
+      <div class="acts">${o.payUrl && o.status !== 'cancelled' ? `<a class="btn tamr" href="${esc(o.payUrl)}">${rest ? (ar ? 'ادفع الباقي' : 'Pay the rest') : ar ? 'ادفع الآن' : 'Pay now'}</a>` : ''}${canCancel ? `<button class="btn line" type="button" data-cancel="${esc(o.ref)}">${ar ? 'إلغاء الطلب' : 'Cancel order'}</button>` : ''}${canMove ? `<button class="btn line" type="button" data-move="${esc(o.ref)}">${ar ? 'غيّر الموعد' : 'Change day'}</button>` : ''}${canAgain ? `<button class="btn primary again" type="button" data-again="${esc(o.ref)}">${ar ? 'اطلبه مرة أخرى' : 'Order again'}</button>` : ''}</div>
     </article>`;
   }
 

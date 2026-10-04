@@ -16,6 +16,8 @@ import { planRoute, navLinks, mapsEnabled, shopAddress, type Origin } from './ro
 
 export const guideText = () => [GUIDE.guide.title.en, ...GUIDE.guide.points.map((p, i) => `${i + 1}. ${p.t.en}`)].join('\n');
 const day = (v: unknown) => (v instanceof Date ? v.toISOString() : String(v ?? '')).slice(0, 10);
+/** What is still to collect at the door: the total less anything already paid (after a change). */
+const dueAtDoor = (o: Row) => (o.payment_status === 'unpaid' && o.payment === 'at-pickup' ? Math.max(o.total_cents - (o.paid_cents ?? 0), 0) : 0);
 
 export async function member(email: string) {
   return one`SELECT id, email, role, name, phone, vehicle, status, agreed_at, volunteer, drives, licence_expires::text, insurance_expires::text, food_cert_expires::text FROM team_members WHERE email = ${email}`;
@@ -44,7 +46,7 @@ export async function onboard(s: Session, b: any) {
 const stopShape = async (o: Row) => ({
   ref: o.ref, seq: o.route_seq ?? null, status: o.status, window: o.slot_window, day: day(o.slot_date), name: o.name, phone: o.phone, street: o.street, postal: o.postal, notes: o.notes,
   gift: o.gift ? { to: o.gift_to, phone: o.gift_phone, message: o.gift_message } : null, driver: o.driver_email,
-  collect: o.payment_status === 'unpaid' && o.payment === 'at-pickup' ? o.total_cents : 0,
+  collect: dueAtDoor(o),
   unpaid: o.payment_status === 'unpaid' && o.payment !== 'at-pickup', collected: o.collected_method ? { method: o.collected_method, cents: o.collected_cents } : null,
   photos: (await sql`SELECT id FROM delivery_photos WHERE order_id = ${o.id} ORDER BY id`).map(p => p.id), customerNote: o.team_note ?? null,
   items: (await items(o.id)).map(i => ({ qty: i.qty, name: i.name_en, option: i.option_en })),
@@ -208,12 +210,12 @@ export async function delivered(s: Session, ref: string, collected: unknown, req
   if (o.status === 'completed') return { ok: true };
   const photo = await one`SELECT id FROM delivery_photos WHERE order_id = ${o.id} LIMIT 1`;
   if (!photo) throw new HttpError(400, 'photo', 'Take a photo of the order at the door first.');
-  const due = o.payment_status === 'unpaid' && o.payment === 'at-pickup';
-  if (due && collected !== 'cash' && collected !== 'card') throw new HttpError(400, 'collect', `Collect ${dollars(o.total_cents)} and choose cash or card.`);
+  const owed = dueAtDoor(o), due = o.payment_status === 'unpaid' && o.payment === 'at-pickup';
+  if (due && collected !== 'cash' && collected !== 'card') throw new HttpError(400, 'collect', `Collect ${dollars(owed)} and choose cash or card.`);
   if (due) {
-    await sql`UPDATE orders SET collected_method = ${collected as string}, collected_cents = ${o.total_cents}, collected_by = ${s.email} WHERE id = ${o.id}`;
+    await sql`UPDATE orders SET collected_method = ${collected as string}, collected_cents = ${owed}, collected_by = ${s.email} WHERE id = ${o.id}`;
     await setPayment(ref, 'paid', s.email);
-    await event(o.id, 'payment', `Collected ${dollars(o.total_cents)} by ${collected} at the door`, s.email);
+    await event(o.id, 'payment', `Collected ${dollars(owed)} by ${collected} at the door`, s.email);
   }
   await setStatus(ref, 'completed', s.email, req, true);
   await sql`UPDATE orders SET delivered_at = NOW(), delivered_by = ${s.email} WHERE id = ${o.id}`;

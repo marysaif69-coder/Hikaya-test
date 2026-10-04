@@ -17,8 +17,13 @@ export default async (req: Request) => {
   const evt = JSON.parse(raw);
   const payment = evt?.data?.object?.payment;
   if (evt?.type === 'payment.updated' && payment?.status === 'COMPLETED' && payment.order_id) {
-    const o = await one`SELECT ref, payment_status FROM orders WHERE square_order_id = ${payment.order_id}`;
-    if (o) await sql`UPDATE orders SET square_payment_id = ${payment.id} WHERE ref = ${o.ref}`;
+    const o = await one`SELECT id, ref, payment_status, total_cents, paid_cents FROM orders WHERE square_order_id = ${payment.order_id}`;
+    if (o) {
+      // Each payment is kept (a balance paid after a change is a second one), so refunds can reach both.
+      const amount = Number(payment.amount_money?.amount ?? payment.total_money?.amount) || Math.max(o.total_cents - o.paid_cents, 0);
+      await sql`INSERT INTO order_payments (order_id, square_payment_id, amount_cents) VALUES (${o.id}, ${payment.id}, ${amount}) ON CONFLICT (square_payment_id) DO NOTHING`;
+      await sql`UPDATE orders SET square_payment_id = ${payment.id} WHERE id = ${o.id}`;
+    }
     if (o && o.payment_status === 'unpaid') await setPayment(o.ref, 'paid', 'square');
     if (!o) {
       const g = await one`SELECT ref FROM gift_cards WHERE square_order_id = ${payment.order_id}`;

@@ -1386,7 +1386,7 @@ import '../../styles/global.css';
       <table>${o.items.map((i: any) => `<tr><td class="q">${i.qty} ×</td><td>${esc(i.name_en)}${i.option_en ? ` <small>(${esc(i.option_en)})</small>` : ''}</td><td class="box">☐</td></tr>`).join('')}</table>
       ${o.notes ? `<p class="note">Customer note: ${esc(o.notes)}</p>` : ''}${o.customerNote ? `<p class="note">Team note: ${esc(o.customerNote)}</p>` : ''}
       ${o.lots?.length ? `<p class="note">Lots: ${o.lots.map(esc).join(', ')}</p>` : ''}
-      <p>${o.paymentStatus === 'paid' ? 'Paid' : o.payment === 'at-pickup' ? `Collect ${money(o.total)}` : 'Not paid yet'}${o.gift ? ' · GIFT: no prices in the bag' : ''}</p></section>
+      <p>${o.paymentStatus === 'paid' ? 'Paid' : o.payment === 'at-pickup' ? `Collect ${money(o.total - (o.paid ?? 0))}` : o.paid ? `${money(o.total - o.paid)} still to pay` : 'Not paid yet'}${o.gift ? ' · GIFT: no prices in the bag' : ''}</p></section>
       ${o.gift && o.gift.message ? `<section class="card"><p class="msg" dir="auto">${esc(o.gift.message)}</p><p class="from" dir="auto">— ${esc(o.name)}</p><p class="brand">حكاية · Hikaya</p></section>` : ''}`;
     const w = window.open('', '_blank'); if (!w) { alert('Allow pop-ups to print the slips.'); return; }
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Packing slips ${esc(d.date)}</title><style>

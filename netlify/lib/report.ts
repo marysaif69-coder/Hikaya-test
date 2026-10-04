@@ -9,7 +9,7 @@ const monthStart = (date: string) => date.slice(0, 7) + '-01';
 const prevMonth = (first: string) => monthStart(addDays(first, -1));
 
 async function numbersFor(from: string, to: string) {
-  const s: any = await one`SELECT COUNT(*)::int AS orders, COALESCE(SUM(total_cents + gift_card_cents - refunded_cents), 0)::int AS sales, COALESCE(SUM(refunded_cents), 0)::int AS refunds,
+  const s: any = await one`SELECT COUNT(*)::int AS orders, COALESCE(SUM(total_cents + gift_card_cents - GREATEST(refunded_cents - GREATEST(paid_cents - total_cents, 0), 0)), 0)::int AS sales, COALESCE(SUM(refunded_cents), 0)::int AS refunds,
       COALESCE(SUM(discount_cents), 0)::int AS discounts, COUNT(*) FILTER (WHERE method = 'delivery')::int AS deliveries, COUNT(DISTINCT email)::int AS customers
     FROM orders WHERE NOT is_sample AND status <> 'cancelled' AND created_at >= ${from}::date AND created_at < ${to}::date`;
   const repeat = await one`SELECT COUNT(*)::int AS n FROM (SELECT email FROM orders WHERE NOT is_sample AND status <> 'cancelled' AND created_at >= ${from}::date AND created_at < ${to}::date

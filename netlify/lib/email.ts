@@ -63,7 +63,7 @@ export function codeEmail(to: string, code: string, lang: Lang, siteUrl: string)
 export type OrderForMail = {
   id: number; ref: string; email: string; name: string; lang: Lang; method: string; street: string | null; postal: string | null;
   slot_date: string; slot_window: string; payment: string; payment_status: string; status: string;
-  subtotal_cents: number; delivery_cents: number; total_cents: number; notes?: string | null;
+  subtotal_cents: number; delivery_cents: number; total_cents: number; paid_cents?: number; notes?: string | null;
   gift?: boolean; gift_to?: string | null; gift_message?: string | null; discount_cents?: number; promo_code?: string | null;
   gift_card_cents?: number; gift_card_code?: string | null; every_weeks?: number | null;
 };
@@ -123,9 +123,12 @@ export function orderEmail(kind: OrderMailKind, o: OrderForMail, items: ItemForM
   const where = o.method === 'pickup'
     ? (ar ? `استلام من ${esc(env('PICKUP_ADDRESS') || '[العنوان]، كالغاري')}${env('PICKUP_HOURS') ? ` · ${esc(env('PICKUP_HOURS'))}` : ''}` : `Pickup at ${esc(env('PICKUP_ADDRESS') || '[address], Calgary')}${env('PICKUP_HOURS') ? ` · ${esc(env('PICKUP_HOURS'))}` : ''}`)
     : (ar ? `توصيل إلى ${esc(o.street)}، ${esc(o.postal)}` : `Delivery to ${esc(o.street)}, ${esc(o.postal)}`);
+  // After a paid order is changed, only the difference is still to pay.
+  const paidIn = o.paid_cents ?? 0, due = o.total_cents - paidIn, rest = paidIn > 0 && due > 0;
   const pay = o.total_cents === 0 ? (ar ? 'دُفع كاملاً ببطاقة الهدية.' : 'Paid in full with your gift card.') : o.payment_status === 'paid' ? (ar ? 'مدفوع. شكراً.' : 'Paid. Thank you.')
-    : o.payment === 'e-transfer' ? (ar ? `أرسل ${dollars(o.total_cents)} بتحويل Interac إلى ${esc(env('ETRANSFER_EMAIL') || 'orders@hikayacoffee.ca')}، واكتب رقم الطلب <span style="white-space:nowrap">${o.ref}</span> في الرسالة.` : `Send ${dollars(o.total_cents)} by Interac e-Transfer to ${esc(env('ETRANSFER_EMAIL') || 'orders@hikayacoffee.ca')} with <span style="white-space:nowrap">${o.ref}</span> in the message.`)
-    : o.payment === 'card' ? (ar ? 'الدفع بالبطاقة عبر Square.' : 'Card payment through Square.')
+    : o.payment === 'e-transfer' ? (ar ? `${rest ? `وصلنا ${dollars(paidIn)}. ` : ''}أرسل ${dollars(due)} بتحويل Interac إلى ${esc(env('ETRANSFER_EMAIL') || 'orders@hikayacoffee.ca')}، واكتب رقم الطلب <span style="white-space:nowrap">${o.ref}</span> في الرسالة.` : `${rest ? `We have ${dollars(paidIn)} already. ` : ''}Send ${dollars(due)} by Interac e-Transfer to ${esc(env('ETRANSFER_EMAIL') || 'orders@hikayacoffee.ca')} with <span style="white-space:nowrap">${o.ref}</span> in the message.`)
+    : o.payment === 'card' ? (rest ? (ar ? `وصلنا ${dollars(paidIn)}. الباقي ${dollars(due)} بالبطاقة عبر Square، من صفحة طلبك.` : `We have ${dollars(paidIn)} already. The remaining ${dollars(due)} is by card through Square, from your order page.`) : (ar ? 'الدفع بالبطاقة عبر Square.' : 'Card payment through Square.'))
+    : rest ? (ar ? `وصلنا ${dollars(paidIn)}. الباقي ${dollars(due)} عند الاستلام، بالبطاقة أو نقداً.` : `We have ${dollars(paidIn)} already. The remaining ${dollars(due)} is paid at pickup or handover, by card or cash.`)
     : (ar ? 'الدفع عند الاستلام، بالبطاقة أو نقداً.' : 'Pay at pickup or handover, by card or cash.');
   const showDetails = kind !== 'cancelled';
   const body = `<p>${c.p}</p>${o.every_weeks && kind === 'received' ? `<p>${ar ? `هذا طلبك المنتظم كل ${o.every_weeks === 2 ? 'أسبوعين' : '٤ أسابيع'}. تستطيع تخطّي المرة القادمة أو إيقافه من حسابك.` : `This is your regular order, every ${o.every_weeks} weeks. You can skip the next one or stop it from your account.`}</p>` : ''}

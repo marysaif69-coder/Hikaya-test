@@ -964,4 +964,62 @@ assert.ok(rfMail); assert.match(rfMail.html, /Najdi/); assert.match(rfMail.html,
 const rfCount = sent.length; await daily('2027-04-30'); assert.ok(!sent.slice(rfCount).some(m => /Running low/.test(m.subject)));
 ok('about three weeks after a coffee order, one "Running low?" email, only to people on the mailing list, never twice');
 
+// ---------- what was actually paid (paid_cents) ----------
+const pc = (ref: string) => pg.query(`SELECT total_cents, paid_cents, payment_status, refunded_cents FROM orders WHERE ref = $1`, [ref]).then(r => r.rows[0] as any);
+// Paid $26, grown to $52: only $26 is owed, and the email says so.
+const pg1 = await order({ email: 'paidgrow@example.com', day: '2027-03-04', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] });
+await call(admin, `/api/admin/orders/${pg1.data.ref}`, { cookie: adm, body: { paymentStatus: 'paid' } });
+assert.equal((await pc(pg1.data.ref)).paid_cents, 2600);
+const pgM = sent.length;
+const pgUp = (await call(admin, `/api/admin/orders/${pg1.data.ref}/items`, { cookie: adm, body: { lines: [{ id: 'najdi', opt: 'dallah', qty: 2 }] } })).data;
+assert.equal(pgUp.balance, 2600); assert.deepEqual([(await pc(pg1.data.ref)).paid_cents, (await pc(pg1.data.ref)).payment_status], [2600, 'unpaid']);
+const pgMail = sent.slice(pgM).find(m => m.subject === `Order ${pg1.data.ref} was updated`);
+assert.match(pgMail.html, /Send \$26 by Interac/); assert.doesNotMatch(pgMail.html, /Send \$52/); ok('a paid order made bigger owes only the difference, and the email asks for that');
+const pgUp2 = (await call(admin, `/api/admin/orders/${pg1.data.ref}/items`, { cookie: adm, body: { lines: [{ id: 'najdi', opt: 'dallah', qty: 3 }] } })).data;
+assert.equal(pgUp2.balance, 5200); ok('a second change is measured against what was paid, not lost');
+await call(admin, `/api/admin/orders/${pg1.data.ref}`, { cookie: adm, body: { paymentStatus: 'paid' } });
+assert.equal((await pc(pg1.data.ref)).paid_cents, 7800); ok('"Money received" records the whole total as paid');
+// Paid $52, cut to $26: $26 to refund, and the refund goes through.
+const ps1 = await order({ email: 'paidshrink@example.com', day: '2027-03-04', lines: [{ id: 'najdi', opt: 'dallah', qty: 2 }] });
+await call(admin, `/api/admin/orders/${ps1.data.ref}`, { cookie: adm, body: { paymentStatus: 'paid' } });
+const psDown = (await call(admin, `/api/admin/orders/${ps1.data.ref}/items`, { cookie: adm, body: { lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] } })).data;
+assert.equal(psDown.balance, -2600);
+assert.equal((await call(admin, `/api/admin/orders/${ps1.data.ref}`, { cookie: adm })).data.order.refundable, 5200); // all that came in can still go back; $26 of it is the difference
+const psRef = await call(admin, `/api/admin/orders/${ps1.data.ref}/refund`, { cookie: adm, body: { amount_cents: 2600, method: 'e-transfer' } });
+assert.equal(psRef.status, 200, JSON.stringify(psRef.data));
+assert.equal((await pc(ps1.data.ref)).payment_status, 'paid');
+const psCust = (await call(admin, '/api/admin/customers?q=paidshrink', { cookie: adm })).data.customers[0];
+assert.equal(psCust.spent, 2600);
+assert.equal((await call(admin, `/api/admin/orders/${ps1.data.ref}/refund`, { cookie: adm, body: { amount_cents: 2601, method: 'cash' } })).data.error, 'amount');
+ok('a paid order made smaller: the difference can be refunded, the order stays paid, and sales count what was kept');
+// Card: a paid order that grows gets a Square link for the balance only.
+process.env.SQUARE_ACCESS_TOKEN = 'sq-test'; process.env.SQUARE_LOCATION_ID = 'L1';
+const sqBodies: any[] = []; const fS = globalThis.fetch;
+globalThis.fetch = (async (url: string, init: any) => {
+  if (String(url).includes('/v2/online-checkout/payment-links')) { const b = JSON.parse(init.body); sqBodies.push(b); return new Response(JSON.stringify({ payment_link: { url: `https://square.test/${sqBodies.length}`, order_id: `SQO-${sqBodies.length}` } }), { status: 200 }); }
+  return fS(url, init);
+}) as any;
+const cd1 = await order({ email: 'cardgrow@example.com', day: '2027-03-05', payment: 'card', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] });
+assert.equal(cd1.status, 201, JSON.stringify(cd1.data));
+await call(admin, `/api/admin/orders/${cd1.data.ref}`, { cookie: adm, body: { paymentStatus: 'paid' } });
+const sqN = sqBodies.length;
+await call(admin, `/api/admin/orders/${cd1.data.ref}/items`, { cookie: adm, body: { lines: [{ id: 'najdi', opt: 'dallah', qty: 2 }] } });
+const balBody = sqBodies[sqN];
+assert.equal(balBody.order.line_items.length, 1); assert.equal(balBody.order.line_items[0].base_price_money.amount, 2600);
+const cdPub = (await call(orders, `/api/my/orders`, { cookie: await login('cardgrow@example.com') })).data.orders?.find((x: any) => x.ref === cd1.data.ref);
+assert.equal(cdPub.paid, 2600); assert.equal(cdPub.payUrl, 'https://square.test/2');
+ok('a paid card order that grows gets a Square link for the balance only, not every line again');
+globalThis.fetch = fS; delete process.env.SQUARE_ACCESS_TOKEN; delete process.env.SQUARE_LOCATION_ID;
+// Pay at the door: paid ahead $26, grown to $52: the driver collects $26.
+const dd1 = await order({ email: 'doorgrow@example.com', method: 'delivery', street: '9 Door St', postal: 'T2P1J9', day: '2027-03-05', payment: 'at-pickup', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] });
+await call(admin, `/api/admin/orders/${dd1.data.ref}`, { cookie: adm, body: { paymentStatus: 'paid' } });
+await call(admin, `/api/admin/orders/${dd1.data.ref}/items`, { cookie: adm, body: { lines: [{ id: 'najdi', opt: 'dallah', qty: 2 }] } });
+await call(admin, '/api/admin/assign', { cookie: adm, body: { refs: [dd1.data.ref], driver: 'dan@example.com' } });
+const ddStop = (await call(driverApi, '/api/driver/stops?date=2027-03-05', { cookie: dan2 })).data.stops.find((x: any) => x.ref === dd1.data.ref);
+assert.equal(ddStop.collect, 2600);
+await driverApi(new Request(`${H}/api/driver/photo?ref=${dd1.data.ref}`, { method: 'POST', headers: { 'content-type': 'image/jpeg', origin: H, cookie: dan2 }, body: jpeg }));
+assert.equal((await call(driverApi, '/api/driver/delivered', { cookie: dan2, body: { ref: dd1.data.ref, collected: 'cash' } })).status, 200);
+const ddRow = (await pg.query(`SELECT collected_cents, paid_cents, total_cents FROM orders WHERE ref = $1`, [dd1.data.ref])).rows[0] as any;
+assert.deepEqual([ddRow.collected_cents, ddRow.paid_cents], [2600, ddRow.total_cents]); ok('pay at the door after a change: the driver collects and records only what is still owed');
+
 console.log(`\n${pass} checks passed`);

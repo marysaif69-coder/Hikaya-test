@@ -64,7 +64,7 @@ const SETTINGS = [
 const summary = (o: any) => ({
   ref: o.ref, name: o.name, email: o.email, phone: o.phone, method: o.method, street: o.street, postal: o.postal,
   day: day(o.slot_date), window: o.slot_window, payment: o.payment, paymentStatus: o.payment_status, status: o.status,
-  total: o.total_cents, lang: o.lang, notes: o.notes, created: o.created_at, items: o.items ?? null,
+  total: o.total_cents, paid: o.paid_cents ?? 0, lang: o.lang, notes: o.notes, created: o.created_at, items: o.items ?? null,
   discount: o.discount_cents ?? 0, promo: o.promo_code ?? null, refunded: o.refunded_cents ?? 0, sample: Boolean(o.is_sample),
   gift: o.gift ? { to: o.gift_to, phone: o.gift_phone, message: o.gift_message } : null,
   driver: o.driver_email ?? null, collected: o.collected_method ? { method: o.collected_method, cents: o.collected_cents, by: o.collected_by } : null,
@@ -114,7 +114,7 @@ async function handle(req: Request) {
       const counts = await sql`SELECT status, COUNT(*)::int AS n FROM orders
         WHERE (${sample} = '' OR (${sample} = 'hide' AND NOT is_sample) OR (${sample} = 'only' AND is_sample)) GROUP BY status`;
       // Money still to come in: paid at pickup (normal), or e-Transfer/card not received yet (to chase).
-      const owed = await sql`SELECT payment, COUNT(*)::int AS n, COALESCE(SUM(total_cents), 0)::int AS cents FROM orders WHERE payment_status = 'unpaid' AND status <> 'cancelled'
+      const owed = await sql`SELECT payment, COUNT(*)::int AS n, COALESCE(SUM(GREATEST(total_cents - paid_cents, 0)), 0)::int AS cents FROM orders WHERE payment_status = 'unpaid' AND status <> 'cancelled'
         AND (${sample} = '' OR (${sample} = 'hide' AND NOT is_sample) OR (${sample} = 'only' AND is_sample)) GROUP BY payment`;
       const sum = (rows: any[]) => ({ n: rows.reduce((a, r) => a + r.n, 0), cents: rows.reduce((a, r) => a + r.cents, 0) });
       const atPickup = sum(owed.filter(r => r.payment === 'at-pickup')), waiting = sum(owed.filter(r => r.payment !== 'at-pickup'));
@@ -129,12 +129,12 @@ async function handle(req: Request) {
         WHERE e.order_id = ${o.id} ORDER BY e.created_at DESC`;
       const emails = await sql`SELECT to_email, subject, status, created_at FROM email_log WHERE order_id = ${o.id} ORDER BY created_at DESC`;
       const cust = await one`SELECT id, team_note FROM customers WHERE email = ${o.email}`;
+      const paid = o.payment_status === 'paid' || o.payment_status === 'partly-refunded';
       // Gift card and store-credit codes are spendable, so helpers only see that one was used.
       const owner = admin.role === 'admin';
       const hide = (t: string) => owner ? t : t.replace(/\b(GIFT|CREDIT)-[A-Z0-9]+/g, '$1-…');
       const refunds = (await refundsFor(o.id)).map(r => owner ? r : { ...r, credit_code: r.credit_code ? hide(r.credit_code) : null });
-      const paid = o.payment_status === 'paid' || o.payment_status === 'partly-refunded';
-      return json({ customer: cust ? { id: cust.id, note: cust.team_note } : null, order: { ...summary(o), giftCard: o.gift_card_cents ?? 0, giftCardCode: o.gift_card_code ? hide(o.gift_card_code) : null, regular: Boolean(o.subscription_id), sms: Boolean(o.sms_ok), subtotal: o.subtotal_cents, delivery: o.delivery_cents, items: await items(o.id), refundable: paid ? o.total_cents - o.refunded_cents : 0, paidByCard: Boolean(o.square_payment_id) }, events: events.map(e => ({ ...e, detail: e.detail ? hide(e.detail) : e.detail })), emails, refunds });
+      return json({ customer: cust ? { id: cust.id, note: cust.team_note } : null, order: { ...summary(o), giftCard: o.gift_card_cents ?? 0, giftCardCode: o.gift_card_code ? hide(o.gift_card_code) : null, regular: Boolean(o.subscription_id), sms: Boolean(o.sms_ok), subtotal: o.subtotal_cents, delivery: o.delivery_cents, items: await items(o.id), refundable: paid ? Math.max((o.paid_cents ?? 0) - o.refunded_cents, 0) : 0, paidByCard: Boolean(o.square_payment_id) }, events: events.map(e => ({ ...e, detail: e.detail ? hide(e.detail) : e.detail })), emails, refunds });
     }
 
     // POST /api/admin/orders/:ref/move — another day or time; force skips the deadline and capacity checks
@@ -337,7 +337,7 @@ async function handle(req: Request) {
       const term = `%${q('q', 80).toLowerCase()}%`;
       const rows = await sql`SELECT c.id, c.email, c.name, c.phone, c.team_note, c.created_at,
           COUNT(o.id) FILTER (WHERE o.status <> 'cancelled')::int AS orders,
-          COALESCE(SUM(o.total_cents + o.gift_card_cents - o.refunded_cents) FILTER (WHERE o.status <> 'cancelled'), 0)::int AS spent,
+          COALESCE(SUM(o.total_cents + o.gift_card_cents - GREATEST(o.refunded_cents - GREATEST(o.paid_cents - o.total_cents, 0), 0)) FILTER (WHERE o.status <> 'cancelled'), 0)::int AS spent,
           MAX(o.slot_date)::text AS last_day,
           (SELECT COUNT(*)::int FROM subscriptions s WHERE s.email = c.email AND s.status = 'active') AS regular,
           EXISTS (SELECT 1 FROM subscribers l WHERE l.email = c.email AND l.confirmed_at IS NOT NULL AND l.unsubscribed_at IS NULL) AS on_list
@@ -486,13 +486,13 @@ async function handle(req: Request) {
     if (parts[0] === 'export.csv' && req.method === 'GET') {
       const from = q('from', 10) || '1900-01-01', to = q('to', 10) || '2999-12-31';
       const rows = await sql`SELECT o.ref, o.created_at, o.slot_date, o.slot_window, o.method, o.status, o.payment, o.payment_status, o.name, o.email, o.phone, o.street, o.postal,
-          o.subtotal_cents, o.delivery_cents, o.discount_cents, o.promo_code, o.total_cents, o.refunded_cents, STRING_AGG(i.qty || ' x ' || i.name_en || COALESCE(' (' || i.option_en || ')', ''), '; ' ORDER BY i.id) AS items
+          o.subtotal_cents, o.delivery_cents, o.discount_cents, o.promo_code, o.total_cents, o.refunded_cents, o.paid_cents, STRING_AGG(i.qty || ' x ' || i.name_en || COALESCE(' (' || i.option_en || ')', ''), '; ' ORDER BY i.id) AS items
         FROM orders o LEFT JOIN order_items i ON i.order_id = o.id WHERE o.slot_date BETWEEN ${from} AND ${to} AND NOT o.is_sample GROUP BY o.id ORDER BY o.slot_date, o.slot_window`;
-      const head = ['ref', 'placed', 'day', 'window', 'method', 'status', 'payment', 'paid', 'name', 'email', 'phone', 'street', 'postal', 'subtotal', 'delivery', 'discount', 'promo', 'total', 'refunded', 'items'];
+      const head = ['ref', 'placed', 'day', 'window', 'method', 'status', 'payment', 'paid', 'name', 'email', 'phone', 'street', 'postal', 'subtotal', 'delivery', 'discount', 'promo', 'total', 'refunded', 'items', 'paid_in'];
       // Customer text that starts like a formula (=, +, -, @) is prefixed so Excel shows it as text.
       const cell = (v: unknown) => { let s = v instanceof Date ? v.toISOString() : String(v ?? ''); if (/^[=+\-@\t\r]/.test(s) && typeof v === 'string') s = `'${s}`; return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
       const lines = rows.map(r => [r.ref, r.created_at, day(r.slot_date), r.slot_window, r.method, r.status, r.payment, r.payment_status, r.name, r.email, r.phone, r.street, r.postal,
-        (r.subtotal_cents / 100).toFixed(2), (r.delivery_cents / 100).toFixed(2), (r.discount_cents / 100).toFixed(2), r.promo_code, (r.total_cents / 100).toFixed(2), (r.refunded_cents / 100).toFixed(2), r.items].map(cell).join(','));
+        (r.subtotal_cents / 100).toFixed(2), (r.delivery_cents / 100).toFixed(2), (r.discount_cents / 100).toFixed(2), r.promo_code, (r.total_cents / 100).toFixed(2), (r.refunded_cents / 100).toFixed(2), r.items, (r.paid_cents / 100).toFixed(2)].map(cell).join(','));
       return new Response([head.join(','), ...lines].join('\n'), { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="hikaya-orders-${from}-${to}.csv"`, 'cache-control': 'no-store' } });
     }
 

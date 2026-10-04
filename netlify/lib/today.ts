@@ -32,7 +32,7 @@ export async function today(role: string, date = calgaryNow().date) {
   for (const u of unassigned) todo.push({ level: u.day === date ? 'now' : 'soon', text: `${plural(u.n, 'delivery', 'deliveries')} ${u.day === date ? 'today' : 'tomorrow'} with no driver`, tab: 'day' });
 
   // e-Transfers not in: orders due by tomorrow, and orders already handed over (money owed).
-  const owed = await sql`SELECT ref, status, slot_date::text AS day, total_cents FROM orders WHERE payment = 'e-transfer' AND payment_status = 'unpaid' AND total_cents > 0 AND NOT is_sample AND status <> 'cancelled'
+  const owed = await sql`SELECT ref, status, slot_date::text AS day, total_cents - paid_cents AS total_cents FROM orders WHERE payment = 'e-transfer' AND payment_status = 'unpaid' AND total_cents > paid_cents AND NOT is_sample AND status <> 'cancelled'
     AND (slot_date BETWEEN ${addDays(date, -14)} AND ${tomorrow} OR (status = 'completed' AND slot_date >= ${addDays(date, -60)})) ORDER BY slot_date`;
   const handed = owed.filter(o => o.status === 'completed'), due = owed.filter(o => o.status !== 'completed');
   const refs = (l: any[]) => `${l.map(o => o.ref).slice(0, 6).join(', ')}${l.length > 6 ? ` and ${l.length - 6} more` : ''}`;
@@ -74,9 +74,9 @@ export async function today(role: string, date = calgaryNow().date) {
 
   let money: { today: number; week: number; orders: number } | null = null;
   if (role === 'admin') {
-    const m = (await one`SELECT COALESCE(SUM(total_cents - refunded_cents) FILTER (WHERE (created_at AT TIME ZONE 'America/Edmonton')::date = ${date}), 0)::int AS today,
+    const m = (await one`SELECT COALESCE(SUM(total_cents - GREATEST(refunded_cents - GREATEST(paid_cents - total_cents, 0), 0)) FILTER (WHERE (created_at AT TIME ZONE 'America/Edmonton')::date = ${date}), 0)::int AS today,
       COUNT(*) FILTER (WHERE (created_at AT TIME ZONE 'America/Edmonton')::date = ${date})::int AS orders,
-      COALESCE(SUM(total_cents - refunded_cents), 0)::int AS week
+      COALESCE(SUM(total_cents - GREATEST(refunded_cents - GREATEST(paid_cents - total_cents, 0), 0)), 0)::int AS week
       FROM orders WHERE NOT is_sample AND status <> 'cancelled' AND created_at > NOW() - INTERVAL '7 days'`)!;
     money = { today: m.today, week: m.week, orders: m.orders };
   }

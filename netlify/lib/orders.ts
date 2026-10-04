@@ -8,7 +8,7 @@ import { checkPromo, redeem, unredeem, shape, type Applied } from './promos';
 import { send, orderEmail, teamAlert, type OrderMailKind } from './email';
 import { pushOwners } from './push';
 import { randomInt } from 'node:crypto';
-import { paymentLink } from './square';
+import { paymentLink, amountLink } from './square';
 import { takeFromGiftCard, giveBackToGiftCard, normGift } from './giftcards';
 
 export const STATUSES = ['received', 'confirmed', 'ready', 'out-for-delivery', 'completed', 'cancelled'] as const;
@@ -160,7 +160,7 @@ export async function publicOrder(o: Row) {
   return {
     ref: o.ref, status: o.status, paymentStatus: o.payment_status, payment: o.payment, method: o.method,
     day: mailShape(o).slot_date, window: o.slot_window, street: o.street, postal: o.postal, name: o.name,
-    subtotal: o.subtotal_cents, delivery: o.delivery_cents, discount: o.discount_cents ?? 0, promo: o.promo_code ?? null, gift: o.gift ? { to: o.gift_to, phone: o.gift_phone, message: o.gift_message } : null, giftCard: o.gift_card_cents ?? 0, regular: Boolean(o.subscription_id), refunded: o.refunded_cents ?? 0, total: o.total_cents, notes: o.notes, payUrl: o.payment_status === 'unpaid' ? o.square_link_url : null,
+    subtotal: o.subtotal_cents, delivery: o.delivery_cents, discount: o.discount_cents ?? 0, promo: o.promo_code ?? null, gift: o.gift ? { to: o.gift_to, phone: o.gift_phone, message: o.gift_message } : null, giftCard: o.gift_card_cents ?? 0, regular: Boolean(o.subscription_id), refunded: o.refunded_cents ?? 0, total: o.total_cents, paid: o.paid_cents ?? 0, notes: o.notes, payUrl: o.payment_status === 'unpaid' ? o.square_link_url : null,
     created: o.created_at, items: await items(o.id), stopsBefore: await stopsBefore(o),
   };
 }
@@ -233,18 +233,27 @@ export async function editOrder(ref: string, rawLines: unknown, actor: string, r
   const gc = Math.min(o.gift_card_cents ?? 0, t.total_cents);
   if ((o.gift_card_cents ?? 0) > gc) await giveBackToGiftCard(o.gift_card_code, o.gift_card_cents - gc);
   const total = t.total_cents - gc;
-  const wasPaid = o.payment_status === 'paid';
+  // Money already in (paid_cents) stays counted: a paid order that grows owes only the difference,
+  // and one that shrinks has the difference to refund.
+  const paidSoFar = o.paid_cents ?? 0;
+  const settled = o.payment_status !== 'unpaid' || paidSoFar > 0;
+  const due = total - paidSoFar;
+  const balance = settled ? due : 0;
+  const payStatus = total === 0 ? 'paid' : !settled ? o.payment_status : due > 0 ? 'unpaid' : o.payment_status === 'unpaid' ? 'paid' : o.payment_status;
   await sql`DELETE FROM order_items WHERE order_id = ${o.id}`;
   for (const l of lines) await sql`INSERT INTO order_items (order_id, product_id, name_en, name_ar, option, option_en, option_ar, qty, unit_cents)
     VALUES (${o.id}, ${l.product_id}, ${l.name_en}, ${l.name_ar}, ${l.option}, ${l.option_en}, ${l.option_ar}, ${l.qty}, ${l.unit_cents})`;
-  const balance = wasPaid ? total - o.total_cents : 0;
   const upd = await one`UPDATE orders SET subtotal_cents = ${t.subtotal_cents}, delivery_cents = ${t.delivery_cents}, discount_cents = ${t.discount_cents}, gift_card_cents = ${gc},
-      total_cents = ${total}, payment_status = ${wasPaid && balance > 0 ? 'unpaid' : total === 0 ? 'paid' : o.payment_status}, square_link_url = ${o.payment === 'card' && !wasPaid ? null : o.square_link_url}, updated_at = NOW()
+      total_cents = ${total}, payment_status = ${payStatus}, square_link_url = ${o.payment === 'card' ? null : o.square_link_url}, updated_at = NOW()
     WHERE id = ${o.id} RETURNING *`;
-  // Card orders not paid yet get a new payment page for the new amount.
+  // Card orders with money still to pay get a new payment page: for an order never paid, every
+  // line at the new prices; for one already paid in part, only the balance.
   if (upd && upd.payment === 'card' && upd.payment_status === 'unpaid' && upd.total_cents > 0) {
     try {
-      const link = await paymentLink(upd, lines, `${siteUrl(req)}/${upd.lang}/account/?order=${upd.ref}`, `${upd.ref}-${Date.now()}`);
+      const back = `${siteUrl(req)}/${upd.lang}/account/?order=${upd.ref}`;
+      const link = paidSoFar > 0
+        ? await amountLink(`${upd.ref}-bal-${Date.now()}`, `Balance for order ${upd.ref}`, due, upd.email, back)
+        : await paymentLink(upd, lines, back, `${upd.ref}-${Date.now()}`);
       await sql`UPDATE orders SET square_order_id = ${link.orderId}, square_link_url = ${link.url} WHERE id = ${o.id}`;
       upd.square_link_url = link.url;
     } catch (e) { console.error(e); }
@@ -264,7 +273,14 @@ export async function releaseOrder(o: Row) {
 
 export async function setPayment(ref: string, paymentStatus: string, actor: string) {
   if (!['unpaid', 'paid', 'partly-refunded', 'refunded'].includes(paymentStatus)) throw new HttpError(400, 'bad-payment');
-  const o = await one`UPDATE orders SET payment_status = ${paymentStatus}, updated_at = NOW() WHERE ref = ${ref} RETURNING *`;
+  // "Paid" means the whole current total came in. Setting a paid order back to unpaid (a mistake
+  // in the desk) leaves only the card payments Square confirmed.
+  const o = paymentStatus === 'paid'
+    ? await one`UPDATE orders SET payment_status = 'paid', paid_cents = GREATEST(paid_cents, total_cents), updated_at = NOW() WHERE ref = ${ref} RETURNING *`
+    : paymentStatus === 'unpaid'
+      ? await one`UPDATE orders SET paid_cents = CASE WHEN payment_status = 'paid' THEN COALESCE((SELECT SUM(amount_cents) FROM order_payments p WHERE p.order_id = orders.id), 0)::int ELSE paid_cents END,
+          payment_status = 'unpaid', updated_at = NOW() WHERE ref = ${ref} RETURNING *`
+      : await one`UPDATE orders SET payment_status = ${paymentStatus}, updated_at = NOW() WHERE ref = ${ref} RETURNING *`;
   if (!o) throw new HttpError(404, 'not-found');
   await event(o.id, 'payment', paymentStatus, actor);
   return o;

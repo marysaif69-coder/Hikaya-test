@@ -14,7 +14,7 @@ export async function tomorrowEmail(date: string) {
   const pack = await sql`SELECT i.name_en, COALESCE(i.option_en, '') AS option, SUM(i.qty)::int AS qty FROM order_items i JOIN orders o ON o.id = i.order_id
     WHERE o.slot_date = ${date} AND o.status <> 'cancelled' AND NOT o.is_sample GROUP BY 1, 2 ORDER BY 1, 2`;
   const pick = orders.filter(o => o.method === 'pickup'), del = orders.filter(o => o.method === 'delivery');
-  const collect = orders.filter(o => o.payment_status === 'unpaid' && o.payment === 'at-pickup').reduce((n, o) => n + o.total_cents, 0);
+  const collect = orders.filter(o => o.payment_status === 'unpaid' && o.payment === 'at-pickup').reduce((n, o) => n + Math.max(o.total_cents - (o.paid_cents ?? 0), 0), 0);
   const chase = orders.filter(o => o.payment_status === 'unpaid' && o.payment !== 'at-pickup');
   const gifts = orders.filter(o => o.gift);
   const notes = orders.filter(o => o.team_note || o.notes);
@@ -25,7 +25,7 @@ export async function tomorrowEmail(date: string) {
 <h2 style="margin:0 0 4px">Tomorrow, ${esc(nice)}</h2>
 <p style="margin:0 0 14px"><b>${pick.length}</b> pickup${pick.length === 1 ? '' : 's'}${windows ? ` (${esc(windows)})` : ''} · <b>${del.length}</b> deliver${del.length === 1 ? 'y' : 'ies'}${gifts.length ? ` · <b>${gifts.length}</b> gift${gifts.length === 1 ? '' : 's'}` : ''}</p>
 ${collect ? `<p>To collect at pickup or the door: <b>${dollars(collect)}</b></p>` : ''}
-${chase.length ? `<p style="color:#A93B28">Not paid yet (e-Transfer or card): ${chase.map(o => `${esc(o.ref)} ${dollars(o.total_cents)}`).join(', ')}</p>` : ''}
+${chase.length ? `<p style="color:#A93B28">Not paid yet (e-Transfer or card): ${chase.map(o => `${esc(o.ref)} ${dollars(o.total_cents - (o.paid_cents ?? 0))}`).join(', ')}</p>` : ''}
 <h3 style="margin:16px 0 6px">To pack</h3><ul>${pack.map(p => `<li>${p.qty} × ${esc(p.name_en)}${p.option ? ` (${esc(p.option)})` : ''}</li>`).join('')}</ul>
 ${del.length ? `<h3 style="margin:16px 0 6px">Deliveries, by area</h3><ol>${del.map(o => `<li>${esc(o.slot_window)} · ${esc(o.postal)} · ${esc(o.gift ? `${o.gift_to} (gift)` : o.name)}</li>`).join('')}</ol>` : ''}
 ${gifts.length ? `<h3 style="margin:16px 0 6px">Gift messages</h3><ul>${gifts.map(o => `<li>${esc(o.ref)} for ${esc(o.gift_to)}${o.gift_message ? `: “${esc(o.gift_message)}”` : ' (no message)'}</li>`).join('')}</ul>` : ''}

@@ -139,7 +139,7 @@ export default async (req: Request) => {
       if (!s) throw new HttpError(401, 'login');
       const b = await body(req);
       const o = await one`UPDATE orders SET status = 'cancelled', updated_at = NOW()
-        WHERE ref = ${str(b.ref, 12)} AND email = ${s.email} AND status = 'received' AND payment_status = 'unpaid' RETURNING *`;
+        WHERE ref = ${str(b.ref, 12)} AND email = ${s.email} AND status = 'received' AND payment_status = 'unpaid' AND paid_cents = 0 RETURNING *`;
       if (!o) throw new HttpError(409, 'cannot-cancel', 'This order can no longer be cancelled online. Reply to your confirmation email.');
       await releaseOrder(o);
       await event(o.id, 'status', 'cancelled', s.email);
