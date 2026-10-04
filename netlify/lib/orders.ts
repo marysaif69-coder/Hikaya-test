@@ -11,6 +11,9 @@ import { randomInt } from 'node:crypto';
 import { paymentLink, amountLink } from './square';
 import { takeFromGiftCard, giveBackToGiftCard, normGift } from './giftcards';
 
+/** Stand-in price for sample orders while a product has no price yet (samples.ts uses it too). */
+export const SAMPLE_CENTS = 2000;
+
 export const STATUSES = ['received', 'confirmed', 'ready', 'out-for-delivery', 'completed', 'cancelled'] as const;
 export type Status = typeof STATUSES[number];
 const PAYMENTS = ['at-pickup', 'e-transfer', 'card'] as const;
@@ -253,8 +256,13 @@ export async function editOrder(ref: string, rawLines: unknown, actor: string, r
   const live = await liveCatalog();
   // Products already in the order can stay even if they've since been hidden or sold out.
   const before = await items(o.id);
-  const keep = new Set(before.map(i => i.product_id));
-  const relaxed = Object.fromEntries(Object.entries(live).map(([id, l]) => [id, keep.has(id) ? { ...l, shown: true, available: true } : l]));
+  const was = new Map(before.map(i => [i.product_id as string, i.unit_cents as number]));
+  // A line already in the order keeps its price if the product has none today. Sample orders use
+  // the same stand-in as the samples themselves, so the team can rehearse with coffee before prices are set.
+  const relaxed = Object.fromEntries(Object.entries(live).map(([id, l]) => {
+    const price_cents = l.price_cents ?? was.get(id) ?? (o.is_sample ? SAMPLE_CENTS : null);
+    return [id, was.has(id) ? { ...l, shown: true, available: true, price_cents } : { ...l, price_cents }];
+  }));
   const lines = priceCart(rawLines, relaxed as any);
   // The order's code is applied again; a code with a minimum only stays while the order meets it.
   const sub = lines.reduce((n, l) => n + l.unit_cents * l.qty, 0);

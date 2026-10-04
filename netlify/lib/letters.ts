@@ -3,7 +3,7 @@
 // unsubscribe link (Canada's anti-spam law).
 import { sql, one } from './db';
 import { HttpError, siteUrl } from './http';
-import { send, sendBatch, letterEmail } from './email';
+import { send, sendBatch, letterEmail, mailingAddress } from './email';
 
 const clean = (v: unknown, max: number) => String(v ?? '').replace(/\r\n/g, '\n').trim().slice(0, max);
 
@@ -30,14 +30,28 @@ export async function testLetter(id: number, to: string, req?: Request) {
   return { to };
 }
 
+/** Sends a draft to every confirmed subscriber, or a partly sent letter to the ones it missed. */
 export async function sendLetter(id: number, req?: Request) {
+  if (!mailingAddress()) throw new HttpError(400, 'address', 'Add a mailing address in Settings → Business details first.');
   // Claim it first so a double click can't send it twice.
-  const l = await one`UPDATE letters SET status = 'sending' WHERE id = ${id} AND status = 'draft' RETURNING *`;
+  const l = await one`UPDATE letters SET status = 'sending' WHERE id = ${id} AND status IN ('draft', 'partial') RETURNING *`;
   if (!l) throw new HttpError(409, 'sent', 'This letter was already sent.');
   const site = siteUrl(req);
-  const people = await sql`SELECT email, lang, unsub_token FROM subscribers WHERE confirmed_at IS NOT NULL AND unsubscribed_at IS NULL`;
-  const mails = people.map(p => { const lang = p.lang === 'ar' ? 'ar' : 'en'; return letterEmail(p.email, lang, l[`subject_${lang}`], l[`body_${lang}`], `${site}/api/list/unsubscribe?t=${p.unsub_token}`, site); });
-  const n = await sendBatch(mails);
-  await sql`UPDATE letters SET status = 'sent', sent_at = NOW(), sent_count = ${n} WHERE id = ${id}`;
-  return { sent: n, of: people.length };
+  try {
+    const people = await sql`SELECT email, lang, unsub_token FROM subscribers s WHERE confirmed_at IS NOT NULL AND unsubscribed_at IS NULL
+      AND NOT EXISTS (SELECT 1 FROM letter_sends ls WHERE ls.letter_id = ${id} AND ls.email = s.email AND ls.status = 'sent')`;
+    const mails = people.map(p => { const lang = p.lang === 'ar' ? 'ar' : 'en'; return letterEmail(p.email, lang, l[`subject_${lang}`], l[`body_${lang}`], `${site}/api/list/unsubscribe?t=${p.unsub_token}`, site); });
+    const { sent, outcomes } = await sendBatch(mails);
+    for (const o of outcomes) await sql`INSERT INTO letter_sends (letter_id, email, status) VALUES (${id}, ${o.to}, ${o.status})
+      ON CONFLICT (letter_id, email) DO UPDATE SET status = EXCLUDED.status, at = NOW()`;
+    const reached = await one`SELECT COUNT(*)::int AS n FROM letter_sends WHERE letter_id = ${id} AND status = 'sent'`;
+    const status = sent === people.length ? 'sent' : 'partial';
+    await sql`UPDATE letters SET status = ${status}, sent_at = NOW(), sent_count = ${reached?.n ?? 0} WHERE id = ${id}`;
+    return { sent, of: people.length, status };
+  } catch (e) {
+    // Never leave it stuck in "sending": back to a draft if nobody got it, otherwise partly sent.
+    const done = await one`SELECT COUNT(*)::int AS n FROM letter_sends WHERE letter_id = ${id} AND status = 'sent'`;
+    await sql`UPDATE letters SET status = ${(done?.n ?? 0) > 0 ? 'partial' : 'draft'}, sent_count = ${done?.n ?? 0} WHERE id = ${id}`;
+    throw e;
+  }
 }

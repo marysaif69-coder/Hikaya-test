@@ -110,7 +110,8 @@ export default async (req: Request, context: { next: () => Promise<Response> }) 
   }
 
   // The waitlist: joining, the confirm link from the email, and leaving the list.
-  const listCall = (url.pathname === '/api/list' && req.method === 'POST') || (['/api/list/confirm', '/api/list/unsubscribe'].includes(url.pathname) && req.method === 'GET');
+  const listCall = (url.pathname === '/api/list' && req.method === 'POST') || (['/api/list/confirm', '/api/list/unsubscribe'].includes(url.pathname) && req.method === 'GET')
+    || (url.pathname === '/api/list/unsubscribe' && req.method === 'POST'); // one-click unsubscribe from the mail app
   if (listCall) {
     const res = await context.next();
     const loc = res.headers.get('location');

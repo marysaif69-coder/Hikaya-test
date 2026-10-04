@@ -16,7 +16,8 @@ export async function subscribe(email: string, lang: 'en' | 'ar', source: 'foote
   const e = email.trim().toLowerCase();
   if (!isEmail(e)) throw Object.assign(new HttpError(400, 'invalid', 'Check the email.'), { fields: { email: 'email' } });
   const cur = await one`SELECT confirmed_at, unsubscribed_at FROM subscribers WHERE email = ${e}`;
-  if (cur?.confirmed_at && !cur.unsubscribed_at) { if (cup) await sql`UPDATE subscribers SET cup = ${cup} WHERE email = ${e}`; return { already: true }; }
+  // Already confirmed: a cup answer is only added if there is none (changing one needs their link).
+  if (cur?.confirmed_at && !cur.unsubscribed_at) { if (cup) await sql`UPDATE subscribers SET cup = ${cup} WHERE email = ${e} AND cup IS NULL`; return { already: true }; }
   const t = token(18);
   await sql`INSERT INTO subscribers (email, lang, source, consent_text, confirm_token_hash, unsub_token, cup)
     VALUES (${e}, ${lang}, ${source}, ${CONSENT[lang]}, ${hash(t)}, ${token(18)}, ${cup})

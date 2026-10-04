@@ -3,6 +3,7 @@
 // the session belongs to an email in ADMIN_EMAILS. Hidden from search engines.
 import '../../styles/fonts.css';
 import '../../styles/global.css';
+import { RELEASES } from '../../data/release-checks';
 ---
 <!doctype html>
 <html lang="en" dir="ltr">
@@ -45,6 +46,7 @@ import '../../styles/global.css';
       <button type="button" data-tab="numbers" data-group="numbers" aria-pressed="false" class="owner-only">Numbers</button>
       <button type="button" data-tab="plan" data-group="numbers" aria-pressed="false" class="owner-only">Plan</button>
       <button type="button" data-tab="settings" data-group="settings" aria-pressed="false" class="owner-only">Settings</button>
+      <button type="button" data-tab="it" data-group="settings" aria-pressed="false" class="owner-only">IT · Release checks</button>
     </nav>
   </header>
 
@@ -159,7 +161,7 @@ import '../../styles/global.css';
       <div class="promo-form" id="listBox"></div>
       <div class="promo-form owner-only" id="letterBox">
         <h2 class="h-s">Letters to the mailing list</h2>
-        <p class="muted">Write it in English and Arabic; each subscriber gets their language, with an unsubscribe link. Send yourself a test first. A blank line starts a new paragraph; **like this** makes bold; links work as they are.</p>
+        <p class="muted">Write it in English and Arabic; each subscriber gets their language, with an unsubscribe link. Send yourself a test first. Every letter ends with Hikaya's mailing address (Settings → Business details → Mailing address, or the pickup address if that is empty); the law needs it, so letters can't go out without one. A blank line starts a new paragraph; **like this** makes bold; links work as they are.</p>
         <form id="letterForm" class="letter-form" novalidate>
           <input name="id" type="hidden" />
           <div class="two-col"><label>Subject (English)<input name="subject_en" maxlength="150" /></label><label dir="rtl">الموضوع (عربي)<input name="subject_ar" maxlength="150" dir="rtl" /></label></div>
@@ -511,6 +513,26 @@ import '../../styles/global.css';
         <button class="btn primary" type="submit">Save</button> <span id="saved" class="muted" hidden>Saved.</span>
       </form>
     </section>
+
+    <!-- IT: what to check on the preview after each release (src/data/release-checks.ts) -->
+    <section id="v-it" hidden class="a-settings">
+      <div class="conn"><h2 class="h-s">Release checks</h2>
+        <p class="muted">After each release, open these on a phone, in Arabic and in English, and tick what works. Ticks are shared: every owner sees who checked what. If something is wrong, write it down for the next session.</p></div>
+      {RELEASES.map(rel => (
+        <div class="conn rel" data-release={rel.id}>
+          <h3>{rel.title} <small class="muted">· {rel.date} · <span class="rel-n"></span></small></h3>
+          <ul class="rel-list">
+            {rel.checks.map(c => (
+              <li>
+                <label class="notify"><input type="checkbox" data-check={`${rel.id}:${c.id}`} /> <span>{c.text}</span></label>
+                {c.links && <span class="rel-links">{c.links.map(l => <a href={l.href} target="_blank" rel="noopener">{l.label}</a>)}</span>}
+                <small class="muted rel-who" data-who={`${rel.id}:${c.id}`}></small>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </section>
   </main>
 
   <!-- ORDER PANEL -->
@@ -663,6 +685,10 @@ import '../../styles/global.css';
   :global(.mini b) { color: var(--tamr); }
   .a-route { margin: 0; padding-inline-start: 22px; display: grid; gap: 8px; }
   .a-settings { max-width: 640px; display: grid; gap: 18px; }
+  .rel-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+  .rel-list li { display: grid; gap: 4px; }
+  .rel-links { display: flex; flex-wrap: wrap; gap: 12px; padding-inline-start: 28px; }
+  .rel-who { padding-inline-start: 28px; }
   .conn { display: grid; gap: 10px; background: var(--sheet); padding: 22px; border-radius: 24px; }
   .conn :global(.cn) { border-radius: 14px; padding: 10px 14px; background: var(--paper); font-size: 14.5px; }
   .conn :global(.cn.ok) { box-shadow: inset 4px 0 0 #6E8B4A; }
@@ -780,7 +806,7 @@ import '../../styles/global.css';
 
   // ---------- auth ----------
   function showLogin() {
-    for (const id of ['v-today', 'v-orders', 'v-inbox', 'v-day', 'v-week', 'v-numbers', 'v-words', 'v-plan', 'v-drivers', 'v-customers', 'v-production', 'v-products', 'v-promos', 'v-assistant', 'v-chats', 'v-settings', 'tabs', 'subtabs', 'qsBox', 'who']) $(id).hidden = true;
+    for (const id of ['v-today', 'v-orders', 'v-inbox', 'v-day', 'v-week', 'v-numbers', 'v-words', 'v-plan', 'v-drivers', 'v-customers', 'v-production', 'v-products', 'v-promos', 'v-assistant', 'v-chats', 'v-settings', 'v-it', 'tabs', 'subtabs', 'qsBox', 'who']) $(id).hidden = true;
     $('login').hidden = false;
     mountLogin($('loginBox'), 'en', user => {
       if (user.role === 'driver' || user.role === 'packer') { location.href = '/admin/driver/'; return; }
@@ -828,7 +854,7 @@ import '../../styles/global.css';
       if (on && !(ROLE !== 'admin' && b.classList.contains('owner-only'))) shown++;
     });
     $('subtabs').hidden = shown < 2;
-    for (const v of ['today', 'orders', 'inbox', 'day', 'week', 'numbers', 'words', 'plan', 'drivers', 'customers', 'production', 'products', 'promos', 'assistant', 'chats', 'settings']) $(`v-${v}`).hidden = v !== name;
+    for (const v of ['today', 'orders', 'inbox', 'day', 'week', 'numbers', 'words', 'plan', 'drivers', 'customers', 'production', 'products', 'promos', 'assistant', 'chats', 'settings', 'it']) $(`v-${v}`).hidden = v !== name;
     if (name === 'products') loadProducts();
     if (name === 'week') loadWeek();
     if (name === 'numbers') { loadNumbers(); if (ROLE === 'admin') { loadMargins(); loadCosts(); } }
@@ -844,6 +870,7 @@ import '../../styles/global.css';
     if (name === 'chats') loadChats();
     if (name === 'day') loadDay();
     if (name === 'settings') loadSettings();
+    if (name === 'it') loadReleaseChecks();
   }
   $('tabs').addEventListener('click', e => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-main]'); if (!b) return;
@@ -948,8 +975,10 @@ import '../../styles/global.css';
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 
   async function openOrder(ref: string) {
-    const d = await api(`/api/admin/orders/${encodeURIComponent(ref)}`);
+    const [d, cat] = await Promise.all([api(`/api/admin/orders/${encodeURIComponent(ref)}`), api('/api/catalog').catch(() => null)]);
     const o = d.order;
+    // Products with no price yet can't go into a real order; sample orders use a stand-in price.
+    const unpriced = (id: string) => cat?.products?.[id] && cat.products[id].price == null;
     $('pRef').textContent = o.ref;
     const flow = o.method === 'pickup' ? ['received', 'confirmed', 'ready', 'completed'] : ['received', 'confirmed', 'out-for-delivery', 'completed'];
     $('pBody').innerHTML = `
@@ -966,7 +995,7 @@ import '../../styles/global.css';
         ${o.delivery ? `<li><span>Delivery</span><span>${money(o.delivery)}</span></li>` : ''}${o.discount ? `<li><span>Discount ${esc(o.promo ?? '')}</span><span>−${money(o.discount)}</span></li>` : ''}<li><b>Total</b><b>${money(o.total)}</b></li>${o.refunded ? `<li><span>Refunded</span><span>−${money(o.refunded)}</span></li>` : ''}</ul>
       ${['received', 'confirmed'].includes(o.status) ? `<details class="edit-items"><summary>Change items</summary>
         <div id="eiList">${o.items.map((i: any) => itemRow(i.product_id, i.option, i.qty)).join('')}</div>
-        <div class="acts"><select id="eiAdd"><option value="">Add a product…</option>${PRODUCTS.map(p => `<option value="${p.id}">${esc(p.name.en)}</option>`).join('')}</select></div>
+        <div class="acts"><select id="eiAdd"><option value="">Add a product…</option>${PRODUCTS.map(p => `<option value="${p.id}"${unpriced(p.id) && !o.sample ? ' disabled' : ''}>${esc(p.name.en)}${unpriced(p.id) ? (o.sample ? ' (no price yet: $20 stand-in)' : ' (no price yet)') : ''}</option>`).join('')}</select></div>
         <label class="notify"><input type="checkbox" id="eiNotify" checked /> Email the customer the new order</label>
         <div class="acts"><button type="button" id="eiSave">Save changes</button></div>
         <p class="ev">Prices are today's. Quantity 0 removes a line. If it was paid and the total goes up, it shows what is still to pay; if it goes down, use Refund.</p></details>` : ''}
@@ -1536,10 +1565,21 @@ import '../../styles/global.css';
   async function loadLetters() {
     const d = await api('/api/admin/letters');
     $('letterTable').innerHTML = '<tr><th>Subject</th><th>Status</th><th></th></tr>' + (d.letters.map((l: any) => `<tr><td>${esc(l.subject_en)}<br><small dir="rtl">${esc(l.subject_ar)}</small></td>
-      <td>${l.status === 'sent' ? `Sent ${new Date(l.sent_at).toLocaleDateString('en-CA')} to ${l.sent_count}` : 'Draft'}</td><td>${l.status === 'draft' ? `<button type="button" data-letter="${l.id}">Open</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">No letters yet.</td></tr>');
+      <td>${l.status === 'sent' ? `Sent ${new Date(l.sent_at).toLocaleDateString('en-CA')} to ${l.sent_count}`
+        : l.status === 'partial' ? `<b>Partly sent</b>: reached ${l.sent_count}; some could not be sent`
+        : l.status === 'sending' ? `Sending… (${l.sent_count} so far)` : 'Draft'}</td>
+      <td>${l.status === 'draft' ? `<button type="button" data-letter="${l.id}">Open</button>` : l.status === 'partial' ? `<button type="button" data-resend="${l.id}">Send to the ones that failed</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">No letters yet.</td></tr>');
     ($('letterTable') as any)._letters = d.letters;
   }
-  $('letterTable').addEventListener('click', e => {
+  $('letterTable').addEventListener('click', async e => {
+    const rs = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-resend]');
+    if (rs) {
+      if (!confirm('Send this letter again to the subscribers it did not reach?')) return;
+      rs.disabled = true;
+      try { const r = await api(`/api/admin/letters/${rs.dataset.resend}/send`, {}); alert(`Sent to ${r.sent} of ${r.of}.${r.status === 'partial' ? ' Some still failed; try again later.' : ''}`); }
+      finally { loadLetters(); }
+      return;
+    }
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-letter]'); if (!b) return;
     const l = ($('letterTable') as any)._letters.find((x: any) => String(x.id) === b.dataset.letter);
     for (const k of ['subject_en', 'subject_ar', 'body_en', 'body_ar']) lv(k).value = l[k];
@@ -1555,7 +1595,7 @@ import '../../styles/global.css';
     const id = await saveLetterForm();
     const l = await api('/api/admin/list');
     if (!confirm(`Send this letter to ${l.confirmed} confirmed subscriber${l.confirmed === 1 ? '' : 's'}? This can't be undone.`)) return;
-    const r = await api(`/api/admin/letters/${id}/send`, {}); alert(`Sent to ${r.sent} of ${r.of}.`); lf().reset(); lv('id').value = ''; loadLetters();
+    const r = await api(`/api/admin/letters/${id}/send`, {}); alert(`Sent to ${r.sent} of ${r.of}.${r.status === 'partial' ? ' Some could not be sent: use "Send to the ones that failed" in the list.' : ''}`); lf().reset(); lv('id').value = ''; loadLetters();
   });
   $('letterNew').addEventListener('click', () => { lf().reset(); lv('id').value = ''; });
 
@@ -1748,6 +1788,25 @@ import '../../styles/global.css';
     const data = Object.fromEntries([...f.querySelectorAll<HTMLInputElement>('[name]')].map(i => [i.name, i.value]));
     await api('/api/admin/business', data); alert('Saved. The site and emails use it within a minute.'); loadBusiness(); loadConnections();
   });
+  // ---------- IT: release checks ----------
+  async function loadReleaseChecks() {
+    const { ticks } = await api('/api/admin/release-checks');
+    document.querySelectorAll<HTMLInputElement>('#v-it [data-check]').forEach(cb => {
+      const t = ticks[cb.dataset.check!];
+      cb.checked = Boolean(t);
+      document.querySelector<HTMLElement>(`#v-it [data-who="${cb.dataset.check}"]`)!.textContent = t ? `Checked by ${t.by}, ${new Date(t.at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })}` : '';
+    });
+    document.querySelectorAll<HTMLElement>('#v-it .rel').forEach(rel => {
+      const all = rel.querySelectorAll<HTMLInputElement>('[data-check]'), done = [...all].filter(c => c.checked).length;
+      rel.querySelector<HTMLElement>('.rel-n')!.textContent = `${done} of ${all.length} checked`;
+    });
+  }
+  $('v-it').addEventListener('change', async e => {
+    const cb = (e.target as HTMLElement).closest<HTMLInputElement>('[data-check]'); if (!cb) return;
+    cb.disabled = true;
+    try { await api('/api/admin/release-checks', { id: cb.dataset.check, done: cb.checked }); } finally { cb.disabled = false; loadReleaseChecks(); }
+  });
+
   async function loadSettings() {
     if (ROLE === 'admin') { loadBusiness(); loadVisibility(); }
     loadConnections();

@@ -11,6 +11,7 @@ export const EDITABLE = {
   EMAIL_REPLY_TO: 'Where customer replies go',
   GOOGLE_REVIEW_URL: 'Google review link',
   SHOP_ADDRESS: 'Where delivery routes start (if not the pickup address)',
+  MAILING_ADDRESS: 'Mailing address for letters (a PO box is fine; the law needs one in every letter)',
   GST_NUMBER: 'GST/HST registration number (once you have one)',
   OWNER_EMAILS: 'More owners (comma-separated emails)',
 } as const;

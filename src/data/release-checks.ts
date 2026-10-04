@@ -1,0 +1,36 @@
+// What to check on the preview after each release, shown in the desk under Settings → IT.
+// Add a release at the top after every batch is pushed. Keep each check's id unchanged once
+// published: the ticks (who checked it, and when) are saved against it.
+export type Check = { id: string; text: string; links?: { label: string; href: string }[] };
+export type Release = { id: string; title: string; date: string; checks: Check[] };
+
+export const RELEASES: Release[] = [
+  {
+    id: '1b-2', title: 'Round 1b · batch 2: emails and the mailing list', date: '2026-10-04',
+    checks: [
+      { id: 'edit-unpriced', text: 'Open a sample order → Change items. Products with no price yet say “(no price yet: $20 stand-in)”. On a real order they are greyed out. Saving no longer says “Gulf coffee is not open for orders yet”.', links: [{ label: 'All orders', href: '/admin/' }] },
+      { id: 'mailing-address', text: 'Settings → Business details has “Mailing address for letters”. Fill it in (a PO box is fine). Without it, “Send to everyone” refuses with a message.', links: [{ label: 'Settings', href: '/admin/' }] },
+      { id: 'letter-test', text: 'Shop → Promotions → Letters: “Send me a test”. The bottom of both test emails shows Hikaya Coffee Ltd. (حكاية in Arabic), the mailing address and hikayacoffee.ca.' },
+      { id: 'consent-words', text: 'The consent tick in the footer and at checkout reads “Yes, send me Hikaya letters (about three emails a year: …)”, the same as Coming soon, in Arabic and English.', links: [{ label: 'Checkout (AR)', href: '/ar/checkout/' }, { label: 'Checkout (EN)', href: '/en/checkout/' }] },
+    ],
+  },
+  {
+    id: '1b-1', title: 'Round 1b · batch 1: Ask Hikaya and help requests', date: '2026-10-04',
+    checks: [
+      { id: 'postal-lethbridge', text: 'Checkout, delivery, postal code T1J 0A1 (Lethbridge) is refused; T2P 1J9 is accepted with the $9 fee.', links: [{ label: 'Checkout (AR)', href: '/ar/checkout/' }, { label: 'Checkout (EN)', href: '/en/checkout/' }] },
+      { id: 'visit-wording', text: 'Visit page, delivery: “Calgary postal codes only, not nearby towns” in both languages.', links: [{ label: 'Visit (AR)', href: '/ar/visit/' }, { label: 'Visit (EN)', href: '/en/visit/' }] },
+      { id: 'help-email', text: 'Send the help form to your own email. The “We have your message” email has the request number but not what you typed.', links: [{ label: 'Help (AR)', href: '/ar/help/' }, { label: 'Help (EN)', href: '/en/help/' }] },
+      { id: 'ask-chips', text: 'Ask Hikaya: tap each suggestion in Arabic and English; every one gets an answer.' },
+      { id: 'ask-eval', text: 'At the end of round 1b: GitHub → Actions → “Ask Hikaya eval” → Run workflow. 37/40 or better.', links: [{ label: 'GitHub Actions', href: 'https://github.com/marysaif69-coder/Hikaya-test/actions' }] },
+    ],
+  },
+  {
+    id: '1a', title: 'Round 1a: money and orders', date: '2026-10-04',
+    checks: [
+      { id: 'paid-edit', text: 'Place a test order, mark it paid, then change its items up and down. The order shows what is still to pay, or what to refund (and no more than that).', links: [{ label: 'All orders', href: '/admin/' }] },
+      { id: 'cancel-final', text: 'Cancel an order: it cannot be moved back to Received or Confirmed.' },
+      { id: 'account-pay', text: 'My account on a phone: “Pay the rest” (ادفع الباقي) on a part-paid card order, no “Pay now” on a cancelled one, and the Arabic error when changing the day.', links: [{ label: 'Account (AR)', href: '/ar/account/' }, { label: 'Account (EN)', href: '/en/account/' }] },
+      { id: 'checkout-full', text: 'Checkout: pick a full time slot; the error is in Arabic on the Arabic page.', links: [{ label: 'Checkout (AR)', href: '/ar/checkout/' }, { label: 'Checkout (EN)', href: '/en/checkout/' }] },
+    ],
+  },
+];

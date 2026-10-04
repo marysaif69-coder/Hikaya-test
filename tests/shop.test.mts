@@ -255,6 +255,12 @@ const mailsA = sent.length;
 const back = await call(admin, '/api/admin/products/qishr', { cookie: adm, body: { available: true, stock: null } });
 assert.equal(back.data.told, 1); assert.equal(sent.length, mailsA + 1); assert.deepEqual(sent.at(-1).to, ['wait@example.com']); assert.match(sent.at(-1).html, /\/ar\/shop\/qishr\//); ok('back on sale emails the waiting list once, in their language');
 assert.equal((await call(admin, '/api/admin/products/qishr', { cookie: adm, body: { available: true } })).data.told, 0); ok('nobody is emailed twice');
+const qishrPrice = (await call(admin, '/api/admin/products', { cookie: adm })).data.products.find((p: any) => p.id === 'qishr').price_cents;
+await call(admin, '/api/admin/products/qishr', { cookie: adm, body: { price_cents: null, available: false } });
+await call(orders, '/api/notify-me', { body: { product: 'qishr', email: 'noprice@example.com', lang: 'en' } });
+assert.equal((await call(admin, '/api/admin/products/qishr', { cookie: adm, body: { available: true } })).data.told, 0);
+assert.equal((await call(admin, '/api/admin/products/qishr', { cookie: adm, body: { price_cents: 1200 } })).data.told, 1); ok('no "it\'s back" email until the product has a price');
+await call(admin, '/api/admin/products/qishr', { cookie: adm, body: { price_cents: qishrPrice } });
 await call(admin, '/api/admin/seasons', { cookie: adm, body: { ramadan: false } });
 await call(orders, '/api/notify-me', { body: { product: 'iftar-pair', email: 'ramadan@example.com', lang: 'en' } });
 assert.equal((await call(admin, '/api/admin/seasons', { cookie: adm, body: { ramadan: true } })).data.told, 1); ok('switching Ramadan on tells people waiting for Ramadan boxes');
@@ -274,6 +280,10 @@ const unsubT = (await pg.query(`SELECT unsub_token FROM subscribers WHERE email 
 await orders(new Request(`${H}/api/list/unsubscribe?t=${unsubT.unsub_token}`));
 const ls = (await call(admin, '/api/admin/list', { cookie: adm })).data;
 assert.equal(ls.confirmed, 0); assert.equal(ls.left, 1); ok('one click unsubscribes');
+await call(orders, '/api/list', { body: { email: 'oneclick@example.com', lang: 'en', consent: true } });
+const ocT = (await pg.query(`SELECT unsub_token FROM subscribers WHERE email = 'oneclick@example.com'`)).rows[0] as any;
+const oc: Response = await orders(new Request(`${H}/api/list/unsubscribe?t=${ocT.unsub_token}`, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', origin: 'https://mail.google.com' }, body: 'List-Unsubscribe=One-Click' }));
+assert.equal(oc.status, 200); assert.ok(((await pg.query(`SELECT unsubscribed_at FROM subscribers WHERE email = 'oneclick@example.com'`)).rows[0] as any).unsubscribed_at); ok('one-click unsubscribe from the mail app (a POST from another site) works');
 await order({ newsletter: true, email: 'buyer-news@example.com' });
 assert.ok(sent.some(m => m.to?.includes('buyer-news@example.com') && /confirm/i.test(m.subject))); ok('the checkout tick sends the same confirmation email');
 
@@ -742,6 +752,21 @@ const edUp = (await call(admin, `/api/admin/orders/${ed.data.ref}/items`, { cook
 assert.equal(edUp.balance, 2600); assert.equal((await pg.query(`SELECT payment_status FROM orders WHERE ref = $1`, [ed.data.ref])).rows[0].payment_status, 'unpaid'); ok('a paid order made bigger shows what is still to pay');
 await call(admin, `/api/admin/orders/${ed.data.ref}`, { cookie: adm, body: { status: 'ready', notify: false } });
 assert.equal((await call(admin, `/api/admin/orders/${ed.data.ref}/items`, { cookie: adm, body: { lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] } })).data.error, 'cannot-edit'); ok('not once it is packed');
+// A product whose price was cleared: a line already in the order keeps its price; it can't be added
+// to a real order; a sample order takes the $20 stand-in so the team can rehearse.
+const hadramiPrice = (await call(admin, '/api/admin/products', { cookie: adm })).data.products.find((p: any) => p.id === 'hadrami').price_cents;
+const np1 = await order({ day: '2027-02-25', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }, { id: 'hadrami', opt: 'dallah', qty: 1 }] });
+const np2 = await order({ day: '2027-02-25' });
+await call(admin, '/api/admin/products/hadrami', { cookie: adm, body: { price_cents: null } });
+const items = (path: string, lines: any[]) => call(admin, `/api/admin/orders/${path}/items`, { cookie: adm, body: { lines, notify: false } });
+assert.equal((await items(np1.data.ref, [{ id: 'najdi', opt: 'dallah', qty: 2 }, { id: 'hadrami', opt: 'dallah', qty: 1 }])).status, 200);
+assert.equal(((await pg.query(`SELECT unit_cents FROM order_items i JOIN orders o ON o.id = i.order_id WHERE o.ref = $1 AND product_id = 'hadrami'`, [np1.data.ref])).rows[0] as any).unit_cents, hadramiPrice);
+assert.equal((await items(np2.data.ref, [{ id: 'najdi', opt: 'dallah', qty: 1 }, { id: 'hadrami', opt: 'dallah', qty: 1 }])).data.error, 'no-price');
+await call(admin, `/api/admin/orders/${np2.data.ref}`, { cookie: adm, body: { sample: true } });
+assert.equal((await items(np2.data.ref, [{ id: 'najdi', opt: 'dallah', qty: 1 }, { id: 'hadrami', opt: 'dallah', qty: 1 }])).status, 200);
+assert.equal(((await pg.query(`SELECT unit_cents FROM order_items i JOIN orders o ON o.id = i.order_id WHERE o.ref = $1 AND product_id = 'hadrami'`, [np2.data.ref])).rows[0] as any).unit_cents, 2000);
+await call(admin, '/api/admin/products/hadrami', { cookie: adm, body: { price_cents: hadramiPrice } });
+ok('editing an order: a line without a price today keeps its price; sample orders use the $20 stand-in');
 
 // ---------- "you're next" ----------
 await pg.query(`UPDATE team_members SET status = 'active' WHERE email = 'dan@example.com'`);
@@ -773,14 +798,32 @@ assert.equal((await call(admin, `/api/admin/letters/${lt.id}/send`, { cookie: he
 const ltM = sent.length;
 await call(admin, `/api/admin/letters/${lt.id}/test`, { cookie: adm, body: {} });
 assert.equal(sent.slice(ltM).filter(m => /^\[Test\]/.test(m.subject)).length, 2); ok('letters: written in English and Arabic, with a test copy first');
-const batches: any[] = []; const fL = globalThis.fetch;
-globalThis.fetch = (async (url: string, init: any) => { if (String(url).includes('/emails/batch')) { batches.push(JSON.parse(init.body)); return new Response('[]', { status: 200 }); } return fL(url, init); }) as any;
+const noAddr = await call(admin, `/api/admin/letters/${lt.id}/send`, { cookie: adm, body: {} });
+assert.equal(noAddr.status, 400); assert.equal(noAddr.data.error, 'address'); ok('a letter cannot go out without a mailing address');
+await call(admin, '/api/admin/business', { cookie: adm, body: { MAILING_ADDRESS: 'PO Box 123, Calgary, AB T2P 2M5' } });
+// 120 more readers, so the letter goes out in two batches of up to 100; the second batch fails.
+for (let i = 0; i < 120; i++) await pg.query(`INSERT INTO subscribers (email, lang, source, consent_text, unsub_token, confirmed_at) VALUES ($1, 'en', 'footer', 'x', $2, NOW())`, [`bulk${i}@example.com`, `bulk-token-${i}`]);
+const batches: any[] = []; const fL = globalThis.fetch; let failNext = 1;
+globalThis.fetch = (async (url: string, init: any) => {
+  if (String(url).includes('/emails/batch')) { const b = JSON.parse(init.body); if (batches.length === failNext) { failNext = -1; return new Response('boom', { status: 500 }); } batches.push(b); return new Response('[]', { status: 200 }); }
+  return fL(url, init);
+}) as any;
 const ltSend = (await call(admin, `/api/admin/letters/${lt.id}/send`, { cookie: adm, body: {} })).data;
+const firstReached = batches.flat().length;
+assert.equal(ltSend.status, 'partial'); assert.equal(ltSend.sent, firstReached); assert.ok(ltSend.of > firstReached);
+assert.equal(((await pg.query('SELECT status FROM letters WHERE id = $1', [lt.id])).rows[0] as any).status, 'partial'); ok('a letter that partly failed is marked partly sent, not sent');
+const again = (await call(admin, `/api/admin/letters/${lt.id}/send`, { cookie: adm, body: {} })).data;
 globalThis.fetch = fL;
+const secondTo = batches.slice(1).flat().map((m: any) => m.to[0]);
+assert.equal(again.status, 'sent'); assert.equal(again.of, ltSend.of - firstReached); assert.equal(secondTo.length, again.of);
+assert.ok(!secondTo.some((e: string) => batches[0].some((m: any) => m.to[0] === e))); ok('"Send to the ones that failed" reaches only the people who missed it');
 const toReader = batches.flat().find((m: any) => m.to[0] === 'reader@example.com');
-assert.ok(ltSend.sent >= 1); assert.equal(toReader.subject, 'الطلب المسبق لرمضان مفتوح'); assert.match(toReader.html, /<b>الثلاثاء<\/b>/); assert.match(toReader.headers['List-Unsubscribe'], /unsubscribe\?t=/);
+assert.equal(toReader.subject, 'الطلب المسبق لرمضان مفتوح'); assert.match(toReader.html, /<b>الثلاثاء<\/b>/); assert.match(toReader.headers['List-Unsubscribe'], /unsubscribe\?t=/);
+assert.ok(toReader.html.includes('PO Box 123, Calgary, AB T2P 2M5') && toReader.text.includes('PO Box 123, Calgary, AB T2P 2M5') && toReader.text.includes('حكاية')); ok('every letter carries the mailing address');
 assert.ok(!batches.flat().some((m: any) => m.to[0] === 'news@example.com')); ok('sent only to confirmed subscribers, each in their language, with one-click unsubscribe');
+await pg.query(`DELETE FROM subscribers WHERE email LIKE 'bulk%@example.com'`);
 assert.equal((await call(admin, `/api/admin/letters/${lt.id}/send`, { cookie: adm, body: {} })).data.error, 'sent'); ok('a letter can only be sent once');
+await call(admin, '/api/admin/business', { cookie: adm, body: { MAILING_ADDRESS: '' } });
 
 // ---------- food safety checklists, announcements, backup, activity ----------
 const ckl = (await call(driverApi, '/api/driver/checklists', { cookie: pat })).data;
@@ -931,8 +974,23 @@ await call(orders, `/api/list/confirm?t=${wlT}`);
 const tdList = (await todayFn('admin', '2027-03-26')).list;
 assert.ok(tdList.confirmed >= 1 && tdList.fromSoon === 1 && tdList.thisWeek >= 1); ok('waitlist sign-ups are kept with where they came from and their Arabic consent; Today counts them');
 assert.equal((await call(admin, '/api/admin/list', { cookie: adm })).data.cups.yemen, 1);
+assert.deepEqual((await call(orders, '/api/list', { body: { email: 'waiting@example.com', lang: 'en', consent: true, source: 'soon', cup: 'shami' } })).data, { already: true });
+assert.equal(((await pg.query(`SELECT cup FROM subscribers WHERE email = 'waiting@example.com'`)).rows[0] as any).cup, 'yemen');
+assert.equal((await call(admin, '/api/admin/list', { cookie: adm })).data.cups.yemen, 1); ok('nobody can change a confirmed subscriber\'s cup answer without their link');
 await call(orders, '/api/list', { body: { email: 'odd@example.com', lang: 'en', consent: true, source: 'soon', cup: 'nonsense' } });
 assert.equal((await pg.query(`SELECT cup FROM subscribers WHERE email = 'odd@example.com'`)).rows[0].cup, null); ok('Which cup is yours? is kept with the sign-up and counted in the desk; anything else is ignored');
+
+// ---------- IT: release checks ----------
+assert.equal((await call(admin, '/api/admin/release-checks', { cookie: helper })).status, 403);
+await call(admin, '/api/admin/release-checks', { cookie: adm, body: { id: '1b-2:letter-test', done: true } });
+await call(admin, '/api/admin/release-checks', { cookie: adm, body: { id: '1b-2:consent-words', done: true } });
+await call(admin, '/api/admin/release-checks', { cookie: adm, body: { id: '1b-2:consent-words', done: false } });
+const relTicks = (await call(admin, '/api/admin/release-checks', { cookie: adm })).data.ticks;
+assert.ok(relTicks['1b-2:letter-test']?.by && relTicks['1b-2:letter-test'].at); assert.equal(relTicks['1b-2:consent-words'], undefined);
+assert.equal((await call(admin, '/api/admin/release-checks', { cookie: adm, body: { id: '<x>', done: true } })).status, 400); ok('release checks: owners tick and untick, with who and when; helpers cannot');
+const { RELEASES } = await import('../src/data/release-checks');
+const relIds = RELEASES.flatMap(r => r.checks.map(c => `${r.id}:${c.id}`));
+assert.equal(new Set(relIds).size, relIds.length); assert.ok(relIds.every(i => /^[\w.-]+:[\w.-]+$/.test(i))); ok('every release check has its own id');
 
 // ---------- who can see the website ----------
 const siteStateFn = (await import('../netlify/functions/site-state.mts')).default;
@@ -998,7 +1056,7 @@ const rfCount = sent.length; await sendRefills('2027-04-30'); assert.ok(!sent.sl
 ok('about three weeks after a coffee order, one "Running low?" email, only to people on the mailing list, never twice');
 assert.match(rfMail.html, /\/api\/list\/unsubscribe\?t=u-refill/); assert.match(rfMail.text, /\/api\/list\/unsubscribe\?t=u-refill/);
 assert.equal(rfMail.headers['List-Unsubscribe'], '<https://hikaya.test/api/list/unsubscribe?t=u-refill>'); assert.equal(rfMail.headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
-assert.match(rfMail.html, /Hikaya · \[TBD\]/); ok('it has an unsubscribe link, one-click unsubscribe headers, and who it is from');
+assert.match(rfMail.html, /Hikaya Coffee Ltd\. · \[TBD\] · hikayacoffee\.ca/); ok('it has an unsubscribe link, one-click unsubscribe headers, and who it is from');
 // A second coffee order four weeks later: no second email within 60 days.
 const rfo2 = await order({ email: 'refill@example.com', day: '2027-05-06', lines: [{ id: 'najdi', opt: 'dallah', qty: 1 }] });
 await pg.query(`UPDATE orders SET status = 'completed' WHERE ref = $1`, [rfo2.data.ref]);

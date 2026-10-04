@@ -7,7 +7,7 @@ import { sql, one } from './db';
 import { hash, token } from './auth';
 import { calgaryNow, addDays, weekday, WINDOWS } from './slots';
 import { PRODUCTS, DATES, GRINDS, fileCents } from '../../src/data/products';
-import { calgaryPostal } from './orders';
+import { calgaryPostal, SAMPLE_CENTS } from './orders';
 
 const PEOPLE: [string, 'en' | 'ar'][] = [
   ['Layla Haddad', 'ar'], ['Omar Saleh', 'ar'], ['Noor Al-Amin', 'ar'], ['Yousef Karim', 'ar'], ['Huda Mansour', 'ar'], ['Rania Khatib', 'ar'],
@@ -38,7 +38,7 @@ export async function createSamples(actor: string) {
           const opt = base?.kind === 'coffee' ? base.grinds[0] ?? null : p.kind === 'box' && p.chooseDate ? pick(Object.keys(DATES)) : null;
           const label = base?.kind === 'coffee' && opt ? GRINDS[opt as keyof typeof GRINDS] : opt ? DATES[opt as keyof typeof DATES].name : null;
           // Prices not set yet: samples use a stand-in so the desk has numbers to show.
-          return { id: p.id, en: p.name.en, ar: p.name.ar, opt, label, qty: 1 + (randomInt(4) === 0 ? 1 : 0), cents: fileCents(p) ?? 2000 };
+          return { id: p.id, en: p.name.en, ar: p.name.ar, opt, label, qty: 1 + (randomInt(4) === 0 ? 1 : 0), cents: fileCents(p) ?? SAMPLE_CENTS };
         });
         const sub = lines.reduce((n, l) => n + l.cents * l.qty, 0);
         const discount = randomInt(8) === 0 ? Math.round(sub * 0.1) : 0;

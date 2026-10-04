@@ -16,7 +16,7 @@ export async function addAlert(productId: string, email: string, lang: 'en' | 'a
 /** Emails everyone waiting for a product that can be ordered again. Returns how many were told. */
 export async function sendBackInStock(req?: Request) {
   const live = await liveCatalog();
-  const ready = Object.entries(live).filter(([, l]) => l.shown && l.available && l.stock !== 0).map(([id]) => id);
+  const ready = Object.entries(live).filter(([, l]) => l.shown && l.available && l.stock !== 0 && l.price_cents != null).map(([id]) => id);
   if (!ready.length) return 0;
   const rows = await sql`SELECT id, product_id, email, lang FROM stock_alerts WHERE notified_at IS NULL AND product_id = ANY(${ready}) LIMIT 500`;
   for (const r of rows) {

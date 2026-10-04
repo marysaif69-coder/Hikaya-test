@@ -238,11 +238,15 @@ export function reviewEmail(o: OrderForMail, reviewUrl: string, siteUrl: string)
 // ---------- marketing footer ----------
 /** Who is writing (name and mailing address, as Canada's anti-spam law asks) and how to stop. The
  * address is the owners' pickup address from Admin → Settings; until it is set it reads [TBD]. */
+export const mailingAddress = () => env('MAILING_ADDRESS') || env('PICKUP_ADDRESS');
+
 function marketingFooter(lang: Lang, unsubUrl: string, why: string) {
   const ar = lang === 'ar';
-  const where = env('PICKUP_ADDRESS') || (ar ? '[يُحدد لاحقاً]' : '[TBD]');
-  const html = `<p style="font-size:13px;color:#66503F;margin-top:24px">${esc(why)} <a href="${unsubUrl}" style="color:#66503F">${ar ? 'إلغاء الاشتراك' : 'Unsubscribe'}</a><br>${ar ? 'حكاية' : 'Hikaya'} · ${esc(where)}</p>`;
-  const text = `${why}\n${ar ? 'إلغاء الاشتراك' : 'Unsubscribe'}: ${unsubUrl}\n${ar ? 'حكاية' : 'Hikaya'} · ${where}`;
+  // Canada's anti-spam law: every marketing email names the sender with a mailing address.
+  const where = mailingAddress() || (ar ? '[يُحدد لاحقاً]' : '[TBD]');
+  const who = ar ? 'حكاية' : 'Hikaya Coffee Ltd.';
+  const html = `<p style="font-size:13px;color:#66503F;margin-top:24px">${esc(why)} <a href="${unsubUrl}" style="color:#66503F">${ar ? 'إلغاء الاشتراك' : 'Unsubscribe'}</a><br>${who} · ${esc(where)} · hikayacoffee.ca</p>`;
+  const text = `${why}\n${ar ? 'إلغاء الاشتراك' : 'Unsubscribe'}: ${unsubUrl}\n${who} · ${where} · hikayacoffee.ca`;
   return { html, text, headers: { 'List-Unsubscribe': `<${unsubUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } };
 }
 
@@ -327,6 +331,7 @@ export async function sendBatch(mails: (Mail & { headers?: Record<string, string
   const key = env('RESEND_API_KEY');
   const from = env('EMAIL_FROM') || 'Hikaya <orders@hikayacoffee.ca>';
   let sentN = 0;
+  const outcomes: { to: string; status: string }[] = [];
   for (let i = 0; i < mails.length; i += 100) {
     const chunk = mails.slice(i, i + 100);
     let status = 'skipped', error: string | null = null;
@@ -339,6 +344,7 @@ export async function sendBatch(mails: (Mail & { headers?: Record<string, string
     }
     for (const m of chunk) await sql`INSERT INTO email_log (to_email, subject, kind, status, error) VALUES (${m.to}, ${m.subject}, ${m.kind}, ${status}, ${error})`;
     if (status === 'sent') sentN += chunk.length;
+    outcomes.push(...chunk.map(m => ({ to: m.to, status })));
   }
-  return sentN;
+  return { sent: sentN, outcomes };
 }

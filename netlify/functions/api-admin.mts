@@ -91,7 +91,7 @@ async function handle(req: Request) {
     // Helpers can read everything and run orders; money, catalog, settings and exports are owners only.
     if (admin.role !== 'admin') {
       const write = req.method !== 'GET';
-      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write) || parts[0] === 'recall.csv' || parts[0] === 'hours.csv' || parts[0] === 'letters' || parts[0] === 'business' || parts[0] === 'visibility' || parts[0] === 'costs' || parts[0] === 'margins' || parts[0] === 'backup.json' || parts[0] === 'activity' || (parts[0] === 'checklists' && write)
+      const ownersOnly = parts[0] === 'export.csv' || parts[0] === 'list.csv' || parts[0] === 'samples' || parts[0] === 'seasons' || parts[0] === 'promos' || parts[0] === 'report' || (parts[0] === 'team' && write) || parts[0] === 'recall.csv' || parts[0] === 'hours.csv' || parts[0] === 'letters' || parts[0] === 'business' || parts[0] === 'release-checks' || parts[0] === 'visibility' || parts[0] === 'costs' || parts[0] === 'margins' || parts[0] === 'backup.json' || parts[0] === 'activity' || (parts[0] === 'checklists' && write)
         // Gift card codes work at checkout like money, so helpers can't list them either.
         || parts[0] === 'giftcards'
         || (write && ['products', 'settings', 'ask', 'connections', 'content', 'report', 'pay'].includes(parts[0])) || (parts[0] === 'orders' && parts[2] === 'refund');
@@ -396,6 +396,22 @@ async function handle(req: Request) {
     // ---------- business details (owners) ----------
     if (parts[0] === 'business' && req.method === 'GET') return json(await businessDetails());
     if (parts[0] === 'business' && req.method === 'POST') return json(await saveBusiness(await body(req)));
+
+    // ---------- release checks (Settings → IT): who ticked each check on the preview ----------
+    if (parts[0] === 'release-checks' && req.method === 'GET') {
+      const r = await one`SELECT value FROM settings WHERE key = 'release_checks'`;
+      return json({ ticks: r ? (typeof r.value === 'string' ? JSON.parse(r.value) : r.value) : {} });
+    }
+    if (parts[0] === 'release-checks' && req.method === 'POST') {
+      const b = await body(req);
+      const id = str(b.id, 100);
+      if (!/^[\w.-]+:[\w.-]+$/.test(id)) throw new HttpError(400, 'invalid');
+      if (b.done === true) {
+        const tick = JSON.stringify({ [id]: { by: admin.email, at: new Date().toISOString() } });
+        await sql`INSERT INTO settings (key, value) VALUES ('release_checks', ${tick}::jsonb) ON CONFLICT (key) DO UPDATE SET value = settings.value || EXCLUDED.value`;
+      } else await sql`UPDATE settings SET value = value - ${id}::text WHERE key = 'release_checks'`;
+      return json({ ok: true });
+    }
 
     // ---------- food safety, announcements, backup, activity ----------
     if (parts[0] === 'checklists' && req.method === 'GET') {

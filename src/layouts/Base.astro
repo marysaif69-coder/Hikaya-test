@@ -6,6 +6,7 @@ import { PRODUCTS, DATES, GRINDS, COFFEES, kitInside } from '../data/products';
 import { UI, dir, other, path } from '../data/i18n';
 import AskHikaya from '../components/AskHikaya.astro';
 import TeamBar from '../components/TeamBar.astro';
+import { CONSENT } from '../../netlify/lib/consent';
 
 interface Props { alertFor?: string; season?: 'ramadan' | 'eid'; lang: Lang; title: string; description?: string; current?: keyof typeof UI.nav; sleeve?: 'regular' | 'ramadan' | 'eid'; intro?: boolean; jsonld?: object; image?: string }
 const { alertFor, season, lang, title, description = UI.footLine[lang], current, sleeve = 'regular', intro = false, jsonld, image = '/media/img/eid-coffee-dates.jpg' } = Astro.props;
@@ -125,7 +126,7 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
             <label class="sr" for={`list-${lang}`}>{UI.email[lang]}</label>
             <input id={`list-${lang}`} type="email" name="email" required autocomplete="email" placeholder={UI.email[lang]} />
             <button class="btn primary" type="submit" style="min-height:46px;padding:11px 18px">{UI.join[lang]}</button>
-            <label class="consent"><input type="checkbox" name="consent" required /> <span>{lang === 'ar' ? 'أوافق على أن تصلني رسائل حكاية (نحو ثلاث في السنة). أستطيع إلغاء الاشتراك في أي وقت.' : 'I agree to receive Hikaya letters (about three a year). I can unsubscribe at any time.'}</span></label>
+            <label class="consent"><input type="checkbox" name="consent" required /> <span>{CONSENT[lang]}</span></label>
             <p class="list-msg" id="listMsg" aria-live="polite"></p>
           </form>
         </div>

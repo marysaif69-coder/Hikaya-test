@@ -52,6 +52,8 @@ assert.equal(conf.status, 303); assert.equal(conf.headers.get('location'), '/?li
 assert.ok((await (await run('/?list=1')).text()).includes('you are on the list')); ok('the confirm link from the email lands on "you are on the list"');
 const un = await runWith('/api/list/unsubscribe?t=abc', {}, new Response(null, { status: 303, headers: { location: 'https://hikaya.test/en/thanks/?unsub=1' } }));
 assert.equal(un.headers.get('location'), '/?unsub=1'); assert.ok((await (await run('/?unsub=1')).text()).includes('You are off the list')); ok('unsubscribe links work while the site is hidden');
+const oneClick = await runWith('/api/list/unsubscribe?t=abc', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', origin: 'https://mail.google.com' }, body: 'List-Unsubscribe=One-Click' }, new Response(null, { status: 200 }));
+assert.equal(oneClick.status, 200); ok('one-click unsubscribe from a mail app (a POST) gets through while the site is hidden');
 assert.equal((await run('/api/list/confirm', { method: 'POST' })).status, 401); assert.equal((await run('/api/orders', { method: 'POST' })).status, 401); ok('everything else on the API stays closed');
 assert.ok(!(await (await run('/?list=1')).text()).includes('<details open>')); assert.ok((await (await post('wrong')).text()).includes('<details open>')); ok('a wrong code opens the Team box again');
 

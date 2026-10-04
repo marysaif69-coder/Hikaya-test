@@ -4,6 +4,7 @@
 import Base from '../../layouts/Base.astro';
 import type { Lang } from '../../data/products';
 import { path } from '../../data/i18n';
+import { CONSENT } from '../../../netlify/lib/consent';
 
 export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
 const lang = Astro.params.lang as Lang;
@@ -86,7 +87,7 @@ const ar = lang === 'ar';
           <div class="field"><label for="f-giftmsg">{ar ? 'رسالة على البطاقة (اختياري)' : 'A message for the card (optional)'}</label><textarea id="f-giftmsg" name="gift_message" rows="2" maxlength="300"></textarea></div>
           <p class="hint">{ar ? 'للتوصيل إليهم: اختر التوصيل واكتب عنوانهم في الأعلى.' : 'To deliver to them, choose delivery and put their address above.'}</p>
         </div>
-        <label class="tick"><input type="checkbox" name="newsletter" id="f-news" /> <span>{ar ? 'أرسلوا لي رسائل حكاية (نحو ثلاث في السنة). أستطيع إلغاء الاشتراك في أي وقت.' : 'Send me Hikaya letters (about three a year). I can unsubscribe at any time.'}</span></label>
+        <label class="tick"><input type="checkbox" name="newsletter" id="f-news" /> <span>{CONSENT[ar ? 'ar' : 'en']}</span></label>
       </fieldset>
 
       <p class="err form-err" id="formErr" hidden role="alert"></p>
