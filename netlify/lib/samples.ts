@@ -1,6 +1,7 @@
 // Sample orders: made-up orders spread over five weeks (two past, this one, two ahead) so the
 // team can try the desk. They are marked SAMPLE, never email anyone, don't use up time slots or
-// stock, are left out of the CSV export, and one button removes them all.
+// stock, are left out of the CSV export, and one button removes them all. A real order ticked
+// "sample" afterwards (the rehearsal) is left out of the numbers too, but that button keeps it.
 import { randomInt } from 'node:crypto';
 import { sql, one } from './db';
 import { hash, token } from './auth';
@@ -55,10 +56,10 @@ export async function createSamples(actor: string) {
         const c = await one`INSERT INTO customers (email, name, phone, lang) VALUES (${email}, ${name}, ${phone}, ${lang})
           ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name RETURNING id`;
         const o = await one`INSERT INTO orders (ref, customer_id, email, name, phone, lang, method, street, postal, slot_date, slot_window, payment, payment_status, status,
-            subtotal_cents, delivery_cents, discount_cents, total_cents, promo_code, notes, guest_token_hash, is_sample)
+            subtotal_cents, delivery_cents, discount_cents, total_cents, paid_cents, promo_code, notes, guest_token_hash, is_sample, created_as_sample)
           VALUES (${'HK-S' + Array.from({ length: 4 }, () => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[randomInt(31)]).join('')}, ${c!.id}, ${email}, ${name}, ${phone}, ${lang}, ${method},
             ${method === 'delivery' ? STREETS[k] : null}, ${method === 'delivery' ? calgaryPostal(POSTALS[k]) : null}, ${date}, ${pick([...WINDOWS])}, ${payment},
-            ${paid ? 'paid' : 'unpaid'}, ${status}, ${sub}, ${fee}, ${discount}, ${sub - discount + fee}, ${discount ? 'SAMPLE10' : null}, ${pick(NOTES)}, ${hash(token())}, TRUE)
+            ${paid ? 'paid' : 'unpaid'}, ${status}, ${sub}, ${fee}, ${discount}, ${sub - discount + fee}, ${paid ? sub - discount + fee : 0}, ${discount ? 'SAMPLE10' : null}, ${pick(NOTES)}, ${hash(token())}, TRUE, TRUE)
           RETURNING id`;
         for (const l of lines) await sql`INSERT INTO order_items (order_id, product_id, name_en, name_ar, option, option_en, option_ar, qty, unit_cents)
           VALUES (${o!.id}, ${l.id}, ${l.en}, ${l.ar}, ${l.opt}, ${l.label?.en ?? null}, ${l.label?.ar ?? null}, ${l.qty}, ${l.cents})`;
@@ -71,7 +72,9 @@ export async function createSamples(actor: string) {
 }
 
 export async function removeSamples() {
-  const r = await one`WITH d AS (DELETE FROM orders WHERE is_sample RETURNING 1) SELECT COUNT(*)::int AS n FROM d`;
+  // Only orders made as samples. A real order ticked "sample" later (the rehearsal) stays, with its
+  // refunds and history, and is still left out of the numbers.
+  const r = await one`WITH d AS (DELETE FROM orders WHERE created_as_sample RETURNING 1) SELECT COUNT(*)::int AS n FROM d`;
   await sql`DELETE FROM customers c WHERE c.email LIKE '%.sample@example.com' AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id)`;
   return { removed: r?.n ?? 0 };
 }

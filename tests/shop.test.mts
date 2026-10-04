@@ -1269,4 +1269,24 @@ await call(admin, '/api/admin/supplies/new', { cookie: adm, body: { name: 'عل�
 const supAr = (await call(admin, '/api/admin/supplies', { cookie: adm })).data.supplies;
 assert.ok(supAr.some((x: any) => x.name === 'أكياس صغيرة') && supAr.some((x: any) => x.name === 'علب الهدايا')); ok('supplies named in Arabic are all saved');
 
+// ---------- a real rehearsal order ticked "sample" ----------
+await call(admin, '/api/admin/products/hijazi', { cookie: adm, body: { visible: true, stock: 5 } });
+const reh = await order({ email: 'rehearsal@example.com', day: '2027-08-12', lines: [{ id: 'hijazi', opt: 'dallah', qty: 2 }] });
+assert.equal(reh.status, 201, JSON.stringify(reh.data)); assert.equal(await stockOf('hijazi'), 3);
+await call(admin, `/api/admin/orders/${reh.data.ref}`, { cookie: adm, body: { paymentStatus: 'paid' } });
+await call(admin, `/api/admin/orders/${reh.data.ref}/refund`, { cookie: adm, body: { amount_cents: 100, method: 'store-credit', notify: false } });
+await call(admin, `/api/admin/orders/${reh.data.ref}`, { cookie: adm, body: { sample: true } });
+assert.equal(await stockOf('hijazi'), 5); ok('ticking a real order "sample" gives its stock back');
+await call(admin, '/api/admin/samples', { cookie: adm, body: { action: 'remove' } });
+assert.equal(await stockOf('hijazi'), 5);
+assert.equal((await pg.query(`SELECT COUNT(*)::int AS n FROM refunds r JOIN orders o ON o.id = r.order_id WHERE o.ref = $1`, [reh.data.ref])).rows[0].n, 1); ok('"Remove all sample orders" keeps a real rehearsal order and its refunds');
+await call(admin, `/api/admin/orders/${reh.data.ref}`, { cookie: adm, body: { status: 'cancelled', notify: false } });
+assert.equal(await stockOf('hijazi'), 5); ok('cancelling it afterwards doesn\'t give the stock back twice');
+const reh2 = await order({ email: 'rehearsal2@example.com', day: '2027-08-12', lines: [{ id: 'hijazi', opt: 'dallah', qty: 1 }] });
+await call(admin, `/api/admin/orders/${reh2.data.ref}`, { cookie: adm, body: { sample: true } });
+assert.equal(await stockOf('hijazi'), 5);
+await call(admin, `/api/admin/orders/${reh2.data.ref}`, { cookie: adm, body: { sample: false } });
+assert.equal(await stockOf('hijazi'), 4); ok('unticking "sample" takes the stock again');
+await call(admin, '/api/admin/products/hijazi', { cookie: adm, body: { stock: null } });
+
 console.log(`\n${pass} checks passed`);

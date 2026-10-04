@@ -22,7 +22,7 @@ import { sql, one } from '../lib/db';
 import { getSettings, WINDOWS, calgaryNow, addDays } from '../lib/slots';
 import { items, setStatus, setPayment, event, STATUSES, moveOrder, editOrder } from '../lib/orders';
 import { readable } from '../lib/ask';
-import { liveCatalog, saveProduct, getSeasons, saveSeasons } from '../lib/catalog';
+import { liveCatalog, saveProduct, getSeasons, saveSeasons, takeStock, restock } from '../lib/catalog';
 import { savePromo, normCode } from '../lib/promos';
 import { refundOrder, refundsFor } from '../lib/refunds';
 import { createSamples, removeSamples } from '../lib/samples';
@@ -160,9 +160,17 @@ async function handle(req: Request) {
       const b = await body(req);
       let o: any = null;
       if (typeof b.sample === 'boolean' && admin.role === 'admin') {
-        o = await one`UPDATE orders SET is_sample = ${b.sample} WHERE ref = ${parts[1]} RETURNING *`;
-        if (!o) throw new HttpError(404, 'not-found');
-        await event(o.id, 'note', b.sample ? 'Marked as a sample order' : 'Marked as a real order', admin.email);
+        // Stock follows the flag: a real order took stock when it was placed, a sample didn't. So
+        // real → sample gives it back, and sample → real takes it (refused if there isn't enough).
+        const was = await one`SELECT * FROM orders WHERE ref = ${parts[1]}`;
+        if (!was) throw new HttpError(404, 'not-found');
+        if (was.is_sample !== b.sample) {
+          const live = was.status !== 'cancelled';
+          if (live && !b.sample) await takeStock((await sql`SELECT product_id, qty FROM order_items WHERE order_id = ${was.id}`).map(i => ({ product_id: i.product_id, qty: i.qty })));
+          o = await one`UPDATE orders SET is_sample = ${b.sample} WHERE id = ${was.id} RETURNING *`;
+          if (live && b.sample) await restock(was.id);
+          await event(o.id, 'note', b.sample ? 'Marked as a sample order' : 'Marked as a real order', admin.email);
+        } else o = was;
       }
       if (b.status) o = await setStatus(parts[1], str(b.status, 30), admin.email, req, b.notify !== false);
       if (b.paymentStatus) o = await setPayment(parts[1], str(b.paymentStatus, 20), admin.email);
