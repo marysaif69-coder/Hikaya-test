@@ -7,6 +7,7 @@
   <span class="tbar-where" id="tbWhere"></span>
   <span class="tbar-now" id="tbNow"></span>
   <span class="tbar-links">View as a customer: <a href="/?phase=brewing">Phase 0</a> · <a href="/?phase=soon">Phase 1</a> · <a href="/en/">Open site</a></span>
+  <span class="tbar-links">Intro: <a href="/en/?intro=full" data-intro>Play full</a> · <a href="/en/?intro=short" data-intro>Play short</a></span>
   <a class="tbar-desk" href="/admin/">Desk</a>
   <button type="button" id="tbHide" aria-label="Hide this bar">×</button>
 </div>
@@ -21,6 +22,9 @@
     const bar = document.getElementById('teamBar')!;
     document.getElementById('tbWhere')!.textContent = preview ? 'PREVIEW · team only, not the real website' : 'TEAM VIEW of hikayacoffee.ca · customers cannot see this';
     document.getElementById('tbNow')!.textContent = `Customers on hikayacoffee.ca see: ${LABEL[s.live] ?? s.live}`;
+    // Intro links open the homepage in the language being viewed.
+    const lang = location.pathname.startsWith('/ar') ? 'ar' : 'en';
+    bar.querySelectorAll<HTMLAnchorElement>('[data-intro]').forEach(a => { a.href = a.href.replace('/en/', `/${lang}/`); });
     bar.hidden = false;
     document.getElementById('tbHide')!.addEventListener('click', () => { bar.hidden = true; try { sessionStorage.setItem('hk-tbar-hidden', '1'); } catch { /* private mode */ } });
   })();
