@@ -9,7 +9,7 @@ interface Props { coffee: Coffee; lang: Lang; class?: string; label?: boolean; s
 const { coffee, lang, class: cls = '', label = true, side = 'front' } = Astro.props;
 const alt = `${coffee.name[lang]} · ${coffee.size[lang]}`;
 const uid = `p${coffee.id.replace(/[^a-z]/g, '')}${Math.random().toString(36).slice(2, 6)}`;
-const BAND: Record<Coffee['fam'], string> = { palm: '#F3CF7E', mountain: '#8C5B33', house: '#3A2620', husk: '#A93B28' };
+const BAND: Record<Coffee['fam'], string> = { palm: '#F3CF7E', mountain: '#8C5B33', house: '#3A2620', husk: '#A93B28', origin: '#1C1714' };
 const band = BAND[coffee.fam];
 // Long names shrink so they always stay inside the sticker.
 // Harakat (e.g. the damma in جُبَني) collide with the English name under it; the bag drops them.
@@ -17,7 +17,7 @@ const arName = coffee.name.ar.replace(/[\u064B-\u0652]/g, '');
 const arSize = Math.min(25, Math.round(25 * 10 / Math.max(10, coffee.name.ar.length)));
 const dots = coffee.spices.length ? coffee.spices.slice(0, 3).map(s => SPICES[s].c) : ['#33211A', '#33211A', '#33211A'];
 const ringFirst = coffee.spices.length === 0 || coffee.spices.length < 3;
-const desc = { palm: ['Gulf-style ground coffee with spices', 'Café moulu à la façon du Golfe, aux épices'], mountain: ['Yemeni-style ground coffee with spices', 'Café moulu à la yéménite, aux épices'], house: ['Shami-style ground coffee', 'Café moulu à la façon du Levant'], husk: ['Dried coffee cherry husk with ginger', 'Cascara séchée au gingembre'] }[coffee.fam];
+const desc = { palm: ['Gulf-style ground coffee with spices', 'Café moulu à la façon du Golfe, aux épices'], mountain: ['Yemeni-style ground coffee with spices', 'Café moulu à la yéménite, aux épices'], house: ['Shami-style ground coffee', 'Café moulu à la façon du Levant'], husk: ['Dried coffee cherry husk with ginger', 'Cascara séchée au gingembre'], origin: ['Coffee from Yemen', 'Café du Yémen'] }[coffee.fam];
 // Muted bubble print, staggered like the bag. Mostly pale; a few warm accents.
 const PALE = '#E6DCC6', ACC = ['#D4B08C', '#F1B7A0', '#B9A99B'];
 const print: [number, number, string, boolean][] = [];

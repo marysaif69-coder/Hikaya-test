@@ -1623,4 +1623,21 @@ ok('a regular order with Medjool or khudri in the Everyday box is not placed; th
   assert.ok('stickers' in w.packaging && !('ramadan' in w.packaging.sleeves)); ok('the week sheet counts Ramadan and Eid stickers, not seasonal sleeves');
 }
 
+// ---------- Yemeni beans: ready, hidden until the owners show them ----------
+{
+  // (The test set-up gave every product a stand-in price row; in the desk, a price alone never shows it.)
+  await pg.query(`DELETE FROM product_settings WHERE product_id = 'yemen-haraz'`);
+  assert.equal((await call(orders, '/api/catalog')).data.products['yemen-haraz'].shown, false);
+  await call(admin, '/api/admin/products/yemen-haraz', { cookie: adm, body: { price_cents: 1800 } });
+  assert.equal((await call(orders, '/api/catalog')).data.products['yemen-haraz'].shown, false); ok('setting a price does not show a Yemeni bean product');
+  assert.equal((await order({ day: '2027-10-15', lines: [{ id: 'yemen-haraz', opt: 'beans', qty: 1 }] })).data.error, 'not-offered'); ok('the Yemeni beans start hidden and cannot be ordered');
+  await call(admin, '/api/admin/products/yemen-haraz', { cookie: adm, body: { visible: true } });
+  const yb = await order({ day: '2027-10-15', email: 'yb@example.com', lines: [{ id: 'yemen-haraz', opt: 'beans', qty: 2 }] });
+  assert.equal(yb.status, 201, JSON.stringify(yb.data));
+  const wy = (await call(admin, '/api/admin/week?from=2027-10-14', { cookie: adm })).data;
+  assert.equal(wy.packaging.blackBoxes, 2); assert.equal(wy.coffee.find((r: any) => r.id === 'yemen-haraz').grind, 'Whole beans');
+  ok('shown in the desk, they can be ordered (whole beans), and the week sheet counts black boxes, not pouches');
+  await call(admin, '/api/admin/products/yemen-haraz', { cookie: adm, body: { visible: false } });
+}
+
 console.log(`\n${pass} checks passed`);

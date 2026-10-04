@@ -4,22 +4,24 @@ import TEXT from '../content/products.json';
 export type Lang = 'en' | 'ar';
 export type L = { en: string; ar: string };
 
-export type Family = 'palm' | 'mountain' | 'house' | 'husk' | 'dates' | 'ramadan' | 'eid';
+export type Family = 'palm' | 'mountain' | 'house' | 'husk' | 'origin' | 'dates' | 'ramadan' | 'eid';
 /** The three coffee lines on the shop: Gulf (palm), Yemeni (mountain, with Jubani and qishr) and Shami (house). */
 export type CoffeeLine = 'gulf' | 'yemen' | 'shami';
 export type Spice = 'saffron' | 'cardamom' | 'ginger' | 'husk' | 'sesame' | 'cinnamon';
 export type DateId = 'sukkari' | 'khalas' | 'khudri' | 'ajwa' | 'medjool' | 'mufattal';
 /** What a stuffed date is filled or dipped with (the customer chooses one per box). */
 export type FillingId = 'pistachio' | 'pistachio-dipped' | 'biscuit' | 'cashew' | 'caramel-almond';
-export type Grind = 'dallah' | 'fine' | 'powder';
+export type Grind = 'dallah' | 'fine' | 'powder' | 'beans';
 export type Allergen = 'milk' | 'sesame' | 'nuts' | 'grain' | 'pistachio' | 'cashew' | 'gluten' | 'soy';
 
 /** A base bag: the coffee itself, with only the spice that belongs in every cup of that line. */
 export interface Coffee {
   kind: 'coffee';
   id: string;
-  fam: 'palm' | 'mountain' | 'house' | 'husk';
+  fam: 'palm' | 'mountain' | 'house' | 'husk' | 'origin';
   line: CoffeeLine;
+  /** Not on the site until the owners show it in Admin → Shop → Products (the Yemeni beans). */
+  startHidden?: true;
   name: L;
   /** null = the owners have not set a price yet: the site shows "price coming" and it can't be ordered. */
   price: number | null;
@@ -127,6 +129,7 @@ export const FAMILIES: Record<Family, { name: L; line: L }> = {
   palm: { name: { en: 'Gulf', ar: 'الخليج' }, line: { en: 'Pale and golden, poured from the dallah. One bag, taken your way.', ar: 'شقراء وذهبية، تُصبّ من الدلّة. كيس واحد، تشربه بطريقتك.' } },
   mountain: { name: { en: 'Yemen', ar: 'اليمن' }, line: { en: 'Yemeni-style coffee from Ethiopian beans, with cardamom. The ginger and each town’s additions come in the packs.', ar: 'قهوة على الطريقة اليمنية من حبوب إثيوبية، بالهيل. والزنجبيل وإضافة كل بلدة في الظروف.' } },
   house: { name: { en: 'Shami', ar: 'الشام' }, line: { en: 'Shami coffee, ground to powder and boiled in the rakwa.', ar: 'القهوة الشامية، مطحونة كالبودرة وتُغلى في الركوة.' } },
+  origin: { name: { en: 'Yemeni beans', ar: 'بن يمني' }, line: { en: 'Grown in Yemen, roasted in Calgary. 100 g in the black box.', ar: 'بن زُرع في اليمن، ونحمّصه في كالغاري. ١٠٠ غ في العلبة السوداء.' } },
   husk: { name: { en: 'Qishr', ar: 'القشر' }, line: { en: 'Qishr – dried coffee cherry husk, with ginger.', ar: 'القشر – قشر ثمرة البن المجفف، مع الزنجبيل.' } },
   dates: { name: { en: 'Dates', ar: 'التمر' }, line: { en: 'Everyday dates by weight; Reserve and stuffed in boxes.', ar: 'تمر كل يوم بالوزن، والنخبة والمحشي في علب.' } },
   ramadan: { name: { en: 'Ramadan', ar: 'رمضان' }, line: { en: 'For the table at sunset.', ar: 'لمائدة الغروب.' } },
@@ -152,6 +155,7 @@ export const GRINDS: Record<Grind, L> = {
   dallah: { en: 'Coarse, for Gulf coffee', ar: 'طحنة خشنة للقهوة الخليجية' }, // id kept: saved carts and orders use it
   fine: { en: 'Fine, for the pot', ar: 'طحنة ناعمة للإبريق' },
   powder: { en: 'Powder-fine, for the rakwa', ar: 'ناعمة كالبودرة للركوة' },
+  beans: { en: 'Whole beans', ar: 'حبوب كاملة' },
 };
 
 /** Allergens live only in the sealed packs. The coffee bags hold coffee and spices, nothing else. */
@@ -324,6 +328,24 @@ export const KITS: Kit[] = [
     bunn: { en: 'Three towns in one box.', ar: 'ثلاث بلدات في علبة واحدة.' }, why: { en: 'Medjool sits well with all three.', ar: 'المجدول يناسب الثلاث.' } }),
 ];
 
+// Yemeni beans: coffee grown in Yemen (our other Yemeni coffee is Yemeni-style, from Ethiopian
+// beans), 100 g in a black box. Not decided yet: built ready, hidden until the owners show them in
+// Admin → Shop → Products. The lots and regions are placeholders until the supplier confirms them.
+const Y = (id: string, name: L, region: L, bunn: L): Coffee => ({
+  kind: 'coffee', id, fam: 'origin', line: 'yemen', startHidden: true, name, price: null,
+  size: { en: '100 g', ar: '١٠٠ غ' }, roast: 0, spices: [], grinds: ['beans', 'dallah'],
+  notes: { en: `Grown in ${region.en}, Yemen, and roasted in Calgary. 100 g in the black box. [TBD: the lot, from the supplier]`, ar: `زُرع في ${region.ar} باليمن، ونحمّصه في كالغاري. ١٠٠ غ في العلبة السوداء. [يُحدد لاحقاً: الدفعة، من المورّد]` },
+  story: { en: 'A small lot, for the cup on its own: no cardamom, no spice.', ar: 'دفعة صغيرة، لفنجان وحده: بلا هيل ولا بهار.' },
+  ingredients: ['Coffee (Yemen).', 'Café (Yémen).'],
+  taste: { en: '[TBD: after the cupping]', ar: '[يُحدد لاحقاً: بعد التذوق]' },
+  bunn, why: { en: '', ar: '' },
+});
+export const SPECIALTY: Coffee[] = [
+  Y('yemen-haraz', { en: 'Haraz', ar: 'حراز' }, { en: 'the Haraz mountains', ar: 'جبال حراز' }, { en: 'Where I learned my ways.', ar: 'هنا تعلّمت طرقي.' }),
+  Y('yemen-matari', { en: 'Bani Matar', ar: 'بني مطر' }, { en: 'Bani Matar', ar: 'بني مطر' }, { en: 'From the terraces west of Sana’a.', ar: 'من مدرجات غرب صنعاء.' }),
+  Y('yemen-yafai', { en: 'Yafa’i', ar: 'يافعي' }, { en: 'Yafa’', ar: 'يافع' }, { en: 'High, slow and patient.', ar: 'عالٍ وبطيء وصبور.' }),
+];
+
 export const BOXES: Box[] = [
   // Everyday dates, sold by weight. One id per size: each size has its own price, and the server prices by id.
   ...([250, 500, 1000] as const).map((g): Box => {
@@ -388,7 +410,7 @@ export const BOXES: Box[] = [
     contents: { en: 'Gold Eid band, two coffees.', ar: 'حزام العيد الذهبي، قهوتان.' }, preorder: true },
 ];
 
-export const PRODUCTS: Product[] = [...COFFEES, ...KITS, ...PACKS, ...BOXES];
+export const PRODUCTS: Product[] = [...COFFEES, ...SPECIALTY, ...KITS, ...PACKS, ...BOXES];
 // Names, descriptions and the other words are edited in the desk (Admin → Shop → Words), which saves them
 // to src/content/products.json. That file wins over the text written above.
 for (const p of PRODUCTS) Object.assign(p, (TEXT as Record<string, Partial<Record<string, L>>>)[p.id] ?? {});

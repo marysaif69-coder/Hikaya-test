@@ -1,7 +1,7 @@
 ---
 import Base from '../../../layouts/Base.astro';
 import ProductCard from '../../../components/ProductCard.astro';
-import { COFFEES, KITS, PACKS, BOXES, FAMILIES, LINES, DATES, EVERYDAY, FILLINGS, ALLERGENS, MIXED, varietiesOf, mixedOk, priceText, type Lang, type CoffeeLine, type Box, type DateId, type FillingId } from '../../../data/products';
+import { COFFEES, SPECIALTY, KITS, PACKS, BOXES, FAMILIES, LINES, DATES, EVERYDAY, FILLINGS, ALLERGENS, MIXED, varietiesOf, mixedOk, priceText, type Lang, type CoffeeLine, type Box, type DateId, type FillingId } from '../../../data/products';
 import { path } from '../../../data/i18n';
 import Pouch from '../../../components/Pouch.astro';
 import { dateSvg } from '../../../data/date-art';
@@ -35,6 +35,12 @@ const SIZES = ['dates-250', 'date-box', 'dates-1kg'].map(id => BY_ID[id]);
 const reserve = BOXES.filter(b => b.tier === 'reserve');
 const stuffed = BOXES.filter(b => b.tier === 'stuffed');
 // One date, or (Mixed) three side by side; stuffed dates show their filling.
+const VIEWS = [
+  { id: 'coffee', name: { ar: 'القهوة', en: 'Coffee' } },
+  { id: 'dates', name: { ar: 'التمر', en: 'Dates' } },
+  { id: 'gifts', name: { ar: 'علب الهدايا', en: 'Gift boxes' } },
+  { id: 'beans', name: { ar: 'بن يمني', en: 'Yemeni beans' } },
+];
 const dateArt = (c: string, filling?: string | null, mix?: { c: string; f?: string | null }[]) => mix
   ? `<svg viewBox="-72 -46 144 92" aria-hidden="true">${mix.map((m, i) => `<g transform="translate(${(i - 1) * 46} 0) scale(.9)">${dateSvg(m.c, m.f as FillingId | undefined)}</g>`).join('')}</svg>`
   : `<svg viewBox="-26 -46 52 92" aria-hidden="true">${dateSvg(c, filling as FillingId | undefined)}</svg>`;
@@ -62,14 +68,14 @@ const DATE_PICKS = [
 <Base lang={lang} title={ar ? 'المتجر' : 'Shop'} current="shop">
   <section class="wrap shop-head">
     <h1 class="h-l">{ar ? 'القهوة والتمر' : 'Coffee & dates'}</h1>
-    <p class="lead">{ar ? 'اختر قهوتك، ثم كيف تشربها. أو اختر تمرك.' : 'Choose your coffee, then how you take it. Or choose your dates.'}</p>
-    <p class="muted small">{ar ? 'كل طريقة تأتي في علبة واحدة، الكيس وظروفه معاً. الأسعار تُعلن قريباً.' : 'Each style comes in one box, the bag and its packs together. Prices are announced soon.'}</p>
+    <p class="lead">{ar ? 'اختر قهوتك وطريقتك في شربها، أو تمرك، أو هدية.' : 'Choose your coffee and how you take it, your dates, or a gift.'}</p>
+    <p class="muted small">{ar ? 'كل طريقة قهوة تأتي في علبة واحدة، الكيس وظروفه معاً. الأسعار تُعلن قريباً.' : 'Each coffee style comes in one box, the bag and its packs together. Prices are announced soon.'}</p>
   </section>
 
-  <!-- Coffee | Dates. Without JavaScript the tabs stay hidden and both views simply show. -->
-  <div class="wrap top-tabs" role="tablist" aria-label={ar ? 'القهوة أو التمر' : 'Coffee or dates'} id="topTabs" hidden>
-    <button type="button" role="tab" id="view-tab-coffee" aria-controls="view-coffee" aria-selected="true" data-view="coffee">{ar ? 'القهوة' : 'Coffee'}{!ar && <span lang="ar">القهوة</span>}</button>
-    <button type="button" role="tab" id="view-tab-dates" aria-controls="view-dates" aria-selected="false" data-view="dates">{ar ? 'التمر' : 'Dates'}{!ar && <span lang="ar">التمر</span>}</button>
+  <!-- Coffee | Dates | Gift boxes | Yemeni beans. Without JavaScript the tabs stay hidden and the
+       views simply show (the Yemeni beans only once the owners show them). -->
+  <div class="wrap top-tabs" role="tablist" aria-label={ar ? 'أقسام المتجر' : 'Shop sections'} id="topTabs" hidden>
+    {VIEWS.map((v, i) => <button type="button" role="tab" id={`view-tab-${v.id}`} aria-controls={`view-${v.id}`} aria-selected={i === 0 ? 'true' : 'false'} data-view={v.id} hidden={v.id === 'beans'}>{v.name[lang]}{!ar && <span lang="ar">{v.name.ar}</span>}</button>)}
   </div>
 
   <div id="view-coffee" role="tabpanel" aria-labelledby="view-tab-coffee" data-view-panel="coffee">
@@ -158,7 +164,7 @@ const DATE_PICKS = [
           </button>
         ))}
       </div>
-      <p class="pick-more"><a class="link" href="#gifts">{ar ? 'هدية؟ علب الهدايا مع القهوة' : 'A gift? Boxes with coffee'}</a></p>
+      <p class="pick-more"><a class="link" href="#gifts">{ar ? 'هدية؟ علب الهدايا، مع القهوة أو بدونها' : 'A gift? Gift boxes, with coffee or without'}</a></p>
     </section>
 
     <section class="fam dsec" id="everyday" aria-labelledby="h-everyday" data-dpanel="everyday">
@@ -242,14 +248,30 @@ const DATE_PICKS = [
       </div>
     </section>
 
-    <section class="fam dsec alt" id="gifts" aria-labelledby="h-gifts" data-dpanel="gifts">
+
+  </div>
+
+  <div id="view-gifts" role="tabpanel" aria-labelledby="view-tab-gifts" data-view-panel="gifts">
+    <section class="fam dsec alt" id="gifts" aria-labelledby="h-gifts">
       <div class="wrap">
-        <div class="panel-head"><h2 id="h-gifts" class="h-m">{ar ? 'علب الهدايا' : 'Gift boxes'}</h2><p class="muted">{ar ? 'قهوة وتمر بالحزام الذهبي، لأي زيارة.' : 'Coffee and dates in the gold sleeve, for any visit.'}</p></div>
+        <div class="panel-head"><h2 id="h-gifts" class="h-m">{ar ? 'علب الهدايا' : 'Gift boxes'}</h2><p class="muted">{ar ? 'قهوة وتمر بالحزام الذهبي، لأي زيارة وطوال السنة.' : 'Coffee and dates in the gold band, for any visit, all year.'}</p></div>
+        <p class="muted panel-note">{ar ? 'اختر ما في العلبة في صفحتها: القهوة، والتمر صنفاً واحداً أو مشكّلاً.' : 'Choose what goes in on each box’s page: the coffee, and the dates, one kind or Mixed.'}</p>
         <p class="muted panel-note" data-season="ramadan eid">{ar ? 'في رمضان والعيد: اختر ملصق رمضان أو العيد في صفحة العلبة.' : 'In Ramadan and Eid: choose the Ramadan or Eid sticker on the box’s page.'}</p>
         <div class="grid">{gifts.map(p => <ProductCard p={p} lang={lang} />)}</div>
       </div>
     </section>
+  </div>
 
+  <!-- Yemeni beans: coffee grown in Yemen, 100 g in the black box. Hidden (also without JavaScript)
+       until the owners show the products in Admin → Shop → Products. -->
+  <div id="view-beans" role="tabpanel" aria-labelledby="view-tab-beans" data-view-panel="beans" hidden>
+    <section class="fam dsec" id="beans" aria-labelledby="h-beans">
+      <div class="wrap">
+        <div class="panel-head"><h2 id="h-beans" class="h-m">{ar ? 'بن يمني' : 'Yemeni beans'}</h2><p class="muted">{ar ? 'زُرع في اليمن، ونحمّصه في كالغاري.' : 'Grown in Yemen, roasted in Calgary.'}</p></div>
+        <p class="muted panel-note">{ar ? 'قهوتنا اليمنية على الطريقة اليمنية، من حبوب إثيوبية. وهذه حبوب من اليمن نفسه، من مدرجاته العالية، في دفعات صغيرة: ١٠٠ غ في علبة سوداء، لفنجان يُشرب وحده بلا هيل ولا بهار.' : 'Our Yemeni qahwa is Yemeni-style, from Ethiopian beans. These are beans from Yemen itself, from its high terraces, in small lots: 100 g in a black box, for a cup on its own, no cardamom, no spice.'}</p>
+        <div class="grid">{SPECIALTY.map(p => <ProductCard p={p} lang={lang} />)}</div>
+      </div>
+    </section>
   </div>
 </Base>
 
@@ -268,26 +290,37 @@ const DATE_PICKS = [
   }
   tabs.forEach(t => t.addEventListener('click', () => choose(t.dataset.pick!, true)));
   // Coffee | Dates: one view at a time. Coffee opens first; #dates and its sections open Dates.
-  const DATE_IDS = ['dates', 'everyday', 'reserve', 'stuffed', 'gifts'];
+  const DATE_IDS = ['dates', 'everyday', 'reserve', 'stuffed'];
+  type View = 'coffee' | 'dates' | 'gifts' | 'beans';
   const viewTabs = [...document.querySelectorAll<HTMLButtonElement>('[data-view]')];
   const views = [...document.querySelectorAll<HTMLElement>('[data-view-panel]')];
   document.getElementById('topTabs')!.hidden = false;
-  function setView(v: 'coffee' | 'dates') {
+  function setView(v: View) {
     viewTabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.view === v)));
     views.forEach(p => { p.hidden = p.dataset.viewPanel !== v; });
   }
   const motion = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth') as ScrollBehavior;
   viewTabs.forEach(t => t.addEventListener('click', () => {
-    const v = t.dataset.view as 'coffee' | 'dates';
+    const v = t.dataset.view as View;
     setView(v);
-    if (v === 'dates') history.replaceState(null, '', '#dates');
+    if (v !== 'coffee') history.replaceState(null, '', `#${v}`);
     else { const cur = tabs.find(x => x.getAttribute('aria-selected') === 'true')?.dataset.pick ?? 'gulf'; history.replaceState(null, '', `#${cur}`); }
   }));
-  // Arrow keys move between the two tabs.
-  viewTabs.forEach((t, i) => t.addEventListener('keydown', e => {
+  // Arrow keys move between the tabs (in reading order, so right-to-left on the Arabic page).
+  viewTabs.forEach(t => t.addEventListener('keydown', e => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-    const n = viewTabs[(i + 1) % 2]; n.focus(); n.click();
+    const shown = viewTabs.filter(x => !x.hidden), i = shown.indexOf(t);
+    const fwd = (e.key === 'ArrowRight') !== (document.documentElement.dir === 'rtl');
+    const n = shown[(i + (fwd ? 1 : -1) + shown.length) % shown.length]; n.focus(); n.click();
   }));
+  // The Yemeni beans tab shows only while the owners show at least one of them.
+  const beansOn = () => [...document.querySelectorAll<HTMLElement>('#view-beans [data-product]')].some(c => !c.hidden);
+  document.addEventListener('catalog:live', () => {
+    const tab = document.getElementById('view-tab-beans')!, on = beansOn();
+    tab.hidden = !on;
+    if (!on && tab.getAttribute('aria-selected') === 'true') setView('coffee');
+    if (on && location.hash === '#beans') setView('beans');
+  });
   // Dates: Everyday, Reserve, Stuffed (and the gift boxes) one at a time, like the coffees; inside
   // each, the kind chosen shows its card. Without JavaScript everything shows.
   const dtabs = [...document.querySelectorAll<HTMLButtonElement>('[data-dpick]')];
@@ -309,6 +342,8 @@ const DATE_PICKS = [
     if (ids.includes(h)) { setView('coffee'); choose(h, true); return true; }
     // Ramadan and Eid are the gift boxes with their sticker: the old shop links go to the season pages.
     if (h === 'ramadan' || h === 'eid') { location.replace(`/${document.documentElement.lang === 'ar' ? 'ar' : 'en'}/${h}/`); return true; }
+    if (h === 'gifts') { setView('gifts'); requestAnimationFrame(() => document.getElementById('topTabs')?.scrollIntoView({ behavior: motion(), block: 'start' })); return true; }
+    if (h === 'beans') { setView(document.getElementById('view-tab-beans')!.hidden ? 'coffee' : 'beans'); return true; }
     if (DATE_IDS.includes(h)) {
       setView('dates');
       chooseDates(h === 'dates' ? 'everyday' : h, false);
@@ -345,7 +380,7 @@ const DATE_PICKS = [
 </script>
 
 <style>
-  .top-tabs { display: flex; gap: 8px; padding-bottom: 20px; }
+  .top-tabs { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 20px; }
   .top-tabs button { border: 0; border-radius: 999px; padding: 10px 22px; font: inherit; font-weight: 700; font-size: 17px; background: var(--sheet); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); cursor: pointer; display: inline-flex; gap: 8px; align-items: baseline; }
   .top-tabs button span { font-weight: 600; font-size: 15px; color: var(--ink-2); }
   .top-tabs button[aria-selected='true'] { background: var(--bunn); color: var(--paper); box-shadow: none; }

@@ -6,6 +6,14 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'shop-4-tabs', title: 'Shop: four tabs (Coffee, Dates, Gift boxes, Yemeni beans)', date: '2026-10-04',
+    checks: [
+      { id: 'tabs-4', text: 'Shop: tabs القهوة · Coffee, التمر · Dates, علب الهدايا · Gift boxes. The fourth, بن يمني · Yemeni beans, stays hidden until you show a Yemeni bean product.', links: [{ label: 'Shop (AR)', href: '/ar/shop/' }, { label: 'Shop (EN)', href: '/en/shop/' }] },
+      { id: 'tabs-gifts', text: 'Gift boxes tab: Coffee & Dates, Two Coffees, Reserve, Stuffed, Four Palms. “A gift?” on the Dates tab opens it.', links: [{ label: 'Gift boxes (EN)', href: '/en/shop/#gifts' }] },
+      { id: 'tabs-beans', text: 'To try the Yemeni beans: Admin → Shop → Products, show “Haraz”; the tab appears with the black box. Hide it again after.', links: [{ label: 'Desk', href: '/admin/' }, { label: 'Haraz page', href: '/en/shop/yemen-haraz/' }] },
+    ],
+  },
+  {
     id: '4-1', title: 'Round 4: Story page and Bunn & Tamr page', date: '2026-10-04',
     checks: [
       { id: '4-1-decisions-groups', text: 'Settings → Decisions: two lists, “What we need from you” (photos, address, prices, labels, words) and “Questions”, each in groups by type (Coffee, Dates, Gift boxes, Ramadan and Eid…) that open and close, with how many are still open.', links: [{ label: 'Desk', href: '/admin/' }] },

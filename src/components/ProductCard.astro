@@ -7,6 +7,7 @@ import { UI, path } from '../data/i18n';
 import Pouch from './Pouch.astro';
 import Sachet from './Sachet.astro';
 import BoxArt from './BoxArt.astro';
+import BlackBox from './BlackBox.astro';
 // sleeve: on the Ramadan and Eid pages, gift boxes open (and add) with that sleeve.
 interface Props { p: Product; lang: Lang; row?: boolean; sleeve?: 'ramadan' | 'eid' }
 const { p, lang, row = false, sleeve } = Astro.props;
@@ -19,6 +20,7 @@ const line = p.kind === 'kit' ? '+ ' + p.parts.map(x => (x.mini ? (ar ? 'ظرف 
   : p.kind === 'pack' ? (ar ? `لـ${forBase?.name.ar}` : `For ${forBase?.name.en}`)
   : p.kind === 'coffee' && p.spices.includes('husk') && p.id !== 'qishr' ? (ar ? 'قهوة وقشر، معاً في الكيس' : 'Coffee and qishr, together in the bag')
   : p.kind === 'coffee' && row && p.spices.length ? (ar ? `بال${p.spices.map(x => SPICES[x].name.ar).join(' وال')} فقط` : `With ${p.spices.map(x => SPICES[x].name.en.toLowerCase()).join(' and ')} only`)
+  : p.kind === 'coffee' && p.fam === 'origin' ? `${p.size[lang]} · ${ar ? 'في العلبة السوداء' : 'in the black box'}`
   : p.kind === 'coffee' ? p.taste[lang]
   : `${FAMILIES[p.fam].name[lang]} · ${p.size[lang]}`;
 const defaultOpt = p.kind === 'coffee' ? (p.grinds[0] ?? '') : p.kind === 'kit' ? (baseOf(p).grinds[0] ?? '') : p.kind === 'box' ? defaultBoxOpt(p) : '';
@@ -31,7 +33,9 @@ const saves = p.kind === 'kit' && !p.discovery ? [p.base, ...p.parts.map(x => x.
 ---
 <article class={`pc pc-${p.kind} ${row ? 'pc-row-card' : ''}`} data-product={p.id}>
   <a href={href} class="pc-media" tabindex="-1" aria-hidden="true">
-    {p.kind === 'coffee'
+    {p.kind === 'coffee' && p.fam === 'origin'
+      ? <BlackBox coffee={p} lang={lang} />
+      : p.kind === 'coffee'
       ? <div class="pc-pouch"><div class="face"><Pouch coffee={p} lang={lang} label={false} /></div></div>
       : p.kind === 'kit'
       ? <div class="pc-pouch pouch-kit"><div class="face"><Pouch coffee={baseOf(p)} lang={lang} label={false} /></div><div class="kit-packs">{p.parts.map(x => <Sachet pack={packOf(x.id)!} lang={lang} mini={x.mini} />)}</div></div>

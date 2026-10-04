@@ -14,7 +14,7 @@ export function weekStart(date = calgaryNow().date) {
   return wd === 4 ? date : wd >= 1 && wd <= 3 ? addDays(date, 4 - wd) : addDays(date, -((wd - 4 + 7) % 7));
 }
 
-type CoffeeRow = { id: string; name: string; grind: string; pouches: number; grams: number; inBoxes: number };
+type CoffeeRow = { id: string; name: string; grind: string; pouches: number; grams: number; inBoxes: number; blackBox?: boolean };
 
 export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hide') {
   const to = addDays(from, 6);
@@ -29,7 +29,7 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
     if (!p || p.kind !== 'coffee') return;
     const g = grind ?? p.grinds[0] ?? 'whole';
     const key = `${id}|${g}`;
-    const row = coffee.get(key) ?? { id, name: p.name.en, grind: g === 'whole' ? 'Whole husk' : GRINDS[g as keyof typeof GRINDS]?.en ?? g, pouches: 0, grams: 0, inBoxes: 0 };
+    const row = coffee.get(key) ?? { blackBox: p.fam === 'origin' || undefined, id, name: p.name.en, grind: g === 'whole' ? 'Whole husk' : GRINDS[g as keyof typeof GRINDS]?.en ?? g, pouches: 0, grams: 0, inBoxes: 0 };
     row.pouches += n; row.grams += n * grams(p.size.en); if (fromBox) row.inBoxes += n; // in gift boxes, styles and discovery packs
     coffee.set(key, row);
   };
@@ -99,8 +99,10 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
     dates: dateRows,
     stuffed: (Object.keys(stuffed) as FillingId[]).map(id => ({ id, name: FILLINGS[id].name.en, pieces: stuffed[id] ?? 0 })).filter(r => r.pieces),
     packaging: {
-      pouches250: coffeeRows.filter(r => r.grams / Math.max(1, r.pouches) === 250).reduce((n, r) => n + r.pouches, 0),
-      pouches100: coffeeRows.filter(r => r.grams / Math.max(1, r.pouches) === 100).reduce((n, r) => n + r.pouches, 0),
+      // The Yemeni beans go in their black box, not a pouch.
+      blackBoxes: coffeeRows.filter(r => r.blackBox).reduce((n, r) => n + r.pouches, 0),
+      pouches250: coffeeRows.filter(r => !r.blackBox && r.grams / Math.max(1, r.pouches) === 250).reduce((n, r) => n + r.pouches, 0),
+      pouches100: coffeeRows.filter(r => !r.blackBox && r.grams / Math.max(1, r.pouches) === 100).reduce((n, r) => n + r.pouches, 0),
       giftBoxes: { D24: boxes.D24, C12: boxes.C12, C2: boxes.C2 },
       everydayTrays: boxes.everyday,
       datePacks,

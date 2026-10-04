@@ -57,7 +57,8 @@ export async function liveCatalog(): Promise<Record<string, Live>> {
   return Object.fromEntries(PRODUCTS.map(p => {
     const r = by.get(p.id);
     const season = seasonOf(p.id);
-    const visible = r ? r.visible : true;
+    // The Yemeni beans start hidden: the owners show them in Admin → Shop → Products.
+    const visible = r ? r.visible : !(p.kind === 'coffee' && p.startHidden);
     // Retired boxes (the old seasonal copies) are never shown or sold.
     const shown = visible && (!season || seasons[season]) && !(p.kind === 'box' && p.retired);
     const partsOk = componentsOf(p.id, 1).slice(1).every(([id]) => !out(id));
@@ -106,7 +107,8 @@ export async function saveProduct(id: string, change: { price_cents?: number | n
   const cur = await one`SELECT price_cents, visible, available, stock, daily_cap FROM product_settings WHERE product_id = ${id}`;
   const next = {
     price_cents: change.price_cents === undefined ? cur?.price_cents ?? null : change.price_cents,
-    visible: change.visible ?? cur?.visible ?? true,
+    // Setting a price never shows a product that starts hidden (the Yemeni beans).
+    visible: change.visible ?? cur?.visible ?? !PRODUCTS.some(p => p.id === id && p.kind === 'coffee' && p.startHidden),
     available: change.available ?? cur?.available ?? true,
     stock: change.stock === undefined ? cur?.stock ?? null : change.stock,
     daily_cap: change.daily_cap === undefined ? cur?.daily_cap ?? null : change.daily_cap,

@@ -90,7 +90,25 @@ export const DECISIONS: Decision[] = [
     context: 'Today it is a draft signed “Hikaya”. Write yours here (Arabic and English) and the next session puts it on the page.',
     options: ['Given'],
   },
+  {
+    id: 'yemen-beans-details', kind: 'provide', topic: 'Yemeni beans · Lots and box', asked: '2026-10-04',
+    question: 'If we sell the Yemeni beans: the lots (regions, farms), their taste notes, the price, and the black box design',
+    context: 'Built and hidden: Shop → “Yemeni beans” tab, three placeholders (Haraz, Bani Matar, Yafa’i) at 100 g, drawn as a black box. Tell us the real lots and send the box artwork or photos.',
+    options: ['Given'],
+  },
   // ---------- questions ----------
+  {
+    id: 'yemen-beans-launch', topic: 'Yemeni beans · Launch', asked: '2026-10-04',
+    question: 'Do we sell the Yemeni beans (coffee grown in Yemen, 100 g in a black box), and when?',
+    context: 'Ready but hidden. To show them, open Admin → Shop → Products and switch each one to shown (and set its price); the “Yemeni beans” tab appears on the shop by itself.',
+    options: ['Yes, at launch', 'Later', 'No'],
+  },
+  {
+    id: 'yemen-beans-grind', topic: 'Yemeni beans · Grind', asked: '2026-10-04',
+    question: 'Are the Yemeni beans sold as whole beans, ground, or both (and which grind)?',
+    context: 'Built with two choices: whole beans, or ground coarse for the dallah.',
+    options: ['Whole beans only', 'Both (as now)', 'Ground only (write the grind below)'],
+  },
   {
     id: 'story-timeline', topic: 'Story page · Timeline', asked: '2026-10-04',
     question: 'The story page timeline no longer gives months. Is this wording right?',
