@@ -59,6 +59,7 @@ const KINDS: [string, string][] = ar
 </Base>
 
 <script>
+  import { errorText } from '../../scripts/errors';
   import { uploadPhoto } from '../../scripts/photo';
   const form = document.getElementById('helpForm') as HTMLFormElement;
   const lang = document.documentElement.lang as 'en' | 'ar';
@@ -96,7 +97,7 @@ const KINDS: [string, string][] = ar
       const d = await r.json();
       if (!r.ok) {
         if (d.fields) for (const k of Object.keys(d.fields)) if (form.elements.namedItem(k)) setErr(k, d.fields[k] === 'email' ? M.email : M.required);
-        throw new Error(d.message || M.fail);
+        throw Object.assign(new Error(), { d });
       }
       const files = Array.from((document.getElementById('h-photos') as HTMLInputElement).files ?? []).slice(0, 4);
       let ok = 0;
@@ -107,7 +108,7 @@ const KINDS: [string, string][] = ar
       document.getElementById('donePhotos')!.textContent = files.length ? M.photos(ok, files.length) : '';
       done.hidden = false; done.focus();
     } catch (x) {
-      err.textContent = (x as Error).message || M.fail; err.hidden = false;
+      err.textContent = errorText((x as any).d, ar, M.fail); err.hidden = false;
     } finally { btn.disabled = false; }
   });
 </script>

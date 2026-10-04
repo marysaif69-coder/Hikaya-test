@@ -9,7 +9,8 @@ export const json = (data: unknown, status = 200, headers: Record<string, string
 
 export const fail = (e: unknown) => {
   // `extra` carries the numbers and names a page needs to say the message in Arabic.
-  if (e instanceof HttpError) return json({ error: e.code, message: e.message, fields: (e as any).fields, extra: (e as any).extra }, e.status);
+  // `message_ar`: the Arabic message, for the few errors that carry their own detail (promo codes, gift cards).
+  if (e instanceof HttpError) return json({ error: e.code, message: e.message, message_ar: (e as any).message_ar, fields: (e as any).fields, extra: (e as any).extra }, e.status);
   console.error(e);
   return json({ error: 'server', message: 'Something went wrong on our side.' }, 500);
 };

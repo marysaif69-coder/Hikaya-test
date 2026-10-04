@@ -160,6 +160,7 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
   <script type="application/json" id="catalog" set:html={JSON.stringify({ lang, cart: path(lang, 'cart'), added: UI.added[lang], add: UI.add[lang], items: catalog })} />
   <script>
     import { initCart } from '../scripts/cart';
+    import { errorText } from '../scripts/errors';
     import { applyLive } from '../scripts/live';
     initCart();
     applyLive();
@@ -178,10 +179,10 @@ const fullTitle = title ? `${title} · ${lang === 'ar' ? 'حكاية' : 'Hikaya'
       try {
         const r = await fetch('/api/list', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, consent, lang: ar ? 'ar' : 'en' }) });
         const d = await r.json();
-        if (!r.ok) throw new Error(d.message);
+        if (!r.ok) throw Object.assign(new Error(), { d });
         msg.textContent = d.already ? (ar ? 'أنت على القائمة بالفعل.' : 'You are already on the list.') : (ar ? 'أرسلنا لك رسالة للتأكيد. افتحها واضغط الزر.' : 'We sent you an email to confirm. Open it and click the button.');
         lf.reset();
-      } catch (x) { msg.textContent = (x as Error).message || (ar ? 'حدث خطأ.' : 'Something went wrong.'); }
+      } catch (x) { msg.textContent = errorText((x as any).d, ar, ar ? 'حدث خطأ.' : 'Something went wrong.'); }
     });
     const btn = document.getElementById('menuBtn');
     const nav = document.getElementById('nav');

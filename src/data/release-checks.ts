@@ -6,6 +6,15 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: '2-5', title: 'Round 2 · batch 5: Arabic error messages and My account', date: '2026-10-04',
+    checks: [
+      { id: 'ar-promo', text: 'Arabic checkout: type a code that doesn’t exist; the message is in Arabic (هذا الرمز غير صحيح.). Try a used-up gift card: Arabic too.', links: [{ label: 'Checkout (AR)', href: '/ar/checkout/' }] },
+      { id: 'ar-login', text: 'Arabic My account: a wrong login code shows Arabic, not English.', links: [{ label: 'Account (AR)', href: '/ar/account/' }] },
+      { id: 'card-discount', text: 'My account, an order with a promo code: the discount line shows (−$5 (EID)), and the lines add up to the total. A refunded order says “Refunded”, not “Not paid yet”.', links: [{ label: 'Account (EN)', href: '/en/account/' }] },
+      { id: 'midnight', text: 'Settings → order-by 00:00: checkout says “12 am”, and the desk explains it closes a whole day earlier.', links: [{ label: 'Desk', href: '/admin/' }] },
+    ],
+  },
+  {
     id: '2-4', title: 'Round 2 · batch 4: naming, “from Yemen”, [address], Arabic text', date: '2026-10-04',
     checks: [
       { id: 'footer-line', text: 'Footer on any page: “Gulf, Yemeni-style and Shami coffee, and dates for the table” (no “Coffee from Yemen”).', links: [{ label: 'Home (AR)', href: '/ar/' }, { label: 'Home (EN)', href: '/en/' }] },

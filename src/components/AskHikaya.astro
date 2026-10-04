@@ -63,6 +63,8 @@ const T = {
 <script>
   import { add } from '../scripts/cart';
   import { uploadPhoto } from '../scripts/photo';
+  import { errorText } from '../scripts/errors';
+  const isAr = document.documentElement.lang === 'ar';
 
   type Action = { type: 'cart'; lines: { id: string; opt: string; qty: number }[] } | { type: 'photo'; ref: string; token: string } | { type: 'request'; ref: string };
   type Entry = { who: 'me' | 'hk'; text: string; actions?: Action[] };
@@ -127,7 +129,7 @@ const T = {
         const file = f.files?.[0]; if (!file) return;
         msg.textContent = T.photoBusy;
         const r = await uploadPhoto(file, a.ref, a.token);
-        msg.textContent = r.ok ? T.photoOk : (r.message || T.error);
+        msg.textContent = r.ok ? T.photoOk : errorText(r, isAr, T.error);
         f.value = '';
       });
       box.append(lab, msg);
@@ -190,13 +192,13 @@ const T = {
     try {
       const r = await fetch('/api/ask', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chat: st.chat, text, lang }) });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.message || T.error);
+      if (!r.ok) throw Object.assign(new Error(), { d });
       st.chat = d.chat;
       const actions: Action[] = d.actions ?? [];
       for (const a of actions) if (a.type === 'cart') a.lines.forEach(l => add(l.id, l.opt, l.qty));
       st.log.push({ who: 'hk', text: d.reply, actions });
     } catch (e) {
-      st.log.push({ who: 'hk', text: (e as Error).message || T.error });
+      st.log.push({ who: 'hk', text: (e as any).d ? errorText((e as any).d, isAr, T.error) : T.error });
     }
     busy = false; save(); paint();
     input.focus({ preventScroll: true });

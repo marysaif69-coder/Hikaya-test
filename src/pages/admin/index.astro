@@ -1902,7 +1902,7 @@ import { DECISIONS } from '../../data/decisions';
     $('cutDayField').hidden = mode !== 'weekly';
     $('cutPreview').textContent = mode === 'weekly'
       ? `Customers see: “Order by ${DAYS[Number((f.elements.namedItem('cutoffWeekday') as HTMLSelectElement).value)]}, ${hh} to get it Thursday to Sunday.”`
-      : `Customers see: “Order by ${hh} the evening before.”`;
+      : `Customers see: “Order by ${hh} the day before.”${h === 0 ? ' (00:00 is the very start of that day, so orders close a whole day earlier.)' : ''}`;
   }
   $('setForm').addEventListener('change', previewCut);
   $('setForm').addEventListener('submit', async e => {

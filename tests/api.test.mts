@@ -277,4 +277,15 @@ assert.equal(isUniqueViolation(Object.assign(new Error('Failed query: INSERT ...
 assert.equal(isUniqueViolation({ code: '23505' }), true); assert.equal(isUniqueViolation(new Error('unique-looking note')), false);
 ok('a duplicate ref is recognised whether or not the database driver wraps the error');
 
+// Errors in the page's language (src/scripts/errors.ts)
+const { errorText } = await import('../src/scripts/errors');
+assert.equal(errorText({ error: 'wrong-code', message: 'That code is not right.' }, true), 'الرمز غير صحيح.');
+assert.equal(errorText({ error: 'wrong-code', message: 'That code is not right.' }, false), 'That code is not right.');
+assert.equal(errorText({ error: 'login', message: 'login' }, false), 'Please log in first.');
+assert.equal(errorText({ error: 'made-up', message: 'Some English' }, true, 'عربي'), 'عربي');
+assert.equal(errorText({ error: 'promo', message: 'x', message_ar: 'انتهت صلاحية هذا الرمز.' }, true), 'انتهت صلاحية هذا الرمز.');
+const badPromo = await call(orders, '/api/promo', { body: { code: 'NOSUCHCODE', lines: [{ id: 'qishr', qty: 1 }] } });
+assert.equal(badPromo.data.error, 'promo'); assert.equal(badPromo.data.message_ar, 'هذا الرمز غير صحيح.');
+ok('server errors show in Arabic on Arabic pages (never the raw code or the English); promo reasons keep their detail');
+
 console.log(`\n${pass} checks passed`);

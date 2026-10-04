@@ -253,7 +253,7 @@ const ar = lang === 'ar';
       days = slots.days ?? []; open = slots.open !== false;
       if (slots.next) {
         const d = (iso: string, o: Intl.DateTimeFormatOptions) => new Date(iso + 'T12:00:00Z').toLocaleDateString(ar ? 'ar-u-nu-arab' : 'en-CA', { ...o, timeZone: 'UTC' });
-        const h = slots.next.orderBy.hour, hh = ar ? `${h > 12 ? h - 12 : h} ${h >= 12 ? 'مساءً' : 'صباحاً'}` : `${h > 12 ? h - 12 : h} ${h >= 12 ? 'pm' : 'am'}`;
+        const h = slots.next.orderBy.hour, hh = ar ? `${h % 12 || 12} ${h >= 12 ? 'مساءً' : 'صباحاً'}` : `${h % 12 || 12} ${h >= 12 ? 'pm' : 'am'}`;
         const by = `${d(slots.next.orderBy.date, { weekday: 'long', day: 'numeric', month: 'long' })}, ${hh}`;
         const range = slots.next.from === slots.next.to ? d(slots.next.from, { weekday: 'long', day: 'numeric', month: 'long' }) : `${d(slots.next.from, { weekday: 'long', day: 'numeric' })} – ${d(slots.next.to, { weekday: 'long', day: 'numeric', month: 'long' })}`;
         $('orderBy').textContent = ar ? `اطلب قبل ${by} ليصلك ${range}.` : `Order by ${by} to get it ${range}.`;
@@ -285,10 +285,10 @@ const ar = lang === 'ar';
     try {
       const r = await fetch('/api/promo', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code, lines: cartLines(), email: val('email') }) });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.message);
+      if (!r.ok) throw Object.assign(new Error(), { d });
       promo = d; msg.className = 'promo-msg'; msg.textContent = ar ? `طُبّق: ${d.label.ar}` : `Applied: ${d.label.en}`;
     } catch (e) {
-      promo = null; if (!quiet) { msg.className = 'promo-msg bad'; msg.textContent = (e as Error).message || (ar ? 'تعذّر تطبيق الرمز.' : 'That code could not be applied.'); }
+      promo = null; if (!quiet) { msg.className = 'promo-msg bad'; msg.textContent = errorText((e as any).d, ar, ar ? 'تعذّر تطبيق الرمز.' : 'That code could not be applied.'); }
     }
     paint();
   }
@@ -298,9 +298,9 @@ const ar = lang === 'ar';
     if (!code) { gift = null; msg.textContent = ''; paint(); return; }
     try {
       const r = await fetch('/api/giftcard/check', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code }) });
-      const d = await r.json(); if (!r.ok) throw new Error(d.message);
+      const d = await r.json(); if (!r.ok) throw Object.assign(new Error(), { d });
       gift = d; msg.className = 'promo-msg'; msg.textContent = ar ? `الرصيد: ${money(d.balance / 100)}` : `Balance: ${money(d.balance / 100)}`;
-    } catch (x) { gift = null; msg.className = 'promo-msg bad'; msg.textContent = (x as Error).message || (ar ? 'تعذّر استخدام البطاقة.' : 'That card could not be used.'); }
+    } catch (x) { gift = null; msg.className = 'promo-msg bad'; msg.textContent = errorText((x as any).d, ar, ar ? 'تعذّر استخدام البطاقة.' : 'That card could not be used.'); }
     paint();
   });
   $('promoForm').addEventListener('submit', e => { e.preventDefault(); applyPromo(($('f-promo') as HTMLInputElement).value.trim()); });
@@ -346,8 +346,8 @@ const ar = lang === 'ar';
           for (const [k, v] of Object.entries(data.fields)) if (FIELD[k]) setErr($(FIELD[k]), MSG[v as string] ?? MSG.required);
           form.querySelector<HTMLElement>('[aria-invalid=true]')?.focus();
         }
-        if (data.error === 'giftcard') { gift = null; $('gcMsg').className = 'promo-msg bad'; $('gcMsg').textContent = data.message; paint(); }
-        if (data.error === 'promo') { promo = null; $('promoMsg').className = 'promo-msg bad'; $('promoMsg').textContent = data.message; paint(); }
+        if (data.error === 'giftcard') { gift = null; $('gcMsg').className = 'promo-msg bad'; $('gcMsg').textContent = errorText(data, ar, ar ? 'تعذّر استخدام البطاقة.' : 'That card could not be used.'); paint(); }
+        if (data.error === 'promo') { promo = null; $('promoMsg').className = 'promo-msg bad'; $('promoMsg').textContent = errorText(data, ar, ar ? 'تعذّر تطبيق الرمز.' : 'That code could not be applied.'); paint(); }
         if (data.error === 'slot-full' || data.error === 'too-soon') { const s = await fetch('/api/slots').then(r => r.json()); days = s.days; paintDays(); paint(); }
         fe.textContent = errorText(data, ar, ar ? 'تعذّر إرسال الطلب.' : 'We could not send your order.'); fe.hidden = false;
         return;

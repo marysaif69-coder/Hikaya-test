@@ -74,6 +74,7 @@ const AMOUNTS = [25, 50, 75, 100];
 </style>
 
 <script>
+  import { errorText } from '../../scripts/errors';
   const lang = document.documentElement.lang as 'en' | 'ar', ar = lang === 'ar';
   const form = document.getElementById('gc') as HTMLFormElement;
   const val = (n: string) => (form.elements.namedItem(n) as RadioNodeList | HTMLInputElement).value;
@@ -92,7 +93,7 @@ const AMOUNTS = [25, 50, 75, 100];
       const d = await r.json();
       if (!r.ok) {
         for (const [k, v] of Object.entries(d.fields ?? {})) { const p = document.getElementById(FIELD[k] ?? '')?.closest('.field')?.querySelector<HTMLElement>('.err'); if (p) { p.textContent = MSG[v as string] ?? MSG.required; p.hidden = false; } }
-        err.textContent = d.message ?? (ar ? 'تعذّر الإرسال.' : 'That did not go through.'); err.hidden = false; return;
+        err.textContent = errorText(d, ar, ar ? 'تعذّر الإرسال.' : 'That did not go through.'); err.hidden = false; return;
       }
       location.href = d.payUrl || `/${lang}/thanks/?giftcard=${encodeURIComponent(d.ref)}`;
     } catch { err.textContent = ar ? 'انقطع الاتصال. حاول مرة أخرى.' : 'The connection dropped. Try again.'; err.hidden = false; }

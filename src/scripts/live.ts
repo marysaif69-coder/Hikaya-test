@@ -1,6 +1,7 @@
 // The pages are built once; prices, sold-out switches, hidden products and the Ramadan/Eid
 // seasons change from the admin desk. This applies the live values on every page: the last
 // known values straight away (from this browser), then fresh ones from /api/catalog.
+import { errorText } from './errors';
 type LiveProduct = { price: number | null; shown: boolean; available: boolean; left: number | null };
 type Live = { seasons: { ramadan: boolean; eid: boolean }; products: Record<string, LiveProduct>; business?: { address: string; hours: string; phone: string } };
 
@@ -120,9 +121,9 @@ function notifyForm(product: string) {
     const email = (f.querySelector('input') as HTMLInputElement).value.trim(), out = f.querySelector('p')!;
     try {
       const r = await fetch('/api/notify-me', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ product, email, lang: ar ? 'ar' : 'en' }) });
-      const d = await r.json(); if (!r.ok) throw new Error(d.message);
+      const d = await r.json(); if (!r.ok) throw Object.assign(new Error(), { d });
       out.textContent = ar ? 'سنرسل لك رسالة واحدة حين يعود.' : "We'll send you one email when it's back.";
-    } catch (x) { out.textContent = (x as Error).message || (ar ? 'تحقق من البريد.' : 'Check the email.'); }
+    } catch (x) { out.textContent = errorText((x as any).d, ar, ar ? 'تحقق من البريد.' : 'Check the email.'); }
   });
   return f;
 }

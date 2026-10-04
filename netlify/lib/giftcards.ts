@@ -101,8 +101,8 @@ export async function sellGiftCardHere(b: any, by: string, req?: Request) {
 export async function giftCardBalance(raw: unknown) {
   const code = normGift(raw);
   const g = code ? await one`SELECT code, balance_cents FROM gift_cards WHERE code = ${code} AND paid_at IS NOT NULL AND cancelled_at IS NULL` : null;
-  if (!g) throw new HttpError(400, 'giftcard', 'That gift card code is not valid.');
-  if (g.balance_cents <= 0) throw new HttpError(400, 'giftcard', 'That gift card has been used up.');
+  if (!g) throw Object.assign(new HttpError(400, 'giftcard', 'That gift card code is not valid.'), { message_ar: 'رمز بطاقة الهدية غير صحيح.' });
+  if (g.balance_cents <= 0) throw Object.assign(new HttpError(400, 'giftcard', 'That gift card has been used up.'), { message_ar: 'استُخدم رصيد بطاقة الهدية كله.' });
   return { code: g.code as string, balance: g.balance_cents as number };
 }
 
@@ -116,7 +116,7 @@ export async function takeFromGiftCard(code: string, want: number) {
     const r = await one`UPDATE gift_cards SET balance_cents = balance_cents - ${take} WHERE code = ${code} AND balance_cents >= ${take} AND paid_at IS NOT NULL AND cancelled_at IS NULL RETURNING id`;
     if (r) return take;
   }
-  throw new HttpError(409, 'giftcard', 'That gift card was just used. Try again.');
+  throw Object.assign(new HttpError(409, 'giftcard', 'That gift card was just used. Try again.'), { message_ar: 'استُخدمت بطاقة الهدية للتو. حاول مرة أخرى.' });
 }
 export async function giveBackToGiftCard(code: string | null, cents: number) {
   if (code && cents > 0) await sql`UPDATE gift_cards SET balance_cents = LEAST(amount_cents, balance_cents + ${cents}) WHERE code = ${code}`;

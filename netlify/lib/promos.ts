@@ -12,22 +12,22 @@ export const randomCode = (prefix: string) => `${prefix}-` + Array.from({ length
 
 export type Applied = { code: string; discount_cents: number; free_delivery: boolean; label: { en: string; ar: string } };
 
-const fail = (en: string) => { throw new HttpError(400, 'promo', en); };
+const fail = (en: string, ar: string) => { throw Object.assign(new HttpError(400, 'promo', en), { message_ar: ar }); };
 
 /** Checks a code against a basket. Does not use it up; createOrder does that. */
 export async function checkPromo(raw: unknown, subtotal_cents: number, email = ''): Promise<Applied> {
   const code = normCode(raw);
-  if (!code) fail('Enter a code.');
+  if (!code) fail('Enter a code.', 'اكتب الرمز.');
   const p = await one`SELECT * FROM promo_codes WHERE code = ${code}`;
   const today = calgaryNow().date;
-  if (!p || !p.active) fail('That code is not valid.');
-  if (p!.starts_on && String(p!.starts_on instanceof Date ? p!.starts_on.toISOString() : p!.starts_on).slice(0, 10) > today) fail('That code is not active yet.');
-  if (p!.ends_on && String(p!.ends_on instanceof Date ? p!.ends_on.toISOString() : p!.ends_on).slice(0, 10) < today) fail('That code has expired.');
-  if (p!.max_uses !== null && p!.uses >= p!.max_uses) fail('That code has been used up.');
-  if (subtotal_cents < p!.min_subtotal_cents) fail(`That code needs an order of $${(p!.min_subtotal_cents / 100).toFixed(0)} or more.`);
+  if (!p || !p.active) fail('That code is not valid.', 'هذا الرمز غير صحيح.');
+  if (p!.starts_on && String(p!.starts_on instanceof Date ? p!.starts_on.toISOString() : p!.starts_on).slice(0, 10) > today) fail('That code is not active yet.', 'هذا الرمز لم يبدأ بعد.');
+  if (p!.ends_on && String(p!.ends_on instanceof Date ? p!.ends_on.toISOString() : p!.ends_on).slice(0, 10) < today) fail('That code has expired.', 'انتهت صلاحية هذا الرمز.');
+  if (p!.max_uses !== null && p!.uses >= p!.max_uses) fail('That code has been used up.', 'نفد استخدام هذا الرمز.');
+  if (subtotal_cents < p!.min_subtotal_cents) fail(`That code needs an order of $${(p!.min_subtotal_cents / 100).toFixed(0)} or more.`, `هذا الرمز لطلب من ${(p!.min_subtotal_cents / 100).toFixed(0)} $ أو أكثر.`);
   if (p!.once_per_email && email) {
     const used = await one`SELECT 1 AS x FROM orders WHERE promo_code = ${code} AND email = ${email.toLowerCase()} AND status <> 'cancelled' LIMIT 1`;
-    if (used) fail('You have already used that code.');
+    if (used) fail('You have already used that code.', 'استخدمت هذا الرمز من قبل.');
   }
   return shape(p!, subtotal_cents);
 }

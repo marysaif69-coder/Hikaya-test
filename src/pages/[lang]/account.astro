@@ -86,6 +86,8 @@ const ar = lang === 'ar';
   const q = new URLSearchParams(location.search);
   const money = (c: number) => { const v = (c / 100).toFixed(c % 100 ? 2 : 0); return ar ? `${v} $` : `$${v}`; };
   const fmtDay = (iso: string) => new Date(iso + 'T12:00:00Z').toLocaleDateString(ar ? 'ar-u-nu-arab' : 'en-CA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+  // Payment state on an order card; "Not paid yet" only for unpaid orders.
+  const PST: Record<string, string> = { paid: ar ? 'مدفوع' : 'Paid', 'partly-refunded': ar ? 'استُرد جزء منه' : 'Partly refunded', refunded: ar ? 'استُرد' : 'Refunded' };
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
   const STEPS = {
     pickup: [['received', ar ? 'وصل الطلب' : 'Received'], ['confirmed', ar ? 'تأكّد' : 'Confirmed'], ['ready', ar ? 'جاهز للاستلام' : 'Ready for pickup'], ['completed', ar ? 'تم الاستلام' : 'Picked up']],
@@ -119,10 +121,11 @@ const ar = lang === 'ar';
       ${o.status === 'cancelled' ? `<p class="cancelled">${ar ? 'أُلغي هذا الطلب.' : 'This order was cancelled.'}</p>` :
         `<ol class="steps">${steps.map((s, i) => `<li class="${i < idx ? 'on' : i === idx ? 'now' : ''}">${s[1]}</li>`).join('')}</ol>`}
       ${o.stopsBefore != null ? `<p class="eta">${aheadText(o.stopsBefore)}</p>` : ''}
-      <ul class="its">${its}${o.delivery ? `<li><span>${ar ? 'التوصيل' : 'Delivery'}</span><span class="tnum">${money(o.delivery)}</span></li>` : ''}</ul>
+      <ul class="its">${its}${o.delivery ? `<li><span>${ar ? 'التوصيل' : 'Delivery'}</span><span class="tnum">${money(o.delivery)}</span></li>` : ''}${o.discount ? `<li><span>${ar ? 'خصم' : 'Discount'}${o.promo ? ` (${esc(o.promo)})` : ''}</span><span class="tnum">−${money(o.discount)}</span></li>` : ''}</ul>
       ${o.giftCard ? `<p class="its"><span>${ar ? 'بطاقة هدية' : 'Gift card'}: −${money(o.giftCard)}</span></p>` : ''}
       <p class="tot"><span>${ar ? 'الإجمالي' : 'Total'}</span><span class="tnum">${money(o.total)}</span></p>
-      <p class="pay">${o.total === 0 && o.giftCard ? (ar ? 'دُفع ببطاقة هدية' : 'Paid with a gift card') : PAY[o.payment] ?? ''} · ${o.paymentStatus === 'paid' ? `<b>${ar ? 'مدفوع' : 'Paid'}</b>` : rest ? (ar ? `الباقي <span class="tnum">${money(rest)}</span>` : `<span class="tnum">${money(rest)}</span> still to pay`) : (ar ? 'لم يُدفع بعد' : 'Not paid yet')}</p>
+      ${o.refunded ? `<p class="its"><span>${ar ? 'استُرد' : 'Refunded'}: <span class="tnum">${money(o.refunded)}</span></span></p>` : ''}
+      <p class="pay">${o.total === 0 && o.giftCard ? (ar ? 'دُفع ببطاقة هدية' : 'Paid with a gift card') : PAY[o.payment] ?? ''} · ${PST[o.paymentStatus] ? `<b>${PST[o.paymentStatus]}</b>` : rest ? (ar ? `الباقي <span class="tnum">${money(rest)}</span>` : `<span class="tnum">${money(rest)}</span> still to pay`) : (ar ? 'لم يُدفع بعد' : 'Not paid yet')}</p>
       <div class="acts">${o.payUrl && o.status !== 'cancelled' ? `<a class="btn tamr" href="${esc(o.payUrl)}">${rest ? (ar ? 'ادفع الباقي' : 'Pay the rest') : ar ? 'ادفع الآن' : 'Pay now'}</a>` : ''}${canCancel ? `<button class="btn line" type="button" data-cancel="${esc(o.ref)}">${ar ? 'إلغاء الطلب' : 'Cancel order'}</button>` : ''}${canMove ? `<button class="btn line" type="button" data-move="${esc(o.ref)}">${ar ? 'غيّر الموعد' : 'Change day'}</button>` : ''}${canAgain ? `<button class="btn primary again" type="button" data-again="${esc(o.ref)}">${ar ? 'اطلبه مرة أخرى' : 'Order again'}</button>` : ''}</div>
     </article>`;
   }
