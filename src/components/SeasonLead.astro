@@ -1,0 +1,36 @@
+---
+// A season page's lead box: one of the gift boxes under a seasonal headline, opening on its page
+// with the season's sticker (and, for Eid Hosting, Mixed) already chosen. The product keeps its name.
+import type { Box, L, Lang } from '../data/products';
+import { priceText, SLEEVES, MIXED, varietiesOf } from '../data/products';
+import { path } from '../data/i18n';
+import BoxArt from './BoxArt.astro';
+interface Props { p: Box; lang: Lang; sleeve: 'ramadan' | 'eid'; title: L; line: L; opt?: string }
+const { p, lang, sleeve, title, line, opt } = Astro.props;
+const ar = lang === 'ar';
+// Mixed: say how it splits, not "one variety".
+const each = opt === 'mixed' && p.count ? p.count / Math.max(1, varietiesOf(p).length) : 0;
+const inside = each ? `${p.size[lang]}, ${MIXED[lang]}: ${ar ? `${String(each).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[+d])} من كل صنف` : `${each} of each`}` : p.contents[lang];
+const href = path(lang, `shop/${p.id}`) + `?sleeve=${sleeve}` + (opt ? `&opt=${opt}` : '');
+---
+<article class="lead-box" data-product={p.id}>
+  <a class="lb-img" href={href} tabindex="-1" aria-hidden="true"><BoxArt p={p} lang={lang} sleeve={sleeve} /></a>
+  <div class="lb-txt">
+    <h3 class="h-m">{title[lang]}{!ar && <span lang="ar">{title.ar}</span>}</h3>
+    <p class="lb-line">{line[lang]}</p>
+    <p class="muted">{p.name[lang]} · {inside} · {SLEEVES[sleeve][lang]}</p>
+    <p class="lb-buy"><span class="price" data-price-for={p.id}>{priceText(p.price, lang)}</span> <a class="btn tamr" href={href}>{ar ? 'اختر ما فيها' : 'Choose what goes in'}</a></p>
+  </div>
+</article>
+
+<style>
+  .lead-box { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 28px; align-items: center; padding: 18px; border-radius: 26px; background: var(--sheet); box-shadow: inset 0 0 0 1.5px var(--line); margin-top: 28px; }
+  @media (max-width: 760px) { .lead-box { grid-template-columns: 1fr; gap: 16px; } }
+  .lb-img { display: block; border-radius: 18px; overflow: hidden; aspect-ratio: 4 / 5; max-width: 420px; }
+  .lb-txt { display: grid; gap: 10px; }
+  .lb-txt h3 span { display: block; font-size: 17px; color: var(--ink-2); font-weight: 600; margin-top: 4px; }
+  .lb-line { font-size: 19px; margin: 0; }
+  .lb-txt p { margin: 0; }
+  .lb-buy { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+  .lb-buy .price { font-weight: 700; }
+</style>

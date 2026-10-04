@@ -7,6 +7,7 @@
 //               "order by Tuesday 8 pm to get it this Thursday to Sunday"
 import { sql, one } from './db';
 import { HttpError } from './http';
+import { EID } from '../../src/data/calendar';
 
 export const WINDOWS = ['11:00–14:00', '14:00–17:00', '17:00–20:00'] as const;
 export const SERVICE_DAYS = [4, 5, 6, 0]; // Thu, Fri, Sat, Sun
@@ -89,7 +90,17 @@ export async function availability(days = 42, now = new Date()) {
   const first = out[0];
   const covers = first ? out.filter(x => x.orderBy.date === first.orderBy.date && x.orderBy.hour === first.orderBy.hour).map(x => x.date) : [];
   const next = first ? { orderBy: first.orderBy, from: covers[0], to: covers[covers.length - 1] } : null;
-  return { open: s.ordering.open, from, cutoffMode: s.ordering.cutoffMode, next, days: out };
+  return { open: s.ordering.open, from, cutoffMode: s.ordering.cutoffMode, next, days: out, eid: eidOrderBy(s.ordering) };
+}
+
+/** Eid: the last service day before Eid (expected date in calendar.ts) and its order-by deadline,
+ * from the same settings as checkout, so the Eid page can say "order by …". */
+export function eidOrderBy(o: Ordering, eid = EID) {
+  for (let i = 1; i <= 14; i++) {
+    const d = addDays(eid, -i);
+    if (SERVICE_DAYS.includes(weekday(d)) && !o.closedDates.includes(d) && d >= o.firstDay) return { eid, day: d, orderBy: cutoffFor(d, o) };
+  }
+  return null;
 }
 
 /** `exceptOrder` leaves out an order being moved, so it doesn't count against its own day.

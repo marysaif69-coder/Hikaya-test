@@ -87,7 +87,7 @@ await call(admin, '/api/admin/products/hijazi', { cookie: adm, body: { visible: 
 assert.equal((await order({ lines: [{ id: 'hijazi', qty: 1 }] })).data.error, 'not-offered'); ok('a hidden product cannot be ordered');
 await call(admin, '/api/admin/seasons', { cookie: adm, body: { ramadan: false } });
 const cat = (await call(orders, '/api/catalog')).data;
-assert.equal(cat.seasons.ramadan, false); assert.equal(cat.products['guest-box'].shown, true); ok('Ramadan off: the gift boxes stay (only their Ramadan sleeve goes)');
+assert.equal(cat.seasons.ramadan, false); assert.equal(cat.products['guest-box'].shown, true); ok('Ramadan off: the gift boxes stay (only the Ramadan sticker goes)');
 for (const id of ['iftar-pair', 'eid-coffee-dates', 'eid-dates', 'eid-duo', 'ramadan-box']) {
   assert.equal(cat.products[id].shown, false, id);
   const r = await order({ lines: [{ id, opt: 'khalas', qty: 1 }] }); assert.equal(r.status, 409, id); assert.equal(r.data.error, 'retired', id);
@@ -1589,11 +1589,11 @@ ok('a regular order with Medjool or khudri in the Everyday box is not placed; th
   const sr = await order({ day, email: 'sr@example.com', lines: [{ id: 'guest-box', opt: 'hadrami|ajwa', qty: 1, sleeve: 'ramadan' }, { id: 'coffee-duo', opt: 'najdi|yemeni', qty: 1, sleeve: 'eid' }, { id: 'dates-1kg', opt: 'khalas', qty: 1, sleeve: 'eid' }] });
   assert.equal(sr.status, 201, JSON.stringify(sr.data));
   const srRows = await opt(sr.data.ref);
-  assert.deepEqual(srRows.map(r => r.sleeve), ['ramadan', 'regular', null]); ok('a Ramadan sleeve is kept in Ramadan; an Eid sleeve while Eid is off is not (gold sleeve); Everyday dates take no sleeve');
+  assert.deepEqual(srRows.map(r => r.sleeve), ['ramadan', 'regular', null]); ok('a Ramadan sticker is kept in Ramadan; an Eid sticker while Eid is off is not; Everyday dates take none');
   assert.equal((await order({ day, lines: [{ id: 'guest-box', opt: 'hadrami|ajwa', qty: 1, sleeve: 'gold-foil' }] })).status, 201); ok('an unknown sleeve falls back to the gold sleeve');
   const w2 = (await call(admin, `/api/admin/week?from=${wk}`, { cookie: adm })).data;
-  assert.equal(w2.packaging.sleeves.ramadan - w1.packaging.sleeves.ramadan, 1); assert.equal(w2.packaging.sleeves.regular - w1.packaging.sleeves.regular, 2);
-  ok('the week sheet counts the Ramadan sleeve from the order line');
+  assert.equal(w2.packaging.stickers.ramadan - w1.packaging.stickers.ramadan, 1); assert.equal(w2.packaging.stickers.eid - w1.packaging.stickers.eid, 0); assert.equal(w2.packaging.sleeves.regular - w1.packaging.sleeves.regular, 3);
+  ok('the week sheet: every gift box takes the gold sleeve; the Ramadan sticker is counted from the order line');
   const slip = (await call(admin, `/api/admin/day?date=${day}`, { cookie: adm })).data.pickups.flatMap((w: any) => w.orders).find((o: any) => o.ref === sr.data.ref);
   assert.equal(slip.items[0].sleeve, 'ramadan'); ok('packing slips get the sleeve');
   // Editing the order in the desk keeps the sleeve.
@@ -1606,8 +1606,21 @@ ok('a regular order with Medjool or khudri in the Everyday box is not placed; th
   const mb = sent.length;
   await daily('2027-10-21');
   const ob = (await pg.query(`SELECT * FROM subscriptions WHERE email = 'old-box@example.com'`)).rows[0] as any;
-  assert.match(ob.last_note, /^Not placed/); assert.ok(sent.slice(mb).some(m => m.to?.includes('old-box@example.com') && /Ramadan or Eid sleeve/.test(m.html + m.text)));
+  assert.match(ob.last_note, /^Not placed/); assert.ok(sent.slice(mb).some(m => m.to?.includes('old-box@example.com') && /Ramadan or Eid sticker/.test(m.html + m.text)));
   ok('a regular order with a retired box is not placed; the customer gets the email');
+}
+
+// ---------- Eid order-by (round 3, batch 4) ----------
+{
+  const { eidOrderBy } = await import('../netlify/lib/slots');
+  const o = { open: true, firstDay: '2027-01-22', cutoffHour: 20, cutoffMode: 'weekly' as const, cutoffWeekday: 2, closedDates: [] as string[] };
+  assert.deepEqual(eidOrderBy(o, '2027-03-09'), { eid: '2027-03-09', day: '2027-03-07', orderBy: { date: '2027-03-02', hour: 20 } });
+  assert.equal(eidOrderBy({ ...o, closedDates: ['2027-03-07'] }, '2027-03-09')!.day, '2027-03-06');
+  assert.ok((await call(orders, '/api/slots')).data.eid?.orderBy); ok('Eid: the last day before it and its order-by come from the deadline settings (and /api/slots)');
+  const W = await import('../netlify/lib/week');
+  assert.ok(W.weekSheet); // sheet shape: stickers apart from sleeves
+  const w = (await call(admin, '/api/admin/week?from=2027-10-07', { cookie: adm })).data;
+  assert.ok('stickers' in w.packaging && !('ramadan' in w.packaging.sleeves)); ok('the week sheet counts Ramadan and Eid stickers, not seasonal sleeves');
 }
 
 console.log(`\n${pass} checks passed`);

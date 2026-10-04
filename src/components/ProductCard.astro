@@ -6,6 +6,7 @@ import { FAMILIES, SPICES, priceText, baseOf, packOf, COFFEES, allergyNote, defa
 import { UI, path } from '../data/i18n';
 import Pouch from './Pouch.astro';
 import Sachet from './Sachet.astro';
+import BoxArt from './BoxArt.astro';
 // sleeve: on the Ramadan and Eid pages, gift boxes open (and add) with that sleeve.
 interface Props { p: Product; lang: Lang; row?: boolean; sleeve?: 'ramadan' | 'eid' }
 const { p, lang, row = false, sleeve } = Astro.props;
@@ -36,7 +37,7 @@ const saves = p.kind === 'kit' && !p.discovery ? [p.base, ...p.parts.map(x => x.
       ? <div class="pc-pouch pouch-kit"><div class="face"><Pouch coffee={baseOf(p)} lang={lang} label={false} /></div><div class="kit-packs">{p.parts.map(x => <Sachet pack={packOf(x.id)!} lang={lang} mini={x.mini} />)}</div></div>
       : p.kind === 'pack'
       ? <div class="pc-pouch pouch-pack"><Sachet pack={p} lang={lang} /></div>
-      : <img src={p.img} alt="" loading="lazy" width="600" height="750" />}
+      : <BoxArt p={p} lang={lang} sleeve={withSleeve} />}
   </a>
   <div class="pc-body">
     <h3><a href={href}>{p.name[lang]}</a>{lang === 'en' && <span lang="ar">{p.name.ar}</span>}</h3>

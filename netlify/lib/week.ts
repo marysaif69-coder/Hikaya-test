@@ -48,7 +48,8 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
   const stuffed: Partial<Record<FillingId, number>> = {};
   const datePacks = { g250: 0, g500: 0, g1000: 0 };
   const boxes = { D24: 0, C12: 0, C2: 0, everyday: 0 };
-  const sleeves = { regular: 0, ramadan: 0, eid: 0 };
+  const sleeves = { regular: 0 };
+  const stickers = { ramadan: 0, eid: 0 };
   const products = new Map<string, { name: string; option: string; qty: number }>();
   const days = new Map<string, { day: string; pickup: Set<string>; delivery: Set<string> }>();
 
@@ -68,8 +69,13 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
       continue;
     }
     boxes[p.insert] += r.qty;
-    // The sleeve chosen on the order line (Ramadan, Eid), else the box's own.
-    if (p.insert !== 'everyday') sleeves[(['regular', 'ramadan', 'eid'].includes(r.sleeve) ? r.sleeve : p.sleeve) as Sleeve] += r.qty;
+    // Every gift box has the gold sleeve; Ramadan and Eid add our Ø50 sticker (from the order line,
+    // else the box's own: the retired seasonal boxes).
+    if (p.insert !== 'everyday') {
+      sleeves.regular += r.qty;
+      const occ = (['regular', 'ramadan', 'eid'].includes(r.sleeve) ? r.sleeve : p.sleeve) as Sleeve;
+      if (occ !== 'regular') stickers[occ] += r.qty;
+    }
     // Bags, packs and dates in pieces (Mixed split per kind; each chosen coffee is a 250 g bag of that style).
     const c = boxContents(p, r.option);
     for (const [cid, n] of Object.entries(c.coffee)) addCoffee(cid, null, n * r.qty, true);
@@ -99,6 +105,7 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
       everydayTrays: boxes.everyday,
       datePacks,
       sleeves,
+      stickers,
       paperCups: boxes.D24 * 24 + boxes.C12 * 12,
     },
     products: [...products.values()].sort((a, b) => a.name.localeCompare(b.name)),

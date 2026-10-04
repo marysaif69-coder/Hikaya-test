@@ -6,6 +6,64 @@ export type Decision = { id: string; topic: string; question: string; context: s
 
 export const DECISIONS: Decision[] = [
   {
+    id: 'ramadan-deliveries', topic: 'Ramadan · Delivery times', asked: '2026-10-04',
+    question: 'Ramadan deliveries: end the delivery windows before iftar, or keep 17:00–20:00 and tell customers which windows arrive before iftar?',
+    context: 'The Ramadan page promised “Ramadan orders arrive before sunset”, but checkout offers 17:00–20:00 on Ramadan days (sunset is about 5:30–6:30 pm). The page now says: for delivery before iftar, choose 11–2 or 2–5. Ending the windows earlier can be built from the iftar times in the calendar.',
+    options: ['Keep the windows, the page tells them (as now)', 'End Ramadan deliveries before iftar'],
+  },
+  {
+    id: 'thirty-nights', topic: 'Ramadan · Idea', asked: '2026-10-04',
+    question: '“ثلاثون ليلة · Thirty Nights”: 30 Reserve dates, one for each iftar. Do we make it?',
+    context: 'Not built. It needs a 30-date insert (D30), which has to be in the China packaging order by 10 November.',
+    options: ['Yes, add the D30 insert to the packaging order', 'No', 'Next year'],
+  },
+  {
+    id: 'sticker-quantities', topic: 'Packaging · Stickers', asked: '2026-10-04',
+    question: 'How many Ramadan and Eid stickers (Ø50) do we order, and how many gold sleeves (for the 10 November packaging order)?',
+    context: 'Every gift box has the same gold khalal sleeve; Ramadan and Eid add our own Ø50 sticker. The week sheet now counts gold sleeves for every gift box and the stickers apart, and Supplies shows them as “Ramadan stickers (Ø50)” and “Eid stickers (Ø50)”.',
+  },
+  {
+    id: 'gift-box-names', topic: 'Gift boxes · Names', asked: '2026-10-04',
+    question: 'Names: “Coffee & Dates / قهوة وتمر” or keep “The Guest Box / صندوق الضيف”? “Two Coffees / قهوتان” or keep “The Coffee Duo / ثنائي القهوة”?',
+    context: 'The site now uses the plain names. Either can be changed in Admin → Shop → Words.',
+    options: ['Plain names (as now)', 'The Guest Box and The Coffee Duo', 'Other (write below)'],
+  },
+  {
+    id: 'two-coffees-choice', topic: 'Gift boxes · Two Coffees', asked: '2026-10-04',
+    question: 'Two Coffees: any two coffees, or set pairs?',
+    context: 'Built: any two of the family styles and bags (not qishr, not the tasting boxes).',
+    options: ['Any two (as now)', 'Set pairs (write which below)'],
+  },
+  {
+    id: 'coffee-dates-styles', topic: 'Gift boxes · Coffee & Dates', asked: '2026-10-04',
+    question: 'Coffee & Dates: can any coffee go in, or only the Gulf and Yemeni styles?',
+    context: 'Built: any family style or bag (Najdi, Qassimi, Hijazi, Hadrami, Rada’i, Baydani, Gulf, Yemeni, Jubani, Shami, Shami sada), not qishr or the tasting boxes.',
+    options: ['Any (as now)', 'Gulf and Yemeni styles only', 'Other (write below)'],
+  },
+  {
+    id: 'may-contain-nuts', topic: 'Dates · Allergens', asked: '2026-10-04',
+    question: 'Plain dates are packed in the same kitchen as the nut and stuffed dates: does a “may contain tree nuts” line go on the Everyday and Reserve labels?',
+    context: 'Part of the food-safety plan; ask your AHS inspector. Until then labels and the site show no “may contain” line, and Ask Hikaya says it can’t confirm cross-contact yet.',
+    options: ['Yes, “may contain tree nuts” on plain dates', 'No (separate packing)', 'Ask AHS first'],
+  },
+  {
+    id: 'supplier-claims', topic: 'Dates · Reserve', asked: '2026-10-04',
+    question: 'What does the supplier certify for the Reserve dates: “hand-picked”, “larger”, the grade?',
+    context: 'The Reserve box text shows these with [TBD: confirm with the supplier] until you confirm them.',
+  },
+  {
+    id: 'caramel-almond', topic: 'Dates · Stuffed', asked: '2026-10-04',
+    question: 'Caramel with almonds: yes or no after your tasting?',
+    context: 'On hold (milk and almonds). If yes, it becomes a fifth filling and Mixed needs new counts (see the Stuffed Mixed question).',
+    options: ['Yes, sell it', 'No'],
+  },
+  {
+    id: 'dates-prices', topic: 'Dates · Prices', asked: '2026-10-04',
+    question: 'Prices for each size and box. Is it the same price for Khalas and Sukkari Qassimi at each size (and for each Reserve variety)?',
+    context: 'Built with one price per size or box, whatever the variety: set them in Admin → Shop → Products. If varieties need different prices, each becomes its own product.',
+    options: ['Same price per size (as now)', 'Different prices per variety'],
+  },
+  {
     id: 'coffee-dates-price', topic: 'Gift boxes · Coffee & Dates', asked: '2026-10-04',
     question: 'Does Coffee & Dates have one price whatever coffee is chosen, or does a style (Najdi, Hadrami…) cost more than a plain bag?',
     context: 'Built with one price per box (set it in Admin → Shop → Products), whatever the customer picks. A price per coffee would mean a different price for each style inside the box.',
@@ -25,7 +83,7 @@ export const DECISIONS: Decision[] = [
   {
     id: 'reserve-mixed', topic: 'Dates · Reserve box', asked: '2026-10-04',
     question: 'Is a Reserve box one variety (the customer picks Mufattal, Ajwa or Medjool), or a mix of the three?',
-    context: 'Built as one variety per box, chosen by the customer. A mixed box would be one fixed box (e.g. 4 of each in the 12).',
+    context: 'Since round 3 batch 3 the Reserve box offers both: one variety, or Mixed (4 of each in the 12, 8 of each in the 24). Answer only if you want to change that.',
     options: ['One variety, the customer chooses', 'A mix of the three', 'Both (two products)'],
   },
   {

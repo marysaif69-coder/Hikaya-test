@@ -24,7 +24,8 @@ const nav: [keyof typeof UI.nav, string][] = [['shop', 'shop'], ['ramadan', 'ram
 const grindsOf = (id: string) => COFFEES.find(c => c.id === id)?.grinds ?? [];
 const catalog = Object.fromEntries(PRODUCTS.map(p => [p.id, {
   n: p.name, price: p.price, kind: p.kind,
-  img: p.kind === 'box' ? p.img : p.kind === 'coffee' ? p.art?.front ?? null : null,
+  // Boxes: no photo yet that shows the real box (the cart shows the logo).
+  img: p.kind === 'coffee' ? p.art?.front ?? null : null,
   opts: p.kind === 'coffee' || p.kind === 'kit' ? Object.fromEntries(grindsOf(p.kind === 'kit' ? p.base : p.id).map(g => [g, GRINDS[g]])) : p.kind === 'box' && p.picks
     // Two-choice boxes: a label for each part (the cart joins "najdi|mixed" as "Najdi · Mixed Reserve").
     ? Object.fromEntries([...GIFT_COFFEES.map(k => [k, PRODUCTS.find(x => x.id === k)!.name]), ...dateChoices(p).map(k => [k, { en: boxOptionLabel({ ...p, picks: ['reserve'] }, k, 'en'), ar: boxOptionLabel({ ...p, picks: ['reserve'] }, k, 'ar') }])])

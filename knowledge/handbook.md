@@ -68,8 +68,10 @@ Edit this file to change what the assistant says, then run the test questions
 ## Ramadan and Eid
 
 - Ramadan 2027 is expected to begin around 8 February 2027; Eid al-Fitr is expected around 9 March 2027. Both depend on the moon sighting; say "expected".
-- Ramadan orders are meant to arrive before sunset. In February and early March, sunset in Calgary is roughly between 5:30 and 6:30 pm. If an order must arrive before iftar, suggest the 11:00–14:00 or 14:00–17:00 window, not 17:00–20:00.
-- Eid orders: choose a day before Eid so the boxes are home for Eid morning. The days around Eid fill up first; suggest ordering early.
+- Ramadan pre-orders are expected to open around Christmas 2026; pickup and delivery start 22 January 2027.
+- Ramadan deliveries: checkout offers 11:00–14:00, 14:00–17:00 and 17:00–20:00 on Ramadan days too. In February and early March, sunset in Calgary is roughly between 5:30 and 6:30 pm, so for an order that must arrive before iftar, suggest 11:00–14:00 or 14:00–17:00, not 17:00–20:00. Do not promise that every Ramadan order arrives before sunset.
+- Ramadan and Eid are not separate products: they are the same gift boxes (Coffee & Dates, Two Coffees, Reserve, Stuffed, Four Palms) in the same gold band, with our Ramadan or Eid sticker chosen on the box's page while that season is on. On the Ramadan page, Coffee & Dates is called "The Iftar Box"; on the Eid page, the Reserve box of 24 (Mixed) is "Eid Hosting" and Two Coffees is "the visit gift". The product names in the cart stay the same.
+- Eid orders: choose a day before Eid so the boxes are home for Eid morning. With Eid expected on Tuesday 9 March 2027, the last pickup and delivery day before it is Sunday 7 March. Its order-by date and hour are on the Eid page; the slots tool gives them too (field "eid"). The days around Eid fill up first; suggest ordering early.
 - The Ramadan page on the website has a sunset table for Calgary.
 
 ## Payment
@@ -91,12 +93,19 @@ Edit this file to change what the assistant says, then run the test questions
 - e-Transfer: the address and the amount are in the confirmation email; put the order number in the message. If it was sent a while ago and the order still says waiting, open a request (kind: question) so the team checks.
 - Never ask for card numbers or banking details in the chat. If someone sends them, tell them not to share card details here and that the team never needs them.
 
+## Dates
+
+- Three tiers. Everyday (تمر كل يوم): Khalas or Sukkari Qassimi, by weight in 250 g, 500 g or 1 kg, in a clear tray, for the house. Reserve (تمر النخبة): Royal Sukkari Mufattal, Ajwa or Medjool (مجدول), in a gift box of 12 or 24, one variety per box or Mixed (an even mix: 4 of each in the 12, 8 of each in the 24); marked "Our pick". Stuffed (تمر محشي): in the same boxes of 12 or 24, one filling per box or Mixed (3 of each in the 12, 6 of each in the 24); each date sealed on its own with its allergen label.
+- Fillings and their allergens: pistachio stuffed (pistachio); dipped in pistachio (pistachio; the coating is still being confirmed, and may add milk and soy); biscuit cream (wheat and soy, still being confirmed from the jar's label); cashew stuffed (cashew). Caramel with almonds is not sold yet: the owners decide after their tasting. For any allergy question beyond this, say we cannot confirm cross-contact yet and offer to ask the team.
+- Describe dates by variety, origin, size or count, never as "premium" or "best". "Hand-picked" and "larger" are still being confirmed with the supplier; don't claim them.
+- Which date goes with which coffee is decided after our tasting: don't recommend a specific date for a coffee yet.
+- Khudri is no longer sold.
+
 ## Gifts and sending to someone else
 
 - At checkout, tick "This is a gift": add the person's name, their phone (so the driver can reach them) and an optional message. For delivery, put their Calgary address as the delivery address.
 - The message reaches the team with the order. Do not promise a printed card or how the message is presented; say the team adds it to the order.
-- Gift boxes, all year: Coffee & Dates (a coffee the customer chooses and 12 Reserve dates, one kind or Mixed), Two Coffees (two coffees the customer chooses), Four Palms (dates only), and the Reserve and Stuffed boxes. There are no separate Ramadan or Eid boxes: in Ramadan and Eid the same gift boxes come in a Ramadan or Eid sleeve, chosen on the box's page while that season is on.
-- Dates come in three tiers: Everyday (Khalas or Sukkari Qassimi) by weight, 250 g, 500 g or 1 kg, for the house; Reserve (Royal Sukkari Mufattal, Ajwa or Medjool) in a gift box of 12 or 24, one variety per box, our pick; and Stuffed dates in the same boxes, one filling per box, each date sealed on its own with its allergen label. Caramel with almonds is not sold yet. Which date goes with which coffee is chosen after our tasting: do not suggest a pairing yet.
+- Gift boxes, all year: Coffee & Dates (a coffee the customer chooses and 12 Reserve dates, one kind or Mixed), Two Coffees (two coffees the customer chooses), Four Palms (dates only), and the Reserve and Stuffed boxes. There are no separate Ramadan or Eid boxes: every gift box has the same gold band, and in Ramadan and Eid the customer can add our Ramadan or Eid sticker, chosen on the box's page while that season is on.
 - Gift cards: $25, $50, $75 or $100 on the Gift cards page (/en/gift-card/, link in the footer). Pay by e-Transfer (or card when available); once paid, the code is emailed to the person (or to the buyer to pass on if no email was given), with the buyer's message. At checkout the code goes in the "Gift card" box; it pays what it can and the rest of the balance stays on the card. A cancelled order puts the money back on the card. Any other gift card question (lost code, refund): open a request for the team. You cannot look up or create gift card codes.
 
 ## Regular orders and reminders

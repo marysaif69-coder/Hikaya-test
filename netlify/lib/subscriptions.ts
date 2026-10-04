@@ -51,7 +51,7 @@ export async function runSubscriptions(req?: Request, today = calgaryNow().date)
       // A date variety or filling we no longer sell (khudri, Medjool in the Everyday box): say so plainly.
       const gone = e?.code === 'choose-date' || e?.code === 'choose-filling';
       const why = e?.code === 'retired'
-        ? (lang(sub) === 'ar' ? 'هذه العلبة صارت علبة هدية واحدة بحزام رمضان أو العيد. ردّ على هذه الرسالة لنرتّبها معك.' : 'That box is now one gift box with a Ramadan or Eid sleeve. Reply to this email and we will set it up with you.')
+        ? (lang(sub) === 'ar' ? 'هذه العلبة صارت علبة هدية واحدة مع ملصق رمضان أو العيد. ردّ على هذه الرسالة لنرتّبها معك.' : 'That box is now one gift box with a Ramadan or Eid sticker. Reply to this email and we will set it up with you.')
         : gone
         ? (lang(sub) === 'ar' ? 'صنف التمر في طلبك لم يعد متوفراً. ردّ على هذه الرسالة لنختار معك صنفاً آخر.' : 'The date in it is no longer offered. Reply to this email and we will choose another with you.')
         : lang(sub) === 'ar' ? 'أحد المنتجات غير متوفر أو الموعد ممتلئ.' : (e?.message ?? 'Something in it is not available.');

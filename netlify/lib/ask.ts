@@ -77,7 +77,7 @@ function catalog() {
     b.picks ? `The customer chooses ${b.picks.map(k => (k === 'coffee' ? 'a coffee' : 'a Reserve kind or "mixed"')).join(' and ')}; option is one string joined by "|" (e.g. "${defaultBoxOpt(b)}"). Coffees: ${GIFT_COFFEES.map(id => `"${id}"`).join(', ')}.${b.picks.includes('reserve') ? ` Reserve kinds: ${varietiesOf(b).map(k => `"${k}" ${DATES[k].name.en}`).join(', ')}, or "mixed" (4 of each).` : ''}` : '',
     !b.picks && b.chooseDate ? `The customer chooses one date variety (option): ${varietiesOf(b).map(k => `"${k}" ${DATES[k].name.en}`).join(', ')}${mixedOk(b) ? `, or "mixed" (${(b.count ?? 0) / varietiesOf(b).length} of each)` : ''}.` : '',
     b.fillings && mixedOk(b) ? `Or "mixed": ${(b.count ?? 0) / b.fillings.length} of each filling, with all their allergens.` : '',
-    takesSleeve(b) ? 'Sleeve: the gold everyday sleeve; in Ramadan and Eid also the Ramadan or Eid sleeve (sleeve "ramadan" / "eid"). A season changes the sleeve, not the box.' : '',
+    takesSleeve(b) ? 'Occasion: every gift box has the same gold band; in Ramadan and Eid the customer can add our Ramadan or Eid sticker (sleeve "ramadan" / "eid"). A season adds a sticker; the box is the same.' : '',
   ].filter(Boolean).join('\n')).join('\n\n');
   // Only the varieties a product offers (khudri stays in DATES for old orders but is not sold).
   const sold = new Set(BOXES.filter(b => !b.retired).flatMap(b => [...varietiesOf(b), ...Object.keys(b.packs?.dates ?? {})]));
@@ -152,7 +152,7 @@ export const TOOLS: BetaTool[] = [
     description: 'Check whether a postal code is inside our Calgary delivery area. The first three characters (e.g. T3A) are enough.',
     input_schema: S({ postal_code: { type: 'string' } }) },
   { name: 'add_to_cart', strict: true,
-    description: "Put products in the visitor's cart on this website. Use the product ids from the product list. option is the grind for coffees and styles (\"dallah\", \"fine\" or \"powder\"); the date variety or filling (or \"mixed\") for date boxes; for Coffee & Dates (guest-box) \"<style>|<reserve kind or mixed>\", e.g. \"najdi|mixed\"; for Two Coffees (coffee-duo) \"<style>|<style>\", e.g. \"najdi|hadrami\"; null otherwise. sleeve (gift boxes only): \"regular\", or \"ramadan\" / \"eid\" while that season is on. Only use after the customer asked for it.",
+    description: "Put products in the visitor's cart on this website. Use the product ids from the product list. option is the grind for coffees and styles (\"dallah\", \"fine\" or \"powder\"); the date variety or filling (or \"mixed\") for date boxes; for Coffee & Dates (guest-box) \"<style>|<reserve kind or mixed>\", e.g. \"najdi|mixed\"; for Two Coffees (coffee-duo) \"<style>|<style>\", e.g. \"najdi|hadrami\"; null otherwise. sleeve (gift boxes only, the occasion sticker): \"regular\" (no sticker), or \"ramadan\" / \"eid\" while that season is on. Only use after the customer asked for it.",
     input_schema: S({ items: { type: 'array', items: S({ product_id: { type: 'string' }, option: nullable({ type: 'string' }), qty: { type: 'integer' }, sleeve: nullable({ type: 'string' }) }) } }) },
   { name: 'open_request', strict: true,
     description: 'Send a request to the Hikaya team, who reply by email. Use for damaged, wrong, missing or late items, order changes and cancellations, large or event orders, complaints, a request for a person, and questions you cannot answer. The customer gets an email with the request number. For damaged, wrong or missing items, a photo upload button appears for the customer after it is opened.',
@@ -196,7 +196,8 @@ async function runTool(name: string, input: any, c: ToolCtx): Promise<unknown> {
       const method = input.method === 'delivery' ? 'delivery' : 'pickup';
       const a = await availability(28);
       const days = a.days.map(d => ({ date: d.date, order_by: `${d.orderBy.date} ${d.orderBy.hour}:00`, windows: d.windows.filter(w => w[method] > 0).map(w => `${w.window} (${w[method]} left)`) })).filter(d => d.windows.length).slice(0, 8);
-      return { ordering_open: a.open, earliest_day: a.from, method, days, note: 'order_by is the Calgary date and hour when orders for that day close' };
+      const eid = a.eid ? { eid_expected: a.eid.eid, last_day_before_eid: a.eid.day, order_by: `${a.eid.orderBy.date} ${a.eid.orderBy.hour}:00` } : null;
+      return { ordering_open: a.open, earliest_day: a.from, method, days, eid, note: 'order_by is the Calgary date and hour when orders for that day close; eid is the last day to receive an order before Eid morning and its order-by' };
     }
     case 'check_postal_code': {
       // The first three characters (e.g. "T3A") are enough to know the area.

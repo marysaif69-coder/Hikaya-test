@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import Pair from '../../components/Pair.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import Films from '../../components/Films.astro';
+import SeasonLead from '../../components/SeasonLead.astro';
 import { BOXES, PRODUCTS, type Lang } from '../../data/products';
 import { path } from '../../data/i18n';
 import { ramadanTable, hhmm, weekday, dayMonth, EID } from '../../data/calendar';
@@ -11,8 +12,11 @@ export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lan
 const lang = Astro.params.lang as Lang;
 const ar = lang === 'ar';
 const rows = ramadanTable();
-// The gift boxes in their Ramadan sleeve, everyday dates for the house, and a coffee.
-const picks = [...['guest-box', 'coffee-duo', 'reserve-12', 'four-palms', 'date-box'].map(id => BOXES.find(b => b.id === id)!), PRODUCTS.find(p => p.id === 'najdi')!];
+// The same gift boxes as all year, with the Ramadan sticker chosen. The Iftar Box leads (it is
+// Coffee & Dates: the name is only this page's headline), then Two Coffees, Reserve and Stuffed.
+const box = (id: string) => BOXES.find(b => b.id === id)!;
+const iftar = box('guest-box');
+const picks = ['coffee-duo', 'reserve-12', 'stuffed-12'].map(box);
 const toAr = (n: number | string) => (ar ? String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]) : String(n));
 ---
 <Base season="ramadan" lang={lang} title={ar ? 'رمضان' : 'Ramadan'} current="ramadan" sleeve="ramadan" description={ar ? 'صناديق تمر وقهوة لرمضان ٢٠٢٧ في كالغاري، وجدول أوقات الإفطار.' : 'Ramadan 2027 dates and coffee in Calgary, with the iftar timetable.'}>
@@ -22,7 +26,7 @@ const toAr = (n: number | string) => (ar ? String(n).replace(/\d/g, d => '٠١٢
       <div class="r-card">
         <h1 class="h-l">{ar ? 'تمر وقهوة لرمضان' : 'Ramadan dates & coffee'}</h1>
         <Pair lang={lang} size="m" bunn={{ ar: 'أنا لما بعد المغرب.', en: "I'm for after sunset." }} tamr={{ ar: 'وأنا أوّل المائدة.', en: "I'm first on the table." }} />
-        <p>{ar ? 'الطلب المسبق يفتح قرابة عيد الميلاد، والاستلام من ٢٢ يناير ٢٠٢٧. استلام وتوصيل داخل كالغاري، وطلبات رمضان تصل قبل الغروب.' : 'Pre-orders open around Christmas; pickups start 22 January 2027. Pickup and delivery in Calgary; Ramadan orders arrive before sunset.'}</p>
+        <p>{ar ? 'الطلب المسبق يفتح قرابة عيد الميلاد، والاستلام من ٢٢ يناير ٢٠٢٧. استلام وتوصيل داخل كالغاري؛ وليصلك التوصيل قبل الإفطار اختر موعد ١١–٢ أو ٢–٥.' : 'Pre-orders open around Christmas; pickups start 22 January 2027. Pickup and delivery in Calgary; for delivery before iftar, choose the 11–2 or 2–5 window.'}</p>
         <a class="btn tamr" href="#boxes">{ar ? 'صناديق رمضان' : 'The Ramadan boxes'}</a>
       </div>
     </div>
@@ -31,7 +35,9 @@ const toAr = (n: number | string) => (ar ? String(n).replace(/\d/g, d => '٠١٢
   <section class="sec" id="boxes" aria-labelledby="boxes-h">
     <div class="wrap">
       <h2 id="boxes-h" class="h-l">{ar ? 'للمائدة عند الغروب' : 'For the table at sunset'}</h2>
+      <SeasonLead p={iftar} lang={lang} sleeve="ramadan" title={{ ar: 'علبة الإفطار', en: 'The Iftar Box' }} line={{ ar: 'أول تمرة وأول فنجان بعد الغروب.', en: 'The first date and the first cup after sunset.' }} />
       <div class="grid">{picks.map(p => <ProductCard p={p} lang={lang} sleeve="ramadan" />)}</div>
+      <p class="muted">{ar ? 'كلها علب الهدايا نفسها بالحزام الذهبي، ومعها ملصق رمضان. ' : 'All are our gift boxes in the gold band, with the Ramadan sticker. '}<a href={path(lang, 'shop') + '#everyday'}>{ar ? 'وتمر كل يوم للبيت' : 'Everyday dates for the house'}</a></p>
     </div>
   </section>
 

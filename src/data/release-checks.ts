@@ -6,14 +6,27 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
-    id: '3-3', title: 'Round 3 · batch 3: four gift boxes with Mixed, and seasonal sleeves', date: '2026-10-04',
+    id: '3-4', title: 'Round 3 · batch 4: Ramadan and Eid pages, Ask Hikaya, stickers, and choices on the Dates tab', date: '2026-10-04',
+    checks: [
+      { id: '3-4-dates-cards', text: 'Shop → Dates: Reserve and Stuffed now work like Everyday: a card for each kind (and Mixed) with 12 / 24 and its own Add button.', links: [{ label: '#reserve (AR)', href: '/ar/shop/#reserve' }, { label: '#dates (EN)', href: '/en/shop/#dates' }] },
+      { id: '3-4-stickers', text: 'Gift box pages: “Occasion · المناسبة”: Any day, Ramadan sticker or Eid sticker (the gold band stays). No “Ramadan sleeve” anywhere.', links: [{ label: 'Coffee & Dates (AR)', href: '/ar/shop/guest-box/' }] },
+      { id: '3-4-art', text: 'Date boxes show a drawing of our real box (the B1 lid with the gold khalal sleeve and seal, open beside what is inside: coffee and 12 dates, two coffees, 12 or 24 dates, stuffed dates sealed one by one), and the Everyday dates a clear tray. They stay until there are photos.', links: [{ label: 'Gift boxes (EN)', href: '/en/shop/#gifts' }] },
+      { id: '3-4-ramadan', text: 'Ramadan page: “علبة الإفطار · The Iftar Box” first, then Two Coffees, Reserve and Stuffed with the Ramadan sticker; the top line now says to choose 11–2 or 2–5 for delivery before iftar.', links: [{ label: 'Ramadan (AR)', href: '/ar/ramadan/' }, { label: 'Ramadan (EN)', href: '/en/ramadan/' }] },
+      { id: '3-4-eid', text: 'Eid page: “ضيافة العيد · Eid Hosting” (Reserve 24, Mixed, opens with Mixed and the Eid sticker chosen), then “The visit gift” (Two Coffees), then Stuffed; the order-by line for the last day before Eid shows.', links: [{ label: 'Eid (AR)', href: '/ar/eid/' }, { label: 'Eid (EN)', href: '/en/eid/' }] },
+      { id: '3-4-hash', text: 'Old shop links /shop/#ramadan and /shop/#eid open the Ramadan and Eid pages.', links: [{ label: '#ramadan', href: '/en/shop/#ramadan' }] },
+      { id: '3-4-ask', text: 'Ask Hikaya: “What dates do you have?”, “Do you have a Ramadan box?” (same gift boxes with the Ramadan sticker), “When do I order for Eid?”.' },
+      { id: '3-4-decisions', text: 'Settings → Decisions: ten new questions for round 3 (prices, Ramadan deliveries, Thirty Nights, stickers, names, may-contain-nuts and more).', links: [{ label: 'Desk', href: '/admin/' }] },
+    ],
+  },
+  {
+    id: '3-3', title: 'Round 3 · batch 3: four gift boxes with Mixed, and the Ramadan and Eid stickers', date: '2026-10-04',
     checks: [
       { id: '3-3-coffee-dates', text: 'Coffee & Dates: choose the coffee (Najdi, Hadrami…) and the Reserve dates (one kind or Mixed, 4 of each); add it: the cart says e.g. “Najdi · Mixed Reserve”.', links: [{ label: 'Coffee & Dates (AR)', href: '/ar/shop/guest-box/' }, { label: 'Coffee & Dates (EN)', href: '/en/shop/guest-box/' }] },
       { id: '3-3-two-coffees', text: 'Two Coffees: two coffee choices, first and second.', links: [{ label: 'Two Coffees (EN)', href: '/en/shop/coffee-duo/' }] },
       { id: '3-3-mixed', text: 'Reserve 24 and Stuffed 12 offer Mixed (8 of each; 3 of each with its allergens).', links: [{ label: 'Reserve 24 (AR)', href: '/ar/shop/reserve-24/' }, { label: 'Stuffed 12 (EN)', href: '/en/shop/stuffed-12/' }] },
-      { id: '3-3-sleeves', text: 'Gift boxes have a Sleeve choice. Ramadan and Eid show only while that season is on (Admin → Shop → Products, top). From the Ramadan page, a box opens with the Ramadan sleeve picked.', links: [{ label: 'Ramadan (AR)', href: '/ar/ramadan/' }, { label: 'Eid (EN)', href: '/en/eid/' }] },
-      { id: '3-3-retired', text: 'The old seasonal boxes are gone from the shop and the Products list (Iftar Pair, Ramadan Date Box, Eid Coffee & Dates, Eid Dates, Eid Coffee Duo). An old link such as /en/shop/iftar-pair/ goes to Coffee & Dates with the Ramadan sleeve.', links: [{ label: 'Old Iftar Pair link', href: '/en/shop/iftar-pair/' }] },
-      { id: '3-3-desk', text: 'Desk: an order with a Ramadan sleeve shows “· Ramadan sleeve” on the order and on the packing slip; the week sheet counts it under Ramadan sleeves.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: '3-3-sleeves', text: 'Gift boxes have an Occasion choice (المناسبة): Any day, or our Ramadan or Eid sticker on the same gold band. Ramadan and Eid show only while that season is on (Admin → Shop → Products, top). From the Ramadan page, a box opens with the Ramadan sticker picked.', links: [{ label: 'Ramadan (AR)', href: '/ar/ramadan/' }, { label: 'Eid (EN)', href: '/en/eid/' }] },
+      { id: '3-3-retired', text: 'The old seasonal boxes are gone from the shop and the Products list (Iftar Pair, Ramadan Date Box, Eid Coffee & Dates, Eid Dates, Eid Coffee Duo). An old link such as /en/shop/iftar-pair/ goes to Coffee & Dates with the Ramadan sticker.', links: [{ label: 'Old Iftar Pair link', href: '/en/shop/iftar-pair/' }] },
+      { id: '3-3-desk', text: 'Desk: an order with the Ramadan sticker shows “· Ramadan sticker” on the order and on the packing slip; the week sheet counts gold sleeves for every gift box and “Ramadan stickers (Ø50)” apart.', links: [{ label: 'Desk', href: '/admin/' }] },
       { id: '3-3-prices', text: 'Admin → Shop → Products: Coffee & Dates and Two Coffees now say “no price” (their old draft prices were for fixed contents). Set them when you are ready.', links: [{ label: 'Desk', href: '/admin/' }] },
     ],
   },

@@ -399,12 +399,14 @@ export const BY_WEIGHT = BOXES.filter(b => b.grams);
 export const ON_SALE = PRODUCTS.filter(p => !(p.kind === 'box' && p.retired));
 
 // ---------- gift boxes: choices, Mixed and sleeves ----------
+// Every gift box has the same gold khalal sleeve. A season adds our own Ø50 occasion sticker on it
+// (packaging brief B1). In the data and on order lines the choice is still called `sleeve`.
 export const SLEEVES: Record<Sleeve, L> = {
-  regular: { en: 'Everyday gold sleeve', ar: 'الحزام الذهبي' },
-  ramadan: { en: 'Ramadan sleeve', ar: 'حزام رمضان' },
-  eid: { en: 'Eid sleeve', ar: 'حزام العيد' },
+  regular: { en: 'Any day', ar: 'كل يوم' },
+  ramadan: { en: 'Ramadan sticker', ar: 'ملصق رمضان' },
+  eid: { en: 'Eid sticker', ar: 'ملصق العيد' },
 };
-/** A box takes a sleeve choice when it is a gift box (inserts C2, C12, D24). */
+/** A box takes the occasion choice when it is a gift box (inserts C2, C12, D24). */
 export const takesSleeve = (b: Box) => b.insert !== 'everyday' && !b.retired;
 export const MIXED: L = { en: 'Mixed', ar: 'مشكّل' };
 /** The coffees a gift box can hold: the family styles, then the bags on their own (qishr is 100 g, so not). */

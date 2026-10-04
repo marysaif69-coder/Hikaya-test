@@ -89,7 +89,7 @@ export async function recall(code: string) {
 const NEED: Record<string, (w: Awaited<ReturnType<typeof weekSheet>>) => number> = {
   pouch250: w => w.packaging.pouches250, pouch100: w => w.packaging.pouches100,
   boxD24: w => w.packaging.giftBoxes.D24, boxC12: w => w.packaging.giftBoxes.C12, boxC2: w => w.packaging.giftBoxes.C2,
-  trayEveryday: w => w.packaging.everydayTrays, sleeveRegular: w => w.packaging.sleeves.regular, sleeveRamadan: w => w.packaging.sleeves.ramadan, sleeveEid: w => w.packaging.sleeves.eid,
+  trayEveryday: w => w.packaging.everydayTrays, sleeveRegular: w => w.packaging.sleeves.regular, sleeveRamadan: w => w.packaging.stickers.ramadan, sleeveEid: w => w.packaging.stickers.eid,
   paperCups: w => w.packaging.paperCups, bags: w => w.orders,
 };
 export async function supplies(weekFrom: string) {

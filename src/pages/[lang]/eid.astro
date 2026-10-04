@@ -2,21 +2,24 @@
 import Base from '../../layouts/Base.astro';
 import Pair from '../../components/Pair.astro';
 import ProductCard from '../../components/ProductCard.astro';
+import SeasonLead from '../../components/SeasonLead.astro';
 import { BOXES, type Lang } from '../../data/products';
 import { path } from '../../data/i18n';
 
 export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
 const lang = Astro.params.lang as Lang;
 const ar = lang === 'ar';
-// One set of gift boxes all year; in Eid they come in the Eid sleeve.
-const eid = ['guest-box', 'coffee-duo', 'four-palms', 'reserve-24'].map(id => BOXES.find(b => b.id === id)!);
+// The same gift boxes as all year, with the Eid sticker chosen. Eid Hosting (the Reserve box of 24,
+// Mixed) and the visit gift (Two Coffees) lead; the names are only this page's headlines.
+const box = (id: string) => BOXES.find(b => b.id === id)!;
+const eid = ['stuffed-12', 'stuffed-24'].map(box);
 ---
 <Base season="eid" lang={lang} title={ar ? 'العيد' : 'Eid'} current="eid" sleeve="eid" description={ar ? 'إصدار العيد من حكاية: قهوة وتمر للزيارات، في كالغاري.' : 'The Hikaya Eid edition: coffee and dates for the visits, in Calgary.'}>
   <section class="e-hero">
     <div class="wrap e-grid">
       <div class="e-copy">
         <h1 class="h-xl">{ar ? 'عيدكم مبارك' : <><span lang="ar">عيدكم مبارك</span><span class="en">Eid Mubarak</span></>}</h1>
-        <p class="lead">{ar ? 'العيد زيارات قبل أن يكون هدايا. إصدار العيد بحزامه الذهبي، لأول بيت تطرقون بابه.' : 'Eid is about visiting before it is about gifts. The Eid edition wears a gold band, for the first door you knock on.'}</p>
+        <p class="lead">{ar ? 'العيد زيارات قبل أن يكون هدايا. علبنا بحزامها الذهبي وملصق العيد، لأول بيت تطرقون بابه.' : 'Eid is about visiting before it is about gifts. Our boxes in their gold band with the Eid sticker, for the first door you knock on.'}</p>
         <div class="cta"><a class="btn primary" href="#eid-boxes">{ar ? 'صناديق العيد' : 'The Eid boxes'}</a></div>
       </div>
       <button class="e-film" type="button" data-film="eid" data-title="Eid">
@@ -40,7 +43,10 @@ const eid = ['guest-box', 'coffee-duo', 'four-palms', 'reserve-24'].map(id => BO
   <section class="sec" id="eid-boxes" aria-labelledby="eb-h">
     <div class="wrap">
       <h2 id="eb-h" class="h-l">{ar ? 'إصدار العيد' : 'The Eid edition'}</h2>
-      <p class="lead" style="margin-top:12px">{ar ? 'علب الهدايا نفسها، بحزام العيد. بلا معمول: نترك المعمول لبيوتكم.' : 'Our gift boxes, in the Eid sleeve. No maamoul: we leave that to your kitchens.'}</p>
+      <p class="lead" style="margin-top:12px">{ar ? 'علب الهدايا نفسها، مع ملصق العيد. بلا معمول: نترك المعمول لبيوتكم.' : 'Our gift boxes, with the Eid sticker. No maamoul: we leave that to your kitchens.'}</p>
+      <p class="order-by" id="eidBy" hidden></p>
+      <SeasonLead p={box('reserve-24')} lang={lang} sleeve="eid" opt="mixed" title={{ ar: 'ضيافة العيد', en: 'Eid Hosting' }} line={{ ar: 'لصينية الضيوف صباح العيد.', en: 'For the guests’ tray on Eid morning.' }} />
+      <SeasonLead p={box('coffee-duo')} lang={lang} sleeve="eid" title={{ ar: 'هدية الزيارة', en: 'The visit gift' }} line={{ ar: 'الهدية التي تحملها حين تزور.', en: 'The gift you bring when you visit.' }} />
       <div class="grid">{eid.map(p => <ProductCard p={p} lang={lang} sleeve="eid" />)}</div>
       <p class="muted when">{ar ? 'العيد متوقع نحو ٩ مارس ٢٠٢٧. طلبات العيد تصل قبل صباح العيد.' : 'Eid is expected around 9 March 2027. Eid orders arrive before Eid morning.'} <a href={path(lang, 'visit')}>{ar ? 'الاستلام والتوصيل' : 'Pickup & delivery'}</a></p>
     </div>
@@ -69,6 +75,7 @@ const eid = ['guest-box', 'coffee-duo', 'four-palms', 'reserve-24'].map(id => BO
   .v-pairs { display: grid; gap: 40px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 36px 24px; margin-top: 32px; }
   .when { margin-top: 28px; }
+  .order-by { margin-top: 14px; font-weight: 600; color: var(--tamr); }
   .when a { color: var(--tamr); font-weight: 600; }
   .viewer { border: 0; padding: 0; background: transparent; max-width: min(92vw, 460px); }
   .viewer::backdrop { background: rgba(28, 18, 14, .86); }
@@ -82,4 +89,17 @@ const eid = ['guest-box', 'coffee-duo', 'four-palms', 'reserve-24'].map(id => BO
   document.querySelector('.e-film')?.addEventListener('click', () => { vid.src = '/media/vid/eid.mp4'; dlg.showModal(); vid.play().catch(() => {}); });
   dlg.addEventListener('close', () => vid.pause());
   dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+  // Order by: the last day before Eid and its deadline, from the same settings as checkout.
+  (async () => {
+    try {
+      const d = (await (await fetch('/api/slots')).json()).eid;
+      if (!d) return;
+      const ar = document.documentElement.lang === 'ar';
+      const f = (iso: string) => new Intl.DateTimeFormat(ar ? 'ar-u-nu-arab' : 'en-CA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(iso + 'T12:00:00Z'));
+      const h = new Intl.NumberFormat(ar ? 'ar-u-nu-arab' : 'en').format(d.orderBy.hour);
+      const el = document.getElementById('eidBy')!;
+      el.textContent = ar ? `لتصلك العلب قبل العيد، آخر يوم استلام وتوصيل ${f(d.day)}: اطلب قبل ${f(d.orderBy.date)}، الساعة ${h}:٠٠.` : `For your boxes before Eid, the last pickup and delivery day is ${f(d.day)}: order by ${f(d.orderBy.date)}, ${h}:00.`;
+      el.hidden = false;
+    } catch { /* the line stays hidden */ }
+  })();
 </script>

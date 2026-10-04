@@ -14,7 +14,7 @@ export const FREE_DELIVERY_FROM = 8000;
 const SLEEVE_IDS: Sleeve[] = ['regular', 'ramadan', 'eid'];
 
 /** Prices a basket. With `live` (from liveCatalog) the team's prices and sold-out switches apply.
- * `seasons`: which seasonal sleeves can be chosen now (a Ramadan or Eid sleeve only in its season). */
+ * `seasons`: which occasion stickers can be chosen now (Ramadan or Eid only in its season). */
 export function priceCart(lines: unknown, live?: Record<string, Live>, seasons?: Partial<Seasons>): PricedLine[] {
   if (!Array.isArray(lines) || lines.length === 0) throw new HttpError(400, 'empty-cart', 'Your cart is empty.');
   if (lines.length > 30) throw new HttpError(400, 'cart-too-big');

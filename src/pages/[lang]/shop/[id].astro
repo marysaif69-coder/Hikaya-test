@@ -4,6 +4,7 @@ import Pouch from '../../../components/Pouch.astro';
 import Sachet from '../../../components/Sachet.astro';
 import Pair from '../../../components/Pair.astro';
 import ProductCard from '../../../components/ProductCard.astro';
+import BoxArt from '../../../components/BoxArt.astro';
 import { PRODUCTS, COFFEES, KITS, PACKS, FAMILIES, SPICES, GRINDS, DATES, FILLINGS, ALLERGENS, BOXES, ON_SALE, GIFT_COFFEES, SLEEVES, MIXED, varietiesOf, mixedOk, mixSplit, defaultBoxOpt, takesSleeve, priceText, baseOf, packOf, stylesFor, allergyNote, kitInside, type Lang, type Product, type Coffee } from '../../../data/products';
 import { BREW } from '../../../data/brew';
 import { UI, path } from '../../../data/i18n';
@@ -81,7 +82,7 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
         ? <div class="pdp-pouch kit-media"><div class="kit-bag"><Pouch coffee={baseOf(p)} lang={lang} /></div><div class="kit-packs">{p.parts.map(x => <Sachet pack={packOf(x.id)!} lang={lang} mini={x.mini} />)}</div></div>
         : p.kind === 'pack'
         ? <div class="pdp-pouch pack-media"><Sachet pack={p} lang={lang} /></div>
-        : <img src={p.img} alt={p.name[lang]} width="1000" height="1250" />}
+        : <div class="box-art-wrap"><BoxArt p={p} lang={lang} /></div>}
     </div>
 
     <div class="pdp-info">
@@ -184,7 +185,7 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
         )}
         {p.kind === 'box' && takesSleeve(p) && (
           <fieldset class="choice" id="sleeves">
-            <legend>{L('Sleeve', 'الحزام')}</legend>
+            <legend>{L('Occasion', 'المناسبة')} <small class="muted">{L('The gold band stays; Ramadan and Eid add our sticker.', 'الحزام الذهبي نفسه؛ ولرمضان والعيد نضيف ملصقنا.')}</small></legend>
             <label><input type="radio" name="sleeve" value="regular" checked /><span>{SLEEVES.regular[lang]}</span></label>
             <label data-season="ramadan"><input type="radio" name="sleeve" value="ramadan" /><span>{SLEEVES.ramadan[lang]}</span></label>
             <label data-season="eid"><input type="radio" name="sleeve" value="eid" /><span>{SLEEVES.eid[lang]}</span></label>
@@ -289,6 +290,9 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
     sync();
     document.addEventListener('catalog:live', sync);
   }
+  // ?opt=mixed (the Eid page's "Eid Hosting"): pick that variety or filling if the box offers it.
+  const wantOpt = new URLSearchParams(location.search).get('opt');
+  if (wantOpt) { const r = document.querySelector<HTMLInputElement>(`fieldset.choice input[name=opt][value="${wantOpt.replace(/[^a-z-]/g, '')}"]`); if (r) r.checked = true; }
   // Coffee & Dates and Two Coffees: the two choices go in one option, "najdi|mixed".
   const picks = document.getElementById('picks');
   if (picks) {
@@ -299,8 +303,8 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
     };
     picks.addEventListener('change', syncPicks); syncPicks();
   }
-  // Sleeve: ?sleeve=ramadan (from the Ramadan and Eid pages) picks it while that season is on;
-  // when a season is off its choice hides, and a hidden choice falls back to the gold sleeve.
+  // Occasion sticker: ?sleeve=ramadan (from the Ramadan and Eid pages) picks it while that season
+  // is on; when a season is off its choice hides, and a hidden choice falls back to "Any day".
   const sleeves = document.getElementById('sleeves');
   if (sleeves) {
     const want = new URLSearchParams(location.search).get('sleeve');
@@ -381,6 +385,7 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
   /* Commas between the visible packs only (a hidden pack leaves no stray comma). */
   .plist > span:not([hidden]) ~ span:not([hidden])::before { content: ', '; }
   :global(html[dir=rtl]) .plist > span:not([hidden]) ~ span:not([hidden])::before { content: '، '; }
+  .box-art-wrap { border-radius: 40px; border-bottom-left-radius: 8px; overflow: hidden; aspect-ratio: 4 / 5; }
   .pdp-media img { border-radius: 40px; border-bottom-left-radius: 8px; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
   .pdp-info { display: grid; gap: 20px; align-content: start; }
   .fam { font-weight: 600; color: var(--tamr); }
