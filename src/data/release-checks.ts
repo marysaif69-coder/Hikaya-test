@@ -6,6 +6,14 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'eid-film-1', title: 'Eid page: the film plays in the page; Coffee & Dates in the Eid edition', date: '2026-10-05',
+    checks: [
+      { id: 'eid-film-inline', text: 'Eid page: the film plays by itself in the page (no pop-up), the whole frame shows and it fits the screen without scrolling, on a laptop and a phone. It pauses when you scroll away.', links: [{ label: 'Eid (EN)', href: '/en/eid/' }, { label: 'العيد (AR)', href: '/ar/eid/' }] },
+      { id: 'eid-film-sound', text: 'Sound: on a first visit the music may play once (only if the browser allows it, e.g. after clicking a link on the site), then it goes silent and keeps looping. The “Sound on / Mute” button on the film works at any time; later visits start silent.', links: [{ label: 'Eid (EN)', href: '/en/eid/' }] },
+      { id: 'eid-guest-box', text: 'The Eid edition list starts with Coffee & Dates (12 dates and a coffee pouch) with the Eid band, then Stuffed 12 and 24.', links: [{ label: 'Eid boxes', href: '/en/eid/#eid-boxes' }] },
+    ],
+  },
+  {
     id: 'address-change-1', title: 'Change the delivery address of an order (customers and the team)', date: '2026-10-05',
     checks: [
       { id: 'addr-customer', text: 'Place a test delivery order, then in My account press “Change address” (غيّر العنوان), type a new street with unit and buzz code and a Calgary postal code, and save. The order shows the new address and an email “New address for order …” arrives.', links: [{ label: 'My account (EN)', href: '/en/account/' }, { label: 'حسابي (AR)', href: '/ar/account/' }] },

@@ -12,7 +12,8 @@ const ar = lang === 'ar';
 // The same gift boxes as all year, with the Eid sticker chosen. Eid Hosting (the Reserve box of 24,
 // Mixed) and the visit gift (Two Coffees) lead; the names are only this page's headlines.
 const box = (id: string) => BOXES.find(b => b.id === id)!;
-const eid = ['stuffed-12', 'stuffed-24'].map(box);
+// Coffee & Dates (half dates, half coffee) is the box in the Eid film, so it leads the list.
+const eid = ['guest-box', 'stuffed-12', 'stuffed-24'].map(box);
 ---
 <Base season="eid" lang={lang} title={ar ? 'العيد' : 'Eid'} current="eid" sleeve="eid" description={ar ? 'إصدار العيد من حكاية: قهوة وتمر للزيارات، في كالغاري.' : 'The Hikaya Eid edition: coffee and dates for the visits, in Calgary.'}>
   <section class="e-hero">
@@ -22,10 +23,13 @@ const eid = ['stuffed-12', 'stuffed-24'].map(box);
         <p class="lead">{ar ? 'العيد زيارات قبل أن يكون هدايا. علبنا بحزامها الذهبي وملصق العيد، لأول بيت تطرقون بابه.' : 'Eid is about visiting before it is about gifts. Our boxes in their gold band with the Eid sticker, for the first door you knock on.'}</p>
         <div class="cta"><a class="btn primary" href="#eid-boxes">{ar ? 'صناديق العيد' : 'The Eid boxes'}</a></div>
       </div>
-      <button class="e-film" type="button" data-film="eid" data-title="Eid">
-        <img src="/media/vid/eid.webp" alt={ar ? 'شغّل فيلم زيارة العيد' : 'Play the Eid visit film'} width="540" height="960" />
-        <span class="play"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 4l10 6-10 6z" fill="currentColor" /></svg>{ar ? 'زيارة العيد · ١٦ ث' : 'The Eid visit · 16 s'}</span>
-      </button>
+      <figure class="e-film">
+        <video class="e-vid" muted playsinline preload="metadata" poster="/media/vid/eid.webp" width="540" height="960" aria-label={ar ? 'فيلم زيارة العيد' : 'The Eid visit film'}><source src="/media/vid/eid.mp4" type="video/mp4" /></video>
+        <button class="snd" type="button" aria-pressed="false" data-on={ar ? 'كتم الصوت' : 'Mute'} data-off={ar ? 'شغّل الصوت' : 'Sound on'}>
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8h3l4-3v10l-4-3H3z" fill="currentColor" /><path class="w" d="M13 7.5a3.5 3.5 0 0 1 0 5M15 5.5a6.5 6.5 0 0 1 0 9" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" /><path class="m" d="M13 8l4 4M17 8l-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+          <span>{ar ? 'شغّل الصوت' : 'Sound on'}</span>
+        </button>
+      </figure>
     </div>
   </section>
 
@@ -52,7 +56,6 @@ const eid = ['stuffed-12', 'stuffed-24'].map(box);
     </div>
   </section>
 
-  <dialog class="viewer"><form method="dialog"><button class="x" aria-label={ar ? 'إغلاق' : 'Close'}><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button></form><video controls playsinline preload="none" poster="/media/vid/eid.webp"></video></dialog>
 </Base>
 
 <style>
@@ -63,12 +66,16 @@ const eid = ['stuffed-12', 'stuffed-24'].map(box);
   .e-copy h1 span { display: block; }
   .e-copy h1 .en { font-size: .55em; color: var(--tamr-2); margin-top: 8px; }
   .e-copy .lead { color: var(--bunn); }
+  /* The film plays in the page, sized by the screen height so the whole frame always shows. */
+  .e-film { position: relative; margin: 0; justify-self: center; height: min(70vh, 620px); aspect-ratio: 9 / 16; border-radius: 34px; border-bottom-right-radius: 8px; overflow: hidden; background: var(--bunn); box-shadow: 0 30px 60px -30px rgba(51, 33, 26, .7); }
+  @media (max-width: 860px) { .e-film { height: min(62vh, 520px); } }
+  .e-vid { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .snd { position: absolute; inset-inline-start: 14px; bottom: 14px; display: inline-flex; align-items: center; gap: 8px; border: 2px solid var(--paper); cursor: pointer; background: var(--bunn); color: var(--paper); border-radius: 999px; padding: 11px 18px 11px 14px; font: 700 16px/1 var(--body); box-shadow: 0 6px 18px rgba(28, 18, 14, .45); }
+  .snd[aria-pressed="true"] { background: var(--tamr); }
+  .snd:focus-visible { outline: 3px solid var(--bunn); outline-offset: 3px; }
+  .snd svg { width: 20px; height: 20px; }
+  .snd .w { display: none; } .snd[aria-pressed="true"] .w { display: inline; } .snd[aria-pressed="true"] .m { display: none; }
   .cta { display: flex; gap: 12px; }
-  .e-film { all: unset; cursor: pointer; position: relative; border-radius: 34px; border-bottom-right-radius: 8px; overflow: hidden; max-width: 340px; justify-self: center; box-shadow: 0 30px 60px -30px rgba(51, 33, 26, .7); }
-  .e-film:focus-visible { outline: 3px solid var(--bunn); outline-offset: 4px; }
-  .e-film img { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; }
-  .play { position: absolute; inset-inline-start: 14px; bottom: 14px; display: inline-flex; align-items: center; gap: 6px; background: var(--paper); color: var(--bunn); border-radius: 999px; padding: 8px 14px 8px 11px; font-size: 14px; font-weight: 600; }
-  .play svg { width: 14px; height: 14px; }
   .visits { background: var(--sheet); }
   .v-grid { display: grid; grid-template-columns: .7fr 1.3fr; gap: 32px clamp(28px, 5vw, 80px); align-items: start; }
   @media (max-width: 860px) { .v-grid { grid-template-columns: 1fr; } }
@@ -77,18 +84,32 @@ const eid = ['stuffed-12', 'stuffed-24'].map(box);
   .when { margin-top: 28px; }
   .order-by { margin-top: 14px; font-weight: 600; color: var(--tamr); }
   .when a { color: var(--tamr); font-weight: 600; }
-  .viewer { border: 0; padding: 0; background: transparent; max-width: min(92vw, 460px); }
-  .viewer::backdrop { background: rgba(28, 18, 14, .86); }
-  .viewer video { width: 100%; max-height: 86vh; aspect-ratio: 9 / 16; border-radius: 22px; background: #000; }
-  .x { position: fixed; top: 14px; inset-inline-end: 18px; background: var(--paper); color: var(--bunn); border: 0; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; }
 </style>
 
 <script>
-  const dlg = document.querySelector<HTMLDialogElement>('.viewer')!;
-  const vid = dlg.querySelector('video')!;
-  document.querySelector('.e-film')?.addEventListener('click', () => { vid.src = '/media/vid/eid.mp4'; dlg.showModal(); vid.play().catch(() => {}); });
-  dlg.addEventListener('close', () => vid.pause());
-  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+  // The Eid film plays in the page, on a loop, silent by default. The first visit tries the sound
+  // once (browsers only allow it after the visitor has clicked on the site); when that play ends it
+  // goes silent. The button turns the sound on (for one play) or off at any time.
+  const vid = document.querySelector<HTMLVideoElement>('.e-vid')!;
+  const snd = document.querySelector<HTMLButtonElement>('.snd')!;
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let seen = false, onScreen = false;
+  try { seen = localStorage.getItem('hikaya-eid-sound') === '1'; } catch { /* storage blocked */ }
+  const paint = () => { snd.setAttribute('aria-pressed', String(!vid.muted)); snd.querySelector('span')!.textContent = vid.muted ? snd.dataset.off! : snd.dataset.on!; };
+  const start = () => vid.play().catch(() => { vid.muted = true; paint(); return vid.play().catch(() => {}); });
+  vid.addEventListener('ended', () => { vid.muted = true; paint(); vid.currentTime = 0; if (onScreen && !calm) vid.play().catch(() => {}); });
+  snd.addEventListener('click', () => {
+    if (vid.muted) { vid.muted = false; vid.currentTime = 0; vid.play().catch(() => {}); } else vid.muted = true;
+    paint();
+  });
+  new IntersectionObserver(([e]) => {
+    onScreen = e.isIntersecting;
+    // Scrolled away: stop, and silence it, so it never comes back with sound.
+    if (!onScreen) { vid.pause(); vid.muted = true; paint(); return; }
+    if (calm && vid.paused && vid.muted) return;
+    if (!seen && !calm) { seen = true; try { localStorage.setItem('hikaya-eid-sound', '1'); } catch { /* fine */ } vid.muted = false; }
+    paint(); start();
+  }, { threshold: 0.4 }).observe(vid);
   // Order by: the last day before Eid and its deadline, from the same settings as checkout.
   (async () => {
     try {
