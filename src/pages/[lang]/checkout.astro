@@ -28,6 +28,8 @@ const ar = lang === 'ar';
           <div class="field"><label for="f-phone">{ar ? 'الهاتف' : 'Phone'}</label><input id="f-phone" name="phone" type="tel" required autocomplete="tel" inputmode="tel" dir="ltr" /><p class="err" hidden></p></div>
         </div>
         <div class="field"><label for="f-email">{ar ? 'البريد الإلكتروني' : 'Email'}</label><input id="f-email" name="email" type="email" required autocomplete="email" dir="ltr" /><p class="hint">{ar ? 'نرسل التأكيد إلى هنا، ويمكنك متابعة طلبك به لاحقاً.' : 'Your confirmation goes here, and you can follow your order with it later.'}</p><p class="err" hidden></p></div>
+        <div class="field"><label for="f-card">{ar ? 'الاسم على بطاقة الشكر' : 'Name on the thank-you card'}</label><input id="f-card" name="card_name" maxlength="25" autocomplete="off" /><p class="hint">{ar ? 'في كل علبة بطاقة «إلى …» باسمك. لترسلها لشخص آخر، اكتب اسمه هنا (حتى ٢٥ حرفاً) ولن نضع الأسعار في العلبة.' : 'Every box has a card “For …” with your name. Sending it to someone else? Put their name here (up to 25 characters) and no prices go in the box.'}</p><p class="err" hidden></p></div>
+        <label class="tick"><input type="checkbox" name="newsletter" id="f-news" /> <span>{CONSENT[ar ? 'ar' : 'en']}</span></label>
       </fieldset>
 
       <fieldset class="block">
@@ -76,20 +78,6 @@ const ar = lang === 'ar';
         <div class="field"><label for="f-notes">{ar ? 'ملاحظة (اختياري)' : 'A note (optional)'}</label><textarea id="f-notes" name="notes" rows="3" placeholder={ar ? 'باب جانبي؟ رقم الشقة؟' : 'Side door? Apartment number?'}></textarea></div>
       </fieldset>
 
-      <fieldset class="block">
-        <legend class="h-s">{ar ? 'هدية؟' : 'A gift?'}</legend>
-        <label class="tick"><input type="checkbox" name="gift" id="f-gift" /> <span>{ar ? 'هذا الطلب هدية لشخص آخر' : 'This order is a gift for someone else'}</span></label>
-        <div class="gift" id="giftBox" hidden>
-          <div class="two">
-            <div class="field"><label for="f-giftto">{ar ? 'اسم من تصله الهدية' : 'Who it is for'}</label><input id="f-giftto" name="gift_to" autocomplete="off" /><p class="err" hidden></p></div>
-            <div class="field"><label for="f-giftphone">{ar ? 'هاتفه (للتوصيل، اختياري)' : 'Their phone (for delivery, optional)'}</label><input id="f-giftphone" name="gift_phone" type="tel" dir="ltr" /></div>
-          </div>
-          <div class="field"><label for="f-giftmsg">{ar ? 'رسالة قصيرة على البطاقة (اختياري)' : 'A short note for the card (optional)'}</label><textarea id="f-giftmsg" name="gift_message" rows="2" maxlength="140"></textarea><p class="hint" id="giftCount" dir="ltr">0 / 140</p></div>
-          <p class="hint">{ar ? 'نضع في العلبة بطاقة شكر باسمه «إلى …» ومعها رسالتك، ودليل التمر إن كان في الطلب تمر. لا نضع الأسعار داخل الهدية.' : 'We put a thank-you card in the box with their name (“For …”) and your note, plus our date guide when there are dates. No prices go inside a gift.'}</p>
-          <p class="hint">{ar ? 'للتوصيل إليهم: اختر التوصيل واكتب عنوانهم في الأعلى.' : 'To deliver to them, choose delivery and put their address above.'}</p>
-        </div>
-        <label class="tick"><input type="checkbox" name="newsletter" id="f-news" /> <span>{CONSENT[ar ? 'ar' : 'en']}</span></label>
-      </fieldset>
 
       <p class="err form-err" id="formErr" hidden role="alert"></p>
       <button class="btn tamr submit" type="submit"><span>{ar ? 'أرسل الطلب المسبق' : 'Send my pre-order'}</span></button>
@@ -218,7 +206,6 @@ const ar = lang === 'ar';
     if (gift) $('sGc').textContent = `−${money(+gc.toFixed(2))}`;
     $('sTot').textContent = money(+(before - gc).toFixed(2));
     $('addr').hidden = !delivery();
-    $('giftBox').hidden = !($('f-gift') as HTMLInputElement).checked;
     $('emptyCo').hidden = lines.length > 0;
     paintWindows();
     form.querySelector<HTMLButtonElement>('.submit')!.disabled = lines.length === 0 || !open;
@@ -271,6 +258,7 @@ const ar = lang === 'ar';
           if (!d) return;
           const fill = (id: string, v: string) => { const el = document.getElementById(id) as HTMLInputElement | null; if (el && !el.value && v) el.value = v; };
           fill('f-name', d.name); fill('f-phone', d.phone); fill('f-street', d.street); fill('f-postal', d.postal);
+          document.getElementById('f-name')?.dispatchEvent(new Event('input')); // the card name follows
         }).catch(() => {});
       }
     } catch {
@@ -315,8 +303,12 @@ const ar = lang === 'ar';
     postal: ar ? 'نوصل داخل كالغاري فقط، ولا يبدو هذا رمزاً بريدياً في كالغاري. اختر الاستلام إن كنت خارجها.' : 'We only deliver in Calgary, and this does not look like a Calgary postal code. Choose pickup if you are outside the city.',
   };
   // The gift note has to fit on the A6 thank-you card: show how much room is left.
-  $('f-giftmsg').addEventListener('input', () => { $('giftCount').textContent = `${($('f-giftmsg') as HTMLTextAreaElement).value.length} / 140`; });
-  const FIELD: Record<string, string> = { gift_to: 'f-giftto', name: 'f-name', phone: 'f-phone', email: 'f-email', street: 'f-street', postal: 'f-postal' };
+  // The thank-you card carries the customer's name unless they change it (then it goes to someone else).
+  const cardIn = $('f-card') as HTMLInputElement, nameIn = $('f-name') as HTMLInputElement;
+  const follow = () => { if (!cardIn.dataset.own) cardIn.value = nameIn.value.slice(0, 25); };
+  nameIn.addEventListener('input', follow); nameIn.addEventListener('change', follow);
+  cardIn.addEventListener('input', () => { cardIn.dataset.own = cardIn.value.trim() && cardIn.value.trim() !== nameIn.value.trim() ? '1' : ''; });
+  const FIELD: Record<string, string> = { gift_to: 'f-card', name: 'f-name', phone: 'f-phone', email: 'f-email', street: 'f-street', postal: 'f-postal' };
   const setErr = (el: HTMLElement, msg: string) => {
     const e = el.closest('.field')?.querySelector<HTMLElement>('.err');
     el.setAttribute('aria-invalid', msg ? 'true' : 'false');
@@ -338,7 +330,7 @@ const ar = lang === 'ar';
           lang, name: val('name'), phone: val('phone'), email: val('email'), method: val('method'), street: val('street'), postal: val('postal'),
           day: val('day'), window: val('window'), payment: val('payment'), notes: val('notes'),
           lines: lines.map(l => ({ id: l.id, opt: l.opt, qty: l.qty, ...(l.sleeve ? { sleeve: l.sleeve } : {}) })), promo: promo?.code ?? '',
-          gift: ($('f-gift') as HTMLInputElement).checked, gift_to: val('gift_to'), gift_phone: val('gift_phone'), gift_message: val('gift_message'),
+          ...(() => { const c = (val('card_name') || val('name')).trim(); const other = c.toLowerCase() !== val('name').trim().toLowerCase(); return { gift: other, gift_to: other ? c : '' }; })(),
           newsletter: ($('f-news') as HTMLInputElement).checked,
           giftcard: gift?.code ?? '', sms: ($('f-sms') as HTMLInputElement).checked, repeat: Number(val('repeat')),
         }),

@@ -56,7 +56,7 @@ export async function createOrder(input: any, s: Session | null, cardEnabled: bo
   }
   const payment = PAYMENTS.includes(input?.payment) ? input.payment : 'at-pickup';
   const gift = input?.gift === true;
-  const giftTo = gift ? str(input?.gift_to, 120) || null : null, giftPhone = gift ? str(input?.gift_phone, 40) || null : null, giftMessage = gift ? str(input?.gift_message, 140) || null : null;
+  const giftTo = gift ? str(input?.gift_to, 25) || null : null, giftPhone = gift ? str(input?.gift_phone, 40) || null : null, giftMessage = gift ? str(input?.gift_message, 140) || null : null;
   if (gift && !giftTo) errors.gift_to = 'required';
   if (payment === 'card' && !cardEnabled) errors.payment = 'card-off';
   if (Object.keys(errors).length) throw Object.assign(new HttpError(400, 'invalid', 'Check the highlighted fields.'), { fields: errors });

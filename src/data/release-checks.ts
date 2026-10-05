@@ -6,10 +6,10 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
-    id: 'gift-cards-1', title: 'Gift orders: the thank-you card, the note and the date guide', date: '2026-10-05',
+    id: 'gift-cards-1', title: 'The thank-you card: a name on every order, and the date guide', date: '2026-10-05',
     checks: [
-      { id: 'gift-checkout', text: 'Checkout → “A gift?”: the note field says “A short note for the card”, counts up to 140 characters, and a line explains the thank-you card with their name, the note and the date guide (Arabic and English).', links: [{ label: 'Checkout (EN)', href: '/en/checkout/' }, { label: 'الدفع (AR)', href: '/ar/checkout/' }] },
-      { id: 'gift-slip', text: 'Desk → Day sheet → Packing slips: each slip has “In the box” with the thank-you card and the name to print, the note for gifts, and the date guide for orders with dates (not for Two Coffees). Gift notes also print on an A6-sized page.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'gift-checkout', text: 'Checkout → You: “Name on the thank-you card” fills in with your name as you type it, and can be changed for someone else (up to 25 characters). There is no gift section or note any more.', links: [{ label: 'Checkout (EN)', href: '/en/checkout/' }, { label: 'الدفع (AR)', href: '/ar/checkout/' }] },
+      { id: 'gift-slip', text: 'Desk → Day sheet → Packing slips: each slip has “In the box” with the thank-you card and the name to print with the date coder, and the date guide for orders with dates (not for Two Coffees). An order with someone else’s name on the card says “no prices in the bag”.', links: [{ label: 'Desk', href: '/admin/' }] },
     ],
   },
   {
