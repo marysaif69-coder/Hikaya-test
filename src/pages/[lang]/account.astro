@@ -70,6 +70,7 @@ const ar = lang === 'ar';
   .empty { display: grid; gap: 14px; justify-items: start; }
   .subs { display: grid; gap: 14px; }
   .orders :global(.mvbox) { display: grid; gap: 10px; background: var(--paper); border-radius: 18px; padding: 14px; }
+  .orders :global(.mvbox input:not([type=radio])) { display: block; width: 100%; margin-top: 4px; border: 1.5px solid var(--line); border-radius: 10px; padding: 8px; font: inherit; background: var(--sheet); }
   .orders :global(.mvbox select) { margin-inline-start: 8px; border: 1.5px solid var(--line); border-radius: 10px; padding: 8px; font: inherit; background: var(--sheet); }
   .orders :global(.mvwins) { display: flex; flex-wrap: wrap; gap: 12px; }
   .orders :global(.again) { margin-inline-start: auto; }
@@ -114,6 +115,7 @@ const ar = lang === 'ar';
     const canCancel = o.status === 'received' && o.paymentStatus === 'unpaid' && !o.paid && !q.has('t');
     const rest = o.paid > 0 && o.total > o.paid ? o.total - o.paid : 0;
     const canMove = !q.has('t') && ['received', 'confirmed'].includes(o.status);
+    const canAddr = canMove && o.method === 'delivery';
     const canAgain = !q.has('t') && o.items.some((i: any) => catalog().items[i.product_id]);
     return `<article class="ord${q.get('order') === o.ref ? ' hl' : ''}" id="o-${esc(o.ref)}">
       <div class="ord-top"><span class="ref">${esc(o.ref)}</span><span class="when">${fmtDay(o.day)} · <span dir="ltr">${esc(o.window)}</span></span></div>
@@ -126,7 +128,7 @@ const ar = lang === 'ar';
       <p class="tot"><span>${ar ? 'الإجمالي' : 'Total'}</span><span class="tnum">${money(o.total)}</span></p>
       ${o.refunded ? `<p class="its"><span>${ar ? 'استُرد' : 'Refunded'}: <span class="tnum">${money(o.refunded)}</span></span></p>` : ''}
       <p class="pay">${o.total === 0 && o.giftCard ? (ar ? 'دُفع ببطاقة هدية' : 'Paid with a gift card') : PAY[o.payment] ?? ''} · ${PST[o.paymentStatus] ? `<b>${PST[o.paymentStatus]}</b>` : rest ? (ar ? `الباقي <span class="tnum">${money(rest)}</span>` : `<span class="tnum">${money(rest)}</span> still to pay`) : (ar ? 'لم يُدفع بعد' : 'Not paid yet')}</p>
-      <div class="acts">${o.payUrl && o.status !== 'cancelled' ? `<a class="btn tamr" href="${esc(o.payUrl)}">${rest ? (ar ? 'ادفع الباقي' : 'Pay the rest') : ar ? 'ادفع الآن' : 'Pay now'}</a>` : ''}${canCancel ? `<button class="btn line" type="button" data-cancel="${esc(o.ref)}">${ar ? 'إلغاء الطلب' : 'Cancel order'}</button>` : ''}${canMove ? `<button class="btn line" type="button" data-move="${esc(o.ref)}">${ar ? 'غيّر الموعد' : 'Change day'}</button>` : ''}${canAgain ? `<button class="btn primary again" type="button" data-again="${esc(o.ref)}">${ar ? 'اطلبه مرة أخرى' : 'Order again'}</button>` : ''}</div>
+      <div class="acts">${o.payUrl && o.status !== 'cancelled' ? `<a class="btn tamr" href="${esc(o.payUrl)}">${rest ? (ar ? 'ادفع الباقي' : 'Pay the rest') : ar ? 'ادفع الآن' : 'Pay now'}</a>` : ''}${canCancel ? `<button class="btn line" type="button" data-cancel="${esc(o.ref)}">${ar ? 'إلغاء الطلب' : 'Cancel order'}</button>` : ''}${canMove ? `<button class="btn line" type="button" data-move="${esc(o.ref)}">${ar ? 'غيّر الموعد' : 'Change day'}</button>` : ''}${canAddr ? `<button class="btn line" type="button" data-addr="${esc(o.ref)}">${ar ? 'غيّر العنوان' : 'Change address'}</button>` : ''}${canAgain ? `<button class="btn primary again" type="button" data-again="${esc(o.ref)}">${ar ? 'اطلبه مرة أخرى' : 'Order again'}</button>` : ''}</div>
     </article>`;
   }
 
@@ -162,6 +164,16 @@ const ar = lang === 'ar';
     box.innerHTML = `<label>${ar ? 'اليوم الجديد' : 'New day'} <select>${days.map((d: any) => `<option value="${d.date}" ${d.date === o.day ? 'selected' : ''}>${fmtDay(d.date)}</option>`).join('')}</select></label>
       <div class="mvwins">${['11:00–14:00', '14:00–17:00', '17:00–20:00'].map(w => `<label><input type="radio" name="mv-${esc(ref)}" value="${w}" ${w === o.window ? 'checked' : ''} /> <span dir="ltr">${w}</span></label>`).join('')}</div>
       <button class="btn primary" type="button" data-move-go="${esc(ref)}">${ar ? 'غيّر الموعد' : 'Move my order'}</button>`;
+    art.querySelector('.acts')!.after(box);
+  }
+  // Change address: a delivery order's street and postal code, until the day's order deadline.
+  function openAddr(ref: string) {
+    const o = mine.find(x => x.ref === ref); if (!o) return;
+    const art = document.getElementById(`o-${ref}`)!; art.querySelector('.mvbox')?.remove();
+    const box = document.createElement('div'); box.className = 'mvbox';
+    box.innerHTML = `<label>${ar ? 'الشارع (مع رقم الشقة ورمز الجرس)' : 'Street (with unit and buzz code)'} <input class="ad-street" maxlength="200" value="${esc(o.street ?? '')}" /></label>
+      <label>${ar ? 'الرمز البريدي (كالغاري)' : 'Postal code (Calgary)'} <input class="ad-postal" maxlength="12" size="9" value="${esc(o.postal ?? '')}" /></label>
+      <button class="btn primary" type="button" data-addr-go="${esc(ref)}">${ar ? 'احفظ العنوان' : 'Save the address'}</button>`;
     art.querySelector('.acts')!.after(box);
   }
   // "Order again": puts everything from that order that is still on sale back in the cart.
@@ -213,6 +225,16 @@ const ar = lang === 'ar';
       const r = await fetch('/api/my/orders/move', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ref: mvGo.dataset.moveGo, day, window: win }) });
       const d = await r.json(); if (!r.ok) { alert(errorText(d, ar)); return; }
       alert(ar ? 'تغيّر الموعد. أرسلنا لك بريداً.' : 'Done. We emailed you the new day.'); showMine(); return;
+    }
+    const ad = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-addr]');
+    if (ad) { openAddr(ad.dataset.addr!); return; }
+    const adGo = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-addr-go]');
+    if (adGo) {
+      const box = adGo.closest<HTMLElement>('.mvbox')!;
+      const street = box.querySelector<HTMLInputElement>('.ad-street')!.value, postal = box.querySelector<HTMLInputElement>('.ad-postal')!.value;
+      const r = await fetch('/api/my/orders/address', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ref: adGo.dataset.addrGo, street, postal }) });
+      const dd = await r.json(); if (!r.ok) { alert(errorText(dd, ar)); return; }
+      alert(ar ? 'تغيّر العنوان. أرسلنا لك بريداً.' : 'Done. We emailed you the new address.'); showMine(); return;
     }
     const again = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-again]');
     if (again) { orderAgain(again.dataset.again!); return; }

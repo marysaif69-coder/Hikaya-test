@@ -6,6 +6,14 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'address-change-1', title: 'Change the delivery address of an order (customers and the team)', date: '2026-10-05',
+    checks: [
+      { id: 'addr-customer', text: 'Place a test delivery order, then in My account press “Change address” (غيّر العنوان), type a new street with unit and buzz code and a Calgary postal code, and save. The order shows the new address and an email “New address for order …” arrives.', links: [{ label: 'My account (EN)', href: '/en/account/' }, { label: 'حسابي (AR)', href: '/ar/account/' }] },
+      { id: 'addr-limits', text: 'A postal code outside Calgary is refused, and a pickup order has no “Change address” button. After the day’s order deadline the customer is told to reply to the confirmation email.', links: [{ label: 'My account', href: '/en/account/' }] },
+      { id: 'addr-desk', text: 'Desk: open the order, “Change delivery address”, save a new one. It works until the order is delivered; the order history shows old → new address, and the driver gets a notice if one is assigned.', links: [{ label: 'Desk', href: '/admin/' }] },
+    ],
+  },
+  {
     id: 'design-1', title: 'Design: the Dates tab on a laptop, the dark Yemeni beans band, speech-bubble corners', date: '2026-10-04',
     checks: [
       { id: 'design-tier-art', text: 'On a laptop, Shop → Dates: next to the cards, a drawing of the box for that tier (clear tray, Reserve box, Stuffed box). On a phone it is hidden.', links: [{ label: 'Dates (EN)', href: '/en/shop/#reserve' }] },

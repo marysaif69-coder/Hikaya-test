@@ -5,7 +5,7 @@ import { json, fail, body, str, siteUrl, HttpError } from '../lib/http';
 import { session } from '../lib/auth';
 import { sql, one } from '../lib/db';
 import { availability } from '../lib/slots';
-import { createOrder, finishOrder, moveOrder, publicOrder, findForGuest, notify, event, releaseOrder } from '../lib/orders';
+import { createOrder, finishOrder, moveOrder, changeAddress, publicOrder, findForGuest, notify, event, releaseOrder } from '../lib/orders';
 import { startSubscription, mySubscriptions, changeSubscription } from '../lib/subscriptions';
 import { buyGiftCard, giftCardBalance } from '../lib/giftcards';
 import { liveCatalog, getSeasons } from '../lib/catalog';
@@ -139,6 +139,14 @@ export default async (req: Request) => {
       const o = await moveOrder(str(b.ref, 12), str(b.day, 10), str(b.window, 20), s.email, req, { email: s.email });
       return json({ order: await publicOrder(o) });
     }
+    // Change the delivery address of one's own order, until that day's order deadline.
+    if (path === '/api/my/orders/address' && req.method === 'POST') {
+      const s = await session(req);
+      if (!s) throw new HttpError(401, 'login');
+      const b = await body(req);
+      const o = await changeAddress(str(b.ref, 12), str(b.street, 200), str(b.postal, 12), s.email, req, { email: s.email });
+      return json({ order: await publicOrder(o) });
+    }
     if (path === '/api/my/orders/cancel' && req.method === 'POST') {
       const s = await session(req);
       if (!s) throw new HttpError(401, 'login');
@@ -155,4 +163,4 @@ export default async (req: Request) => {
   } catch (e) { return fail(e); }
 };
 
-export const config: Config = { path: ['/api/config', '/api/catalog', '/api/promo', '/api/notify-me', '/api/list', '/api/list/confirm', '/api/list/unsubscribe', '/api/hit', '/api/giftcard', '/api/giftcard/check', '/api/my/subscriptions', '/api/slots', '/api/orders', '/api/orders/view', '/api/my/orders', '/api/my/orders/cancel', '/api/my/orders/move', '/api/my/details'] };
+export const config: Config = { path: ['/api/config', '/api/catalog', '/api/promo', '/api/notify-me', '/api/list', '/api/list/confirm', '/api/list/unsubscribe', '/api/hit', '/api/giftcard', '/api/giftcard/check', '/api/my/subscriptions', '/api/slots', '/api/orders', '/api/orders/view', '/api/my/orders', '/api/my/orders/cancel', '/api/my/orders/move', '/api/my/orders/address', '/api/my/details'] };

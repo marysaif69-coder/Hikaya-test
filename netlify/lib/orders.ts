@@ -247,6 +247,29 @@ export async function moveOrder(ref: string, day: string, window: string, actor:
   return moved!;
 }
 
+/** Changes where a delivery goes. Customers can do it until the day's order deadline; the team
+ * (force) until it is handed over, and the driver hears about it. The route order is reset, the
+ * old and new address are logged, and the customer gets an email with the new address. */
+export async function changeAddress(ref: string, streetIn: string, postalIn: string, actor: string, req?: Request, opts: { email?: string; force?: boolean } = {}) {
+  const o = await one`SELECT * FROM orders WHERE ref = ${ref}`;
+  if (!o || (opts.email && o.email !== opts.email)) throw new HttpError(404, 'not-found', 'We could not find that order.');
+  if (o.method !== 'delivery') throw new HttpError(409, 'not-delivery', 'This order is a pickup, so it has no delivery address.');
+  const open = opts.force ? ['received', 'confirmed', 'ready', 'out-for-delivery'] : ['received', 'confirmed'];
+  if (!open.includes(o.status)) throw new HttpError(409, 'cannot-change-address', 'This order is already on its way. Reply to your confirmation email or call us and we will help.');
+  const street = str(streetIn, 200), postal = calgaryPostal(str(postalIn, 12));
+  if (!street || !postal) throw Object.assign(new HttpError(400, 'bad-address', 'Enter the street address and a Calgary postal code.'), { fields: { ...(street ? {} : { street: 'required' }), ...(postal ? {} : { postal: 'postal' }) } });
+  if (street === o.street && postal === o.postal) throw new HttpError(400, 'same-address', 'That is the address it already has.');
+  if (!opts.force) {
+    const c = calgaryNow(), cut = cutoffFor(mailShape(o).slot_date, (await getSettings()).ordering);
+    if (!(c.date < cut.date || (c.date === cut.date && c.hour < cut.hour))) throw new HttpError(409, 'too-late', 'It is too late to change this order online. Reply to your confirmation email and we will help.');
+  }
+  const changed = await one`UPDATE orders SET street = ${street}, postal = ${postal}, route_seq = NULL, updated_at = NOW() WHERE id = ${o.id} RETURNING *`;
+  await event(o.id, 'address', `${o.street}, ${o.postal} → ${street}, ${postal}`, actor);
+  if (o.driver_email) await pushTo([o.driver_email], { title: `${o.ref}: new address`, body: `${street}, ${postal}`, tag: 'stops' });
+  await notify('address', changed!, req);
+  return changed!;
+}
+
 /** Changes what is in an order (the team, e.g. after a phone call): priced again at today's prices,
  * stock and daily limits checked, the promo code and gift card kept, and the customer emailed. */
 export async function editOrder(ref: string, rawLines: unknown, actor: string, req?: Request, sendEmail = true) {

@@ -20,7 +20,7 @@ import { readContent, saveContent, type FileId } from '../lib/content';
 import { requireTeam } from '../lib/auth';
 import { sql, one } from '../lib/db';
 import { getSettings, WINDOWS, calgaryNow, addDays } from '../lib/slots';
-import { items, setStatus, setPayment, event, STATUSES, moveOrder, editOrder } from '../lib/orders';
+import { items, setStatus, setPayment, event, STATUSES, moveOrder, editOrder, changeAddress } from '../lib/orders';
 import { readable } from '../lib/ask';
 import { DECISIONS } from '../../src/data/decisions';
 import { liveCatalog, saveProduct, getSeasons, saveSeasons, takeStock, restock } from '../lib/catalog';
@@ -143,6 +143,13 @@ async function handle(req: Request) {
       const b = await body(req);
       const o = await moveOrder(parts[1], str(b.day, 10), str(b.window, 20), admin.email, req, { force: b.force === true });
       return json({ ok: true, day: day(o.slot_date), window: o.slot_window });
+    }
+
+    // POST /api/admin/orders/:ref/address — a new delivery address (until it is handed over; the driver is told)
+    if (parts[0] === 'orders' && parts[1] && parts[2] === 'address' && req.method === 'POST') {
+      const b = await body(req);
+      const o = await changeAddress(parts[1], str(b.street, 200), str(b.postal, 12), admin.email, req, { force: true });
+      return json({ ok: true, street: o.street, postal: o.postal });
     }
 
     // POST /api/admin/orders/:ref/items — change what is in the order

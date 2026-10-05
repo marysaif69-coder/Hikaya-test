@@ -107,6 +107,10 @@ const COPY = {
     en: (o: OrderForMail) => ({ s: `New day for order ${o.ref}`, h: 'Your order has a new day.', p: 'We have moved your order. Here are the new details.' }),
     ar: (o: OrderForMail) => ({ s: `موعد جديد لطلبك ${o.ref}`, h: 'لطلبك موعد جديد.', p: 'غيّرنا موعد طلبك، وهذه التفاصيل الجديدة.' }),
   },
+  address: {
+    en: (o: OrderForMail) => ({ s: `New address for order ${o.ref}`, h: 'Your delivery address has changed.', p: 'We will deliver your order to the new address below.' }),
+    ar: (o: OrderForMail) => ({ s: `عنوان جديد لطلبك ${o.ref}`, h: 'تغيّر عنوان التوصيل.', p: 'سنوصل طلبك إلى العنوان الجديد أدناه.' }),
+  },
   updated: {
     en: (o: OrderForMail) => ({ s: `Order ${o.ref} was updated`, h: 'Your order was updated.', p: 'We changed your order as agreed. Here is what it is now.' }),
     ar: (o: OrderForMail) => ({ s: `عُدّل طلبك ${o.ref}`, h: 'عُدّل طلبك.', p: 'عدّلنا طلبك كما اتفقنا، وهذا ما أصبح عليه.' }),

@@ -448,6 +448,23 @@ assert.equal((await call(orders, '/api/my/orders/move', { cookie: mover, body: {
 await call(admin, `/api/admin/orders/${mv.data.ref}`, { cookie: adm, body: { status: 'confirmed', notify: false } });
 const forced = await call(admin, `/api/admin/orders/${mv.data.ref}/move`, { cookie: helper, body: { day: '2027-01-28', window: '17:00–20:00', force: true } });
 assert.equal(forced.data.day, '2027-01-28'); ok('the team can move any order (even past the deadline)');
+// Change the delivery address (customer before the deadline, the team until it is handed over).
+const adMails = sent.length;
+const adr = await call(orders, '/api/my/orders/address', { cookie: mover, body: { ref: mv.data.ref, street: '513 - 909 5 Avenue SW, buzz 513', postal: 't2p3g5' } });
+assert.equal(adr.status, 200); assert.equal(adr.data.order.street, '513 - 909 5 Avenue SW, buzz 513'); assert.equal(adr.data.order.postal, 'T2P 3G5');
+assert.ok(sent.slice(adMails).some(m => /New address for order/.test(m.subject) && m.to.includes('mover@example.com') && /513 - 909 5 Avenue SW/.test(m.html))); ok('a customer changes the delivery address of their own order; they get an email with the new address');
+assert.equal((await call(orders, '/api/my/orders/address', { cookie: regCookie, body: { ref: mv.data.ref, street: '1 Other St', postal: 'T2P 3G5' } })).status, 404); ok('nobody else can change it');
+assert.equal((await call(orders, '/api/my/orders/address', { cookie: mover, body: { ref: mv.data.ref, street: '1 Far Rd', postal: 'T4N 1A1' } })).data.error, 'bad-address'); ok('the new address must be in Calgary');
+assert.equal((await call(orders, '/api/my/orders/address', { cookie: mover, body: { ref: mv.data.ref, street: '513 - 909 5 Avenue SW, buzz 513', postal: 'T2P 3G5' } })).data.error, 'same-address');
+await call(admin, `/api/admin/orders/${mv.data.ref}`, { cookie: adm, body: { status: 'out-for-delivery', notify: false } });
+assert.equal((await call(orders, '/api/my/orders/address', { cookie: mover, body: { ref: mv.data.ref, street: '2 New St', postal: 'T2P 3G5' } })).data.error, 'cannot-change-address'); ok('customers cannot change it once it is on its way');
+const adTeam = await call(admin, `/api/admin/orders/${mv.data.ref}/address`, { cookie: helper, body: { street: '77 Spruce Place SW, unit 1202', postal: 'T3C 3X6' } });
+assert.equal(adTeam.status, 200); assert.equal(adTeam.data.postal, 'T3C 3X6');
+const adEv = (await call(admin, `/api/admin/orders/${mv.data.ref}`, { cookie: adm })).data.events;
+assert.ok(adEv.some((e: any) => e.kind === 'address' && /77 Spruce Place SW/.test(e.detail ?? ''))); ok('the team can still change it while out for delivery; old and new address are logged');
+await call(admin, `/api/admin/orders/${mv.data.ref}`, { cookie: adm, body: { status: 'confirmed', notify: false } });
+const pk = await order({ email: 'pickup.only@example.com', name: 'Pia Pickup', phone: '403-555-0112', method: 'pickup', day: '2027-01-29' });
+assert.equal((await call(admin, `/api/admin/orders/${pk.data.ref}/address`, { cookie: helper, body: { street: '9 Elm St', postal: 'T3A 0A1' } })).data.error, 'not-delivery'); ok('a pickup order has no address to change');
 
 const cl = (await call(admin, '/api/admin/customers?q=mover', { cookie: helper })).data.customers;
 assert.equal(cl.length, 1); assert.equal(cl[0].orders, 1); assert.ok(cl[0].spent > 0);

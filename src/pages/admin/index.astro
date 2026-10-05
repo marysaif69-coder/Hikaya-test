@@ -1068,6 +1068,9 @@ const DEC_LISTS = [
       <h3>Change day or time</h3>
       <div class="acts"><input type="date" id="mvDay" value="${o.day}" /><select id="mvWin">${['11:00–14:00', '14:00–17:00', '17:00–20:00'].map(w => `<option ${w === o.window ? 'selected' : ''}>${w}</option>`).join('')}</select><button type="button" id="mvGo">Move</button></div>
       <label class="notify"><input type="checkbox" id="mvForce" /> Allow even if that time is full or past the deadline</label>
+      ${o.method === 'delivery' && !['completed', 'cancelled'].includes(o.status) ? `<h3>Change delivery address</h3>
+      <div class="acts"><input id="adStreet" value="${esc(o.street ?? '')}" placeholder="Street, unit, buzz code" maxlength="200" /><input id="adPostal" value="${esc(o.postal ?? '')}" placeholder="Postal code" maxlength="12" size="9" /><button type="button" id="adGo">Save address</button></div>
+      <p class="ev">The customer is emailed the new address. If a driver has it, they get a notice and the route order is reset.</p>` : ''}
       <h3>Payment</h3>
       <div class="acts"><button type="button" data-pay="paid" class="${o.paymentStatus === 'paid' ? 'cur' : ''}">Money received</button><button type="button" data-pay="unpaid" class="${o.paymentStatus === 'unpaid' ? 'cur' : ''}">Not received yet</button></div>
       ${ROLE !== 'admin' ? '' : `<h3>Refund</h3>`}
@@ -1105,6 +1108,10 @@ const DEC_LISTS = [
       if (!lines.length) { alert('An order needs at least one item. To cancel it, use Cancel order.'); return; }
       const r = await api(`/api/admin/orders/${encodeURIComponent(ref)}/items`, { lines, notify: ($('eiNotify') as HTMLInputElement).checked });
       alert(`Saved. New total ${money(r.total)}.${r.balance > 0 ? ` ${money(r.balance)} still to pay.` : r.balance < 0 ? ` ${money(-r.balance)} to refund.` : ''}`); refresh();
+    });
+    $('adGo')?.addEventListener('click', async () => {
+      const r = await api(`/api/admin/orders/${encodeURIComponent(ref)}/address`, { street: ($('adStreet') as HTMLInputElement).value, postal: ($('adPostal') as HTMLInputElement).value });
+      alert(`Saved: ${r.street}, ${r.postal}. The customer was emailed.`); refresh();
     });
     $('mvGo').addEventListener('click', async () => {
       const r = await api(`/api/admin/orders/${encodeURIComponent(ref)}/move`, { day: ($('mvDay') as HTMLInputElement).value, window: ($('mvWin') as HTMLSelectElement).value, force: ($('mvForce') as HTMLInputElement).checked });
