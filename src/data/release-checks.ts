@@ -6,6 +6,13 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'gift-cards-1', title: 'Gift orders: the thank-you card, the note and the date guide', date: '2026-10-05',
+    checks: [
+      { id: 'gift-checkout', text: 'Checkout → “A gift?”: the note field says “A short note for the card”, counts up to 140 characters, and a line explains the thank-you card with their name, the note and the date guide (Arabic and English).', links: [{ label: 'Checkout (EN)', href: '/en/checkout/' }, { label: 'الدفع (AR)', href: '/ar/checkout/' }] },
+      { id: 'gift-slip', text: 'Desk → Day sheet → Packing slips: each slip has “In the box” with the thank-you card and the name to print, the note for gifts, and the date guide for orders with dates (not for Two Coffees). Gift notes also print on an A6-sized page.', links: [{ label: 'Desk', href: '/admin/' }] },
+    ],
+  },
+  {
     id: 'eid-film-1', title: 'Eid page: the film plays in the page; Coffee & Dates in the Eid edition', date: '2026-10-05',
     checks: [
       { id: 'eid-film-inline', text: 'Eid page: the film plays by itself in the page (no pop-up), the whole frame shows and it fits the screen without scrolling, on a laptop and a phone. It pauses when you scroll away.', links: [{ label: 'Eid (EN)', href: '/en/eid/' }, { label: 'العيد (AR)', href: '/ar/eid/' }] },

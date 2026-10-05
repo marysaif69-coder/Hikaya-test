@@ -104,6 +104,18 @@ export const DECISIONS: Decision[] = [
   },
   // ---------- questions ----------
   {
+    id: 'card-note-space', topic: 'Packaging · Cards', asked: '2026-10-05',
+    question: 'Where does the gift note go? The thank-you card (A6) only has room for the name in the “إلى · For” box.',
+    context: 'Checkout now asks gift buyers for a short note (up to 140 characters) and tells them the box has a thank-you card with the person’s name and their note, plus the date guide when there are dates. The packing slip prints an A6-sized note page to slip in with the card for now. Options: make the “For” box on the card bigger so the note fits under the name; print the note on a small separate insert; or write it by hand on the back.',
+    options: ['Bigger “For” box on the card', 'Small separate note insert', 'Handwritten'],
+  },
+  {
+    id: 'date-guide-khudri', topic: 'Packaging · Cards', asked: '2026-10-05',
+    question: 'The date guide card lists Khudri, which we no longer sell. Swap it for Royal Sukkari Mufattal before printing?',
+    context: 'Drive → Higgsfield → Assets → 06 Artwork draft → D cards → D-card_date-guide_back. It lists Sukkari, Khalas, Khudri, Ajwa, Medjool. The site sells Sukkari, Khalas, Royal Sukkari Mufattal (سكري ملكي مفتل), Ajwa and Medjool. The card is put in every order with dates.',
+    options: ['Yes, swap Khudri for Mufattal', 'Keep Khudri (we will sell it)'],
+  },
+  {
     id: 'green-first-order', topic: 'Green coffee · First order', asked: '2026-10-04',
     question: 'After the cupping (about 20 Oct): which green coffees, and how much, for the first United Beans order?',
     context: 'Rules: Gulf (Najdi, Qassimi, Hijazi) and Yemeni-style coffee use natural (sun-dried) Ethiopian beans only, never washed: light roasts show the process most and washed tastes sour there. Shami is a medium roast with Brazilian beans, where the process matters less. Grade (G1, G2, G3) is defects per 300 g and cup quality, not acidity or picking order. Prices go by total order weight across coffees: 180–239 lb is Tier 3, 240 lb or more is Tier 4. Examples (OTC list, Sep 2026; shipping ≈ $116 by Canpar for 7 boxes): 180 lb, Harrar 90 + Peaberry 90 ≈ $1,508 delivered ($8.38/lb); 180 lb, Harrar 90 + Campos Altos 90 ≈ $1,603 ($8.90/lb); 240 lb, Harrar 120 + Hube 30 + Peaberry 90 ≈ $1,976 ($8.23/lb): the extra 30 lb bag costs only about $180. The price lists expire after 15 days, so ask Ibrahim for a fresh one before ordering, and remind him of the sample credit. Details on the team site: T79 and the United Beans follow-up.',

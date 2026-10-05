@@ -1490,6 +1490,8 @@ const DEC_LISTS = [
   }
 
   // ---------- packing slips and gift cards (print) ----------
+  // Boxes with dates get the date guide card (every box except an all-coffee one, like Two Coffees).
+  const HAS_DATES = new Set(PRODUCTS.filter((p: any) => p.kind === 'box' && !(p.picks && p.picks.every((x: string) => x === 'coffee'))).map((p: any) => p.id));
   $('slips').addEventListener('click', async () => {
     const d = await api(`/api/admin/day${dayPick.value ? `?date=${dayPick.value}` : ''}`);
     const all = [...d.pickups.flatMap((w: any) => w.orders), ...d.deliveries];
@@ -1499,15 +1501,22 @@ const DEC_LISTS = [
       <table>${o.items.map((i: any) => `<tr><td class="q">${i.qty} ×</td><td>${esc(i.name_en)}${i.option_en ? ` <small>(${esc(i.option_en)})</small>` : ''}${i.sleeve ? ` <b class="sl">· ${esc(SLEEVES[i.sleeve as keyof typeof SLEEVES]?.en ?? i.sleeve)}</b>` : ''}</td><td class="box">☐</td></tr>`).join('')}</table>
       ${o.notes ? `<p class="note">Customer note: ${esc(o.notes)}</p>` : ''}${o.customerNote ? `<p class="note">Team note: ${esc(o.customerNote)}</p>` : ''}
       ${o.lots?.length ? `<p class="note">Lots: ${o.lots.map(esc).join(', ')}</p>` : ''}
+      <h3 class="in">In the box</h3>
+      <table class="in"><tr><td>Thank-you card · For: <b dir="auto">${esc(o.gift ? o.gift.to : o.name)}</b> <small>(print the name in the “إلى · For” box with the date coder)</small></td><td class="box">☐</td></tr>
+      ${o.gift && o.gift.message ? `<tr><td>Note on the card: <i dir="auto">“${esc(o.gift.message)}”</i> <small>— from ${esc(o.name)}</small></td><td class="box">☐</td></tr>` : ''}
+      ${o.items.some((i: any) => HAS_DATES.has(i.product_id)) ? '<tr><td>Date guide card (خمس تمرات · Five dates)</td><td class="box">☐</td></tr>' : ''}</table>
       <p>${o.paymentStatus === 'paid' ? 'Paid' : o.payment === 'at-pickup' ? `Collect ${money(o.total - (o.paid ?? 0))}` : o.paid ? `${money(o.total - o.paid)} still to pay` : 'Not paid yet'}${o.gift ? ' · GIFT: no prices in the bag' : ''}</p></section>
-      ${o.gift && o.gift.message ? `<section class="card"><p class="msg" dir="auto">${esc(o.gift.message)}</p><p class="from" dir="auto">— ${esc(o.name)}</p><p class="brand">حكاية · Hikaya</p></section>` : ''}`;
+      ${o.gift && o.gift.message ? `<section class="card"><p class="for" dir="auto">إلى · For <b>${esc(o.gift.to)}</b></p><p class="msg" dir="auto">${esc(o.gift.message)}</p><p class="from" dir="auto">— ${esc(o.name)}</p></section>` : ''}`;
     const w = window.open('', '_blank'); if (!w) { alert('Allow pop-ups to print the slips.'); return; }
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Packing slips ${esc(d.date)}</title><style>
       body{font:15px/1.45 Arial,sans-serif;color:#33211A;margin:0} .slip,.card{page-break-after:always;padding:28px;max-width:640px;margin:0 auto}
       header{display:flex;justify-content:space-between;border-bottom:2px solid #33211A;padding-bottom:8px} h2{margin:16px 0 4px;font-size:26px}
       table{width:100%;border-collapse:collapse;margin:14px 0} td{padding:8px 4px;border-bottom:1px solid #DFD1BA} .q{width:50px;font-weight:700} .box{width:30px;font-size:22px}
-      .note{background:#F4E6BF;padding:8px 10px;border-radius:8px} .card{display:flex;flex-direction:column;justify-content:center;min-height:60vh;text-align:center}
-      .msg{font:italic 26px/1.4 Georgia,serif} .from{font-size:18px} .brand{margin-top:40px;color:#A93B28;letter-spacing:2px}</style></head>
+      .note{background:#F4E6BF;padding:8px 10px;border-radius:8px} h3.in{margin:14px 0 0;font-size:15px} table.in td{border-bottom:1px dashed #DFD1BA}
+      /* The note, at the size of the A6 thank-you card (105 × 148 mm), to slip in with it. */
+      .card{width:105mm;height:148mm;box-sizing:border-box;padding:14mm 10mm;margin:0 auto;display:flex;flex-direction:column;justify-content:center;gap:6mm;text-align:center;border:1px dashed #DFD1BA}
+      .for{font-size:15px;color:#A93B28} .msg{font:italic 20px/1.45 Georgia,serif;margin:0} .from{font-size:15px;margin:0}
+      @media print{.card{border:0}}</style></head>
       <body>${all.map(slip).join('')}<script>window.onload=()=>window.print()<\/script></body></html>`);
     w.document.close();
   });

@@ -84,7 +84,8 @@ const ar = lang === 'ar';
             <div class="field"><label for="f-giftto">{ar ? 'اسم من تصله الهدية' : 'Who it is for'}</label><input id="f-giftto" name="gift_to" autocomplete="off" /><p class="err" hidden></p></div>
             <div class="field"><label for="f-giftphone">{ar ? 'هاتفه (للتوصيل، اختياري)' : 'Their phone (for delivery, optional)'}</label><input id="f-giftphone" name="gift_phone" type="tel" dir="ltr" /></div>
           </div>
-          <div class="field"><label for="f-giftmsg">{ar ? 'رسالة على البطاقة (اختياري)' : 'A message for the card (optional)'}</label><textarea id="f-giftmsg" name="gift_message" rows="2" maxlength="300"></textarea></div>
+          <div class="field"><label for="f-giftmsg">{ar ? 'رسالة قصيرة على البطاقة (اختياري)' : 'A short note for the card (optional)'}</label><textarea id="f-giftmsg" name="gift_message" rows="2" maxlength="140"></textarea><p class="hint" id="giftCount" dir="ltr">0 / 140</p></div>
+          <p class="hint">{ar ? 'نضع في العلبة بطاقة شكر باسمه «إلى …» ومعها رسالتك، ودليل التمر إن كان في الطلب تمر. لا نضع الأسعار داخل الهدية.' : 'We put a thank-you card in the box with their name (“For …”) and your note, plus our date guide when there are dates. No prices go inside a gift.'}</p>
           <p class="hint">{ar ? 'للتوصيل إليهم: اختر التوصيل واكتب عنوانهم في الأعلى.' : 'To deliver to them, choose delivery and put their address above.'}</p>
         </div>
         <label class="tick"><input type="checkbox" name="newsletter" id="f-news" /> <span>{CONSENT[ar ? 'ar' : 'en']}</span></label>
@@ -313,6 +314,8 @@ const ar = lang === 'ar';
     phone: ar ? 'اكتب رقم هاتف من ١٠ أرقام.' : 'Enter a 10-digit phone number.',
     postal: ar ? 'نوصل داخل كالغاري فقط، ولا يبدو هذا رمزاً بريدياً في كالغاري. اختر الاستلام إن كنت خارجها.' : 'We only deliver in Calgary, and this does not look like a Calgary postal code. Choose pickup if you are outside the city.',
   };
+  // The gift note has to fit on the A6 thank-you card: show how much room is left.
+  $('f-giftmsg').addEventListener('input', () => { $('giftCount').textContent = `${($('f-giftmsg') as HTMLTextAreaElement).value.length} / 140`; });
   const FIELD: Record<string, string> = { gift_to: 'f-giftto', name: 'f-name', phone: 'f-phone', email: 'f-email', street: 'f-street', postal: 'f-postal' };
   const setErr = (el: HTMLElement, msg: string) => {
     const e = el.closest('.field')?.querySelector<HTMLElement>('.err');
