@@ -32,8 +32,9 @@ export const PACK_FIELDS: [keyof PackInput, string, string][] = [
 ];
 
 const ROLLS: Record<string, [string, number]> = {
-  E1: ['80 × 80 coffee front', 80], E1b: ['100 × 100 coffee back, spice packs', 100], E2: ['Ø76 box seal', 76],
-  E3: ['100 × 90 dates label, box bottom', 90], E4: ['Ø50 Ramadan / Eid', 50], E6: ['60 × 66 saffron, small packs', 66],
+  E1: ['80 × 80 coffee front', 80], E1b: ['100 × 100 coffee back, spice packs, dates front', 100], E2: ['Ø76 box seal', 76],
+  E3: ['100 × 90 dates back, box bottom', 90], E4: ['Ø50 Ramadan / Eid', 50], E5: ['100 × 40 box side (name, origin, ingredients)', 40],
+  E6: ['60 × 66 saffron and small packs, front and back', 66],
   E7: ['Ø30 Yemeni region seal', 30], E8: ['60 × 34 Yemeni lot card', 34], E9: ['82 × 66 Yemeni Nutrition Facts', 66],
 };
 const B1_MIX = { D24: 50, C12: 33, C2: 17 };   // % of gift boxes by insert
@@ -74,11 +75,12 @@ export function packCounts(i: PackInput) {
     { group: 'Bags', code: 'H', name: 'Cloth tote (sold)', need: i.totes, why: 'your number', order: up(i.totes, 50) },
     { group: 'Bags', code: 'T', name: 'Yemeni gift tag + cord', need: u.A3, why: 'one per Yemeni pouch', order: up(w(u.A3, i.waste_labels), 100) },
     lab('E1', u.A1, 'one per 250 g pouch'),
-    lab('E1b', u.A1 + u.spice, '250 g pouches + spice packs'),
+    lab('E1b', u.A1 + u.spice + u.dates, '250 g backs + spice packs + dates fronts'),
     lab('E2', u.B1 + u.B5, 'one per gift box'),
-    lab('E3', u.dates + u.B1 + u.B5, 'dates bags + box bottoms'),
+    lab('E3', u.dates + u.B1 + u.B5 + b1('C12'), 'dates backs + box bottoms (+1 on Coffee & Dates boxes)'),
     lab('E4', Math.ceil((u.B1 + u.B5) * i.seasonal_share / 100), `${i.seasonal_share}% of gift boxes`),
-    lab('E6', u.small, 'saffron and small packs'),
+    lab('E5', u.B1 + u.B5, 'one per gift box, on a side'),
+    lab('E6', u.small * 2, 'front and back of each small pack'),
     lab('E7', u.A3, 'one per Yemeni pouch'), lab('E8', u.A3, 'one per Yemeni pouch'), lab('E9', u.A3, 'one per Yemeni pouch'),
   ];
   return { units: u, rows, labels: rows.filter(r => r.rolls).reduce((s, r) => s + r.order, 0) };

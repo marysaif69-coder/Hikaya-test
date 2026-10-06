@@ -6,6 +6,12 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-calc-2', title: 'Packaging calculator: dates get a front and a back sticker, boxes a side label, small packs two stickers', date: '2026-10-06',
+    checks: [
+      { id: 'pack-calc-rolls', text: 'Desk → Numbers → Packaging: the label rolls list E1b “250 g backs + spice packs + dates fronts”, E3 “dates backs + box bottoms”, a new E5 box side label, and E6 “front and back of each small pack”.', links: [{ label: 'Desk', href: '/admin/' }] },
+    ],
+  },
+  {
     id: 'ask-qr-1', title: 'hikayacoffee.ca/ask opens Ask Hikaya on the help page (for the QR code on the pouches); a packaging calculator in the desk', date: '2026-10-06',
     checks: [
       { id: 'ask-qr-open', text: 'Open /ask on a phone: it lands on the help page (How can we help) with Ask Hikaya already open, and the address bar shows no “?ask”. An Arabic phone lands on the Arabic page.', links: [{ label: '/ask', href: '/ask' }] },
