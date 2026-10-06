@@ -6,6 +6,13 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'ask-qr-1', title: 'hikayacoffee.ca/ask opens Ask Hikaya (for the QR code on the pouches)', date: '2026-10-06',
+    checks: [
+      { id: 'ask-qr-open', text: 'Open /ask on a phone: it lands on the home page with Ask Hikaya already open, and the address bar shows no “?ask”. An Arabic phone lands on the Arabic page.', links: [{ label: '/ask', href: '/ask' }] },
+      { id: 'ask-qr-brew', text: '/brew still opens the brew guides (the other QR code).', links: [{ label: '/brew', href: '/brew' }] },
+    ],
+  },
+  {
     id: 'gift-cards-1', title: 'The thank-you card: a name on every order, and the date guide', date: '2026-10-05',
     checks: [
       { id: 'gift-checkout', text: 'Checkout → You: “Name on the thank-you card” fills in with your name as you type it, and can be changed for someone else (up to 25 characters). There is no gift section or note any more.', links: [{ label: 'Checkout (EN)', href: '/en/checkout/' }, { label: 'الدفع (AR)', href: '/ar/checkout/' }] },

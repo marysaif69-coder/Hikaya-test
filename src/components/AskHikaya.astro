@@ -251,7 +251,10 @@ const T = {
     e.preventDefault(); if (panel.hidden) open();
     if (t.dataset.ask) send(t.dataset.ask);
   });
-  if (st.open) open();
+  // The Ask Hikaya QR code on the pouches lands on /ask, which redirects here with ?ask: open the assistant.
+  const q = new URLSearchParams(location.search);
+  if (q.has('ask')) { q.delete('ask'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash); open(); }
+  else if (st.open) open();
 </script>
 
 <style is:global>
