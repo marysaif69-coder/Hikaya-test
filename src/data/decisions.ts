@@ -11,7 +11,25 @@ const GROUPS: Record<string, string> = { Ramadan: 'Ramadan and Eid', 'Privacy pa
 export const groupOf = (d: Decision) => { const first = d.topic.split(' · ')[0]; return GROUPS[first] ?? first; };
 
 export const DECISIONS: Decision[] = [
+  {
+    id: 'website-address-phone', topic: 'Business · Website contact', asked: '2026-10-06',
+    question: 'Which business address and phone number does the website show before checkout?',
+    context: 'Labels only need “Hikaya Coffee Ltd., Calgary, Alberta, Canada”. The website is different: Alberta’s Internet Sales Contract Regulation asks an online seller to show its business address (and its mailing address if different) and a telephone number before the customer orders (checked through two summaries; confirm with your lawyer). The registered office at the lawyer’s can work as the mailing address if they agree to receive mail and have it listed. A phone number can be a low-cost business line that goes to voicemail. Do not put the lawyer’s address on the food labels: an address on a label is taken to be where the food was packed (SFCA 45).',
+    options: ['Registered office as mailing address + a business phone line', 'Home address + a business phone line', 'Ask the lawyer first'],
+  },
+  {
+    id: 'pickup-without-location', topic: 'Delivery area · Pickup', asked: '2026-10-06',
+    question: 'The site offers free pickup at “[address]”. With no location yet, keep pickup?',
+    context: 'Checkout, the visit page and My account all show pickup Thursday to Sunday at the address set in Settings → Business details.',
+    options: ['Keep pickup: we will set a pickup address', 'Delivery only for now (turn pickup off)'],
+  },
   // ---------- what we need from you ----------
+  {
+    id: 'dates-supplier-label-info', kind: 'provide', topic: 'Dates · Supplier', asked: '2026-10-06',
+    question: 'From the everyday dates supplier: what our sticker on their packed bags needs',
+    context: 'For each variety and bag size (250 g, 500 g, 1 kg): (1) a lab sheet or nutrition values per 100 g (calories, fat, saturated and trans fat, cholesterol, sodium, carbohydrate, fibre, sugars, protein, potassium, calcium, iron); (2) are the dates only dates, or coated, oiled or with glucose syrup; (3) any allergen cross-contact at their plant; (4) country where they were grown and packed; (5) the net weight on their bag and how much it varies; (6) their lot code on each bag, or we add ours; (7) the bag size, and whether anything is printed where our 100 × 90 sticker goes; (8) whether they pack for us under our label (then the country name must be 6.4 mm tall on 500 g and 1 kg, 3.2 mm on 250 g). Our sticker then carries: the name in English and French, the weight, Nutrition Facts, “Product of Saudi Arabia / Produit d’Arabie saoudite” next to our name, and the lot.',
+    options: ['Given'],
+  },
   {
     id: 'green-samples', kind: 'provide', topic: 'Green coffee · Samples', asked: '2026-10-04',
     question: 'Green coffee samples from United Beans (ordered 5 Oct, order #39078)',

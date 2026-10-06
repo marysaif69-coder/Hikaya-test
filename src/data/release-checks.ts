@@ -6,10 +6,13 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
-    id: 'ask-qr-1', title: 'hikayacoffee.ca/ask opens Ask Hikaya (for the QR code on the pouches)', date: '2026-10-06',
+    id: 'ask-qr-1', title: 'hikayacoffee.ca/ask opens Ask Hikaya on the help page (for the QR code on the pouches); a packaging calculator in the desk', date: '2026-10-06',
     checks: [
-      { id: 'ask-qr-open', text: 'Open /ask on a phone: it lands on the home page with Ask Hikaya already open, and the address bar shows no “?ask”. An Arabic phone lands on the Arabic page.', links: [{ label: '/ask', href: '/ask' }] },
+      { id: 'ask-qr-open', text: 'Open /ask on a phone: it lands on the help page (How can we help) with Ask Hikaya already open, and the address bar shows no “?ask”. An Arabic phone lands on the Arabic page.', links: [{ label: '/ask', href: '/ask' }] },
       { id: 'ask-qr-brew', text: '/brew still opens the brew guides (the other QR code).', links: [{ label: '/brew', href: '/brew' }] },
+      { id: 'pack-calc', text: 'Desk → Numbers → Packaging: change the kilos of coffee or dates and the counts of pouches, boxes, bags and label rolls change with them. “Back to the brief’s numbers” resets them.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'label-line', text: 'A coffee page → Ingredients: the last line reads “Hikaya Coffee Ltd., Calgary, Alberta, Canada” (no “Made in Calgary”, no [address]).', links: [{ label: 'Shop (EN)', href: '/en/shop/' }] },
+      { id: 'dec-new', text: 'Settings → Decisions: three new items (website address and phone, pickup without a location, what we need from the dates supplier).', links: [{ label: 'Desk', href: '/admin/' }] },
     ],
   },
   {

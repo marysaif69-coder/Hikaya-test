@@ -52,6 +52,7 @@ const DEC_LISTS = [
       <a class="drv-link" data-group="team" href="/admin/driver/">Team app ↗</a>
       <button type="button" data-tab="numbers" data-group="numbers" aria-pressed="false" class="owner-only">Numbers</button>
       <button type="button" data-tab="plan" data-group="numbers" aria-pressed="false" class="owner-only">Plan</button>
+      <button type="button" data-tab="packaging" data-group="numbers" aria-pressed="false" class="owner-only">Packaging</button>
       <button type="button" data-tab="settings" data-group="settings" aria-pressed="false" class="owner-only">Settings</button>
       <button type="button" data-tab="decisions" data-group="settings" aria-pressed="false" class="owner-only">Decisions <span class="badge" id="decN" hidden></span></button>
       <button type="button" data-tab="it" data-group="settings" aria-pressed="false" class="owner-only">IT · Release checks</button>
@@ -257,6 +258,17 @@ const DEC_LISTS = [
         <div class="mg-pick"><label>From <input type="date" id="mgFrom" /></label><label>To <input type="date" id="mgTo" /></label><button type="button" class="btn line sm" id="mgShow">Show</button></div>
         <div class="a-table-wrap"><table class="a-table mini-t" id="mgTable"></table></div><p id="mgTotals"></p>
         <details><summary><b>Cost of one, per product</b></summary><p class="muted">Saved as you leave each box.</p><div class="a-table-wrap"><table class="a-table mini-t" id="costTable"></table></div></details></div>
+    </section>
+
+    <!-- PACKAGING: how much to order from China, from the kilos (src/data/packaging.ts) -->
+    <section id="v-packaging" hidden class="plan">
+      <div class="promo-form">
+        <h2 class="h-s">Packaging to order</h2>
+        <p class="muted">Type the kilos and box counts. Each count is units × pieces per unit, plus a waste allowance, rounded up to the order step (pouches: at least 500). Label rolls come blank from China; the count is how many fit on one roll (2-inch core, 100 mm across, 3 mm gap). Starts from the brief's placeholder numbers; your numbers stay in this browser.</p>
+        <form class="pk-in" id="pkForm" autocomplete="off"></form>
+        <p><button type="button" class="btn line sm" id="pkReset">Back to the brief's numbers</button> <span class="muted" id="pkSum"></span></p>
+        <div class="a-table-wrap"><table class="a-table mini-t" id="pkTable"></table></div>
+      </div>
     </section>
 
     <!-- WORDS: recipes and product text -->
@@ -760,6 +772,12 @@ const DEC_LISTS = [
   .a-daygrid.week { grid-template-columns: 1.2fr 1fr; }
   @media (max-width: 1000px) { .a-daygrid.week { grid-template-columns: 1fr; } }
   .mini-t { font-size: 14px; }
+  .pk-in { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .pk-in fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .pk-in legend { font-weight: 600; margin-bottom: 4px; }
+  .pk-in label { display: grid; grid-template-columns: 1fr 96px; gap: 8px; align-items: center; font-size: 14px; }
+  .pk-in input { text-align: right; font-variant-numeric: tabular-nums; }
+  #pkTable .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .mini-t :global(th) { padding: 6px 8px !important; }
   .mini-t :global(td) { padding: 8px !important; }
   /* The first cell of a list row: a real button, so rows open from the keyboard too; looks like plain text. */
@@ -822,6 +840,7 @@ const DEC_LISTS = [
   import { askWho, whoLabel } from '../../scripts/whois';
   import { calgaryToIso, isoToCalgary } from '../../scripts/calgary-time';
   import { PRODUCTS, DATES, FILLINGS, ALLERGENS, GRINDS, SLEEVES, dateChoices, defaultBoxOpt, optionName } from '../../data/products';
+  import { PACK_DEFAULTS, PACK_FIELDS, packCounts, type PackInput } from '../../data/packaging';
   const PRODUCT_LIST = PRODUCTS.filter(p => !(p.kind === 'box' && p.retired)).map(p => ({ id: p.id, kind: p.kind, name: p.name.en }));
   const DATE_LIST = Object.entries(DATES).map(([id, d]) => ({ id, name: d.name.en }));
   const FILLING_LIST = Object.entries(FILLINGS).map(([id, f]) => ({ id, name: `Stuffed · ${f.name.en}${f.hold ? ' (on hold)' : ''}` }));
@@ -888,6 +907,40 @@ const DEC_LISTS = [
   }
   $('logout').addEventListener('click', async () => { await logout(); location.reload(); });
 
+  // ---------- packaging calculator ----------
+  const PK_KEY = 'hk-packaging';
+  function loadPackaging() {
+    const form = $('pkForm') as HTMLFormElement;
+    let saved: Partial<PackInput> = {};
+    try { saved = JSON.parse(localStorage.getItem(PK_KEY) || '{}'); } catch { saved = {}; }
+    if (!form.dataset.ready) {
+      let group = '';
+      form.innerHTML = PACK_FIELDS.map(([k, g, label]) => {
+        const head = g !== group ? `${group ? '</fieldset>' : ''}<fieldset><legend>${esc(g)}</legend>` : ''; group = g;
+        return `${head}<label>${esc(label)} <input type="number" min="0" step="any" name="${k}" inputmode="decimal" /></label>`;
+      }).join('') + '</fieldset>';
+      form.addEventListener('input', () => { try { localStorage.setItem(PK_KEY, JSON.stringify(readPk())); } catch {} drawPk(); });
+      $('pkReset').addEventListener('click', () => { try { localStorage.removeItem(PK_KEY); } catch {} fillPk(PACK_DEFAULTS); drawPk(); });
+      form.dataset.ready = '1';
+    }
+    fillPk({ ...PACK_DEFAULTS, ...saved }); drawPk();
+  }
+  function fillPk(v: PackInput) { for (const [k] of PACK_FIELDS) ($('pkForm') as HTMLFormElement).querySelector<HTMLInputElement>(`[name="${k}"]`)!.value = String(v[k]); }
+  function readPk(): PackInput {
+    const o = { ...PACK_DEFAULTS };
+    for (const [k] of PACK_FIELDS) { const n = parseFloat(($('pkForm') as HTMLFormElement).querySelector<HTMLInputElement>(`[name="${k}"]`)!.value); o[k] = isFinite(n) && n >= 0 ? n : 0; }
+    return o;
+  }
+  function drawPk() {
+    const r = packCounts(readPk()), f = (n: number) => n.toLocaleString('en-CA');
+    let g = '';
+    $('pkTable').innerHTML = '<tr><th>Item</th><th>How</th><th class="num">Need</th><th class="num">Order</th><th class="num">Rolls</th></tr>' + r.rows.map(x => {
+      const head = x.group !== g ? `<tr><th colspan="5">${esc(x.group)}</th></tr>` : ''; g = x.group;
+      return `${head}<tr><td>${esc(x.code)} · ${esc(x.name)}</td><td>${esc(x.why)}</td><td class="num">${f(x.need)}</td><td class="num"><b>${f(x.order)}</b></td><td class="num">${x.rolls ? `${f(x.rolls)} × ${f(x.perRoll!)}` : ''}</td></tr>`;
+    }).join('');
+    $('pkSum').textContent = `${f(r.units.A1 + r.units.A3)} coffee pouches · ${f(r.units.dates)} dates bags · ${f(r.units.B1 + r.units.B5)} gift boxes · ${f(r.labels)} blank labels`;
+  }
+
   // ---------- tabs ----------
   // Main tabs (top row) hold smaller tabs (second row); the second row is hidden when a main tab
   // has only one. Each main tab remembers the smaller tab last opened in it.
@@ -903,13 +956,14 @@ const DEC_LISTS = [
       if (on && !(ROLE !== 'admin' && b.classList.contains('owner-only'))) shown++;
     });
     $('subtabs').hidden = shown < 2;
-    for (const v of ['today', 'orders', 'inbox', 'day', 'week', 'numbers', 'words', 'plan', 'drivers', 'customers', 'production', 'products', 'promos', 'assistant', 'chats', 'settings', 'it', 'decisions']) $(`v-${v}`).hidden = v !== name;
+    for (const v of ['today', 'orders', 'inbox', 'day', 'week', 'numbers', 'words', 'plan', 'drivers', 'customers', 'production', 'products', 'promos', 'assistant', 'chats', 'settings', 'it', 'decisions', 'packaging']) $(`v-${v}`).hidden = v !== name;
     if (name === 'products') loadProducts();
     if (name === 'week') loadWeek();
     if (name === 'numbers') { loadNumbers(); if (ROLE === 'admin') { loadMargins(); loadCosts(); } }
     if (name === 'words') loadWords();
     if (name === 'drivers') loadDrivers();
     if (name === 'production') loadProduction();
+    if (name === 'packaging') loadPackaging();
     if (name === 'customers') loadCustomers();
     if (name === 'promos') loadPromos();
     if (name === 'assistant') loadAssistant();

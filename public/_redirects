@@ -5,10 +5,10 @@
 /brew    /ar/brew/  302  Language=ar
 /brew    /en/brew/  302
 /brew/*  /en/brew/  302
-# The Ask Hikaya QR code on the pouches (round 8 packaging) opens the assistant
-/ask     /ar/?ask=1  302  Language=ar
-/ask     /en/?ask=1  302
-/ask/*   /en/?ask=1  302
+# The Ask Hikaya QR code on the pouches opens the assistant on the help page (the contact form is behind it)
+/ask     /ar/help/?ask=1  302  Language=ar
+/ask     /en/help/?ask=1  302
+/ask/*   /en/help/?ask=1  302
 # Round 3: the seasonal copies are retired; a season is now a sleeve on the gift boxes
 /:lang/shop/iftar-pair/        /:lang/shop/guest-box/?sleeve=ramadan   301
 /:lang/shop/eid-coffee-dates/  /:lang/shop/guest-box/?sleeve=eid       301
