@@ -327,7 +327,7 @@ export const KITS: Kit[] = [
     taste: { en: 'Hadrami · Rada’i · Baydani', ar: 'حضرمية · رداعية · بيضانية' },
     notes: { en: 'One 250 g bag of Yemeni qahwa with a small Hadrami, Rada’i and Baydani pack. Try each style, then choose yours.', ar: 'كيس قهوة يمنية ٢٥٠ غ مع ظرف صغير حضرمي ورداعي وبيضاني. جرّب كل طريقة، ثم اختر طريقتك.' },
     story: { en: 'Three towns, one pot at a time.', ar: 'ثلاث بلدات، إبريق بعد إبريق.' },
-    bunn: { en: 'Three towns in one box.', ar: 'ثلاث بلدات في علبة واحدة.' }, why: { en: 'Medjool sits well with all three.', ar: 'المجدول يناسب الثلاث.' } }),
+    bunn: { en: 'Three towns, one coffee.', ar: 'ثلاث بلدات وقهوة واحدة.' }, why: { en: 'Medjool sits well with all three.', ar: 'المجدول يناسب الثلاث.' } }),
 ];
 
 // Yemeni beans: coffee grown in Yemen (our other Yemeni coffee is Yemeni-style, from Ethiopian

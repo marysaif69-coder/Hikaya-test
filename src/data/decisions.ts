@@ -31,9 +31,14 @@ export const DECISIONS: Decision[] = [
   },
   {
     id: 'coffee-style-box', topic: 'Coffee · The box for the styles', asked: '2026-10-07',
-    question: 'The shop says “each coffee style comes in one box, the bag and its packs together”, but the China order had no such box. Keep the box?',
+    question: 'The shop said “each coffee style comes in one box, the bag and its packs together”, but the China order had no such box. Keep the box? (You answered in the chat on 7 Oct: no box, a Hikaya sticker holds them together; the shop words are changed. Tick “No box” to close this.)',
     context: 'It covers the six styles (Najdi, Qassimi, Hijazi, Hadrami, Rada’i, Baydani) and the two tasting boxes. The China brief now asks for a quote on one style box (K1): one design for every style, the 250 g bag standing with its packs in front, our 80 × 80 sticker names the style and our 100 × 40 sticker lists what is inside. Enter how many you expect in Desk → Numbers → Packaging (Coffee styles and tasting boxes). Without a box, the shop words change to “the bag and its packs together”.',
     options: ['Keep the style box (K1)', 'No box: change the shop words'],
+  },
+  {
+    id: 'bundle-sticker', kind: 'provide', topic: 'Coffee · The sticker that holds a style together', asked: '2026-10-07',
+    question: 'Design the Hikaya sticker that holds a coffee style together: the 250 g bag, its spice mix and the small saffron pouch.',
+    context: 'You said in the chat (7 Oct): no box; one regular Hikaya sticker holds the bag and its packs together and they go in the paper bag. The China brief quotes it as a blank 40 × 300 strip (label E13) that goes across the packs and onto both sides of the bag, which we print on the Epson; the factory can also quote it printed once you send the design. Confirm the size with the first samples, and enter how many styles you expect in Desk → Numbers → Packaging.',
   },
   {
     id: 'reserve-12-box', topic: 'Dates · Reserve box of 12', asked: '2026-10-07',

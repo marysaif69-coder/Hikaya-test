@@ -25,7 +25,7 @@ export const PACK_FIELDS: [keyof PackInput, string, string][] = [
   ['coffee_kg', 'Coffee', '250 g coffee, kg'], ['yemeni_kg', 'Coffee', 'Yemeni 250 g, kg'], ['qishr_packs', 'Coffee', 'Qishr 250 g (in the 250 g pouch), count'],
   ['spice_packs', 'Coffee', 'Spice packs (blends), count'], ['small_packs', 'Coffee', 'Saffron and small packs, count'],
   ['dates_250_kg', 'Dates', 'In 250 g bags, kg'], ['dates_500_kg', 'Dates', 'In 500 g bags, kg'], ['dates_1kg_kg', 'Dates', 'In 1 kg bags, kg'],
-  ['style_boxes', 'Coffee', 'Coffee styles and tasting boxes (style box K1), count'],
+  ['style_boxes', 'Coffee', 'Coffee styles and tasting sets (bag + packs, one Hikaya sticker each), count'],
   ['b1_boxes', 'Dates', 'Gift boxes B1'], ['b5_boxes', 'Dates', 'Small boxes B5'], ['stuffed_dates', 'Dates', 'Stuffed dates, each wrapped (count of dates)'],
   ['bagged_orders', 'Orders and waste', 'Orders that get a paper bag'], ['medium_share', 'Orders and waste', 'Of those, medium bag %'],
   ['seasonal_share', 'Orders and waste', 'Boxes with a season sticker %'], ['totes', 'Orders and waste', 'Totes'],
@@ -33,11 +33,12 @@ export const PACK_FIELDS: [keyof PackInput, string, string][] = [
 ];
 
 const ROLLS: Record<string, [string, number]> = {
-  E1: ['80 × 80 coffee front, style box front', 80], E1b: ['100 × 100 coffee back, spice packs, dates (one label on the front)', 100], E2: ['Ø76 box seal', 76],
-  E3: ['100 × 90 box bottom', 90], E4: ['Ø50 Ramadan / Eid', 50], E5: ['100 × 40 box side (name, origin, ingredients), style box contents', 40],
+  E1: ['80 × 80 coffee front', 80], E1b: ['100 × 100 coffee back, spice packs, dates (one label on the front)', 100], E2: ['Ø76 box seal', 76],
+  E3: ['100 × 90 box bottom', 90], E4: ['Ø50 Ramadan / Eid', 50], E5: ['100 × 40 box side (name, origin, ingredients)', 40],
   E6: ['60 × 66 saffron and small packs, front and back', 66],
   E7: ['Ø30 Yemeni region seal', 30], E8: ['60 × 34 Yemeni lot card', 34], E9: ['82 × 66 Yemeni Nutrition Facts', 66],
   E11: ['40 × 25 label on each stuffed date (filling, allergens)', 25],
+  E13: ['40 × 300 Hikaya sticker that holds a coffee style together', 300],
 };
 const B1_MIX = { D24: 50, C12: 33, C2: 17 };   // % of gift boxes by insert
 const WASTE = { boxes: 3, bags: 5, cups: 5 };
@@ -67,7 +68,6 @@ export function packCounts(i: PackInput) {
     { group: 'Pouches', code: 'A3', name: '250 g Yemeni pouch (black and gold)', need: u.A3, why: 'Yemeni kg ÷ 0.25', order: pouch(u.A3) },
     { group: 'Pouches', code: 'A4', name: 'Spice-pack sachet', need: u.spice, why: 'one per pack', order: pouch(u.spice) },
     { group: 'Pouches', code: 'A5', name: 'Saffron and small-pack pouch', need: u.small, why: 'one per pack', order: pouch(u.small) },
-    { group: 'Boxes', code: 'K1', name: 'Coffee style box (bag and its packs)', need: i.style_boxes, why: 'styles and tasting boxes sold', order: i.style_boxes ? up(w(i.style_boxes, WASTE.boxes), 10) : 0 },
     { group: 'Boxes', code: 'B1', name: 'Gift box 320 × 240', need: u.B1, why: 'boxes', order: up(w(u.B1, WASTE.boxes), 10) },
     { group: 'Boxes', code: 'B2', name: 'B1 inserts D24 · C12 · C2', need: u.B1, why: `${b1('D24')} · ${b1('C12')} · ${b1('C2')}`, order: up(w(u.B1, WASTE.boxes), 10) },
     { group: 'Boxes', code: 'B5', name: 'Small date box 205 × 135', need: u.B5, why: 'boxes', order: up(w(u.B5, WASTE.boxes), 10) },
@@ -79,15 +79,16 @@ export function packCounts(i: PackInput) {
     { group: 'Bags', code: 'C-M', name: 'Medium paper bag', need: medium, why: `${i.medium_share}% of orders, at least one per gift box`, order: up(w(medium, WASTE.bags), 50) },
     { group: 'Bags', code: 'H', name: 'Cloth tote (sold)', need: i.totes, why: 'your number', order: up(i.totes, 50) },
     { group: 'Bags', code: 'T', name: 'Yemeni gift tag + cord', need: u.A3, why: 'one per Yemeni pouch', order: up(w(u.A3, i.waste_labels), 100) },
-    lab('E1', u.A1 + i.style_boxes, 'one per 250 g pouch (coffee and qishr), one per style box'),
+    lab('E1', u.A1, 'one per 250 g pouch (coffee and qishr)'),
     lab('E1b', u.A1 + u.spice + u.dates, '250 g backs + spice packs + dates bags (one label each, on the front)'),
     lab('E2', u.B1 + u.B5, 'one per gift box'),
     lab('E3', u.B1 + u.B5 + b1('C12'), 'box bottoms (+1 on Coffee & Dates boxes)'),
     lab('E4', Math.ceil((u.B1 + u.B5) * i.seasonal_share / 100), `${i.seasonal_share}% of gift boxes`),
-    lab('E5', u.B1 + u.B5 + i.style_boxes, 'one per gift box, on a side; one per style box'),
+    lab('E5', u.B1 + u.B5, 'one per gift box, on a side'),
     lab('E6', u.small * 2, 'front and back of each small pack'),
     lab('E7', u.A3, 'one per Yemeni pouch'), lab('E8', u.A3, 'one per Yemeni pouch'), lab('E9', u.A3, 'one per Yemeni pouch'),
     ...(i.stuffed_dates ? [lab('E11', i.stuffed_dates, 'one per stuffed date, on its wrapper')] : []),
+    ...(i.style_boxes ? [lab('E13', i.style_boxes, 'one per coffee style or tasting set: holds the bag and its packs together')] : []),
   ];
   return { units: u, rows, labels: rows.filter(r => r.rolls).reduce((s, r) => s + r.order, 0) };
 }

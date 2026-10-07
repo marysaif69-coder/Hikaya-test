@@ -53,7 +53,7 @@ function catalog() {
   const specialty = SPECIALTY.map(c => `- ${c.name.en} (${c.name.ar}) · id: ${c.id} · ${usd(c.price)} · ${c.size.en} · ${c.notes.en}`).join('\n');
   const kits = KITS.map(k => [
     `### ${k.name.en} (${k.name.ar}) · id: ${k.id}`,
-    `${k.discovery ? 'Discovery pack' : 'Family style'} · ${LINES[k.line].name.en} line · ${usd(k.price)} · one box: ${kitInside(k, 'en')}`,
+    `${k.discovery ? 'Discovery pack' : 'Family style'} · ${LINES[k.line].name.en} line · ${usd(k.price)} · the bag and its packs, held together with our sticker: ${kitInside(k, 'en')}`,
     `Taste: ${k.taste.en} / ${k.taste.ar}`,
     `About: ${k.notes.en} ${k.story.en}`,
     `بالعربية: ${k.notes.ar} ${k.story.ar}`,

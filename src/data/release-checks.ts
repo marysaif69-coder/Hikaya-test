@@ -6,6 +6,15 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-8', title: 'No box for the coffee styles: our sticker holds the bag and its packs together', date: '2026-10-07',
+    checks: [
+      { id: 'pack8-words', text: 'Shop → Coffee: the line under the styles says “the bag and its packs together, held with our sticker” (no “one box”), in English and Arabic; the same on the home page step “2 · How you take it”.', links: [{ label: 'Shop (EN)', href: '/en/shop/' }, { label: 'Shop (AR)', href: '/ar/shop/' }, { label: 'Home (AR)', href: '/ar/' }] },
+      { id: 'pack8-visit', text: 'Visit → “Why is the saffron separate?”: it always comes with Najdi (no “Najdi box”); Our recipes, the Najdi line, the same in Arabic.', links: [{ label: 'Visit (EN)', href: '/en/visit/' }, { label: 'Our recipes (AR)', href: '/ar/our-recipes/' }] },
+      { id: 'pack8-calc', text: 'Desk → Numbers → Packaging: no K1 row. Type 400 in “Coffee styles and tasting sets”: a label row E13 (40 × 300 Hikaya sticker) appears with 500; E1 and E5 do not change.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'pack8-decision', text: 'Settings → Decisions: “What we need from you” lists the sticker that holds a style together; the box question says you answered no box.', links: [{ label: 'Desk', href: '/admin/' }] },
+    ],
+  },
+  {
     id: 'pack-final-7', title: 'Every coffee is 250 g; the everyday dates take one label, on the front', date: '2026-10-07',
     checks: [
       { id: 'pack7-qishr', text: 'Qishr page: the size reads 250 g / ٢٥٠ غ (not 100 g).', links: [{ label: 'Qishr (EN)', href: '/en/shop/qishr/' }, { label: 'Qishr (AR)', href: '/ar/shop/qishr/' }] },
