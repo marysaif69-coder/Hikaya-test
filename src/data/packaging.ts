@@ -22,7 +22,7 @@ export const PACK_DEFAULTS: PackInput = {
 };
 
 export const PACK_FIELDS: [keyof PackInput, string, string][] = [
-  ['coffee_kg', 'Coffee', '250 g coffee, kg'], ['yemeni_kg', 'Coffee', 'Yemeni beans 100 g, kg'], ['qishr_packs', 'Coffee', 'Qishr 250 g (in the 250 g pouch), count'],
+  ['coffee_kg', 'Coffee', '250 g coffee, kg'], ['yemeni_kg', 'Coffee', 'Yemeni beans 100 g, kg'], ['qishr_packs', 'Coffee', 'Qishr pouches (the 250 g pouch; weight set by your fill test), count'],
   ['spice_packs', 'Coffee', 'Spice packs (blends), count'], ['small_packs', 'Coffee', 'Saffron and small packs, count'],
   ['dates_250_kg', 'Dates', 'In 250 g bags, kg'], ['dates_500_kg', 'Dates', 'In 500 g bags, kg'], ['dates_1kg_kg', 'Dates', 'In 1 kg bags, kg'],
   ['style_boxes', 'Coffee', 'Coffee styles and tasting sets (bag + packs, one Hikaya sticker each), count'],
@@ -34,7 +34,7 @@ export const PACK_FIELDS: [keyof PackInput, string, string][] = [
 
 const ROLLS: Record<string, [string, number]> = {
   E1: ['80 × 80 coffee front', 80], E1b: ['100 × 100 coffee back, spice packs, dates (one label on the front)', 100], E2: ['Ø76 box seal', 76],
-  E3: ['100 × 90 box bottom', 90], E4: ['Ø50 Ramadan / Eid', 50], E5: ['100 × 40 box side (name, origin, ingredients)', 40],
+  E3: ['100 × 90 box bottom (Nutrition Facts, lot)', 90], E4: ['Ø50 Ramadan / Eid', 50], E5: ['100 × 40 gift box B1 side, below the lid (what is inside, ingredients, Contains)', 40], E14: ['100 × 20 small box B5 side, below its 20 mm lid (what is inside, ingredients, origin)', 20],
   E6: ['60 × 66 saffron and small packs, front and back', 66],
   E7: ['Ø30 Yemeni region seal', 30], E8: ['60 × 34 Yemeni lot card', 34], E9: ['82 × 66 Yemeni Nutrition Facts', 66],
   E11: ['40 × 25 label on each stuffed date (filling, allergens)', 25],
@@ -64,7 +64,7 @@ export function packCounts(i: PackInput) {
     return { group: 'Label rolls (blank, from China)', code, name: ROLLS[code][0], need: n, why, order, rolls: Math.ceil(order / pr), perRoll: pr };
   };
   const rows: PackRow[] = [
-    { group: 'Pouches', code: 'A1', name: '250 g coffee pouch', need: u.A1, why: 'coffee kg ÷ 0.25, plus qishr packs', order: pouch(u.A1) },
+    { group: 'Pouches', code: 'A1', name: '250 g coffee pouch', need: u.A1, why: 'coffee kg ÷ 0.25, plus qishr pouches', order: pouch(u.A1) },
     { group: 'Pouches', code: 'A3', name: '100 g Yemeni pouch (black and gold)', need: u.A3, why: 'Yemeni kg ÷ 0.1', order: pouch(u.A3) },
     { group: 'Pouches', code: 'A4', name: 'Spice-pack sachet', need: u.spice, why: 'one per pack', order: pouch(u.spice) },
     { group: 'Pouches', code: 'A5', name: 'Saffron and small-pack pouch', need: u.small, why: 'one per pack', order: pouch(u.small) },
@@ -84,7 +84,8 @@ export function packCounts(i: PackInput) {
     lab('E2', u.B1 + u.B5, 'one per gift box'),
     lab('E3', u.B1 + u.B5 + b1('C12'), 'box bottoms (+1 on Coffee & Dates boxes)'),
     lab('E4', Math.ceil((u.B1 + u.B5) * i.seasonal_share / 100), `${i.seasonal_share}% of gift boxes`),
-    lab('E5', u.B1 + u.B5, 'one per gift box, on a side'),
+    lab('E5', u.B1, 'one per gift box B1, on a long side below the lid'),
+    lab('E14', u.B5, 'one per small box B5: its side shows only 25 mm below the lid, too low for E5'),
     lab('E6', u.small * 2, 'front and back of each small pack'),
     lab('E7', u.A3, 'one per Yemeni pouch'), lab('E8', u.A3, 'one per Yemeni pouch'), lab('E9', u.A3, 'one per Yemeni pouch'),
     ...(i.stuffed_dates ? [lab('E11', i.stuffed_dates, 'one per stuffed date, on its wrapper')] : []),

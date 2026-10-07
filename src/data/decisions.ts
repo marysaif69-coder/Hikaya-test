@@ -36,9 +36,14 @@ export const DECISIONS: Decision[] = [
     options: ['Keep the style box (K1)', 'No box: change the shop words'],
   },
   {
+    id: 'qishr-fill', kind: 'provide', topic: 'Coffee · Qishr: how much fits the bag', asked: '2026-10-07',
+    question: 'Fill one 250 g coffee pouch with your qishr and weigh it: what net weight do we print on its stickers and on the shop?',
+    context: 'You said in the chat (7 Oct): qishr goes in the same pouch as the coffee, you see how much fits, and the weight goes on our stickers, so the pouch does not change. Qishr is lighter and bulkier than ground coffee. Use a sample A1 pouch (or a stock pouch of the same size): fill to about 50 mm below the top edge, so the sides fold flat at the top and the zipper closes, shake it down, and weigh the qishr. Round down to a weight you can fill every time (for example 200 g). Until you answer, the shop and the sticker engine say 250 g.',
+  },
+  {
     id: 'bundle-sticker', kind: 'provide', topic: 'Coffee · The sticker that holds a style together', asked: '2026-10-07',
     question: 'Design the Hikaya sticker that holds a coffee style together: the 250 g bag, its spice mix and the small saffron pouch.',
-    context: 'You said in the chat (7 Oct): no box; one regular Hikaya sticker holds the bag and its packs together and they go in the paper bag. The China brief quotes it as a blank 40 × 300 strip (label E13) that goes across the packs and onto both sides of the bag, which we print on the Epson; the factory can also quote it printed once you send the design. Confirm the size with the first samples, and enter how many styles you expect in Desk → Numbers → Packaging.',
+    context: 'You said in the chat (7 Oct): no box; one regular Hikaya sticker holds the bag and its packs together and they go in the paper bag. The China brief quotes it as a blank 40 × 300 strip (label E13) on removable glue, so it peels off the bag cleanly, which we print on the Epson; the factory can also quote it printed once you send the design. Suggested way to put it on: the spice mix and the saffron pouch lie on the back of the bag (the front, with its name and weight, stays in view), and the strip goes round the bag 55–95 mm from the top, below the zipper, clear of the valve, the front sticker and the Ask Hikaya code. Confirm the size with the first samples, and enter how many styles you expect in Desk → Numbers → Packaging.',
   },
   {
     id: 'reserve-12-box', topic: 'Dates · Reserve box of 12', asked: '2026-10-07',

@@ -6,6 +6,13 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-9', title: 'Qishr fills the same pouch (weight from your fill test); the small box gets its own side label', date: '2026-10-07',
+    checks: [
+      { id: 'pack9-calc', text: 'Desk → Numbers → Packaging with the brief’s numbers: the field reads “Qishr pouches (the 250 g pouch; weight set by your fill test), count”; E5 “gift box B1 side” 400; a new row E14 “100 × 20 small box B5 side” 700; labels in total 12,400.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'pack9-decisions', text: 'Settings → Decisions → What we need from you: “Qishr: how much fits the bag” is listed, and the sticker that holds a style together says removable glue, packs on the back, strip 55–95 mm from the top.', links: [{ label: 'Desk', href: '/admin/' }] },
+    ],
+  },
+  {
     id: 'pack-final-8', title: 'No box for the coffee styles: our sticker holds the bag and its packs together', date: '2026-10-07',
     checks: [
       { id: 'pack8-words', text: 'Shop → Coffee: the line under the styles says “the bag and its packs together, held with our sticker” (no “one box”), in English and Arabic; the same on the home page step “2 · How you take it”.', links: [{ label: 'Shop (EN)', href: '/en/shop/' }, { label: 'Shop (AR)', href: '/ar/shop/' }, { label: 'Home (AR)', href: '/ar/' }] },
