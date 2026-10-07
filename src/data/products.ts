@@ -361,7 +361,7 @@ export const BOXES: Box[] = [
       name: { en: `Everyday dates, ${en}`, ar: `تمر كل يوم ${ar}` }, price: null, size: { en, ar }, img: '/media/img/giftbox.webp',
       insert: 'everyday', sleeve: 'regular', chooseDate: true, grams: g, varieties: EVERYDAY,
       notes: { en: 'Good dates at an everyday price: Khalas or Sukkari Qassimi.', ar: 'تمر طيّب بسعر كل يوم: خلاص أو سكري قصيمي.' },
-      contents: { en: `${en} of one variety in a clear tray.`, ar: `${ar} من صنف واحد في علبة شفافة.` }, preorder: true };
+      contents: { en: `${en} of one variety in a clear bag.`, ar: `${ar} من صنف واحد في كيس شفاف.` }, preorder: true };
   }),
   // Reserve: one variety per box (a mixed box waits for the owners, Settings → Decisions).
   ...([12, 24] as const).map((n): Box => ({ kind: 'box', id: `reserve-${n}`, fam: 'dates', tier: 'reserve',

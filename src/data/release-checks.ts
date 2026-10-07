@@ -6,6 +6,14 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-5', title: 'Everything the shop sells is now in the packaging: a style box, single-date wrappers', date: '2026-10-07',
+    checks: [
+      { id: 'pack5-calc', text: 'Desk → Numbers → Packaging: two new fields, “Coffee styles and tasting boxes” and “Stuffed dates, each wrapped”. Type 400 and 3,000: rows K1 (style box) and S1 (wrapper) appear with orders, and E1, E5 and E7 go up.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'pack5-decisions', text: 'Settings → Decisions: two new items, “The box for the styles” and “Reserve box of 12”.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'pack5-bag', text: 'An Everyday dates page: “… of one variety in a clear bag” (not a tray), in English and Arabic.', links: [{ label: 'Everyday dates', href: '/en/shop/date-box/' }] },
+    ],
+  },
+  {
     id: 'pack-final-4', title: 'Qishr in the packaging calculator; one more owner question (origin on the date boxes)', date: '2026-10-07',
     checks: [
       { id: 'pack4-qishr', text: 'Desk → Numbers → Packaging: a new field “Qishr 100 g (in the 250 g pouch), count”. Type 200: the 250 g pouches (A1), the front stickers (E1) and the back stickers (E1b) each go up by about 200. Back to the brief’s numbers puts it at 0.', links: [{ label: 'Desk', href: '/admin/' }] },

@@ -30,6 +30,18 @@ export const DECISIONS: Decision[] = [
     options: ['Yes, exactly', 'No: I will write the exact name here'],
   },
   {
+    id: 'coffee-style-box', topic: 'Coffee · The box for the styles', asked: '2026-10-07',
+    question: 'The shop says “each coffee style comes in one box, the bag and its packs together”, but the China order had no such box. Keep the box?',
+    context: 'It covers the six styles (Najdi, Qassimi, Hijazi, Hadrami, Rada’i, Baydani) and the two tasting boxes. The China brief now asks for a quote on one style box (K1): one design for every style, the 250 g bag standing with its packs in front, our 80 × 80 sticker names the style and our 100 × 40 sticker lists what is inside. Enter how many you expect in Desk → Numbers → Packaging (Coffee styles and tasting boxes). Without a box, the shop words change to “the bag and its packs together”.',
+    options: ['Keep the style box (K1)', 'No box: change the shop words'],
+  },
+  {
+    id: 'reserve-12-box', topic: 'Dates · Reserve box of 12', asked: '2026-10-07',
+    question: 'Twelve Medjool dates do not fit the small box B5. Where does the Reserve box of 12 go?',
+    context: 'Medjool is up to about 55 mm long. The small box B5 takes 6 large dates or 12 small or stuffed dates. Royal Sukkari Mufattal and Ajwa may fit twelve; Medjool does not. The China brief also asks for a 12-date insert for the gift box B1 (D12), so either way is quoted. Decide with the date samples.',
+    options: ['B5 with 12 for Mufattal and Ajwa; Medjool only in the box of 24', 'Every Reserve box of 12 in B1 with the D12 insert', 'Decide with the samples'],
+  },
+  {
     id: 'box-origin-label', topic: 'Dates · Origin on the date boxes', asked: '2026-10-07',
     question: 'Ask the lawyer: on our date boxes, how tall must “Product of Saudi Arabia” be? (Decide before the label rolls are ordered, about 10 November.)',
     context: 'Dates we pack under our name need the country of origin next to “Hikaya Coffee Ltd., Calgary, Alberta, Canada”. For the dates bag sticker we planned the strictest reading: the country name 6.4 mm tall (the rule for imported processed fruit, SFCR, as we read it). If that also applies to the gift boxes, the small box B5 has no room for it on the lid once the band, the seal and the logo are on, and B1 needs a lid label. If the normal 1.6 mm minimum applies, the Ø76 seal carries the name, the weight, the origin and our name on both boxes, and nothing changes. Nothing printed in China depends on this; only the label shapes do.',
