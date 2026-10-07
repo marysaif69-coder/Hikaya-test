@@ -8,7 +8,7 @@ export const RELEASES: Release[] = [
   {
     id: 'pack-final-5', title: 'Everything the shop sells is now in the packaging: a style box, single-date wrappers', date: '2026-10-07',
     checks: [
-      { id: 'pack5-calc', text: 'Desk → Numbers → Packaging: two new fields, “Coffee styles and tasting boxes” and “Stuffed dates, each wrapped”. Type 400 and 3,000: rows K1 (style box) and S1 (wrapper) appear with orders, and E1, E5 and E7 go up.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'pack5-calc', text: 'Desk → Numbers → Packaging: two new fields, “Coffee styles and tasting boxes” and “Stuffed dates, each wrapped”. Type 400 and 3,000: rows K1 (style box), S1 (wrapper) and the E11 label roll appear with orders, and E1 and E5 go up.', links: [{ label: 'Desk', href: '/admin/' }] },
       { id: 'pack5-decisions', text: 'Settings → Decisions: two new items, “The box for the styles” and “Reserve box of 12”.', links: [{ label: 'Desk', href: '/admin/' }] },
       { id: 'pack5-bag', text: 'An Everyday dates page: “… of one variety in a clear bag” (not a tray), in English and Arabic.', links: [{ label: 'Everyday dates', href: '/en/shop/date-box/' }] },
     ],

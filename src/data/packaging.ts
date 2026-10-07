@@ -36,7 +36,8 @@ const ROLLS: Record<string, [string, number]> = {
   E1: ['80 × 80 coffee front, style box front', 80], E1b: ['100 × 100 coffee back, spice packs, dates front', 100], E2: ['Ø76 box seal', 76],
   E3: ['100 × 90 dates back, box bottom', 90], E4: ['Ø50 Ramadan / Eid', 50], E5: ['100 × 40 box side (name, origin, ingredients), style box contents', 40],
   E6: ['60 × 66 saffron and small packs, front and back', 66],
-  E7: ['Ø30 Yemeni region seal, label on each stuffed date', 30], E8: ['60 × 34 Yemeni lot card', 34], E9: ['82 × 66 Yemeni Nutrition Facts', 66],
+  E7: ['Ø30 Yemeni region seal', 30], E8: ['60 × 34 Yemeni lot card', 34], E9: ['82 × 66 Yemeni Nutrition Facts', 66],
+  E11: ['40 × 25 label on each stuffed date (filling, allergens)', 25],
 };
 const B1_MIX = { D24: 50, C12: 33, C2: 17 };   // % of gift boxes by insert
 const WASTE = { boxes: 3, bags: 5, cups: 5 };
@@ -85,7 +86,8 @@ export function packCounts(i: PackInput) {
     lab('E4', Math.ceil((u.B1 + u.B5) * i.seasonal_share / 100), `${i.seasonal_share}% of gift boxes`),
     lab('E5', u.B1 + u.B5 + i.style_boxes, 'one per gift box, on a side; one per style box'),
     lab('E6', u.small * 2, 'front and back of each small pack'),
-    lab('E7', u.A3 + i.stuffed_dates, 'one per Yemeni pouch, one per stuffed date'), lab('E8', u.A3, 'one per Yemeni pouch'), lab('E9', u.A3, 'one per Yemeni pouch'),
+    lab('E7', u.A3, 'one per Yemeni pouch'), lab('E8', u.A3, 'one per Yemeni pouch'), lab('E9', u.A3, 'one per Yemeni pouch'),
+    ...(i.stuffed_dates ? [lab('E11', i.stuffed_dates, 'one per stuffed date, on its wrapper')] : []),
   ];
   return { units: u, rows, labels: rows.filter(r => r.rolls).reduce((s, r) => s + r.order, 0) };
 }
