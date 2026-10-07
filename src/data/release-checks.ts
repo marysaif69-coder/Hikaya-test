@@ -6,10 +6,17 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-10', title: 'The coffee-style sticker is a regular round Hikaya sticker (no band); box bottom labels clear of the band', date: '2026-10-07',
+    checks: [
+      { id: 'pack10-calc', text: 'Desk → Numbers → Packaging: type 400 in “Coffee styles and tasting sets”. The E13 row reads “Ø50 round Hikaya sticker, removable glue …” with 500 to order on one roll (not a 40 × 300 strip).', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'pack10-decision', text: 'Settings → Decisions → “The sticker that holds a style together”: it says a round Ø50 sticker at the top of the back, folding over onto the front above the tear-off line, and no band.', links: [{ label: 'Desk', href: '/admin/' }] },
+    ],
+  },
+  {
     id: 'pack-final-9', title: 'Qishr fills the same pouch (weight from your fill test); the small box gets its own side label', date: '2026-10-07',
     checks: [
       { id: 'pack9-calc', text: 'Desk → Numbers → Packaging with the brief’s numbers: the field reads “Qishr pouches (the 250 g pouch; weight set by your fill test), count”; E5 “gift box B1 side” 400; a new row E14 “100 × 20 small box B5 side” 700; labels in total 12,400.', links: [{ label: 'Desk', href: '/admin/' }] },
-      { id: 'pack9-decisions', text: 'Settings → Decisions → What we need from you: “Qishr: how much fits the bag” is listed, and the sticker that holds a style together says removable glue, packs on the back, strip 55–95 mm from the top.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'pack9-decisions', text: 'Settings → Decisions → What we need from you: “Qishr: how much fits the bag” is listed.', links: [{ label: 'Desk', href: '/admin/' }] },
     ],
   },
   {

@@ -34,11 +34,11 @@ export const PACK_FIELDS: [keyof PackInput, string, string][] = [
 
 const ROLLS: Record<string, [string, number]> = {
   E1: ['80 × 80 coffee front', 80], E1b: ['100 × 100 coffee back, spice packs, dates (one label on the front)', 100], E2: ['Ø76 box seal', 76],
-  E3: ['100 × 90 box bottom (Nutrition Facts, lot)', 90], E4: ['Ø50 Ramadan / Eid', 50], E5: ['100 × 40 gift box B1 side, below the lid (what is inside, ingredients, Contains)', 40], E14: ['100 × 20 small box B5 side, below its 20 mm lid (what is inside, ingredients, origin)', 20],
+  E3: ['100 × 90 box bottom (Nutrition Facts, lot): B1 beside the band, B5 over it', 90], E4: ['Ø50 Ramadan / Eid', 50], E5: ['100 × 40 gift box B1 side, below the lid (what is inside, ingredients, Contains)', 40], E14: ['100 × 20 small box B5 side, below its 20 mm lid (what is inside, ingredients, origin)', 20],
   E6: ['60 × 66 saffron and small packs, front and back', 66],
   E7: ['Ø30 Yemeni region seal', 30], E8: ['60 × 34 Yemeni lot card', 34], E9: ['82 × 66 Yemeni Nutrition Facts', 66],
   E11: ['40 × 25 label on each stuffed date (filling, allergens)', 25],
-  E13: ['40 × 300 Hikaya sticker that holds a coffee style together', 300],
+  E13: ['Ø50 round Hikaya sticker, removable glue: folded over the top, it holds a coffee style together (same shape as E4)', 50],
 };
 const B1_MIX = { D24: 50, C12: 33, C2: 17 };   // % of gift boxes by insert
 const WASTE = { boxes: 3, bags: 5, cups: 5 };
