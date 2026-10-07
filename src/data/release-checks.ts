@@ -6,6 +6,12 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-12', title: 'China order: customs, delivery and the label printer model', date: '2026-10-07',
+    checks: [
+      { id: 'pack12-decisions', text: 'Settings → Decisions: three new items. Under China order, “Who brings the China order through Canadian customs” and, in What we need from you, “Where should the China order be delivered”. Under Labels, “Which Epson CW-C4000 do you have”.', links: [{ label: 'Desk', href: '/admin/' }] },
+    ],
+  },
+  {
     id: 'pack-final-11', title: 'The brew page has a guide for the Yemeni beans (the QR code on their pouch lands there too)', date: '2026-10-07',
     checks: [
       { id: 'pack11-brew', text: 'How to brew: a fifth card “Yemeni beans” with a small black and gold pouch opens “Yemeni beans, by pour-over”: five steps with timers 0:30, 0:40 and 2:30, the grams and the water still [TBD] (your recipe goes in Words). The same in Arabic (“بن اليمن، بالتقطير”). The address ending #beans opens it straight away.', links: [{ label: 'Brew (EN)', href: '/en/brew/#beans' }, { label: 'Brew (AR)', href: '/ar/brew/#beans' }] },

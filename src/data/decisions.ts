@@ -12,6 +12,23 @@ export const groupOf = (d: Decision) => { const first = d.topic.split(' · ')[0]
 
 export const DECISIONS: Decision[] = [
   {
+    id: 'china-customs', topic: 'China order · Customs', asked: '2026-10-07',
+    question: 'Who brings the China order through Canadian customs: the factory’s DDP agent, or our own customs broker?',
+    context: 'DDP (door to door, duty paid): the factory’s agent is the importer and pays the duty and the 5% GST. It is the simplest, but we cannot claim that GST back, and if the agent declares a lower value the shipment can be held. Our own broker (the factory quotes to Calgary without customs, “DAP”): we need a CRA business number with an import-export (RM) account and the CBSA CARM portal. Since 20 May 2025 goods come out before the duty is paid only if we post our own security (a bond); without one we pay the duty and GST first, then the goods are released. Either way the factory must give an HS code and the true value for each item (the brief asks for both).',
+    options: ['DDP: the factory’s agent clears it', 'Our own customs broker', 'Decide when the quotes come in'],
+  },
+  {
+    id: 'china-delivery', kind: 'provide', topic: 'China order · Delivery in Calgary', asked: '2026-10-07',
+    question: 'Where should the China order be delivered, and who receives it?',
+    context: 'About 40 cartons: about 3.5 m³ and 500 kg in all, and the B1 and B5 boxes are 2.8 m³ of it (they come by sea; the rest can fly if the dates slip, which means two deliveries). The forwarder needs a Calgary address, a name and a phone number (for the shipment only; it is never printed). Keep it dry, off the floor and at room temperature: label rolls and soft-touch pouches do not like cold or damp.',
+  },
+  {
+    id: 'label-printer-model', topic: 'Labels · Printer model', asked: '2026-10-07',
+    question: 'Which Epson CW-C4000 do you have, or will you buy: Matte Black (MK) or Gloss Black (BK)?',
+    context: 'Every label roll in the brief is white matte BOPP for pigment ink. That needs the Matte Black (MK) model for dark, sharp text and QR codes; the Gloss Black (BK) model is for glossy labels and is not recommended on matte ones. If yours is BK, tell us before the factories quote and we change the label material in the brief.',
+    options: ['Matte Black (MK)', 'Gloss Black (BK)', 'Not bought yet: we will buy MK'],
+  },
+  {
     id: 'qr-codes-while-closed', topic: 'Business · QR codes on the packaging', asked: '2026-10-07',
     question: 'While the website is closed, every printed QR code (brew guides, Ask Hikaya, the thank-you card) opens the “Something is brewing” screen. What should someone who scans one see?',
     context: 'The QR codes print on 1,100 pouches of each kind and the cards. The private-preview gate covers the whole real website, so /brew and /ask show the closed screen, and Ask Hikaya cannot answer, until you open the website. That is fine if the website is open before the first pouch reaches a customer (pouches arrive about 15 January). If samples or gifts go out earlier, the brew guides and Ask Hikaya can be let through the gate on their own. Nothing changes until you choose.',
