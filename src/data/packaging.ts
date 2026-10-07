@@ -22,7 +22,7 @@ export const PACK_DEFAULTS: PackInput = {
 };
 
 export const PACK_FIELDS: [keyof PackInput, string, string][] = [
-  ['coffee_kg', 'Coffee', '250 g coffee, kg'], ['yemeni_kg', 'Coffee', 'Yemeni 250 g, kg'], ['qishr_packs', 'Coffee', 'Qishr 250 g (in the 250 g pouch), count'],
+  ['coffee_kg', 'Coffee', '250 g coffee, kg'], ['yemeni_kg', 'Coffee', 'Yemeni beans 100 g, kg'], ['qishr_packs', 'Coffee', 'Qishr 250 g (in the 250 g pouch), count'],
   ['spice_packs', 'Coffee', 'Spice packs (blends), count'], ['small_packs', 'Coffee', 'Saffron and small packs, count'],
   ['dates_250_kg', 'Dates', 'In 250 g bags, kg'], ['dates_500_kg', 'Dates', 'In 500 g bags, kg'], ['dates_1kg_kg', 'Dates', 'In 1 kg bags, kg'],
   ['style_boxes', 'Coffee', 'Coffee styles and tasting sets (bag + packs, one Hikaya sticker each), count'],
@@ -50,7 +50,7 @@ export function packCounts(i: PackInput) {
   const up = (n: number, step: number) => Math.ceil(n / step) * step;
   const w = (n: number, pct: number) => Math.ceil(n * (1 + pct / 100));
   const u = {
-    A1: Math.ceil(i.coffee_kg / 0.25) + Math.ceil(i.qishr_packs), A3: Math.ceil(i.yemeni_kg / 0.25),
+    A1: Math.ceil(i.coffee_kg / 0.25) + Math.ceil(i.qishr_packs), A3: Math.ceil(i.yemeni_kg / 0.1),
     dates: Math.ceil(i.dates_250_kg / 0.25) + Math.ceil(i.dates_500_kg / 0.5) + Math.ceil(i.dates_1kg_kg),
     B1: i.b1_boxes, B5: i.b5_boxes, spice: i.spice_packs, small: i.small_packs,
   };
@@ -65,7 +65,7 @@ export function packCounts(i: PackInput) {
   };
   const rows: PackRow[] = [
     { group: 'Pouches', code: 'A1', name: '250 g coffee pouch', need: u.A1, why: 'coffee kg ÷ 0.25, plus qishr packs', order: pouch(u.A1) },
-    { group: 'Pouches', code: 'A3', name: '250 g Yemeni pouch (black and gold)', need: u.A3, why: 'Yemeni kg ÷ 0.25', order: pouch(u.A3) },
+    { group: 'Pouches', code: 'A3', name: '100 g Yemeni pouch (black and gold)', need: u.A3, why: 'Yemeni kg ÷ 0.1', order: pouch(u.A3) },
     { group: 'Pouches', code: 'A4', name: 'Spice-pack sachet', need: u.spice, why: 'one per pack', order: pouch(u.spice) },
     { group: 'Pouches', code: 'A5', name: 'Saffron and small-pack pouch', need: u.small, why: 'one per pack', order: pouch(u.small) },
     { group: 'Boxes', code: 'B1', name: 'Gift box 320 × 240', need: u.B1, why: 'boxes', order: up(w(u.B1, WASTE.boxes), 10) },

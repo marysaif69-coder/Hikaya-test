@@ -100,7 +100,7 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
     stuffed: (Object.keys(stuffed) as FillingId[]).map(id => ({ id, name: FILLINGS[id].name.en, pieces: stuffed[id] ?? 0 })).filter(r => r.pieces),
     packaging: {
       // The Yemeni beans go in their own black and gold pouch (A3, with a tag), not the cream one (A1).
-      // Every coffee is 250 g, qishr too; a 100 g row would mean a product set up wrong.
+      // Every other coffee is 250 g, qishr too; a 100 g row here would mean a product set up wrong.
       blackBoxes: coffeeRows.filter(r => r.blackBox).reduce((n, r) => n + r.pouches, 0),
       pouches250: coffeeRows.filter(r => !r.blackBox && r.grams / Math.max(1, r.pouches) === 250).reduce((n, r) => n + r.pouches, 0),
       pouches100: coffeeRows.filter(r => !r.blackBox && r.grams / Math.max(1, r.pouches) === 100).reduce((n, r) => n + r.pouches, 0),

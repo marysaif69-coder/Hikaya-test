@@ -331,7 +331,7 @@ export const KITS: Kit[] = [
 ];
 
 // Yemeni beans: coffee grown in Yemen (our other Yemeni coffee is Yemeni-style, from Ethiopian
-// beans), 250 g like every coffee, in the black and gold pouch with a gift tag. Not decided yet: shown for now so the owners can look at them; they
+// beans), 100 g in the black and gold pouch with a gift tag (every other coffee is 250 g). Not decided yet: shown for now so the owners can look at them; they
 // hide them in Admin → Shop → Products (or set `startHidden: true` here so new sites start hidden).
 // The lots and regions are placeholders until the supplier confirms them.
 // Sold as whole roasted beans only (graded and roasted by us, not ground). The region lines are
@@ -339,8 +339,8 @@ export const KITS: Kit[] = [
 // supplier and our cupping.
 const Y = (id: string, name: L, region: L, bunn: L): Coffee => ({
   kind: 'coffee', id, fam: 'origin', line: 'yemen', name, price: null,
-  size: { en: '250 g', ar: '٢٥٠ غ' }, roast: 0, spices: [], grinds: ['beans'],
-  notes: { en: `${region.en} Whole roasted beans, 250 g in the black and gold pouch. [TBD: the lot, from the supplier]`, ar: `${region.ar} حبوب محمّصة كاملة، ٢٥٠ غ في الكيس الأسود والذهبي. [يُحدد لاحقاً: الدفعة، من المورّد]` },
+  size: { en: '100 g', ar: '١٠٠ غ' }, roast: 0, spices: [], grinds: ['beans'],
+  notes: { en: `${region.en} Whole roasted beans, 100 g in the black and gold pouch. [TBD: the lot, from the supplier]`, ar: `${region.ar} حبوب محمّصة كاملة، ١٠٠ غ في الكيس الأسود والذهبي. [يُحدد لاحقاً: الدفعة، من المورّد]` },
   story: { en: 'Yemeni coffee is traditionally dried whole in its fruit under the mountain sun, and often tastes of dried fruit, dates and dark chocolate. A small lot, cupped and scored by us, roasted in Calgary; grind it just before you brew, for pour-over, and drink it on its own: no cardamom, no spice.', ar: 'يُجفَّف البن اليمني عادةً بثمرته تحت شمس الجبال، وكثيراً ما يحمل طعم الفاكهة المجففة والتمر والشوكولاتة الداكنة. دفعة صغيرة نتذوقها ونقيّمها ونحمّصها في كالغاري؛ اطحنها قبل التحضير مباشرة، بالتقطير، واشربها وحدها: بلا هيل ولا بهار.' },
   ingredients: ['Coffee (Yemen).', 'Café (Yémen).'],
   taste: { en: '[TBD: after the cupping]', ar: '[يُحدد لاحقاً: بعد التذوق]' },
