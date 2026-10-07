@@ -2,10 +2,12 @@
 // hikayacoffee.ca/brew — the QR code on the back of every pouch lands here. Phone first.
 // Same way as the shop: choose the coffee (four cards), then only its guide shows. A slim bar
 // stays at the top once the cards scroll away, so switching never means scrolling back up.
+// The Yemeni beans (black and gold pouch, its QR code lands here too) have the fifth card; it goes
+// when the owners hide all three beans (live.ts hides a tab whose cards are all hidden).
 import Base from '../../../layouts/Base.astro';
 import Pouch from '../../../components/Pouch.astro';
 import { BREW } from '../../../data/brew';
-import { COFFEES, KITS, packOf, type Lang } from '../../../data/products';
+import { COFFEES, SPECIALTY, KITS, packOf, type Lang } from '../../../data/products';
 import { path } from '../../../data/i18n';
 
 export const getStaticPaths = () => [{ params: { lang: 'en' } }, { params: { lang: 'ar' } }];
@@ -18,6 +20,7 @@ const FAMS = [
   { f: 'mountain', name: { en: 'Yemeni coffee', ar: 'القهوة اليمنية' }, bag: 'yemeni' },
   { f: 'house', name: { en: 'Shami coffee', ar: 'القهوة الشامية' }, bag: 'shami' },
   { f: 'husk', name: { en: 'Qishr', ar: 'القشر' }, bag: 'qishr' },
+  { f: 'origin', name: { en: 'Yemeni beans', ar: 'بن اليمن' }, bag: null },
 ] as const;
 // "How do you take it?" on each guide: what goes into the pot for each style.
 const takes = (f: string) => {
@@ -40,7 +43,9 @@ const takes = (f: string) => {
     <div class="pick-cards" role="tablist">
       {FAMS.map(x => (
         <button type="button" role="tab" class="pick" aria-controls={x.f} aria-selected="false" data-pick={x.f}>
-          <span class="pick-bag"><Pouch coffee={COFFEES.find(c => c.id === x.bag)!} lang={lang} label={false} /></span>
+          <span class="pick-bag">{x.bag ? <Pouch coffee={COFFEES.find(c => c.id === x.bag)!} lang={lang} label={false} /> : (
+            <svg class="pouch" viewBox="0 0 229 455" aria-hidden="true"><rect width="229" height="455" rx="12" fill="#1C1714" /><rect width="229" height="44" rx="12" fill="#2A2420" /><image href="/brand/logo-gold.svg" x="65" y="96" width="99" height="83" /><circle cx="114.5" cy="300" r="64" fill="#CF9C0C" /></svg>
+          )}</span>
           <span class="pick-txt"><b>{x.name[lang]}</b><small>{BREW[x.f].vessel[lang]} · {BREW[x.f].yields[lang]}</small></span>
         </button>
       ))}
@@ -71,7 +76,8 @@ const takes = (f: string) => {
                 <p class="adds"><span class="label">{ar ? 'في الكيس' : 'Mixed into the bag'}</span> <b data-adds-out>{ways[0].adds}</b></p>
               </fieldset>
             )}
-            <a class="shop-link" href={path(lang, 'shop') + `#${x.f === 'palm' ? 'gulf' : x.f === 'mountain' ? 'yemen' : x.f === 'house' ? 'shami' : 'qishr'}`}>{ar ? 'إلى المتجر' : 'In the shop'} <span aria-hidden="true">{ar ? '←' : '→'}</span></a>
+            {x.f === 'origin' && SPECIALTY.map(c => <span data-product={c.id} hidden></span>)}
+            <a class="shop-link" href={path(lang, 'shop') + `#${x.f === 'palm' ? 'gulf' : x.f === 'mountain' ? 'yemen' : x.f === 'house' ? 'shami' : x.f === 'origin' ? 'beans' : 'qishr'}`}>{ar ? 'إلى المتجر' : 'In the shop'} <span aria-hidden="true">{ar ? '←' : '→'}</span></a>
           </header>
           <div>
             <ol class="steps">
@@ -96,7 +102,7 @@ const takes = (f: string) => {
   .brew-head > * { max-width: 760px; }
   .small { font-size: 15px; }
   .picker { padding-bottom: 32px; }
-  .pick-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .pick-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
   @media (max-width: 1100px) { .pick-cards { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 560px) { .pick-cards { grid-template-columns: 1fr; gap: 8px; } }
   .pick { display: grid; grid-template-columns: 52px 1fr; gap: 14px; align-items: center; text-align: start; border: 0; padding: 12px 16px; border-radius: 22px; background: var(--sheet); box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink); cursor: pointer; transition: box-shadow .15s, background .15s, transform .15s var(--ease); }
@@ -147,8 +153,8 @@ const takes = (f: string) => {
 <script>
   // One coffee at a time, like the shop. The address keeps it (#mountain), so the QR code on a
   // bag and links from product pages open the right guide. Without JavaScript all guides show.
-  const ids = ['palm', 'mountain', 'house', 'husk'];
-  const alias: Record<string, string> = { gulf: 'palm', yemen: 'mountain', yemeni: 'mountain', shami: 'house', qishr: 'husk' };
+  const ids = ['palm', 'mountain', 'house', 'husk', 'origin'];
+  const alias: Record<string, string> = { gulf: 'palm', yemen: 'mountain', yemeni: 'mountain', shami: 'house', qishr: 'husk', beans: 'origin' };
   const panels = [...document.querySelectorAll<HTMLElement>('[data-panel]')];
   const tabs = [...document.querySelectorAll<HTMLButtonElement>('[data-pick]')];
   function choose(id: string, scroll: boolean) {
@@ -161,7 +167,12 @@ const takes = (f: string) => {
   const fromHash = () => { const h = location.hash.slice(1); const id = alias[h] ?? h; if (ids.includes(id)) { choose(id, true); return true; } return false; };
   if (!fromHash()) choose('palm', false);
   addEventListener('hashchange', fromHash);
-  // The slim switcher shows once the four cards are out of view.
+  // When the owners hide the beans, their card goes (live.ts); if it was open, open Gulf coffee.
+  document.addEventListener('catalog:live', () => {
+    const cur = tabs.find(t => t.getAttribute('aria-selected') === 'true');
+    if (cur?.hidden) choose('palm', false);
+  });
+  // The slim switcher shows once the cards are out of view.
   const bar = document.getElementById('switch')!;
   new IntersectionObserver(([e]) => { const on = !e.isIntersecting && e.boundingClientRect.top < 0; bar.classList.toggle('on', on); bar.setAttribute('aria-hidden', String(!on)); bar.querySelectorAll('button').forEach(b => b.tabIndex = on ? 0 : -1); }).observe(document.getElementById('picker')!);
   // How do you take it: what goes into the pot.

@@ -183,5 +183,58 @@
       "en": "Light on caffeine. Good with Sukkari.",
       "ar": "قليل الكافيين، ويليق به السكري."
     }
+  },
+  "origin": {
+    "title": {
+      "en": "Yemeni beans, by pour-over",
+      "ar": "بن اليمن، بالتقطير"
+    },
+    "vessel": {
+      "en": "A pour-over dripper with a paper filter, and a grinder",
+      "ar": "قمع تقطير بفلتر ورقي، ومطحنة"
+    },
+    "yields": {
+      "en": "One cup, about 250 ml",
+      "ar": "كوب واحد، نحو ٢٥٠ مل"
+    },
+    "steps": [
+      {
+        "t": {
+          "en": "Boil the water, then let it rest off the heat.",
+          "ar": "اغلِ الماء، ثم اتركه بعيداً عن النار قليلاً."
+        },
+        "secs": 30
+      },
+      {
+        "t": {
+          "en": "Grind [TBD] g of beans just before you brew, medium-fine, like coarse sand.",
+          "ar": "اطحن [يُحدد لاحقاً] غ من الحبوب قبل التحضير مباشرة، طحنة متوسطة كالرمل الخشن."
+        }
+      },
+      {
+        "t": {
+          "en": "Rinse the paper filter with hot water and pour that water away. Add the coffee and level it.",
+          "ar": "اشطف الفلتر الورقي بالماء الساخن وتخلّص من ذلك الماء، ثم ضع القهوة وسوِّ سطحها."
+        }
+      },
+      {
+        "t": {
+          "en": "Pour just enough water to wet all the coffee, about twice its weight, and let it bloom.",
+          "ar": "صبّ ماءً يكفي لتبليل القهوة كلها، نحو ضعف وزنها، واتركها تتفتّح."
+        },
+        "secs": 40
+      },
+      {
+        "t": {
+          "en": "Pour the rest slowly in small circles, up to 250 ml in all, and let it drip through.",
+          "ar": "صبّ الباقي ببطء في دوائر صغيرة حتى ٢٥٠ مل في المجموع، واتركها تقطر حتى آخرها."
+        },
+        "secs": 150
+      }
+    ],
+    "serve": {
+      "en": "Drink it as it is: no cardamom, no spice. A date beside it, if you like.",
+      "ar": "اشربها كما هي: بلا هيل ولا بهار. وتمرة بجانبها إن شئت."
+    }
   }
 }
