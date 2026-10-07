@@ -6,6 +6,14 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-7', title: 'Every coffee is 250 g; the everyday dates take one label, on the front', date: '2026-10-07',
+    checks: [
+      { id: 'pack7-qishr', text: 'Qishr page: the size reads 250 g / ٢٥٠ غ (not 100 g).', links: [{ label: 'Qishr (EN)', href: '/en/shop/qishr/' }, { label: 'Qishr (AR)', href: '/ar/shop/qishr/' }] },
+      { id: 'pack7-yemen', text: 'Shop → Yemeni beans tab and a Yemeni beans page (if shown): 250 g in the black and gold pouch, in English and Arabic; the drawing shows 250 g.', links: [{ label: 'Shop (EN)', href: '/en/shop/' }, { label: 'Shop (AR)', href: '/ar/shop/' }] },
+      { id: 'pack7-calc', text: 'Desk → Numbers → Packaging with the brief’s numbers: A3 “250 g Yemeni pouch” 500, Yemeni tags 500, E7/E8/E9 500 each, E3 “box bottom” 1,100 (the dates bags no longer take a back label), labels in total 10,500.', links: [{ label: 'Desk', href: '/admin/' }] },
+    ],
+  },
+  {
     id: 'pack-final-6', title: 'The shop shows the packaging you chose: the red band, the Yemeni pouch with its tag', date: '2026-10-07',
     checks: [
       { id: 'pack6-band', text: 'A gift box page (Coffee & Dates): the drawing shows a red band (not gold) with our round seal on it, and the text says “red band” / “الحزام الأحمر”. Choose the Ramadan sticker: a dark round sticker with a gold crescent appears on the band; Eid: a gold round sticker.', links: [{ label: 'Coffee & Dates (EN)', href: '/en/shop/guest-box/' }, { label: 'Coffee & Dates (AR)', href: '/ar/shop/guest-box/' }] },

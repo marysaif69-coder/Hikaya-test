@@ -183,7 +183,7 @@ export const DECISIONS: Decision[] = [
   },
   {
     id: 'yemen-beans-launch', topic: 'Yemeni beans · Launch', asked: '2026-10-04',
-    question: 'Do we sell the Yemeni beans (coffee grown in Yemen, 100 g in a black box), and when?',
+    question: 'Do we sell the Yemeni beans (coffee grown in Yemen, 250 g in the black and gold pouch), and when?',
     context: 'Shown for now so you can look at them (Shop → “بن اليمن · Yemeni beans”, slogan “من مزارعنا”). To hide them, switch the three off in Admin → Shop → Products; the tab goes away by itself. They can’t be ordered until they have a price.',
     options: ['Yes, at launch', 'Later', 'No'],
   },
