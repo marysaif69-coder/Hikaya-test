@@ -8,7 +8,7 @@ export const RELEASES: Release[] = [
   {
     id: 'pack-final-11', title: 'The brew page has a guide for the Yemeni beans (the QR code on their pouch lands there too)', date: '2026-10-07',
     checks: [
-      { id: 'pack11-brew', text: 'How to brew: a fifth card “Yemeni beans” with a small black and gold pouch opens “Yemeni beans, by pour-over”: five steps with timers 0:30, 0:40 and 2:30, the grams still [TBD]. The same in Arabic (“بن اليمن، بالتقطير”). The address ending #beans opens it straight away.', links: [{ label: 'Brew (EN)', href: '/en/brew/#beans' }, { label: 'Brew (AR)', href: '/ar/brew/#beans' }] },
+      { id: 'pack11-brew', text: 'How to brew: a fifth card “Yemeni beans” with a small black and gold pouch opens “Yemeni beans, by pour-over”: five steps with timers 0:30, 0:40 and 2:30, the grams and the water still [TBD] (your recipe goes in Words). The same in Arabic (“بن اليمن، بالتقطير”). The address ending #beans opens it straight away.', links: [{ label: 'Brew (EN)', href: '/en/brew/#beans' }, { label: 'Brew (AR)', href: '/ar/brew/#beans' }] },
       { id: 'pack11-hidden', text: 'If the three Yemeni beans are hidden in Desk → Shop → Products, the Yemeni beans card does not show on How to brew and the page opens on Gulf coffee.', links: [{ label: 'Brew (EN)', href: '/en/brew/' }] },
       { id: 'pack11-words', text: 'Desk → Shop → Words → Recipes (brew guides): “Yemeni beans, by pour-over” is there to edit. Put in the grams after the cupping.', links: [{ label: 'Desk', href: '/admin/' }] },
     ],

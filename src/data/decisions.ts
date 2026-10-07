@@ -200,7 +200,7 @@ export const DECISIONS: Decision[] = [
   {
     id: 'yemen-beans-grind', topic: 'Yemeni beans · Grind', asked: '2026-10-04',
     question: 'Yemeni beans: whole roasted beans only (as now)? And the pour-over recipe?',
-    context: 'Shadi (4 Oct): we grade and roast them and sell the roasted beans only, not ground. The product page shows “Grind just before you brew” and the recipe as “[TBD] g coffee to [TBD] ml water” until you give it.',
+    context: 'Shadi (4 Oct): we grade and roast them and sell the roasted beans only, not ground. The product page shows “Grind just before you brew” and the recipe as “[TBD] g coffee to [TBD] ml water” until you give it. How to brew now has a Yemeni beans card (its pouch QR code lands there): five pour-over steps with the grams and water [TBD]. Put your recipe in Desk → Shop → Words → Recipes (brew guides) → “Yemeni beans, by pour-over”, or write it here.',
     options: ['Whole beans only (as now)', 'Also ground'],
   },
   {

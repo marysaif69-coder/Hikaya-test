@@ -194,8 +194,8 @@
       "ar": "قمع تقطير بفلتر ورقي، ومطحنة"
     },
     "yields": {
-      "en": "One cup, about 250 ml",
-      "ar": "كوب واحد، نحو ٢٥٠ مل"
+      "en": "One cup",
+      "ar": "كوب واحد"
     },
     "steps": [
       {
@@ -226,8 +226,8 @@
       },
       {
         "t": {
-          "en": "Pour the rest slowly in small circles, up to 250 ml in all, and let it drip through.",
-          "ar": "صبّ الباقي ببطء في دوائر صغيرة حتى ٢٥٠ مل في المجموع، واتركها تقطر حتى آخرها."
+          "en": "Pour the rest slowly in small circles, up to [TBD] ml in all, and let it drip through.",
+          "ar": "صبّ الباقي ببطء في دوائر صغيرة حتى [يُحدد لاحقاً] مل في المجموع، واتركها تقطر حتى آخرها."
         },
         "secs": 150
       }
