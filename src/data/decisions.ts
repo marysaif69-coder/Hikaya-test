@@ -12,6 +12,42 @@ export const groupOf = (d: Decision) => { const first = d.topic.split(' · ')[0]
 
 export const DECISIONS: Decision[] = [
   {
+    id: 'qr-codes-while-closed', topic: 'Business · QR codes on the packaging', asked: '2026-10-07',
+    question: 'While the website is closed, every printed QR code (brew guides, Ask Hikaya, the thank-you card) opens the “Something is brewing” screen. What should someone who scans one see?',
+    context: 'The QR codes print on 1,100 pouches of each kind and the cards. The private-preview gate covers the whole real website, so /brew and /ask show the closed screen, and Ask Hikaya cannot answer, until you open the website. That is fine if the website is open before the first pouch reaches a customer (pouches arrive about 15 January). If samples or gifts go out earlier, the brew guides and Ask Hikaya can be let through the gate on their own. Nothing changes until you choose.',
+    options: ['The website will be open before any pouch reaches a customer', 'Let the brew guides and Ask Hikaya through the gate now', 'Ask me again in December'],
+  },
+  {
+    id: 'a3-yemen-grown-only', topic: 'Coffee · Yemeni beans pouch (A3)', asked: '2026-10-07',
+    question: 'The A3 pouch prints “بن اليمن · YEMENI COFFEE” and “From Yemen’s farms”. Will it only ever hold coffee grown in Yemen? (Answer by 16 October: China prints it.)',
+    context: 'An origin printed on the pouch must be true for everything that goes in it (Food and Drugs Act s. 5: no misleading origin). The Gulf and Yemeni-style coffees made from Ethiopian beans must never go in this pouch; they use the 250 g pouch with our stickers, which say “Ethiopian beans”. If you might ever put other beans in A3, we change the print now to something without a country.',
+    options: ['Yes: only coffee grown in Yemen', 'No: take the country off the A3 print'],
+  },
+  {
+    id: 'legal-name-on-print', topic: 'Business · Name printed in China', asked: '2026-10-07',
+    question: 'Is “Hikaya Coffee Ltd.” exactly the name on the incorporation papers? (Answer by 16 October.)',
+    context: 'It is printed by the factory on the A1 and A3 pouches, so it cannot be changed after printing. The label must show the company’s real name (or a registered trade name).',
+    options: ['Yes, exactly', 'No: I will write the exact name here'],
+  },
+  {
+    id: 'stuffed-box-labels', topic: 'Dates · Stuffed date boxes', asked: '2026-10-07',
+    question: 'Stuffed date boxes need more on the box than plain dates. Where should it go? (Decide before the label rolls are ordered, about 10 November.)',
+    context: 'Fillings with added sugar (biscuit cream, chocolate, caramel) need the “High in sugars” front-of-package symbol (mandatory since January 2026) on the lid, in its upper half, not under the band or a sticker. The box also needs the full ingredient list with a “Contains” line, “Product of Saudi Arabia” next to our name, and a best-before date if they keep 90 days or less. Plain dates need none of this except the origin. The 100 × 40 box side label (E5) is too small for a stuffed list, and on the small box B5 the visible side below the lid is only about 25 mm. Our suggestion: stuffed dates go in the gift box B1 only, with a 100 × 70 lid label beside the band (a new die on the label order) carrying the symbol, ingredients, Contains, origin and our name. The small box B5 has no room on its lid for that label once the band and logo are on, so B5 stays for plain dates.',
+    options: ['Stuffed dates in B1 only, with the 100 × 70 lid label', 'Only plain dates in boxes for now', 'Let us talk about it'],
+  },
+  {
+    id: 'boxes-in-bags', topic: 'Delivery · Boxes in the paper bags', asked: '2026-10-07',
+    question: 'The gift boxes only fit in the paper bags standing on their side. Is that all right?',
+    context: 'B1 (320 × 240 × 70) fits the medium bag (254 × 127 × 330) only on its long edge; B5 (205 × 135 × 45) is too wide to lie flat in either bag (small 203 × 121, medium 254 × 127). Standing up is common for gift boxes, and the film over the dates and the band hold them, but if you want them flat the bag sizes would need to change before 16 October.',
+    options: ['Standing up is fine', 'Change the bag sizes so boxes lie flat'],
+  },
+  {
+    id: 'tote-fibre-label', topic: 'Bags · Cloth tote', asked: '2026-10-07',
+    question: 'Will the cloth tote be sold (or given with an order)? If yes, it needs a small sewn label.',
+    context: 'Textiles sold in Canada usually need a fibre label in English and French (“100% cotton / 100 % coton”) and the dealer’s name and address or a CA number (free from the Competition Bureau; it avoids printing an address). The factory can sew it in. Confirm with the lawyer whether a bag counts.',
+    options: ['Sold: add a sewn label (we get a CA number)', 'Only given away free'],
+  },
+  {
     id: 'website-address-phone', topic: 'Business · Website contact', asked: '2026-10-06',
     question: 'Which business address and phone number does the website show before checkout?',
     context: 'Labels only need “Hikaya Coffee Ltd., Calgary, Alberta, Canada”. The website is different: Alberta’s Internet Sales Contract Regulation asks an online seller to show its business address (and its mailing address if different) and a telephone number before the customer orders (checked through two summaries; confirm with your lawyer). The registered office at the lawyer’s can work as the mailing address if they agree to receive mail and have it listed. A phone number can be a low-cost business line that goes to voicemail. Do not put the lawyer’s address on the food labels: an address on a label is taken to be where the food was packed (SFCA 45).',
@@ -27,7 +63,7 @@ export const DECISIONS: Decision[] = [
   {
     id: 'dates-supplier-label-info', kind: 'provide', topic: 'Dates · Supplier', asked: '2026-10-06',
     question: 'From the everyday dates supplier: what our sticker on their packed bags needs',
-    context: 'For each variety and bag size (250 g, 500 g, 1 kg): (1) a lab sheet or nutrition values per 100 g (calories, fat, saturated and trans fat, cholesterol, sodium, carbohydrate, fibre, sugars, protein, potassium, calcium, iron); (2) are the dates only dates, or coated, oiled or with glucose syrup; (3) any allergen cross-contact at their plant; (4) country where they were grown and packed; (5) the net weight on their bag and how much it varies; (6) their lot code on each bag, or we add ours; (7) the bag face size (it needs room for our 100 × 100 front sticker and 100 × 90 back sticker), and whether anything is printed there; (8) whether they pack for us under our label (then the country name must be 6.4 mm tall on 500 g and 1 kg, 3.2 mm on 250 g). Our front sticker then carries the name in English and French, the weight, “Product of Saudi Arabia / Produit d’Arabie saoudite” next to our name, and the lot; the back sticker carries the Nutrition Facts.',
+    context: 'For each variety and bag size (250 g, 500 g, 1 kg): (1) a lab sheet or nutrition values per 100 g (calories, fat, saturated and trans fat, cholesterol, sodium, carbohydrate, fibre, sugars, protein, potassium, calcium, iron); (2) are the dates only dates, or coated, oiled or with glucose syrup; (3) any allergen cross-contact at their plant; (4) country where they were grown and packed; (5) the net weight on their bag and how much it varies; (6) their lot code on each bag, or we add ours; (7) the bag face size (it needs room for our 100 × 100 front sticker and 100 × 90 back sticker), and whether anything is printed there; (8) whether they pack for us under our label (then the country name must be 6.4 mm tall on 500 g and 1 kg, 3.2 mm on 250 g). (9) any sulphites or preservatives (10 ppm or more must be declared), and their shelf life. Our front sticker then carries the name in English and French, the weight, “Product of Saudi Arabia / Produit d’Arabie saoudite” next to our name, and the lot; the back sticker carries the Nutrition Facts.',
     options: ['Given'],
   },
   {

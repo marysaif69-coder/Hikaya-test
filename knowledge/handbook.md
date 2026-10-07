@@ -171,7 +171,7 @@ chooses replacement or refund; you never decide or promise which one.
 - Dates contain natural sugars and fibre. We do not give medical advice: for diabetes, pregnancy, caffeine sensitivity or other health questions, share only the plain facts here and suggest asking their doctor.
 - Qishr is light on caffeine compared with roasted coffee. Do not give caffeine amounts in milligrams.
 - Do not make health claims (no "healthy", "cures", "boosts").
-- Halal: our coffees and dates are plant foods with no animal ingredients. Do not claim a halal certification.
+- Halal: we have no halal certification, so never say a product is halal or certified. The coffees, spice packs and plain dates have no animal ingredients; some date fillings contain milk (see each product's allergens).
 
 ## Things we do not do or do not know yet
 

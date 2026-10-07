@@ -6,6 +6,14 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-3', title: 'Final packaging check: calculator matches the China brief, QR addresses tested, six new questions', date: '2026-10-07',
+    checks: [
+      { id: 'pack3-rolls', text: 'Desk → Numbers → Packaging with the brief’s numbers: label rolls read E1 1,100 · E1b 3,100 · E2 1,000 · E3 2,700 · E6 700 · E7/E8/E9 1,100, and the sleeves show two rows, B1 310 and B5 620.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'pack3-decisions', text: 'Settings → Decisions: six new items at the top (QR codes while the site is closed, Yemeni pouch only for Yemen-grown coffee, exact company name, stuffed box labels, boxes in the bags, tote label).', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'pack3-beans', text: 'Shop → Yemeni beans tab and a Yemeni beans page: the text says “black and gold pouch”, not “black box”.', links: [{ label: 'Shop (EN)', href: '/en/shop/' }, { label: 'Shop (AR)', href: '/ar/shop/' }] },
+    ],
+  },
+  {
     id: 'pack-calc-2', title: 'Packaging calculator: dates get a front and a back sticker, boxes a side label, small packs two stickers', date: '2026-10-06',
     checks: [
       { id: 'pack-calc-rolls', text: 'Desk → Numbers → Packaging: the label rolls list E1b “250 g backs + spice packs + dates fronts”, E3 “dates backs + box bottoms”, a new E5 box side label, and E6 “front and back of each small pack”.', links: [{ label: 'Desk', href: '/admin/' }] },

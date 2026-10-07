@@ -127,4 +127,10 @@ assert.ok(!anonPrev.includes('TEAM VIEW') && anonPrev.includes('id="wl"')); ok('
 
 process.env.PREVIEW_PASSWORD = 'new-code';
 assert.notEqual(await (await run('/en/', { headers: { cookie } })).text(), '<h1>shop</h1>'); ok('changing the passcode signs everyone out');
+// The QR codes printed on the pouches and cards (1,100+ of each) point at these addresses: they must keep working.
+const redirects = fs.readFileSync('public/_redirects', 'utf8');
+for (const [from, to] of [['/brew', '/en/brew/'], ['/brew', '/ar/brew/'], ['/ask', '/en/help/?ask=1'], ['/ask', '/ar/help/?ask=1']])
+  assert.ok(new RegExp(`^${from.replace('/', '\\/')}\\s+${to.replace(/[/?.]/g, m => '\\' + m)}\\s+302`, 'm').test(redirects), `${from} -> ${to}`);
+assert.ok(fs.existsSync('src/pages/[lang]/brew.astro') || fs.existsSync('src/pages/[lang]/brew/index.astro'), 'the brew guides page exists');
+ok('the printed QR addresses /brew and /ask still redirect to the brew guides and Ask Hikaya');
 console.log(`\n${pass} checks passed`);

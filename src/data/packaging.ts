@@ -57,7 +57,7 @@ export function packCounts(i: PackInput) {
   const small = Math.ceil(i.bagged_orders * (1 - i.medium_share / 100));
   const medium = Math.max(Math.ceil(i.bagged_orders * i.medium_share / 100), u.B1);
   const lab = (code: string, n: number, why: string): PackRow => {
-    const order = w(n, i.waste_labels), pr = perRoll(ROLLS[code][1]);
+    const order = up(w(n, i.waste_labels), 100), pr = perRoll(ROLLS[code][1]);   // ordered in hundreds
     return { group: 'Label rolls (blank, from China)', code, name: ROLLS[code][0], need: n, why, order, rolls: Math.ceil(order / pr), perRoll: pr };
   };
   const rows: PackRow[] = [
@@ -68,7 +68,8 @@ export function packCounts(i: PackInput) {
     { group: 'Boxes', code: 'B1', name: 'Gift box 320 × 240', need: u.B1, why: 'boxes', order: up(w(u.B1, WASTE.boxes), 10) },
     { group: 'Boxes', code: 'B2', name: 'B1 inserts D24 · C12 · C2', need: u.B1, why: `${b1('D24')} · ${b1('C12')} · ${b1('C2')}`, order: up(w(u.B1, WASTE.boxes), 10) },
     { group: 'Boxes', code: 'B5', name: 'Small date box 205 × 135', need: u.B5, why: 'boxes', order: up(w(u.B5, WASTE.boxes), 10) },
-    { group: 'Boxes', code: 'B4', name: 'Sleeves (B1 + B5)', need: u.B1 + u.B5, why: 'one per box', order: up(w(u.B1 + u.B5, WASTE.boxes), 10) },
+    { group: 'Boxes', code: 'B4-B1', name: 'Sleeve B1 50 × 665 (vertical)', need: u.B1, why: 'one per gift box', order: up(w(u.B1, WASTE.boxes), 10) },
+    { group: 'Boxes', code: 'B4-B5', name: 'Sleeve B5 50 × 525 (horizontal)', need: u.B5, why: 'one per small box', order: up(w(u.B5, WASTE.boxes), 10) },
     { group: 'Boxes', code: 'B3', name: 'Paper cups', need: cups, why: 'D24 × 24 + C12 × 12 + B5 × 6', order: up(w(cups, WASTE.cups), 500) },
     { group: 'Bags', code: 'C-S', name: 'Small paper bag', need: small, why: `${i.bagged_orders} bagged orders × ${100 - i.medium_share}%`, order: up(w(small, WASTE.bags), 50) },
     { group: 'Bags', code: 'C-M', name: 'Medium paper bag', need: medium, why: `${i.medium_share}% of orders, at least one per gift box`, order: up(w(medium, WASTE.bags), 50) },
