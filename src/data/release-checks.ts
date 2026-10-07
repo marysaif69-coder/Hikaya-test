@@ -6,6 +6,14 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-4', title: 'Qishr in the packaging calculator; one more owner question (origin on the date boxes)', date: '2026-10-07',
+    checks: [
+      { id: 'pack4-qishr', text: 'Desk → Numbers → Packaging: a new field “Qishr 100 g (in the 250 g pouch), count”. Type 200: the 250 g pouches (A1), the front stickers (E1) and the back stickers (E1b) each go up by about 200. Back to the brief’s numbers puts it at 0.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'pack4-origin', text: 'Settings → Decisions: a new item “Origin on the date boxes” (a question for the lawyer).', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'pack4-qishr-fr', text: 'Qishr page → Ingredients in French: “Écorces de cerise de café, gingembre.” (not “Cascara”, which in Canada reads as the laxative herb).', links: [{ label: 'Qishr', href: '/en/shop/qishr/' }] },
+    ],
+  },
+  {
     id: 'pack-final-3', title: 'Final packaging check: calculator matches the China brief, QR addresses tested, six new questions', date: '2026-10-07',
     checks: [
       { id: 'pack3-rolls', text: 'Desk → Numbers → Packaging with the brief’s numbers: label rolls read E1 1,100 · E1b 3,100 · E2 1,000 · E3 2,700 · E6 700 · E7/E8/E9 1,100, and the sleeves show two rows, B1 310 and B5 620.', links: [{ label: 'Desk', href: '/admin/' }] },

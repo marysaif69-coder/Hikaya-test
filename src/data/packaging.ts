@@ -8,7 +8,7 @@ const ROLL_MM = Math.PI * (50 * 50 - 25.4 * 25.4) / 0.14, GAP = 3;
 export const perRoll = (h: number) => Math.floor(ROLL_MM / (h + GAP));
 
 export type PackInput = {
-  coffee_kg: number; yemeni_kg: number; dates_250_kg: number; dates_500_kg: number; dates_1kg_kg: number;
+  coffee_kg: number; yemeni_kg: number; qishr_packs: number; dates_250_kg: number; dates_500_kg: number; dates_1kg_kg: number;
   b1_boxes: number; b5_boxes: number; spice_packs: number; small_packs: number;
   seasonal_share: number; bagged_orders: number; medium_share: number; totes: number;
   waste_labels: number; waste_pouches: number;
@@ -16,13 +16,13 @@ export type PackInput = {
 
 /** The brief's placeholder quantities, until the kilo forecast is set. */
 export const PACK_DEFAULTS: PackInput = {
-  coffee_kg: 250, yemeni_kg: 100, dates_250_kg: 125, dates_500_kg: 300, dates_1kg_kg: 400,
+  coffee_kg: 250, yemeni_kg: 100, qishr_packs: 0, dates_250_kg: 125, dates_500_kg: 300, dates_1kg_kg: 400,
   b1_boxes: 300, b5_boxes: 600, spice_packs: 300, small_packs: 300,
   seasonal_share: 100, bagged_orders: 1200, medium_share: 25, totes: 100, waste_labels: 8, waste_pouches: 5,
 };
 
 export const PACK_FIELDS: [keyof PackInput, string, string][] = [
-  ['coffee_kg', 'Coffee', '250 g coffee, kg'], ['yemeni_kg', 'Coffee', 'Yemeni 100 g, kg'],
+  ['coffee_kg', 'Coffee', '250 g coffee, kg'], ['yemeni_kg', 'Coffee', 'Yemeni 100 g, kg'], ['qishr_packs', 'Coffee', 'Qishr 100 g (in the 250 g pouch), count'],
   ['spice_packs', 'Coffee', 'Spice packs 25 g, count'], ['small_packs', 'Coffee', 'Saffron and small packs, count'],
   ['dates_250_kg', 'Dates', 'In 250 g bags, kg'], ['dates_500_kg', 'Dates', 'In 500 g bags, kg'], ['dates_1kg_kg', 'Dates', 'In 1 kg bags, kg'],
   ['b1_boxes', 'Dates', 'Gift boxes B1'], ['b5_boxes', 'Dates', 'Small boxes B5'],
@@ -47,7 +47,7 @@ export function packCounts(i: PackInput) {
   const up = (n: number, step: number) => Math.ceil(n / step) * step;
   const w = (n: number, pct: number) => Math.ceil(n * (1 + pct / 100));
   const u = {
-    A1: Math.ceil(i.coffee_kg / 0.25), A3: Math.ceil(i.yemeni_kg / 0.1),
+    A1: Math.ceil(i.coffee_kg / 0.25) + Math.ceil(i.qishr_packs), A3: Math.ceil(i.yemeni_kg / 0.1),
     dates: Math.ceil(i.dates_250_kg / 0.25) + Math.ceil(i.dates_500_kg / 0.5) + Math.ceil(i.dates_1kg_kg),
     B1: i.b1_boxes, B5: i.b5_boxes, spice: i.spice_packs, small: i.small_packs,
   };
@@ -61,7 +61,7 @@ export function packCounts(i: PackInput) {
     return { group: 'Label rolls (blank, from China)', code, name: ROLLS[code][0], need: n, why, order, rolls: Math.ceil(order / pr), perRoll: pr };
   };
   const rows: PackRow[] = [
-    { group: 'Pouches', code: 'A1', name: '250 g coffee pouch', need: u.A1, why: 'coffee kg ÷ 0.25', order: pouch(u.A1) },
+    { group: 'Pouches', code: 'A1', name: '250 g coffee pouch', need: u.A1, why: 'coffee kg ÷ 0.25, plus qishr packs', order: pouch(u.A1) },
     { group: 'Pouches', code: 'A3', name: '100 g Yemeni pouch', need: u.A3, why: 'Yemeni kg ÷ 0.1', order: pouch(u.A3) },
     { group: 'Pouches', code: 'A4', name: '25 g spice-pack sachet', need: u.spice, why: 'one per pack', order: pouch(u.spice) },
     { group: 'Pouches', code: 'A5', name: 'Saffron and small-pack pouch', need: u.small, why: 'one per pack', order: pouch(u.small) },
@@ -75,7 +75,7 @@ export function packCounts(i: PackInput) {
     { group: 'Bags', code: 'C-M', name: 'Medium paper bag', need: medium, why: `${i.medium_share}% of orders, at least one per gift box`, order: up(w(medium, WASTE.bags), 50) },
     { group: 'Bags', code: 'H', name: 'Cloth tote (sold)', need: i.totes, why: 'your number', order: up(i.totes, 50) },
     { group: 'Bags', code: 'T', name: 'Yemeni gift tag + cord', need: u.A3, why: 'one per Yemeni pouch', order: up(w(u.A3, i.waste_labels), 100) },
-    lab('E1', u.A1, 'one per 250 g pouch'),
+    lab('E1', u.A1, 'one per 250 g pouch (coffee and qishr)'),
     lab('E1b', u.A1 + u.spice + u.dates, '250 g backs + spice packs + dates fronts'),
     lab('E2', u.B1 + u.B5, 'one per gift box'),
     lab('E3', u.dates + u.B1 + u.B5 + b1('C12'), 'dates backs + box bottoms (+1 on Coffee & Dates boxes)'),

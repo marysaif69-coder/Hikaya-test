@@ -30,6 +30,12 @@ export const DECISIONS: Decision[] = [
     options: ['Yes, exactly', 'No: I will write the exact name here'],
   },
   {
+    id: 'box-origin-label', topic: 'Dates · Origin on the date boxes', asked: '2026-10-07',
+    question: 'Ask the lawyer: on our date boxes, how tall must “Product of Saudi Arabia” be? (Decide before the label rolls are ordered, about 10 November.)',
+    context: 'Dates we pack under our name need the country of origin next to “Hikaya Coffee Ltd., Calgary, Alberta, Canada”. For the dates bag sticker we planned the strictest reading: the country name 6.4 mm tall (the rule for imported processed fruit, SFCR, as we read it). If that also applies to the gift boxes, the small box B5 has no room for it on the lid once the band, the seal and the logo are on, and B1 needs a lid label. If the normal 1.6 mm minimum applies, the Ø76 seal carries the name, the weight, the origin and our name on both boxes, and nothing changes. Nothing printed in China depends on this; only the label shapes do.',
+    options: ['Lawyer: 1.6 mm is enough (the seal carries it)', 'Lawyer: 6.4 mm is needed (add a lid label)', 'Ask me again'],
+  },
+  {
     id: 'stuffed-box-labels', topic: 'Dates · Stuffed date boxes', asked: '2026-10-07',
     question: 'Stuffed date boxes need more on the box than plain dates. Where should it go? (Decide before the label rolls are ordered, about 10 November.)',
     context: 'Fillings with added sugar (biscuit cream, chocolate, caramel) need the “High in sugars” front-of-package symbol (mandatory since January 2026) on the lid, in its upper half, not under the band or a sticker. The box also needs the full ingredient list with a “Contains” line, “Product of Saudi Arabia” next to our name, and a best-before date if they keep 90 days or less. Plain dates need none of this except the origin. The 100 × 40 box side label (E5) is too small for a stuffed list, and on the small box B5 the visible side below the lid is only about 25 mm. Our suggestion: stuffed dates go in the gift box B1 only, with a 100 × 70 lid label beside the band (a new die on the label order) carrying the symbol, ingredients, Contains, origin and our name. The small box B5 has no room on its lid for that label once the band and logo are on, so B5 stays for plain dates.',
