@@ -1,7 +1,8 @@
 ---
 // A drawing of a date box as it really is, until there are photos: the B1 gift box (cream lid with
-// the pattern, the gold khalal sleeve and the seal; Ramadan or Eid adds our Ø50 sticker) open beside
-// its lid, with what goes inside, or the clear tray of the Everyday dates. 4:5, like the photos.
+// the pattern, the Tamr red band, 50 mm, across the short side, and our Ø76 seal on it; Ramadan or Eid
+// adds our Ø50 sticker) open beside its lid, with what goes inside, or the clear bag of the Everyday
+// dates. 4:5, like the photos. Lid 400 × 300 = 320 × 240 mm at 1.25 px/mm.
 import type { Box, Lang } from '../data/products';
 import { DATES, EVERYDAY, RESERVE, PRODUCTS, defaultBoxOpt } from '../data/products';
 import { dateSvg } from '../data/date-art';
@@ -42,11 +43,11 @@ const ar = lang === 'ar';
       <rect width="400" height="300" rx="10" fill={`url(#pat-${uid})`} />
       <rect x="28" y="96" width="140" height="108" rx="8" fill="#F7F1E4" />
       <image href="/brand/logo.svg" x="44" y="106" width="108" height="90" />
-      <rect x="238" y="0" width="100" height="300" fill="#CF9C0C" />
-      <circle cx="288" cy="150" r="44" fill="#F5EFE3" />
-      <image href="/brand/logo.svg" x="256" y="124" width="64" height="54" />
-      {sleeve === 'ramadan' && <g><circle cx="300" cy="236" r="30" fill="#A93B28" /><path d="M310 222a16 16 0 1 0 0 28a13 13 0 1 1 0-28z" fill="#F5EFE3" /></g>}
-      {sleeve === 'eid' && <g><circle cx="300" cy="236" r="30" fill="#33211A" /><text x="300" y="246" text-anchor="middle" font-family="El Messiri, serif" font-weight="700" font-size="24" fill="#CF9C0C">عيد</text></g>}
+      <rect x="307.5" y="0" width="62.5" height="300" fill="#A93B28" />
+      <circle cx="339" cy="150" r="47.5" fill="#F5EFE3" />
+      <image href="/brand/logo.svg" x="307" y="123" width="64" height="54" />
+      {sleeve === 'ramadan' && <g><circle cx="339" cy="241" r="31" fill="#33211A" stroke="#F5EFE3" stroke-width="3" /><path d="M349 227a16 16 0 1 0 0 28a13 13 0 1 1 0-28z" fill="#CF9C0C" /></g>}
+      {sleeve === 'eid' && <g><circle cx="339" cy="241" r="31" fill="#CF9C0C" stroke="#F5EFE3" stroke-width="3" /><text x="339" y="251" text-anchor="middle" font-family="El Messiri, serif" font-weight="700" font-size="24" fill="#33211A">عيد</text></g>}
     </g>
   )}
   <g transform={tray ? 'translate(100 200) rotate(-3)' : 'translate(150 330) rotate(5)'}>

@@ -69,7 +69,7 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
       continue;
     }
     boxes[p.insert] += r.qty;
-    // Every gift box has the gold sleeve; Ramadan and Eid add our Ø50 sticker (from the order line,
+    // Every gift box has the red band (B4); Ramadan and Eid add our Ø50 sticker (from the order line,
     // else the box's own: the retired seasonal boxes).
     if (p.insert !== 'everyday') {
       sleeves.regular += r.qty;
@@ -99,7 +99,8 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
     dates: dateRows,
     stuffed: (Object.keys(stuffed) as FillingId[]).map(id => ({ id, name: FILLINGS[id].name.en, pieces: stuffed[id] ?? 0 })).filter(r => r.pieces),
     packaging: {
-      // The Yemeni beans go in their black box, not a pouch.
+      // The Yemeni beans go in their own black and gold 100 g pouch (A3, with a tag), not the 250 g one.
+      // Qishr (100 g) fills the 250 g pouch (A1) too, counted apart.
       blackBoxes: coffeeRows.filter(r => r.blackBox).reduce((n, r) => n + r.pouches, 0),
       pouches250: coffeeRows.filter(r => !r.blackBox && r.grams / Math.max(1, r.pouches) === 250).reduce((n, r) => n + r.pouches, 0),
       pouches100: coffeeRows.filter(r => !r.blackBox && r.grams / Math.max(1, r.pouches) === 100).reduce((n, r) => n + r.pouches, 0),

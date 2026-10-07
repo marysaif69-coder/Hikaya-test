@@ -1573,7 +1573,7 @@ ok('a regular order with Medjool or khudri in the Everyday box is not placed; th
   assert.equal(cd.status, 201, JSON.stringify(cd.data));
   const cdRow = (await opt(cd.data.ref))[0];
   assert.equal(cdRow.option, 'najdi|mixed'); assert.equal(cdRow.option_en, 'Najdi · Mixed Reserve'); assert.equal(cdRow.option_ar, 'نجدية · نخبة مشكّلة'); assert.equal(cdRow.sleeve, 'regular');
-  ok('Coffee & Dates: a style and Mixed Reserve in one option, saved readable, gold sleeve by default');
+  ok('Coffee & Dates: a style and Mixed Reserve in one option, saved readable, the regular red band by default');
   for (const [o, err] of [['najdi|khalas', 'choose-date'], ['qishr|ajwa', 'choose-coffee'], ['najdi', 'choose-date'], ['taste-gulf|ajwa', 'choose-coffee']] as const)
     assert.equal((await order({ day, lines: [{ id: 'guest-box', opt: o, qty: 1 }] })).data.error, err, o);
   ok('Coffee & Dates refuses an Everyday date, qishr, a tasting box or a missing part');
@@ -1607,10 +1607,10 @@ ok('a regular order with Medjool or khudri in the Everyday box is not placed; th
   assert.equal(sr.status, 201, JSON.stringify(sr.data));
   const srRows = await opt(sr.data.ref);
   assert.deepEqual(srRows.map(r => r.sleeve), ['ramadan', 'regular', null]); ok('a Ramadan sticker is kept in Ramadan; an Eid sticker while Eid is off is not; Everyday dates take none');
-  assert.equal((await order({ day, lines: [{ id: 'guest-box', opt: 'hadrami|ajwa', qty: 1, sleeve: 'gold-foil' }] })).status, 201); ok('an unknown sleeve falls back to the gold sleeve');
+  assert.equal((await order({ day, lines: [{ id: 'guest-box', opt: 'hadrami|ajwa', qty: 1, sleeve: 'gold-foil' }] })).status, 201); ok('an unknown sleeve falls back to the regular red band');
   const w2 = (await call(admin, `/api/admin/week?from=${wk}`, { cookie: adm })).data;
   assert.equal(w2.packaging.stickers.ramadan - w1.packaging.stickers.ramadan, 1); assert.equal(w2.packaging.stickers.eid - w1.packaging.stickers.eid, 0); assert.equal(w2.packaging.sleeves.regular - w1.packaging.sleeves.regular, 3);
-  ok('the week sheet: every gift box takes the gold sleeve; the Ramadan sticker is counted from the order line');
+  ok('the week sheet: every gift box takes the red band; the Ramadan sticker is counted from the order line');
   const slip = (await call(admin, `/api/admin/day?date=${day}`, { cookie: adm })).data.pickups.flatMap((w: any) => w.orders).find((o: any) => o.ref === sr.data.ref);
   assert.equal(slip.items[0].sleeve, 'ramadan'); ok('packing slips get the sleeve');
   // Editing the order in the desk keeps the sleeve.
@@ -1656,7 +1656,7 @@ ok('a regular order with Medjool or khudri in the Everyday box is not placed; th
   assert.equal(yb.status, 201, JSON.stringify(yb.data));
   const wy = (await call(admin, '/api/admin/week?from=2027-10-14', { cookie: adm })).data;
   assert.equal(wy.packaging.blackBoxes, 2); assert.equal(wy.coffee.find((r: any) => r.id === 'yemen-haraz').grind, 'Whole roasted beans');
-  ok('shown in the desk, they can be ordered (whole beans), and the week sheet counts black boxes, not pouches');
+  ok('shown in the desk, they can be ordered (whole beans), and the week sheet counts their black and gold pouches apart from the 250 g ones');
   await call(admin, '/api/admin/products/yemen-haraz', { cookie: adm, body: { visible: false } });
 }
 

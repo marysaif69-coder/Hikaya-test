@@ -78,7 +78,7 @@ function catalog() {
     b.picks ? `The customer chooses ${b.picks.map(k => (k === 'coffee' ? 'a coffee' : 'a Reserve kind or "mixed"')).join(' and ')}; option is one string joined by "|" (e.g. "${defaultBoxOpt(b)}"). Coffees: ${GIFT_COFFEES.map(id => `"${id}"`).join(', ')}.${b.picks.includes('reserve') ? ` Reserve kinds: ${varietiesOf(b).map(k => `"${k}" ${DATES[k].name.en}`).join(', ')}, or "mixed" (4 of each).` : ''}` : '',
     !b.picks && b.chooseDate ? `The customer chooses one date variety (option): ${varietiesOf(b).map(k => `"${k}" ${DATES[k].name.en}`).join(', ')}${mixedOk(b) ? `, or "mixed" (${(b.count ?? 0) / varietiesOf(b).length} of each)` : ''}.` : '',
     b.fillings && mixedOk(b) ? `Or "mixed": ${(b.count ?? 0) / b.fillings.length} of each filling, with all their allergens.` : '',
-    takesSleeve(b) ? 'Occasion: every gift box has the same gold band; in Ramadan and Eid the customer can add our Ramadan or Eid sticker (sleeve "ramadan" / "eid"). A season adds a sticker; the box is the same.' : '',
+    takesSleeve(b) ? 'Occasion: every gift box has the same red band; in Ramadan and Eid the customer can add our Ramadan or Eid sticker (sleeve "ramadan" / "eid"). A season adds a sticker; the box is the same.' : '',
   ].filter(Boolean).join('\n')).join('\n\n');
   // Only the varieties a product offers (khudri stays in DATES for old orders but is not sold).
   const sold = new Set(BOXES.filter(b => !b.retired).flatMap(b => [...varietiesOf(b), ...Object.keys(b.packs?.dates ?? {})]));

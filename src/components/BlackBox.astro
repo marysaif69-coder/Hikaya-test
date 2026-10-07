@@ -1,26 +1,49 @@
 ---
-// The Yemeni beans' black box (100 g), drawn until there is artwork: matte black, a thin gold rule,
-// the logo and حكاية in gold, and the region on a small gold label. [TBD: the box design.]
+// The Yemeni beans in their pouch, drawn until there are photos: the black and gold 100 g pouch
+// (A3 in the packaging brief, 95 × 155 × 45) with the region on our round gold sticker (E7), and
+// the gold gift tag (T) tied at the top. The file keeps its old name; it was a black box before.
 import type { Coffee, Lang } from '../data/products';
 interface Props { coffee: Coffee; lang: Lang }
 const { coffee, lang } = Astro.props;
 const ar = lang === 'ar';
+const MS = 'El Messiri, serif', PLEX = 'IBM Plex Sans, Arial, sans-serif';
 ---
-<svg class="black-box" viewBox="0 0 600 750" role="img" aria-label={ar ? `علبة سوداء: ${coffee.name.ar}` : `Black box: ${coffee.name.en}`}>
+<svg class="black-box" viewBox="0 0 600 750" direction="ltr" role="img" aria-label={ar ? `كيس أسود وذهبي: ${coffee.name.ar}` : `Black and gold pouch: ${coffee.name.en}`}>
   <rect width="600" height="750" fill="#EFE7DA" />
-  <ellipse cx="300" cy="652" rx="175" ry="24" fill="#33211A" opacity=".22" />
-  <ellipse cx="300" cy="650" rx="120" ry="12" fill="#33211A" opacity=".18" />
-  <g transform="translate(150 110)">
-    <rect x="16" y="-14" width="268" height="20" rx="3" fill="#2A2420" />
-    <rect width="300" height="540" rx="10" fill="#1C1714" />
-    <rect x="16" y="16" width="268" height="508" rx="6" fill="none" stroke="#CF9C0C" stroke-opacity=".75" stroke-width="2" />
-    <image href="/brand/logo.svg" x="104" y="88" width="92" height="77" opacity=".95" />
-    <text x="150" y="232" text-anchor="middle" font-family="El Messiri, serif" font-weight="700" font-size="40" fill="#CF9C0C">حكاية</text>
-    <text x="150" y="262" text-anchor="middle" font-family="IBM Plex Sans, Arial, sans-serif" font-weight="600" font-size="13" letter-spacing="6" fill="#CF9C0C" opacity=".8">HIKAYA</text>
-    <rect x="70" y="330" width="160" height="96" rx="8" fill="#CF9C0C" />
-    <text x="150" y="372" text-anchor="middle" font-family="El Messiri, serif" font-weight="700" font-size="30" fill="#1C1714">{coffee.name.ar}</text>
-    <text x="150" y="404" text-anchor="middle" font-family="IBM Plex Sans, Arial, sans-serif" font-weight="600" font-size="15" fill="#1C1714">{coffee.name.en} · {ar ? 'اليمن' : 'Yemen'}</text>
-    <text x="150" y="486" text-anchor="middle" font-family="IBM Plex Sans, Arial, sans-serif" font-weight="600" font-size="14" fill="#CF9C0C" opacity=".75">{coffee.size[lang]}</text>
+  <ellipse cx="260" cy="618" rx="170" ry="22" fill="#33211A" opacity=".2" />
+  <g transform="translate(110 150)">
+    <rect width="280" height="457" rx="8" fill="#1C1714" />
+    <rect width="280" height="30" rx="8" fill="#2A2420" />
+    <rect y="22" width="280" height="8" fill="#2A2420" />
+    <path d="M0 47l6 6-6 6zM280 47l-6 6 6 6z" fill="#EFE7DA" />
+    <line x1="0" y1="77" x2="280" y2="77" stroke="#2A2420" stroke-width="3" />
+    <circle cx="233" cy="127" r="15" fill="none" stroke="#CF9C0C" stroke-opacity=".3" stroke-width="1.5" />
+    <image href="/brand/logo-gold.svg" x="91" y="100" width="98" height="82" />
+    <text x="128" y="211" text-anchor="end" font-family={MS} font-weight="700" font-size="26" fill="#CF9C0C">حكاية</text>
+    <line x1="140" y1="192" x2="140" y2="214" stroke="#CF9C0C" stroke-width="1.5" />
+    <text x="152" y="207" font-family={PLEX} font-weight="600" font-size="9" letter-spacing="3" fill="#CF9C0C">HIKAYA</text>
+    <line x1="70" y1="226" x2="210" y2="226" stroke="#CF9C0C" stroke-width="1.5" />
+    <text x="140" y="262" text-anchor="middle" font-family={MS} font-weight="700" font-size="36" fill="#CF9C0C">بن اليمن</text>
+    <text x="140" y="283" text-anchor="middle" font-family={PLEX} font-weight="600" font-size="11" letter-spacing="4" fill="#CF9C0C">YEMENI COFFEE</text>
+    <text x="140" y="302" text-anchor="middle" font-family={PLEX} font-size="11.5" fill="#F5EFE3" opacity=".9">Whole bean coffee</text>
+    <text x="140" y="316" text-anchor="middle" font-family={PLEX} font-size="11.5" fill="#F5EFE3" opacity=".9">Café en grains entiers</text>
+    <circle cx="140" cy="370" r="44" fill="#CF9C0C" />
+    <circle cx="140" cy="370" r="39" fill="none" stroke="#1C1714" stroke-opacity=".35" stroke-width="1" />
+    <text x="140" y="376" text-anchor="middle" font-family={MS} font-weight="700" font-size="22" fill="#1C1714">{coffee.name.ar}</text>
+    <text x="140" y="393" text-anchor="middle" font-family={PLEX} font-weight="600" font-size="7.5" letter-spacing="2" fill="#1C1714">{coffee.name.en.toUpperCase()}</text>
+    <text x="140" y="438" text-anchor="middle" font-family={PLEX} font-weight="600" font-size="20" fill="#F5EFE3">{coffee.size[lang]}</text>
+  </g>
+  <path d="M378 168c30 4 52 14 66 34" fill="none" stroke="#E6D2A6" stroke-width="2.5" />
+  <g transform="translate(444 196) rotate(-7)">
+    <rect x="-55" y="-14" width="110" height="220" rx="22" fill="#CF9C0C" />
+    <circle cx="0" cy="6" r="5" fill="#EFE7DA" />
+    <circle cx="-10" cy="34" r="3.2" fill="#33211A" /><circle cx="0" cy="34" r="3.2" fill="#33211A" /><circle cx="10" cy="34" r="3.2" fill="#33211A" />
+    <text x="0" y="70" text-anchor="middle" font-family={MS} font-weight="700" font-size="13.5" fill="#33211A">من مدرجات اليمن</text>
+    <text x="0" y="92" text-anchor="middle" font-family={MS} font-weight="700" font-size="13.5" fill="#33211A">حيث بدأت</text>
+    <text x="0" y="114" text-anchor="middle" font-family={MS} font-weight="700" font-size="13.5" fill="#33211A">حكاية القهوة</text>
+    <line x1="-26" y1="130" x2="26" y2="130" stroke="#33211A" stroke-width="1.2" />
+    <text x="0" y="150" text-anchor="middle" font-family={PLEX} font-weight="600" font-size="7.5" fill="#33211A">From Yemen’s terraces,</text>
+    <text x="0" y="161" text-anchor="middle" font-family={PLEX} font-weight="600" font-size="7.5" fill="#33211A">where coffee’s story began.</text>
   </g>
 </svg>
 <style>.black-box { width: 100%; height: 100%; display: block; }</style>

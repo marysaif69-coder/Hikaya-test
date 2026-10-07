@@ -37,7 +37,7 @@ const toAr = (n: number | string) => (ar ? String(n).replace(/\d/g, d => '٠١٢
       <h2 id="boxes-h" class="h-l">{ar ? 'للمائدة عند الغروب' : 'For the table at sunset'}</h2>
       <SeasonLead p={iftar} lang={lang} sleeve="ramadan" title={{ ar: 'علبة الإفطار', en: 'The Iftar Box' }} line={{ ar: 'أول تمرة وأول فنجان بعد الغروب.', en: 'The first date and the first cup after sunset.' }} />
       <div class="grid">{picks.map(p => <ProductCard p={p} lang={lang} sleeve="ramadan" />)}</div>
-      <p class="muted">{ar ? 'كلها علب الهدايا نفسها بالحزام الذهبي، ومعها ملصق رمضان. ' : 'All are our gift boxes in the gold band, with the Ramadan sticker. '}<a href={path(lang, 'shop') + '#everyday'}>{ar ? 'وتمر كل يوم للبيت' : 'Everyday dates for the house'}</a></p>
+      <p class="muted">{ar ? 'كلها علب الهدايا نفسها بالحزام الأحمر، ومعها ملصق رمضان. ' : 'All are our gift boxes in the red band, with the Ramadan sticker. '}<a href={path(lang, 'shop') + '#everyday'}>{ar ? 'وتمر كل يوم للبيت' : 'Everyday dates for the house'}</a></p>
     </div>
   </section>
 

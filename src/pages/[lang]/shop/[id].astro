@@ -199,7 +199,7 @@ const sizeText = p.kind === 'kit' ? kitInside(p, lang) : p.size[lang];
         )}
         {p.kind === 'box' && takesSleeve(p) && (
           <fieldset class="choice" id="sleeves">
-            <legend>{L('Occasion', 'المناسبة')} <small class="muted">{L('The gold band stays; Ramadan and Eid add our sticker.', 'الحزام الذهبي نفسه؛ ولرمضان والعيد نضيف ملصقنا.')}</small></legend>
+            <legend>{L('Occasion', 'المناسبة')} <small class="muted">{L('The red band stays; Ramadan and Eid add our sticker.', 'الحزام الأحمر نفسه؛ ولرمضان والعيد نضيف ملصقنا.')}</small></legend>
             <label><input type="radio" name="sleeve" value="regular" checked /><span>{SLEEVES.regular[lang]}</span></label>
             <label data-season="ramadan"><input type="radio" name="sleeve" value="ramadan" /><span>{SLEEVES.ramadan[lang]}</span></label>
             <label data-season="eid"><input type="radio" name="sleeve" value="eid" /><span>{SLEEVES.eid[lang]}</span></label>

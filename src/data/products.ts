@@ -381,18 +381,18 @@ export const BOXES: Box[] = [
     insert: 'D24', sleeve: 'regular', packs: { dates: { sukkari: 6, khalas: 6, ajwa: 6 } },
     notes: { en: 'Sukkari, Khalas, Khudri and Ajwa, six of each, side by side.', ar: 'سكري وخلاص وخضري وعجوة، ست من كل صنف، جنباً إلى جنب.' },
     contents: { en: 'Gift box, 24 dates in paper cups, four varieties.', ar: 'صندوق هدية، ٢٤ تمرة في أكواب ورقية، أربعة أصناف.' }, preorder: true },
-  // Year-round gift boxes in the regular gold sleeve: they stay when Ramadan and Eid are switched off.
+  // Year-round gift boxes in the regular red band (Tamr, packaging brief B4): they stay when Ramadan and Eid are switched off.
   // Coffee & Dates (id kept for order history): one coffee style + 12 Reserve dates, both chosen.
   // `packs` is what boxes held before the choices (old orders without an option).
   { kind: 'box', id: 'guest-box', tier: 'gift', fam: 'dates', name: { en: 'Coffee & Dates', ar: 'قهوة وتمر' }, price: null, picks: ['coffee', 'reserve'], count: 12, varieties: RESERVE, mixed: true, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/giftbox.webp',
     insert: 'C12', sleeve: 'regular', packs: { coffee: { gulf: 1 }, sachets: { 'pack-saffron': 1 }, dates: { khalas: 12 } },
-    notes: { en: 'One coffee and twelve dates in the gold sleeve, for any visit, any time of year.', ar: 'قهوة واثنتا عشرة تمرة بالحزام الذهبي، لأي زيارة في أي وقت من السنة.' },
+    notes: { en: 'One coffee and twelve dates in the red band, for any visit, any time of year.', ar: 'قهوة واثنتا عشرة تمرة بالحزام الأحمر، لأي زيارة في أي وقت من السنة.' },
     contents: { en: 'Gift box with Najdi coffee (Gulf coffee and its saffron packet) and 12 Khalas dates.', ar: 'صندوق هدية فيه قهوة نجدية (قهوة خليجية وظرف زعفرانها) و١٢ تمرة خلاص.' }, preorder: true },
   // Two Coffees (id kept): two styles, both chosen.
   { kind: 'box', id: 'coffee-duo', tier: 'gift', fam: 'dates', name: { en: 'Two Coffees', ar: 'قهوتان' }, price: null, picks: ['coffee', 'coffee'], size: { en: '2 × 250 g', ar: '٢ × ٢٥٠ غ' }, img: '/media/img/giftbox.webp',
     insert: 'C2', sleeve: 'regular', packs: { coffee: { gulf: 1, yemeni: 1 }, sachets: { 'pack-saffron': 1 } },
     notes: { en: 'Najdi and Yemeni qahwa side by side, for the house that pours all year.', ar: 'نجدية ويمنية جنباً إلى جنب، للبيت الذي يصبّ طوال السنة.' },
-    contents: { en: 'Gift box, gold sleeve, two coffees: Najdi (Gulf coffee with its saffron packet) and Yemeni qahwa.', ar: 'صندوق هدية بالحزام الذهبي، قهوتان: نجدية (قهوة خليجية مع ظرف الزعفران) ويمنية.' }, preorder: true },
+    contents: { en: 'Gift box, red band, two coffees: Najdi (Gulf coffee with its saffron packet) and Yemeni qahwa.', ar: 'صندوق هدية بالحزام الأحمر، قهوتان: نجدية (قهوة خليجية مع ظرف الزعفران) ويمنية.' }, preorder: true },
   // Retired: the seasonal copies. Ramadan and Eid are now a sleeve on the gift boxes above.
   { kind: 'box', id: 'iftar-pair', retired: true, tier: 'gift', fam: 'ramadan', name: { en: 'The Iftar Pair', ar: 'ثنائي الإفطار' }, price: 54, size: { en: '250 g + 12 dates', ar: '٢٥٠ غ + ١٢ تمرة' }, img: '/media/img/iftar-pair.webp',
     insert: 'C12', sleeve: 'ramadan', packs: { coffee: { gulf: 1 }, sachets: { 'pack-saffron': 1 }, dates: { khalas: 12 } },
@@ -427,8 +427,8 @@ export const BY_WEIGHT = BOXES.filter(b => b.grams);
 export const ON_SALE = PRODUCTS.filter(p => !(p.kind === 'box' && p.retired));
 
 // ---------- gift boxes: choices, Mixed and sleeves ----------
-// Every gift box has the same gold khalal sleeve. A season adds our own Ø50 occasion sticker on it
-// (packaging brief B1). In the data and on order lines the choice is still called `sleeve`.
+// Every gift box has the same Tamr red band (50 mm; packaging brief B4). A season adds our own Ø50
+// occasion sticker on the lid (label E4). In the data and on order lines the choice is still called `sleeve`.
 export const SLEEVES: Record<Sleeve, L> = {
   regular: { en: 'Any day', ar: 'كل يوم' },
   ramadan: { en: 'Ramadan sticker', ar: 'ملصق رمضان' },

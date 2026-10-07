@@ -6,6 +6,16 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-6', title: 'The shop shows the packaging you chose: the red band, the Yemeni pouch with its tag', date: '2026-10-07',
+    checks: [
+      { id: 'pack6-band', text: 'A gift box page (Coffee & Dates): the drawing shows a red band (not gold) with our round seal on it, and the text says “red band” / “الحزام الأحمر”. Choose the Ramadan sticker: a dark round sticker with a gold crescent appears on the band; Eid: a gold round sticker.', links: [{ label: 'Coffee & Dates (EN)', href: '/en/shop/guest-box/' }, { label: 'Coffee & Dates (AR)', href: '/ar/shop/guest-box/' }] },
+      { id: 'pack6-words', text: 'No “gold band” or “الحزام الذهبي” left: Shop → Gift boxes heading line, Two Coffees “What is inside”, the Ramadan and Eid pages, and the box builder.', links: [{ label: 'Shop (EN)', href: '/en/shop/' }, { label: 'Ramadan (AR)', href: '/ar/ramadan/' }, { label: 'Eid (AR)', href: '/ar/eid/' }] },
+      { id: 'pack6-pouch', text: 'A Yemeni beans page (if shown): the drawing is the black and gold pouch with the round gold region sticker and the gold tag beside it, not a black box.', links: [{ label: 'Shop (EN)', href: '/en/shop/' }] },
+      { id: 'pack6-desk', text: 'Desk → week sheet → Packaging: rows read “250 g pouches (A1)”, “… for qishr, 100 g each”, “Black and gold pouches + tags (A3, Yemeni beans)”, “Everyday dates, clear bag”, “Red bands (B4)”.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'pack6-ask', text: 'Ask Hikaya: “What colour is the gift box band?” answers red, not gold. (The handbook changed: run the Ask Hikaya eval.)', links: [{ label: 'Ask (EN)', href: '/en/help/?ask=1' }] },
+    ],
+  },
+  {
     id: 'pack-final-5', title: 'Everything the shop sells is now in the packaging: a style box, single-date wrappers', date: '2026-10-07',
     checks: [
       { id: 'pack5-calc', text: 'Desk → Numbers → Packaging: two new fields, “Coffee styles and tasting boxes” and “Stuffed dates, each wrapped”. Type 400 and 3,000: rows K1 (style box), S1 (wrapper) and the E11 label roll appear with orders, and E1 and E5 go up.', links: [{ label: 'Desk', href: '/admin/' }] },

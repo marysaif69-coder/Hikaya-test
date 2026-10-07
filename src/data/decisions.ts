@@ -93,7 +93,7 @@ export const DECISIONS: Decision[] = [
   {
     id: 'box-photos', kind: 'provide', topic: 'Photos · Date and gift boxes', asked: '2026-10-04',
     question: 'Photos of the real boxes, when the samples arrive',
-    context: 'Until then the site draws each box. Shot list, all 4:5 portrait, same angle, on the cream background: Coffee & Dates open (a pouch and 12 dates); Two Coffees open; Reserve 12 and 24 (one variety, and Mixed); Stuffed 12 (showing the seals and the fillings); Four Palms; the closed box with the gold band, then with the Ramadan sticker and with the Eid sticker; the Everyday clear tray in 250 g, 500 g and 1 kg. Send them to the website session; a box with a photo shows it, the rest keep the drawing.',
+    context: 'Until then the site draws each box. Shot list, all 4:5 portrait, same angle, on the cream background: Coffee & Dates open (a pouch and 12 dates); Two Coffees open; Reserve 12 and 24 (one variety, and Mixed); Stuffed 12 (showing the seals and the fillings); Four Palms; the closed box with the red band, then with the Ramadan sticker and with the Eid sticker; the Everyday dates in their clear bag in 250 g, 500 g and 1 kg. Send them to the website session; a box with a photo shows it, the rest keep the drawing.',
     options: ['Given'],
   },
   {
@@ -213,8 +213,8 @@ export const DECISIONS: Decision[] = [
   },
   {
     id: 'sticker-quantities', topic: 'Packaging · Stickers', asked: '2026-10-04',
-    question: 'How many Ramadan and Eid stickers (Ø50) do we order, and how many gold sleeves (for the 10 November packaging order)?',
-    context: 'Every gift box has the same gold khalal sleeve; Ramadan and Eid add our own Ø50 sticker. The week sheet now counts gold sleeves for every gift box and the stickers apart, and Supplies shows them as “Ramadan stickers (Ø50)” and “Eid stickers (Ø50)”.',
+    question: 'How many Ramadan and Eid stickers (Ø50) do we order, and how many red bands (for the 10 November packaging order)?',
+    context: 'Every gift box has the same Tamr red band; Ramadan and Eid add our own Ø50 sticker. The week sheet now counts red bands for every gift box and the stickers apart, and Supplies shows them as “Ramadan stickers (Ø50)” and “Eid stickers (Ø50)”.',
   },
   {
     id: 'gift-box-names', topic: 'Gift boxes · Names', asked: '2026-10-04',

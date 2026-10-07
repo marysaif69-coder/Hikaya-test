@@ -261,7 +261,7 @@ const DATE_PICKS = [
   <div id="view-gifts" role="tabpanel" aria-labelledby="view-tab-gifts" data-view-panel="gifts">
     <section class="fam dsec alt" id="gifts" aria-labelledby="h-gifts">
       <div class="wrap">
-        <div class="panel-head"><h2 id="h-gifts" class="h-m">{ar ? 'علب الهدايا' : 'Gift boxes'}</h2><p class="muted">{ar ? 'قهوة وتمر بالحزام الذهبي، لأي زيارة وطوال السنة.' : 'Coffee and dates in the gold band, for any visit, all year.'}</p></div>
+        <div class="panel-head"><h2 id="h-gifts" class="h-m">{ar ? 'علب الهدايا' : 'Gift boxes'}</h2><p class="muted">{ar ? 'قهوة وتمر بالحزام الأحمر، لأي زيارة وطوال السنة.' : 'Coffee and dates in the red band, for any visit, all year.'}</p></div>
         <p class="muted panel-note">{ar ? 'اختر ما في العلبة في صفحتها: القهوة، والتمر صنفاً واحداً أو مشكّلاً.' : 'Choose what goes in on each box’s page: the coffee, and the dates, one kind or Mixed.'}</p>
         <p class="muted panel-note" data-season="ramadan eid">{ar ? 'في رمضان والعيد: اختر ملصق رمضان أو العيد في صفحة العلبة.' : 'In Ramadan and Eid: choose the Ramadan or Eid sticker on the box’s page.'}</p>
         <div class="grid">{gifts.map(p => <ProductCard p={p} lang={lang} />)}</div>
