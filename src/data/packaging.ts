@@ -34,7 +34,7 @@ export const PACK_FIELDS: [keyof PackInput, string, string][] = [
 
 const ROLLS: Record<string, [string, number]> = {
   E1: ['80 × 80 coffee front', 80], E1b: ['100 × 100 coffee back, spice packs', 100], E2: ['Ø76 box seal', 76],
-  E12: ['100 × 170 everyday dates, 500 g and 1 kg packs: everything on one label (packed in Saudi Arabia, so the country name is 6.4 mm tall, beside our name)', 170],
+  E12: ['100 × 150 everyday dates, 500 g and 1 kg trays, on the top, 150 wide: everything on one label (packed in Saudi Arabia, so the country name is 6.4 mm tall, beside our name)', 150],
   E12s: ['80 × 120 smallest everyday dates tray (250 g), on its top, 120 wide: everything on one label (country name 3.2 mm)', 120],
   E3: ['100 × 90 box bottom (Nutrition Facts, lot): B1 beside the band, B5 over it', 90], E4: ['Ø50 Ramadan / Eid', 50], E14: ['100 × 20 box side, B1 and B5, below the 16 mm lid (what is inside, ingredients, origin; a stuffed-date box takes two: English, French)', 20],
   E6: ['60 × 66 saffron and small packs, front and back', 66],

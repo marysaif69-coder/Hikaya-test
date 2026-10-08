@@ -6,6 +6,13 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-20', title: 'Pack v15: the 500 g and 1 kg dates label E12 turns landscape, 150 × 100, to fit flat-topped trays', date: '2026-10-08',
+    checks: [
+      { id: 'pack20-calc', text: 'Desk → Numbers → Packaging: the E12 row reads “100 × 150 everyday dates, 500 g and 1 kg trays, on the top, 150 wide…”, still 1,100; E12s still 600; 12,300 blank labels in all.', links: [{ label: 'Desk', href: '/admin' }] },
+      { id: 'pack20-decisions', text: 'Desk → Settings → Decisions → the dates supplier item: it says you ordered the small pack as 250 g and that E12 is 150 × 100, needing a flat top of about 155 × 105.', links: [{ label: 'Desk', href: '/admin' }] },
+    ],
+  },
+  {
     id: 'pack-final-19', title: 'Pack v14: the dividers come as loose strips by type (we put them together); the dates label fits the 250 g tray', date: '2026-10-08',
     checks: [
       { id: 'pack19-calc', text: 'Desk → Numbers → Packaging, with the starting numbers: no B2 grid row; instead six strip rows, B1-L6 500, B1-S4 800, B1-L4 250, B1-S3 350, B5-L3 650, B5-S2 1,250; the B5 row reads “(its strips below)”; E12 1,100 for the 500 g and 1 kg packs and a new E12s row, 600, “80 × 120 smallest everyday dates tray”; the line under the table says “dates packs” and 12,300 blank labels.', links: [{ label: 'Desk', href: '/admin' }] },
