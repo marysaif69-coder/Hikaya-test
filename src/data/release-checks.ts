@@ -6,6 +6,13 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-13', title: 'The everyday dates label is 100 × 130 (E12): 100 × 100 cannot hold everything at the legal sizes', date: '2026-10-08',
+    checks: [
+      { id: 'pack13-calc', text: 'Desk → Numbers → Packaging, label rolls: E1b now reads “100 × 100 coffee back, spice packs”, and a new row E12 “100 × 130 everyday dates bag, on the front: everything on one label …”, one per dates bag. With the starting numbers: E1b 1,500 and E12 1,700, about 12,500 labels in all.', links: [{ label: 'Desk', href: '/admin' }] },
+      { id: 'pack13-decision', text: 'Settings → Decisions → “Origin on the date boxes”: the explanation ends with the dates bag sticker being 100 × 130 (E12).', links: [{ label: 'Desk', href: '/admin' }] },
+    ],
+  },
+  {
     id: 'legal-1', title: 'Legal answers researched (no lawyer); who sells shows on the website and in every email', date: '2026-10-08',
     checks: [
       { id: 'legal1-footer', text: 'Any page, the bottom line: “© 2026 Hikaya Coffee Ltd. · Calgary, Alberta”. Once Settings → Business details has the pickup address and the phone, it shows the full address and the phone instead (the phone opens a call on a phone).', links: [{ label: 'Home (EN)', href: '/en/' }, { label: 'Desk', href: '/admin/' }] },
