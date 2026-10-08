@@ -6,6 +6,13 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-16', title: 'Pack v11: the dates bag sizes still to confirm, with a shorter 250 g label (E12s) quoted', date: '2026-10-08',
+    checks: [
+      { id: 'pack16-decision', text: 'Settings → Decisions: “From the everyday dates supplier” point (7) asks for each bag’s flat width and height, the zipper position and the bottom gusset (or one empty bag of each size), says a 250 g bag too small for the 100 × 170 label gets E12s, 100 × 140, and that the sizes are needed before the label order on 13 November.', links: [{ label: 'Desk', href: '/admin' }] },
+      { id: 'pack16-calc', text: 'Desk → Numbers → Packaging: the E12 row’s note ends with “a 250 g bag too small for it gets E12s, 100 × 140”. The numbers are unchanged.', links: [{ label: 'Desk', href: '/admin' }] },
+    ],
+  },
+  {
     id: 'pack-final-15', title: 'Pack v10: the China order moves to 13 November (factory lead times)', date: '2026-10-08',
     checks: [
       { id: 'pack15-dates', text: 'Settings → Decisions: the stuffed-date boxes question says “on 13 November”, the 30-date insert says “by 13 November”, and the Ramadan and Eid stickers question says “the 13 November packaging order”.', links: [{ label: 'Desk', href: '/admin' }] },

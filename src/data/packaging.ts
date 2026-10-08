@@ -86,7 +86,7 @@ export function packCounts(i: PackInput) {
     { group: 'Bags', code: 'T', name: 'Yemeni gift tag + cord', need: u.A3, why: 'one per Yemeni pouch', order: up(w(u.A3, i.waste_labels), 100) },
     lab('E1', u.A1, 'one per 250 g pouch (coffee and qishr)'),
     lab('E1b', u.A1 + u.spice, '250 g backs + spice packs'),
-    lab('E12', u.dates, 'one per dates bag, on the front, with everything on it'),
+    lab('E12', u.dates, 'one per dates bag, on the front, with everything on it (a 250 g bag too small for it gets E12s, 100 × 140)'),
     lab('E2', u.B1 + u.B5, 'one per gift box'),
     lab('E3', u.B1 + u.B5 + b1('C12'), 'box bottoms (+1 on Coffee & Dates boxes)'),
     lab('E4', Math.ceil((u.B1 + u.B5) * i.seasonal_share / 100), `${i.seasonal_share}% of gift boxes`),
