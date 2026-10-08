@@ -938,7 +938,7 @@ const DEC_LISTS = [
       const head = x.group !== g ? `<tr><th colspan="5">${esc(x.group)}</th></tr>` : ''; g = x.group;
       return `${head}<tr><td>${esc(x.code)} · ${esc(x.name)}</td><td>${esc(x.why)}</td><td class="num">${f(x.need)}</td><td class="num"><b>${f(x.order)}</b></td><td class="num">${x.rolls ? `${f(x.rolls)} × ${f(x.perRoll!)}` : ''}</td></tr>`;
     }).join('');
-    $('pkSum').textContent = `${f(r.units.A1 + r.units.A3)} coffee pouches · ${f(r.units.dates)} dates bags · ${f(r.units.B1 + r.units.B5)} gift boxes · ${f(r.labels)} blank labels`;
+    $('pkSum').textContent = `${f(r.units.A1 + r.units.A3)} coffee pouches · ${f(r.units.dates)} dates packs · ${f(r.units.B1 + r.units.B5)} gift boxes · ${f(r.labels)} blank labels`;
   }
 
   // ---------- tabs ----------
