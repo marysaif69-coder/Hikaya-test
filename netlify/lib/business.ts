@@ -4,9 +4,9 @@ import { sql, one } from './db';
 import { HttpError, isEmail, netlifyEnv, setOverrides } from './http';
 
 export const EDITABLE = {
-  PICKUP_ADDRESS: 'Pickup address (street, Calgary, AB, postal code)',
+  PICKUP_ADDRESS: 'Pickup address (street, Calgary, AB, postal code); the website and emails also show it as our business address',
   PICKUP_HOURS: 'Pickup hours (as customers should read them)',
-  BUSINESS_PHONE: 'Phone number for customers (optional)',
+  BUSINESS_PHONE: 'Phone number for customers (needed before you sell: Alberta’s online sales rules ask for it on the website and in order emails)',
   ETRANSFER_EMAIL: 'Interac e-Transfer email',
   EMAIL_REPLY_TO: 'Where customer replies go',
   GOOGLE_REVIEW_URL: 'Google review link',

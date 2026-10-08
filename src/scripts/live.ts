@@ -34,6 +34,8 @@ function apply(live: Live) {
     fillAddress(document.body);
     document.querySelectorAll<HTMLElement>('[data-biz-pending]').forEach(el => { el.hidden = true; });
     document.querySelectorAll<HTMLElement>('[data-biz-hours]').forEach(el => { if (live.business!.hours) { el.textContent = live.business!.hours; el.hidden = false; } });
+    // Who sells: the footer and the checkout show the business address (Alberta's Internet Sales Contract Regulation).
+    document.querySelectorAll<HTMLElement>('[data-biz-addr-line]').forEach(el => { el.textContent = live.business!.address; });
     // Search engines: the shop's address and phone in the Store details.
     document.querySelectorAll<HTMLScriptElement>('script[type="application/ld+json"]').forEach(el => {
       try {
@@ -45,6 +47,11 @@ function apply(live: Live) {
     });
     if (!watching) { watching = true; new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => fillAddress(n)))).observe(document.body, { childList: true, subtree: true }); }
   }
+  const phone = live.business?.phone;
+  if (phone) document.querySelectorAll<HTMLElement>('[data-biz-phone-wrap]').forEach(w => {
+    const a = w.querySelector<HTMLAnchorElement>('[data-biz-phone]'); if (a) { a.textContent = phone; a.href = `tel:${phone.replace(/[^\d+]/g, '')}`; }
+    w.hidden = false;
+  });
   const P = live.products;
   // Seasons: whole pages, nav links, banners and sections.
   // data-season="ramadan" or "ramadan eid": shown while any of those seasons is on.

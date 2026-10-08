@@ -60,7 +60,7 @@ export const DECISIONS: Decision[] = [
   {
     id: 'bundle-sticker', kind: 'provide', topic: 'Coffee · The sticker that holds a style together', asked: '2026-10-07',
     question: 'Design the Hikaya sticker that holds a coffee style together: the 250 g bag, its spice mix and the small saffron pouch.',
-    context: 'You said in the chat (7 Oct): no box; one regular Hikaya sticker holds the bag and its packs together and they go in the paper bag. No band: the red band is only for the date boxes. The China brief quotes it as label E13, a round Ø50 sticker (the same shape as the Ramadan and Eid sticker E4) on removable glue, which we print on the Epson; the factory can also quote it printed once you send the design. How it goes on: the spice mix lies on the back of the bag, its top level with the bag top, with the saffron pouch tucked behind it; the sticker goes at the top centre, on the spice mix, and its top 12 mm folds over the bag top onto the front, above the tear-off line. On the bag it touches only the part that tears off. Suggested design: cream with the logo, and a plain Tamr cap on the part that folds to the front. Enter how many styles you expect in Desk → Numbers → Packaging.',
+    context: 'You said in the chat (7 Oct): no box; one regular Hikaya sticker holds the bag and its packs together and they go in the paper bag. No band: the red band is only for the date boxes. The China brief quotes it as label E13, a round Ø50 sticker (the same shape as the Ramadan and Eid sticker E4) on removable glue, which we print on the Epson; the factory can also quote it printed once you send the design. How it goes on: the spice mix lies on the back of the bag, its top level with the bag top, with the saffron pouch tucked behind it; the sticker goes at the top centre, on the spice mix, and its top 12 mm folds over the bag top onto the front, above the tear-off line. On the bag it touches only the part that tears off. Suggested design: cream with the logo, and a plain Tamr cap on the part that folds to the front. A style sold as one item at one price must list its parts (SFCR s. 239: how many, the common name in English and French, and the weight of each, figures 3.2 mm tall). That goes on the style’s 80 × 80 front sticker on the bag, which has room (three parts use 58 of 80 mm), so E13 stays a plain holding sticker. Enter how many styles you expect in Desk → Numbers → Packaging.',
   },
   {
     id: 'reserve-12-box', topic: 'Dates · Reserve box of 12', asked: '2026-10-07',
@@ -70,9 +70,9 @@ export const DECISIONS: Decision[] = [
   },
   {
     id: 'box-origin-label', topic: 'Dates · Origin on the date boxes', asked: '2026-10-07',
-    question: 'Ask the lawyer: on our date boxes, how tall must “Product of Saudi Arabia” be? (Decide before the label rolls are ordered, about 10 November.)',
-    context: 'Dates we pack under our name need the country of origin next to “Hikaya Coffee Ltd., Calgary, Alberta, Canada”. For the dates bag sticker we planned the strictest reading: the country name 6.4 mm tall (the rule for imported processed fruit, SFCR, as we read it). If that also applies to the gift boxes, the small box B5 has no room for it on the lid once the band, the seal and the logo are on, and B1 needs a lid label. If the normal 1.6 mm minimum applies, the Ø76 seal carries the name, the weight, the origin and our name on both boxes, and nothing changes. Nothing printed in China depends on this; only the label shapes do.',
-    options: ['Lawyer: 1.6 mm is enough (the seal carries it)', 'Lawyer: 6.4 mm is needed (add a lid label)', 'Ask me again'],
+    question: 'Researched (no lawyer): on the date boxes, “Product of Saudi Arabia / Produit d’Arabie saoudite” at 1.6 mm, bold, on the lid seal next to our name. All right?',
+    context: 'Our boxes are packed by us in Calgary, so the 6.4 mm rule does not apply to them: SFCR s. 274(3) is only for processed fruit imported already packed under a Canadian importer’s own label, and dried dates may not even count as a “processed fruit or vegetable product” (the SFCR definition needs a standard, a grade or a container size for them, and dates have none). What applies is SFCR s. 223: dates grown abroad and packed here, with our name on them, need “Imported by / Importé par” before our name, or the country of origin right next to it, at the usual 1.6 mm minimum. If CFIA treats dates as fresh fruit, ss. 269–270 add only that it be bold and near the weight. The Ø76 seal carries all of it, so neither box needs a lid label for the origin. The dates bag sticker keeps the stricter 6.4 mm until the supplier tells us where their bags are packed.',
+    options: ['Yes: 1.6 mm, bold, on the seal', 'Make it bigger anyway (a lid label)'],
   },
   {
     id: 'stuffed-box-labels', topic: 'Dates · Stuffed date boxes', asked: '2026-10-07',
@@ -88,15 +88,15 @@ export const DECISIONS: Decision[] = [
   },
   {
     id: 'tote-fibre-label', topic: 'Bags · Cloth tote', asked: '2026-10-07',
-    question: 'Will the cloth tote be sold (or given with an order)? If yes, it needs a small sewn label.',
-    context: 'Textiles sold in Canada usually need a fibre label in English and French (“100% cotton / 100 % coton”) and the dealer’s name and address or a CA number (free from the Competition Bureau; it avoids printing an address). The factory can sew it in. Confirm with the lawyer whether a bag counts.',
-    options: ['Sold: add a sewn label (we get a CA number)', 'Only given away free'],
+    question: 'Researched (no lawyer): the cloth tote needs no fibre label, sold or given. Sew one in anyway?',
+    context: 'The Textile Labelling and Advertising Regulations exempt “handbags, luggage, carrying cases and brushes” (Schedule II, item 2(b)), and a tote is a carrying bag. So no sewn label and no CA number are needed. If you add a label anyway, it must be true (“100% cotton / 100 % coton”).',
+    options: ['No label', 'Sew in a fibre label anyway'],
   },
   {
     id: 'website-address-phone', topic: 'Business · Website contact', asked: '2026-10-06',
-    question: 'Which business address and phone number does the website show before checkout?',
-    context: 'Labels only need “Hikaya Coffee Ltd., Calgary, Alberta, Canada”. The website is different: Alberta’s Internet Sales Contract Regulation asks an online seller to show its business address (and its mailing address if different) and a telephone number before the customer orders (checked through two summaries; confirm with your lawyer). The registered office at the lawyer’s can work as the mailing address if they agree to receive mail and have it listed. A phone number can be a low-cost business line that goes to voicemail. Do not put the lawyer’s address on the food labels: an address on a label is taken to be where the food was packed (SFCA 45).',
-    options: ['Registered office as mailing address + a business phone line', 'Home address + a business phone line', 'Ask the lawyer first'],
+    question: 'Which business address and phone number do the website and the order emails show?',
+    context: 'Researched (no lawyer). Alberta’s Internet Sales Contract Regulation (s. 4) requires, before the customer orders: our name, our business address (and our mailing address if different), a phone number, and an email if we have one, plus the refund and cancellation policy. Section 5 requires the same in the copy of the order we send within 15 days (our confirmation email). The website now does this by itself once you fill in Settings → Business details: the footer of every page and the line above “Send my pre-order” show our name, address and phone with the refund policy, and every email carries them. The business address is where you run the business: the pickup or kitchen address works; the registered office can be added as the mailing address only if mail goes there. The phone can be a low-cost business line that goes to voicemail. Labels stay as they are: “Hikaya Coffee Ltd., Calgary, Alberta, Canada” only.',
+    options: ['Pickup or kitchen address + a business phone line', 'Home address + a business phone line', 'Let us talk about it'],
   },
   {
     id: 'pickup-without-location', topic: 'Delivery area · Pickup', asked: '2026-10-06',

@@ -43,6 +43,10 @@ export async function send(m: Mail) {
 // ---------- layout ----------
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
+/** Who sells, in every email. Alberta's Internet Sales Contract Regulation wants the seller's name, business address and
+ * phone before the order and in the copy of it (ss. 4 and 5); they come from Admin → Settings → Business details. */
+const sellerLine = () => ['Hikaya Coffee Ltd.', env('PICKUP_ADDRESS') || 'Calgary, Alberta', env('BUSINESS_PHONE')].filter(Boolean).map(v => esc(String(v))).join(' · ');
+
 function layout(lang: Lang, title: string, body: string, siteUrl: string) {
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
   return `<!doctype html><html lang="${lang}" dir="${dir}"><body style="margin:0;background:#F5EFE3;font-family:Arial,'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif;color:#33211A">
@@ -52,7 +56,7 @@ function layout(lang: Lang, title: string, body: string, siteUrl: string) {
 <tr><td style="padding:28px 28px 8px;text-align:center"><img src="${siteUrl}/brand/logo-email.png" width="72" height="60" alt="Hikaya" style="display:inline-block"><div style="font-size:26px;font-weight:700;margin-top:6px">حكاية</div><div style="font-size:10px;letter-spacing:4px;color:#66503F">HIKAYA</div></td></tr>
 <tr><td style="padding:12px 28px 28px;font-size:16px;line-height:1.55;text-align:${lang === 'ar' ? 'right' : 'left'}">
 <h1 style="font-size:22px;margin:0 0 14px">${esc(title)}</h1>${body}</td></tr>
-<tr><td style="padding:18px 28px;background:#EDE3D0;font-size:13px;color:#66503F;text-align:center">وللحكاية بقية · <a href="${siteUrl}/${lang}/" style="color:#A93B28">hikayacoffee.ca</a> · Instagram @hikaya.yyc</td></tr>
+<tr><td style="padding:18px 28px;background:#EDE3D0;font-size:13px;color:#66503F;text-align:center">وللحكاية بقية · <a href="${siteUrl}/${lang}/" style="color:#A93B28">hikayacoffee.ca</a> · Instagram @hikaya.yyc<br><span style="font-size:12px;direction:ltr;unicode-bidi:embed">${sellerLine()}</span></td></tr>
 </table></td></tr></table></body></html>`;
 }
 const btn = (href: string, label: string) => `<p style="margin:22px 0"><a href="${href}" style="background:#33211A;color:#F5EFE3;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;display:inline-block">${esc(label)}</a></p>`;
@@ -152,6 +156,7 @@ ${o.discount_cents ? `<tr><td style="padding:6px 0">${ar ? 'الخصم' : 'Disco
 ${o.gift_card_cents ? `<tr><td style="padding:6px 0">${ar ? 'بطاقة هدية' : 'Gift card'}</td><td style="text-align:${ar ? 'left' : 'right'}">−${dollars(o.gift_card_cents)}</td></tr>` : ''}
 <tr><td style="padding:8px 0;font-weight:700">${ar ? 'الإجمالي' : 'Total'}</td><td style="text-align:${ar ? 'left' : 'right'};font-weight:700">${dollars(o.total_cents)}</td></tr></table>
 <p>${pay}</p>` : ''}
+${kind === 'received' || kind === 'confirmed' ? `<p style="font-size:14px;color:#66503F">${ar ? 'القهوة والتمر طعام، فلا نستطيع استرجاعهما بعد الاستلام. إن وصل شيء تالفاً أو خاطئاً أخبرنا خلال ٤٨ ساعة ونستبدله أو نعيد المبلغ.' : "Coffee and dates are food, so we can't take them back once they leave us. If something arrives damaged or wrong, tell us within 48 hours and we'll replace it or refund you."} <a href="${siteUrl}/${L}/visit/#policies" style="color:#A93B28">${ar ? 'السياسات' : 'Our policies'}</a></p>` : ''}
 ${btn(viewUrl, ar ? 'عرض طلبك' : 'View your order')}
 ${kind === 'completed' ? `<p><a href="${siteUrl}/${L}/brew/" style="color:#A93B28">${ar ? 'طريقة التحضير' : 'How to brew it'}</a></p>` : ''}`;
   const text = `${c.h}\n\n${c.p}\n\n${ar ? 'رقم الطلب' : 'Order'}: ${o.ref}\n${o.slot_date} ${o.slot_window}\n${dollars(o.total_cents)}\n\n${viewUrl}`;

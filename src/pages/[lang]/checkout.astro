@@ -79,6 +79,8 @@ const ar = lang === 'ar';
       </fieldset>
 
 
+      <!-- Alberta’s Internet Sales Contract Regulation (s. 4): the seller, its address and phone, and the refund policy, before the order. -->
+      <p class="seller">{ar ? 'البائع:' : 'Sold by'} Hikaya Coffee Ltd. · <span data-biz-addr-line>Calgary, Alberta</span><span data-biz-phone-wrap hidden> · <a data-biz-phone dir="ltr" href="tel:"></a></span>. {ar ? 'القهوة والتمر طعام، فلا نستطيع استرجاعهما بعد الاستلام. إن وصل شيء تالفاً أو خاطئاً أخبرنا خلال ٤٨ ساعة ونستبدله أو نعيد المبلغ.' : "Coffee and dates are food, so we can't take them back once they leave us. If something arrives damaged or wrong, tell us within 48 hours and we'll replace it or refund you."} <a href={path(lang, 'visit') + '#policies'}>{ar ? 'كل السياسات' : 'All our policies'}</a></p>
       <p class="err form-err" id="formErr" hidden role="alert"></p>
       <button class="btn tamr submit" type="submit"><span>{ar ? 'أرسل الطلب المسبق' : 'Send my pre-order'}</span></button>
     </form>
@@ -111,6 +113,8 @@ const ar = lang === 'ar';
 </Base>
 
 <style>
+  .seller { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--ink-2); }
+  .seller a { color: var(--tamr); }
   .co { display: grid; grid-template-columns: 1.3fr .7fr; gap: clamp(28px, 5vw, 72px); padding-block: clamp(40px, 6vw, 80px) clamp(64px, 8vw, 104px); align-items: start; }
   @media (max-width: 900px) { .co { grid-template-columns: 1fr; } .co-sum { order: -1; position: static !important; } }
   .co-form { display: grid; gap: 28px; }

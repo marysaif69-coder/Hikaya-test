@@ -6,6 +6,15 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'legal-1', title: 'Legal answers researched (no lawyer); who sells shows on the website and in every email', date: '2026-10-08',
+    checks: [
+      { id: 'legal1-footer', text: 'Any page, the bottom line: “© 2026 Hikaya Coffee Ltd. · Calgary, Alberta”. Once Settings → Business details has the pickup address and the phone, it shows the full address and the phone instead (the phone opens a call on a phone).', links: [{ label: 'Home (EN)', href: '/en/' }, { label: 'Desk', href: '/admin/' }] },
+      { id: 'legal1-checkout', text: 'Checkout, just above “Send my pre-order”: “Sold by Hikaya Coffee Ltd. · …”, the refund line (food can’t be taken back; damaged or wrong: tell us within 48 hours) and “All our policies”. The same in Arabic.', links: [{ label: 'Checkout (EN)', href: '/en/checkout/' }, { label: 'Checkout (AR)', href: '/ar/checkout/' }] },
+      { id: 'legal1-emails', text: 'Place a test order: the confirmation email ends with the refund line and “Our policies”, and its grey footer has “Hikaya Coffee Ltd. · address · phone”.', links: [{ label: 'Desk', href: '/admin/' }] },
+      { id: 'legal1-decisions', text: 'Settings → Decisions: the origin on the date boxes, the cloth tote and the website contact now start with “Researched (no lawyer)” and give the answer with the rule it comes from.', links: [{ label: 'Desk', href: '/admin/' }] },
+    ],
+  },
+  {
     id: 'pack-final-12', title: 'China order: customs, delivery and the label printer model', date: '2026-10-07',
     checks: [
       { id: 'pack12-decisions', text: 'Settings → Decisions: three new items. Under China order, “Who brings the China order through Canadian customs” and, in What we need from you, “Where should the China order be delivered”. Under Labels, “Which Epson CW-C4000 do you have”.', links: [{ label: 'Desk', href: '/admin/' }] },
