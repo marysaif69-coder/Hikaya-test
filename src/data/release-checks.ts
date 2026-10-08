@@ -6,6 +6,12 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-15', title: 'Pack v10: the China order moves to 13 November (factory lead times)', date: '2026-10-08',
+    checks: [
+      { id: 'pack15-dates', text: 'Settings → Decisions: the stuffed-date boxes question says “on 13 November”, the 30-date insert says “by 13 November”, and the Ramadan and Eid stickers question says “the 13 November packaging order”.', links: [{ label: 'Desk', href: '/admin' }] },
+    ],
+  },
+  {
     id: 'pack-final-14', title: 'Pack v9: the dates label is 100 × 170 (packed in Saudi Arabia), and the clear covers have their sizes', date: '2026-10-08',
     checks: [
       { id: 'pack14-calc', text: 'Desk → Numbers → Packaging: the E12 row reads “100 × 170 everyday dates bag …”, still 1,700 labels with the starting numbers, now 8 rolls. Under Boxes, three new “Cover” rows: D24 and D12 size 160, C12 size 110, B5 size 620.', links: [{ label: 'Desk', href: '/admin' }] },

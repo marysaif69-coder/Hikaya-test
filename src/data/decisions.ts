@@ -76,7 +76,7 @@ export const DECISIONS: Decision[] = [
   },
   {
     id: 'stuffed-box-labels', topic: 'Dates · Stuffed date boxes', asked: '2026-10-07',
-    question: 'Stuffed date boxes need more on the box than plain dates. Where should it go? (Decide before the label rolls are ordered, about 10 November.)',
+    question: 'Stuffed date boxes need more on the box than plain dates. Where should it go? (Decide before the label rolls are ordered, on 13 November.)',
     context: 'Fillings with added sugar (biscuit cream, chocolate, caramel) need the “High in sugars” front-of-package symbol (mandatory since January 2026) on the lid, in its upper half, not under the band or a sticker. The box also needs the full ingredient list with a “Contains” line, “Product of Saudi Arabia” next to our name, and a best-before date if they keep 90 days or less. Plain dates need none of this except the origin. The 100 × 40 box side label (E5) is too small for a stuffed list, and on the small box B5 the visible side below the lid is only about 25 mm. Our suggestion: stuffed dates go in the gift box B1 only, with a 100 × 70 lid label beside the band (a new die on the label order) carrying the symbol, ingredients, Contains, origin and our name. The small box B5 has no room on its lid for that label once the band and logo are on, so B5 stays for plain dates.',
     options: ['Stuffed dates in B1 only, with the 100 × 70 lid label', 'Only plain dates in boxes for now', 'Let us talk about it'],
   },
@@ -235,12 +235,12 @@ export const DECISIONS: Decision[] = [
   {
     id: 'thirty-nights', topic: 'Ramadan · Idea', asked: '2026-10-04',
     question: '“ثلاثون ليلة · Thirty Nights”: 30 Reserve dates, one for each iftar. Do we make it?',
-    context: 'Not built. It needs a 30-date insert (D30), which has to be in the China packaging order by 10 November.',
+    context: 'Not built. It needs a 30-date insert (D30), which has to be in the China packaging order by 13 November.',
     options: ['Yes, add the D30 insert to the packaging order', 'No', 'Next year'],
   },
   {
     id: 'sticker-quantities', topic: 'Packaging · Stickers', asked: '2026-10-04',
-    question: 'How many Ramadan and Eid stickers (Ø50) do we order, and how many red bands (for the 10 November packaging order)?',
+    question: 'How many Ramadan and Eid stickers (Ø50) do we order, and how many red bands (for the 13 November packaging order)?',
     context: 'Every gift box has the same Tamr red band; Ramadan and Eid add our own Ø50 sticker. The week sheet now counts red bands for every gift box and the stickers apart, and Supplies shows them as “Ramadan stickers (Ø50)” and “Eid stickers (Ø50)”.',
   },
   {
