@@ -233,7 +233,7 @@ const saffronPacks = (s: any) => s.packs.filter((r: any) => r.id === 'pack-saffr
 const w0 = await sheet();
 assert.equal((await order({ lines: [{ id: 'guest-box', opt: 'najdi|ajwa', qty: 1 }, { id: 'najdi', opt: 'dallah', qty: 2 }] })).status, 201);
 const w1 = await sheet();
-assert.equal(najdiPouches(w1) - najdiPouches(w0), 3); assert.equal(saffronPacks(w1) - saffronPacks(w0), 3); assert.equal(w1.packaging.giftBoxes.C12 - w0.packaging.giftBoxes.C12, 1);
+assert.equal(najdiPouches(w1) - najdiPouches(w0), 3); assert.equal(saffronPacks(w1) - saffronPacks(w0), 3); assert.equal(w1.packaging.giftBoxes.D12 - w0.packaging.giftBoxes.D12, 1); assert.equal(w1.packaging.coffeeSets.C12 - w0.packaging.coffeeSets.C12, 1);
 const packRow = (s: any, id: string) => s.packs.find((r: any) => r.id === id) ?? { full: 0, mini: 0 };
 assert.equal((await order({ day: '2027-01-23', lines: [{ id: 'taste-gulf', qty: 1 }, { id: 'pack-radai', qty: 2 }] })).status, 201);
 const w2 = await sheet();
@@ -1528,8 +1528,19 @@ assert.equal((await pg.query('SELECT i.option_en FROM order_items i JOIN orders 
   const dr = (id: string) => w.dates.find((d: any) => d.id === id) ?? { pieces: 0, grams: 0 };
   assert.equal(dr('sukkari').grams, 1000); assert.equal(dr('khalas').grams, 500); assert.equal(dr('mufattal').pieces, 12); assert.equal(dr('mufattal').grams, 0);
   assert.deepEqual(w.stuffed, [{ id: 'pistachio', name: 'Pistachio stuffed', pieces: 24 }]);
-  assert.deepEqual(w.packaging.datePacks, { g250: 2, g500: 0, g1000: 1 }); assert.equal(w.packaging.giftBoxes.C12, 1); assert.equal(w.packaging.giftBoxes.D24, 1);
+  assert.deepEqual(w.packaging.datePacks, { g250: 2, g500: 0, g1000: 1 }); assert.equal(w.packaging.giftBoxes.D12, 1); assert.equal(w.packaging.giftBoxes.D24, 1);
   ok('week sheet: grams for dates by weight, pieces for Reserve, stuffed per filling, packs by size');
+}
+{
+  // Pack v12: the boxes hold dates only. Two Coffees is two pouches in our paper bag: a coffee set, with no box and no band.
+  const before = (await call(admin, '/api/admin/week?from=2027-09-02', { cookie: adm })).data.packaging;
+  assert.equal((await order({ day: '2027-09-03', email: 'duo@example.com', lines: [{ id: 'coffee-duo', opt: 'najdi|yemeni', qty: 1 }] })).status, 201);
+  const after = (await call(admin, '/api/admin/week?from=2027-09-02', { cookie: adm })).data.packaging;
+  assert.equal(after.coffeeSets.C2 - before.coffeeSets.C2, 1); assert.equal(after.giftBoxes.D12, before.giftBoxes.D12); assert.equal(after.giftBoxes.D24, before.giftBoxes.D24);
+  assert.equal(after.sleeves.regular, before.sleeves.regular);
+  const sup = (await call(admin, '/api/admin/supplies?from=2027-09-02', { cookie: adm })).data.supplies;
+  assert.ok(!sup.some((x: any) => x.key === 'boxC2')); assert.match(sup.find((x: any) => x.key === 'boxC12').name, /D12/);
+  ok('Two Coffees: a coffee set in the paper bag, no box and no band; the supplies list the D12 box and no C2 box');
 }
 {
   const l1 = (await call(admin, '/api/admin/lots', { cookie: adm, body: { item_kind: 'dates', item_id: 'mufattal', made_on: '2027-09-01' } })).data.code;
@@ -1541,7 +1552,7 @@ assert.equal((await pg.query('SELECT i.option_en FROM order_items i JOIN orders 
   assert.deepEqual(rc.orders.map((o: any) => o.ref), [stO.data.ref]);
   ok('lots per variety (MUFATT-…) and per filling (PISTAC-…, PISDIP-…); recall finds the stuffed order');
 }
-// The gift-box limit counts Reserve and stuffed boxes (C12, D24), not Everyday packs.
+// The gift-box limit counts the Reserve and stuffed boxes (D12, D24) and the coffee sets, not Everyday packs.
 await call(admin, '/api/admin/settings', { cookie: adm, body: { caps: { dailyOrders: null, giftBoxesPerDay: 1, stopsPerDriver: null, deliveryFromShifts: false } } });
 assert.equal((await order({ day: '2027-09-11', email: 'g1@example.com', lines: [{ id: 'guest-box', opt: 'najdi|ajwa', qty: 1 }] })).status, 201);
 assert.equal((await order({ day: '2027-09-11', email: 'g2@example.com', lines: [{ id: 'dates-1kg', opt: 'khalas', qty: 2 }] })).status, 201);
@@ -1609,8 +1620,8 @@ ok('a regular order with Medjool or khudri in the Everyday box is not placed; th
   assert.deepEqual(srRows.map(r => r.sleeve), ['ramadan', 'regular', null]); ok('a Ramadan sticker is kept in Ramadan; an Eid sticker while Eid is off is not; Everyday dates take none');
   assert.equal((await order({ day, lines: [{ id: 'guest-box', opt: 'hadrami|ajwa', qty: 1, sleeve: 'gold-foil' }] })).status, 201); ok('an unknown sleeve falls back to the regular red band');
   const w2 = (await call(admin, `/api/admin/week?from=${wk}`, { cookie: adm })).data;
-  assert.equal(w2.packaging.stickers.ramadan - w1.packaging.stickers.ramadan, 1); assert.equal(w2.packaging.stickers.eid - w1.packaging.stickers.eid, 0); assert.equal(w2.packaging.sleeves.regular - w1.packaging.sleeves.regular, 3);
-  ok('the week sheet: every gift box takes the red band; the Ramadan sticker is counted from the order line');
+  assert.equal(w2.packaging.stickers.ramadan - w1.packaging.stickers.ramadan, 1); assert.equal(w2.packaging.stickers.eid - w1.packaging.stickers.eid, 0); assert.equal(w2.packaging.sleeves.regular - w1.packaging.sleeves.regular, 2);
+  ok('the week sheet: every box takes the red band (Two Coffees has no box, so none); the Ramadan sticker is counted from the order line');
   const slip = (await call(admin, `/api/admin/day?date=${day}`, { cookie: adm })).data.pickups.flatMap((w: any) => w.orders).find((o: any) => o.ref === sr.data.ref);
   assert.equal(slip.items[0].sleeve, 'ramadan'); ok('packing slips get the sleeve');
   // Editing the order in the desk keeps the sleeve.

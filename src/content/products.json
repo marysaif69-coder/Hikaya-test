@@ -621,12 +621,12 @@
       "ar": "قهوة وتمر"
     },
     "notes": {
-      "en": "A coffee of your choosing and twelve Reserve dates, in the red band; in Ramadan and Eid, with our sticker.",
-      "ar": "قهوة تختارها واثنتا عشرة تمرة من النخبة، بالحزام الأحمر، ومع ملصقنا في رمضان والعيد."
+      "en": "A coffee of your choosing beside a box of twelve Reserve dates in its red band; in Ramadan and Eid, with our sticker on the box.",
+      "ar": "قهوة تختارها بجانب علبة فيها اثنتا عشرة تمرة من النخبة بحزامها الأحمر، ومع ملصقنا على العلبة في رمضان والعيد."
     },
     "contents": {
-      "en": "Gift box: one coffee (250 g, a style or a bag) and 12 Reserve dates, one kind or Mixed.",
-      "ar": "صندوق هدية: قهوة واحدة (٢٥٠ غ، طريقة أو كيس) و١٢ تمرة من النخبة، صنف واحد أو مشكّلة."
+      "en": "In our paper bag: one coffee (250 g, a style or a bag) and a box of 12 Reserve dates, one kind or Mixed.",
+      "ar": "في كيسنا الورقي: قهوة واحدة (٢٥٠ غ، طريقة أو كيس) وعلبة فيها ١٢ تمرة من النخبة، صنف واحد أو مشكّلة."
     },
     "size": {
       "en": "250 g + 12 dates",
@@ -643,8 +643,8 @@
       "ar": "قهوتان تختارهما جنباً إلى جنب، للبيت الذي يصبّ طوال السنة."
     },
     "contents": {
-      "en": "Gift box, red band (with our Ramadan or Eid sticker in their season), two coffees of 250 g, styles or bags.",
-      "ar": "صندوق هدية بالحزام الأحمر (مع ملصق رمضان أو العيد في موسمهما)، قهوتان ٢٥٠ غ، طرق أو أكياس."
+      "en": "In our paper bag (with our Ramadan or Eid sticker in their season): two coffees of 250 g, styles or bags.",
+      "ar": "في كيسنا الورقي (مع ملصق رمضان أو العيد في موسمهما): قهوتان ٢٥٠ غ، طرق أو أكياس."
     },
     "size": {
       "en": "2 × 250 g",

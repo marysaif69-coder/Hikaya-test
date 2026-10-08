@@ -6,6 +6,14 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'site-sets-1', title: 'The coffee sets go in the paper bag; the date boxes hold dates only', date: '2026-10-08',
+    checks: [
+      { id: 'sets1-home', text: 'Home page, “One box, a place for every date.”: two insides, D24 and D12 (picking D12 shows “Reserve box, 12 dates”); the band on the lid is red; a line says coffee goes beside the box, in our paper bag, with links to Coffee & Dates and Two Coffees. The same in Arabic.', links: [{ label: 'Home', href: '/en/' }] },
+      { id: 'sets1-shop', text: 'Shop → Coffee & Dates: the drawing shows the box of 12 dates with a pouch beside it, and the text starts “In our paper bag”. Shop → Two Coffees: two pouches in front of the paper bag, no box.', links: [{ label: 'Coffee & Dates', href: '/en/shop/guest-box/' }, { label: 'Two Coffees', href: '/en/shop/coffee-duo/' }] },
+      { id: 'sets1-week', text: 'Desk → the week’s packing list: gift boxes by grid (D24; D12, which counts the Coffee & Dates boxes too) and a line for each coffee set; Two Coffees adds no red band. Supplies: “Gift boxes, D12 grid”, “Red bands (B4)”, and no C2 row.', links: [{ label: 'Desk', href: '/admin' }] },
+    ],
+  },
+  {
     id: 'pack-final-17', title: 'Pack v12: the date boxes hold dates only (40 mm deep, no platform), grids as flat strips, coffee sets in the bag', date: '2026-10-08',
     checks: [
       { id: 'pack17-calc', text: 'Desk → Numbers → Packaging, with the starting numbers: B1 “Gift box 320 × 240 × 40” 260; B2 “B1 grids D24 · D12” 150 · 100; one B1 cover row (260) and the B5 cover (620); sleeves B1 50 × 605 and B5 50 × 515; no E5 row; E14 for both boxes, 1,000.', links: [{ label: 'Desk', href: '/admin' }] },

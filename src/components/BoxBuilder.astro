@@ -1,6 +1,7 @@
 ---
-// One gift box (320 × 240 × 70), three inserts, one khalal sleeve; the occasion is only our Ø50 sticker.
-// Drawn to the packaging brief at 2 px per mm.
+// One gift box (320 × 240 × 40) for dates only: a card grid gives each date its own cell (D24 or D12), the Tamr red band
+// goes across the short side, and the occasion is only our Ø50 sticker. Coffee goes beside the box, in our paper bag
+// (packaging brief v12). Drawn to the packaging brief at 2 px per mm.
 import type { Lang } from '../data/products';
 import { BOXES, DATES, EVERYDAY, RESERVE, priceText } from '../data/products';
 import { path } from '../data/i18n';
@@ -9,9 +10,8 @@ const { lang } = Astro.props;
 const ar = lang === 'ar';
 
 const INSERTS = [
-  { id: 'D24', name: { en: 'D24 · dates only', ar: 'D24 · تمر فقط' }, line: { en: '24 dates in paper cups: Reserve, stuffed or Four Palms.', ar: '٢٤ تمرة في أكواب ورقية: النخبة أو المحشي أو أربع نخلات.' } },
-  { id: 'C12', name: { en: 'C12 · coffee + 12 dates', ar: 'C12 · قهوة و١٢ تمرة' }, line: { en: 'One pouch lying flat, twelve dates beside it.', ar: 'كيس قهوة ممدد، واثنتا عشرة تمرة بجانبه.' } },
-  { id: 'C2', name: { en: 'C2 · two coffees', ar: 'C2 · قهوتان' }, line: { en: 'Two pouches, side by side.', ar: 'كيسان جنباً إلى جنب.' } },
+  { id: 'D24', name: { en: 'D24 · 24 dates', ar: 'D24 · ٢٤ تمرة' }, line: { en: 'Each date in its own cell: Reserve, stuffed or Four Palms.', ar: 'لكل تمرة خانتها: النخبة أو المحشي أو أربع نخلات.' } },
+  { id: 'D12', name: { en: 'D12 · 12 large dates', ar: 'D12 · ١٢ تمرة كبيرة' }, line: { en: 'Twelve wider cells, for Medjool and the Reserve box of 12.', ar: 'اثنتا عشرة خانة أوسع، للمجدول ولعلبة النخبة ذات الاثنتي عشرة تمرة.' } },
 ] as const;
 const OCC = [
   { id: 'regular', name: { en: 'Any day', ar: 'كل يوم' } },
@@ -20,7 +20,7 @@ const OCC = [
 ] as const;
 // Which real product each combination is. Missing combinations fall back to the any-day box.
 // A season changes the sleeve, not the product: the link opens the box with that sleeve picked.
-const MATCH: Record<string, string> = { D24: 'four-palms', C12: 'guest-box', C2: 'coffee-duo' };
+const MATCH: Record<string, string> = { D24: 'four-palms', D12: 'reserve-12' };
 const products = Object.fromEntries(BOXES.map(b => [b.id, { id: b.id, name: b.name[lang], price: priceText(b.price, lang), href: path(lang, `shop/${b.id}`), contents: b.contents[lang] }]));
 // Colours of the varieties we sell (no pairing is shown: that waits for the tasting).
 const dc = [...EVERYDAY, ...RESERVE].map(d => DATES[d].c);
@@ -28,14 +28,20 @@ const dc = [...EVERYDAY, ...RESERVE].map(d => DATES[d].c);
 // geometry (2 px / mm): inner tray 312 × 232 → 624 × 464
 const cups = (cols: number, rows: number, x0: number, y0: number, w: number, h: number) =>
   Array.from({ length: cols * rows }, (_, i) => ({ x: x0 + (i % cols) * w, y: y0 + Math.floor(i / cols) * h, c: dc[Math.floor(i / rows) % 4] }));
-const D24 = cups(6, 4, 16, 16, 98, 108);
-const C12 = cups(3, 4, 316, 16, 98, 108);
+// the grid fills the tray (624 × 464): D24 6 × 4 cells, D12 4 × 3; the strips between the cells are drawn as cream walls
+const D24 = cups(6, 4, 16, 16, 104, 116);
+const D12 = cups(4, 3, 16, 16, 156, 464 / 3);
+const walls = (cols: number, rows: number, w: number, h: number) => [
+  ...Array.from({ length: cols - 1 }, (_, i) => ({ x: 16 + (i + 1) * w - 2, y: 16, w: 4, h: 464 })),
+  ...Array.from({ length: rows - 1 }, (_, i) => ({ x: 16, y: 16 + (i + 1) * h - 2, w: 624, h: 4 })),
+];
+const sets = { cd: products['guest-box'], two: products['coffee-duo'] };
 ---
 <section class="sec boxsec" aria-labelledby="box-h">
   <div class="wrap box-grid">
     <div class="box-copy">
-      <h2 id="box-h" class="h-l">{ar ? 'صندوق واحد، ثلاثة بطون.' : 'One box, three insides.'}</h2>
-      <p class="lead">{ar ? 'نصنع صندوقاً واحداً لكل الهدايا. ما في داخله يتغيّر، والحزام الأحمر يبقى، والمناسبة ملصق صغير نضعه بأيدينا في كالغاري.' : 'We make one box for every gift. What sits inside changes, the red band stays, and the occasion is a small sticker we put on by hand in Calgary.'}</p>
+      <h2 id="box-h" class="h-l">{ar ? 'صندوق واحد، ولكل تمرة مكانها.' : 'One box, a place for every date.'}</h2>
+      <p class="lead">{ar ? 'نصنع صندوقاً واحداً لهدايا التمر. في داخله لكل تمرة خانتها، والحزام الأحمر يبقى، والمناسبة ملصق صغير نضعه بأيدينا في كالغاري.' : 'We make one box for every gift of dates. Inside, each date sits in its own cell; the red band stays, and the occasion is a small sticker we put on by hand in Calgary.'}</p>
 
       <fieldset class="opt">
         <legend>{ar ? 'في الداخل' : 'Inside'}</legend>
@@ -49,6 +55,10 @@ const C12 = cups(3, 4, 316, 16, 98, 108);
           <label data-season={o.id === 'regular' ? undefined : o.id}><input type="radio" name="occ" value={o.id} checked={i === 0} /><span><b>{o.name[lang]}</b></span></label>
         ))}
       </fieldset>
+
+      <p class="sets muted">{ar
+        ? <>القهوة تأتي بجانب الصندوق في كيسنا الورقي: <a href={sets.cd.href}>{sets.cd.name}</a> و<a href={sets.two.href}>{sets.two.name}</a>.</>
+        : <>Coffee goes beside the box, in our paper bag: <a href={sets.cd.href}>{sets.cd.name}</a> and <a href={sets.two.href}>{sets.two.name}</a>.</>}</p>
 
       <div class="match" aria-live="polite">
                 <a class="match-name" id="matchLink" href={products['four-palms'].href}>{products['four-palms'].name}</a>
@@ -69,34 +79,30 @@ const C12 = cups(3, 4, 316, 16, 98, 108);
         <rect x="0" y="0" width="640" height="480" rx="10" fill="url(#lidpat)" />
         <rect x="40" y="150" width="210" height="180" rx="8" fill="#F7F1E4" />
         <image href="/brand/logo.svg" x="70" y="170" width="150" height="126" />
-        <rect x="380" y="0" width="160" height="480" fill="#CF9C0C" />
-        <circle cx="460" cy="240" r="76" fill="#F5EFE3" />
-        <image href="/brand/logo.svg" x="404" y="196" width="112" height="94" />
+        <rect x="492" y="0" width="100" height="480" fill="#A93B28" />
+        <circle cx="542" cy="200" r="76" fill="#F5EFE3" />
+        <image href="/brand/logo.svg" x="486" y="156" width="112" height="94" />
         <g class="occ occ-ramadan">
-          <circle cx="530" cy="345" r="50" fill="#A93B28" />
-          <path d="M546 322a26 26 0 1 0 0 46a21 21 0 1 1 0-46z" fill="#F5EFE3" />
+          <circle cx="542" cy="360" r="50" fill="#33211A" stroke="#F5EFE3" stroke-width="4" />
+          <path d="M558 337a26 26 0 1 0 0 46a21 21 0 1 1 0-46z" fill="#CF9C0C" />
         </g>
         <g class="occ occ-eid">
-          <circle cx="530" cy="345" r="50" fill="#33211A" />
-          <text x="530" y="360" text-anchor="middle" font-family="El Messiri, serif" font-weight="700" font-size="38" fill="#CF9C0C">عيد</text>
+          <circle cx="542" cy="360" r="50" fill="#CF9C0C" stroke="#F5EFE3" stroke-width="4" />
+          <text x="542" y="375" text-anchor="middle" font-family="El Messiri, serif" font-weight="700" font-size="38" fill="#33211A">عيد</text>
         </g>
       </svg>
 
-      <!-- base, opened: three inserts drawn to the brief -->
+      <!-- base, opened: the two grids drawn to the brief -->
       <svg class="base" viewBox="0 0 656 496">
         <rect x="0" y="0" width="656" height="496" rx="12" fill="#E9DFCB" />
         <rect x="16" y="16" width="624" height="464" rx="6" fill="#F3EBDA" />
         <g class="ins ins-D24">
-          {D24.map(c => (<g><rect x={c.x + 4} y={c.y + 4} width="90" height="100" rx="14" fill="#5A3A28" /><path transform={`translate(${c.x + 49} ${c.y + 54})`} fill={c.c} d="M-2 -42c13 0 22 12 22 40c0 27-9 44-22 44c-12 0-21-15-21-43c0-29 8-41 21-41z" /><path transform={`translate(${c.x + 49} ${c.y + 54})`} d="M-12 -18q6 3 11 0M-14 4q7 4 14 0M-11 24q6 3 12-1M4 -30q5 2 9-1" stroke="#33211A" stroke-opacity=".28" stroke-width="2" fill="none" stroke-linecap="round" /></g>))}
+          {D24.map(c => (<g><rect x={c.x + 4} y={c.y + 4} width="96" height="108" rx="14" fill="#5A3A28" /><g transform={`translate(${c.x + 52.0} ${c.y + 58.0}) scale(1.05)`}><path fill={c.c} d="M-2 -42c13 0 22 12 22 40c0 27-9 44-22 44c-12 0-21-15-21-43c0-29 8-41 21-41z" /><path d="M-12 -18q6 3 11 0M-14 4q7 4 14 0M-11 24q6 3 12-1M4 -30q5 2 9-1" stroke="#33211A" stroke-opacity=".28" stroke-width="2" fill="none" stroke-linecap="round" /></g></g>))}
+          {walls(6, 4, 104, 116).map(r => <rect x={r.x} y={r.y} width={r.w} height={r.h} fill="#F7F1E4" />)}
         </g>
-        <g class="ins ins-C12">
-          <g transform="translate(30 30)"><rect width="280" height="420" rx="10" fill="#FBF7EE" /><image href="/brand/logo.svg" x="95" y="40" width="90" height="76" /><rect x="50" y="190" width="180" height="180" rx="10" fill="#FFFDF8" /><rect x="50" y="190" width="180" height="52" rx="10" fill="#E6D2A6" /><text x="140" y="300" text-anchor="middle" font-family="El Messiri, serif" font-weight="700" font-size="34" fill="#33211A">نجدية</text></g>
-          {C12.map(c => (<g><rect x={c.x + 4} y={c.y + 4} width="90" height="100" rx="14" fill="#5A3A28" /><path transform={`translate(${c.x + 49} ${c.y + 54})`} fill="#8E4A22" d="M-2 -42c13 0 22 12 22 40c0 27-9 44-22 44c-12 0-21-15-21-43c0-29 8-41 21-41z" /><path transform={`translate(${c.x + 49} ${c.y + 54})`} d="M-12 -18q6 3 11 0M-14 4q7 4 14 0M-11 24q6 3 12-1M4 -30q5 2 9-1" stroke="#33211A" stroke-opacity=".28" stroke-width="2" fill="none" stroke-linecap="round" /></g>))}
-        </g>
-        <g class="ins ins-C2">
-          {[[46, 'نجدية', '#E6D2A6'], [346, 'خليجية', '#E6D2A6']].map(([x, n, b]) => (
-            <g transform={`translate(${x} 30)`}><rect width="264" height="420" rx="10" fill="#FBF7EE" /><image href="/brand/logo.svg" x="87" y="40" width="90" height="76" /><rect x="42" y="190" width="180" height="180" rx="10" fill="#FFFDF8" /><rect x="42" y="190" width="180" height="52" rx="10" fill={b as string} /><text x="132" y="300" text-anchor="middle" font-family="El Messiri, serif" font-weight="700" font-size="32" fill="#33211A">{n}</text></g>
-          ))}
+        <g class="ins ins-D12">
+          {D12.map(c => (<g><rect x={c.x + 4} y={c.y + 4} width="148" height="147" rx="14" fill="#5A3A28" /><g transform={`translate(${c.x + 78.0} ${c.y + 77.3}) scale(1.45)`}><path fill={c.c} d="M-2 -42c13 0 22 12 22 40c0 27-9 44-22 44c-12 0-21-15-21-43c0-29 8-41 21-41z" /><path d="M-12 -18q6 3 11 0M-14 4q7 4 14 0M-11 24q6 3 12-1M4 -30q5 2 9-1" stroke="#33211A" stroke-opacity=".28" stroke-width="2" fill="none" stroke-linecap="round" /></g></g>))}
+          {walls(4, 3, 156, 464 / 3).map(r => <rect x={r.x} y={r.y} width={r.w} height={r.h} fill="#F7F1E4" />)}
         </g>
       </svg>
     </div>
@@ -119,6 +125,8 @@ const C12 = cups(3, 4, 316, 16, 98, 108);
   .opt input:focus-visible + span { outline: 2.5px solid var(--tamr); outline-offset: 3px; }
   .opt-row { grid-template-columns: repeat(3, auto); justify-content: start; }
   .opt-row legend { grid-column: 1 / -1; }
+  .sets { font-size: 15px; }
+  .sets a { color: var(--tamr); }
   .match { border-top: 1px solid var(--line); padding-top: 18px; display: grid; gap: 4px; }
   .match-name { font-family: var(--display); font-size: 32px; font-weight: 700; color: var(--tamr); text-decoration: none; }
   .match-name:hover { text-decoration: underline; }
@@ -128,9 +136,8 @@ const C12 = cups(3, 4, 316, 16, 98, 108);
   html[dir='rtl'] .lid { transform: rotate(-5deg); }
   .base { width: 88%; border-radius: 12px; filter: drop-shadow(0 18px 24px rgba(51, 33, 26, .18)); }
   .ins, .occ { opacity: 0; transition: opacity .35s var(--ease); }
-  .boxsec:not(:has(input[value='C12']:checked)):not(:has(input[value='C2']:checked)) .ins-D24,
-  .boxsec:has(input[value='C12']:checked) .ins-C12,
-  .boxsec:has(input[value='C2']:checked) .ins-C2,
+  .boxsec:not(:has(input[value='D12']:checked)) .ins-D24,
+  .boxsec:has(input[value='D12']:checked) .ins-D12,
   .boxsec:has(input[value='ramadan']:checked) .occ-ramadan,
   .boxsec:has(input[value='eid']:checked) .occ-eid { opacity: 1; }
 </style>

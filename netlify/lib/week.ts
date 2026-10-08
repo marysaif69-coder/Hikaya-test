@@ -47,7 +47,7 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
   const dateGrams: Partial<Record<DateId, number>> = {};
   const stuffed: Partial<Record<FillingId, number>> = {};
   const datePacks = { g250: 0, g500: 0, g1000: 0 };
-  const boxes = { D24: 0, C12: 0, C2: 0, everyday: 0 };
+  const boxes = { D24: 0, D12: 0, C12: 0, C2: 0, everyday: 0 };
   const sleeves = { regular: 0 };
   const stickers = { ramadan: 0, eid: 0 };
   const products = new Map<string, { name: string; option: string; qty: number }>();
@@ -72,7 +72,7 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
     // Every gift box has the red band (B4); Ramadan and Eid add our Ø50 sticker (from the order line,
     // else the box's own: the retired seasonal boxes).
     if (p.insert !== 'everyday') {
-      sleeves.regular += r.qty;
+      if (p.insert !== 'C2') sleeves.regular += r.qty;   // Two Coffees has no box, so no band; its sticker goes on the bag
       const occ = (['regular', 'ramadan', 'eid'].includes(r.sleeve) ? r.sleeve : p.sleeve) as Sleeve;
       if (occ !== 'regular') stickers[occ] += r.qty;
     }
@@ -104,12 +104,15 @@ export async function weekSheet(from: string, sample: '' | 'hide' | 'only' = 'hi
       blackBoxes: coffeeRows.filter(r => r.blackBox).reduce((n, r) => n + r.pouches, 0),
       pouches250: coffeeRows.filter(r => !r.blackBox && r.grams / Math.max(1, r.pouches) === 250).reduce((n, r) => n + r.pouches, 0),
       pouches100: coffeeRows.filter(r => !r.blackBox && r.grams / Math.max(1, r.pouches) === 100).reduce((n, r) => n + r.pouches, 0),
-      giftBoxes: { D24: boxes.D24, C12: boxes.C12, C2: boxes.C2 },
+      // Pack v12: boxes hold dates only. Coffee & Dates (C12) is a pouch beside a 12-date box (D12) in the paper bag,
+      // Two Coffees (C2) two pouches in the bag; both count as coffee sets.
+      giftBoxes: { D24: boxes.D24, D12: boxes.D12 + boxes.C12 },
+      coffeeSets: { C12: boxes.C12, C2: boxes.C2 },
       everydayTrays: boxes.everyday,
       datePacks,
       sleeves,
       stickers,
-      paperCups: boxes.D24 * 24 + boxes.C12 * 12,
+      paperCups: boxes.D24 * 24 + (boxes.D12 + boxes.C12) * 12,
     },
     products: [...products.values()].sort((a, b) => a.name.localeCompare(b.name)),
   };
