@@ -34,7 +34,7 @@ export const PACK_FIELDS: [keyof PackInput, string, string][] = [
 
 const ROLLS: Record<string, [string, number]> = {
   E1: ['80 × 80 coffee front', 80], E1b: ['100 × 100 coffee back, spice packs', 100], E2: ['Ø76 box seal', 76],
-  E12: ['100 × 130 everyday dates bag, on the front: everything on one label (100 × 100 cannot hold the Nutrition Facts table and the rest at legal type sizes)', 130],
+  E12: ['100 × 170 everyday dates bag, on the front: everything on one label (packed in Saudi Arabia, so the country name is 6.4 mm tall, beside our name)', 170],
   E3: ['100 × 90 box bottom (Nutrition Facts, lot): B1 beside the band, B5 over it', 90], E4: ['Ø50 Ramadan / Eid', 50], E5: ['100 × 40 gift box B1 side, below the lid (what is inside, ingredients, Contains)', 40], E14: ['100 × 20 small box B5 side, below its 20 mm lid (what is inside, ingredients, origin)', 20],
   E6: ['60 × 66 saffron and small packs, front and back', 66],
   E7: ['Ø30 Yemeni region seal', 30], E8: ['60 × 34 Yemeni lot card', 34], E9: ['82 × 66 Yemeni Nutrition Facts', 66],
@@ -75,6 +75,10 @@ export function packCounts(i: PackInput) {
     { group: 'Boxes', code: 'B4-B1', name: 'Sleeve B1 50 × 665 (vertical)', need: u.B1, why: 'one per gift box', order: up(w(u.B1, WASTE.boxes), 10) },
     { group: 'Boxes', code: 'B4-B5', name: 'Sleeve B5 50 × 525 (horizontal)', need: u.B5, why: 'one per small box', order: up(w(u.B5, WASTE.boxes), 10) },
     { group: 'Boxes', code: 'B3', name: 'Paper cups', need: cups, why: 'D24 × 24 + C12 × 12 + B5 × 6', order: up(w(cups, WASTE.cups), 500) },
+    // the clear cover over the dates lies on the insert, under the lid: one size for D24 (and D12), one for the date side of C12, one for B5; C2 holds no dates
+    { group: 'Boxes', code: 'Cover', name: 'Clear cover, D24 and D12 size (about 305 × 225)', need: b1('D24'), why: 'one per D24 box', order: up(w(b1('D24'), WASTE.boxes), 10) },
+    { group: 'Boxes', code: 'Cover', name: 'Clear cover, C12 size (about 150 × 225, the date side)', need: b1('C12'), why: 'one per C12 box; C2 has no dates', order: up(w(b1('C12'), WASTE.boxes), 10) },
+    { group: 'Boxes', code: 'Cover', name: 'Clear cover, B5 size (about 191 × 121)', need: u.B5, why: 'one per small box', order: up(w(u.B5, WASTE.boxes), 10) },
     { group: 'Boxes', code: 'S1', name: 'Single-date wrapper (stuffed dates)', need: i.stuffed_dates, why: 'one per stuffed date', order: i.stuffed_dates ? up(w(i.stuffed_dates, WASTE.cups), 100) : 0 },
     { group: 'Bags', code: 'C-S', name: 'Small paper bag', need: small, why: `${i.bagged_orders} bagged orders × ${100 - i.medium_share}%`, order: up(w(small, WASTE.bags), 50) },
     { group: 'Bags', code: 'C-M', name: 'Medium paper bag', need: medium, why: `${i.medium_share}% of orders, at least one per gift box`, order: up(w(medium, WASTE.bags), 50) },

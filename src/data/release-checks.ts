@@ -6,6 +6,13 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-14', title: 'Pack v9: the dates label is 100 × 170 (packed in Saudi Arabia), and the clear covers have their sizes', date: '2026-10-08',
+    checks: [
+      { id: 'pack14-calc', text: 'Desk → Numbers → Packaging: the E12 row reads “100 × 170 everyday dates bag …”, still 1,700 labels with the starting numbers, now 8 rolls. Under Boxes, three new “Cover” rows: D24 and D12 size 160, C12 size 110, B5 size 620.', links: [{ label: 'Desk', href: '/admin' }] },
+      { id: 'pack14-decision', text: 'Settings → Decisions: “Origin on the date boxes” ends with the dates bags being packed in Saudi Arabia and their sticker being 100 × 170; “From the everyday dates supplier” asks for each bag’s front size for one 100 × 170 label.', links: [{ label: 'Desk', href: '/admin' }] },
+    ],
+  },
+  {
     id: 'pack-final-13', title: 'The everyday dates label is 100 × 130 (E12): 100 × 100 cannot hold everything at the legal sizes', date: '2026-10-08',
     checks: [
       { id: 'pack13-calc', text: 'Desk → Numbers → Packaging, label rolls: E1b now reads “100 × 100 coffee back, spice packs”, and a new row E12 “100 × 130 everyday dates bag, on the front: everything on one label …”, one per dates bag. With the starting numbers: E1b 1,500 and E12 1,700, about 12,500 labels in all.', links: [{ label: 'Desk', href: '/admin' }] },
