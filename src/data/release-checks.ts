@@ -6,6 +6,12 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-18', title: 'Pack v13: the date grids come made up and folded flat (never glued); one more row either way is priced', date: '2026-10-08',
+    checks: [
+      { id: 'pack18-calc', text: 'Desk → Numbers → Packaging: the B2 row reads “B1 grids D24 · D12 (made up, folded flat)”; the numbers are unchanged.', links: [{ label: 'Desk', href: '/admin' }] },
+    ],
+  },
+  {
     id: 'site-sets-1', title: 'The coffee sets go in the paper bag; the date boxes hold dates only', date: '2026-10-08',
     checks: [
       { id: 'sets1-home', text: 'Home page, “One box, a place for every date.”: two insides, D24 and D12 (picking D12 shows “Reserve box, 12 dates”); the band on the lid is red; a line says coffee goes beside the box, in our paper bag, with links to Coffee & Dates and Two Coffees. The same in Arabic.', links: [{ label: 'Home', href: '/en/' }] },

@@ -70,7 +70,7 @@ export function packCounts(i: PackInput) {
     { group: 'Pouches', code: 'A4', name: 'Spice-pack sachet', need: u.spice, why: 'one per pack', order: pouch(u.spice) },
     { group: 'Pouches', code: 'A5', name: 'Saffron and small-pack pouch', need: u.small, why: 'one per pack', order: pouch(u.small) },
     { group: 'Boxes', code: 'B1', name: 'Gift box 320 × 240 × 40', need: u.B1, why: 'boxes', order: up(w(u.B1, WASTE.boxes), 10) },
-    { group: 'Boxes', code: 'B2', name: 'B1 grids D24 · D12 (card strips, sent flat)', need: u.B1, why: `${b1('D24')} · ${b1('D12')}`, order: up(w(u.B1, WASTE.boxes), 10) },
+    { group: 'Boxes', code: 'B2', name: 'B1 grids D24 · D12 (made up, folded flat)', need: u.B1, why: `${b1('D24')} · ${b1('D12')}`, order: up(w(u.B1, WASTE.boxes), 10) },
     { group: 'Boxes', code: 'B5', name: 'Small date box 205 × 135 × 40, with its grid', need: u.B5, why: 'boxes', order: up(w(u.B5, WASTE.boxes), 10) },
     { group: 'Boxes', code: 'B4-B1', name: 'Sleeve B1 50 × 605 (vertical)', need: u.B1, why: 'one per gift box', order: up(w(u.B1, WASTE.boxes), 10) },
     { group: 'Boxes', code: 'B4-B5', name: 'Sleeve B5 50 × 515 (horizontal)', need: u.B5, why: 'one per small box', order: up(w(u.B5, WASTE.boxes), 10) },
