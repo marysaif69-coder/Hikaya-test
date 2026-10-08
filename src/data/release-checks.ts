@@ -6,6 +6,13 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-17', title: 'Pack v12: the date boxes hold dates only (40 mm deep, no platform), grids as flat strips, coffee sets in the bag', date: '2026-10-08',
+    checks: [
+      { id: 'pack17-calc', text: 'Desk → Numbers → Packaging, with the starting numbers: B1 “Gift box 320 × 240 × 40” 260; B2 “B1 grids D24 · D12” 150 · 100; one B1 cover row (260) and the B5 cover (620); sleeves B1 50 × 605 and B5 50 × 515; no E5 row; E14 for both boxes, 1,000.', links: [{ label: 'Desk', href: '/admin' }] },
+      { id: 'pack17-decisions', text: 'Settings → Decisions: “Thirty Nights” says the China brief already asks for the D30 grid’s price; “Boxes in the paper bags” gives the 40 mm boxes and the coffee sets in the medium bag; the photo shot list shows Coffee & Dates and Two Coffees with the paper bag.', links: [{ label: 'Desk', href: '/admin' }] },
+    ],
+  },
+  {
     id: 'pack-final-16', title: 'Pack v11: the dates bag sizes still to confirm, with a shorter 250 g label (E12s) quoted', date: '2026-10-08',
     checks: [
       { id: 'pack16-decision', text: 'Settings → Decisions: “From the everyday dates supplier” point (7) asks for each bag’s flat width and height, the zipper position and the bottom gusset (or one empty bag of each size), says a 250 g bag too small for the 100 × 170 label gets E12s, 100 × 140, and that the sizes are needed before the label order on 13 November.', links: [{ label: 'Desk', href: '/admin' }] },

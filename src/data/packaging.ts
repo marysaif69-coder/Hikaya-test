@@ -17,7 +17,7 @@ export type PackInput = {
 /** The brief's placeholder quantities, until the kilo forecast is set. */
 export const PACK_DEFAULTS: PackInput = {
   coffee_kg: 250, yemeni_kg: 100, qishr_packs: 0, dates_250_kg: 125, dates_500_kg: 300, dates_1kg_kg: 400,
-  b1_boxes: 300, b5_boxes: 600, spice_packs: 300, small_packs: 300, style_boxes: 0, stuffed_dates: 0,
+  b1_boxes: 250, b5_boxes: 600, spice_packs: 300, small_packs: 300, style_boxes: 0, stuffed_dates: 0,
   seasonal_share: 100, bagged_orders: 1200, medium_share: 25, totes: 100, waste_labels: 8, waste_pouches: 5,
 };
 
@@ -35,13 +35,13 @@ export const PACK_FIELDS: [keyof PackInput, string, string][] = [
 const ROLLS: Record<string, [string, number]> = {
   E1: ['80 × 80 coffee front', 80], E1b: ['100 × 100 coffee back, spice packs', 100], E2: ['Ø76 box seal', 76],
   E12: ['100 × 170 everyday dates bag, on the front: everything on one label (packed in Saudi Arabia, so the country name is 6.4 mm tall, beside our name)', 170],
-  E3: ['100 × 90 box bottom (Nutrition Facts, lot): B1 beside the band, B5 over it', 90], E4: ['Ø50 Ramadan / Eid', 50], E5: ['100 × 40 gift box B1 side, below the lid (what is inside, ingredients, Contains)', 40], E14: ['100 × 20 small box B5 side, below its 20 mm lid (what is inside, ingredients, origin)', 20],
+  E3: ['100 × 90 box bottom (Nutrition Facts, lot): B1 beside the band, B5 over it', 90], E4: ['Ø50 Ramadan / Eid', 50], E14: ['100 × 20 box side, B1 and B5, below the 16 mm lid (what is inside, ingredients, origin; a stuffed-date box takes two: English, French)', 20],
   E6: ['60 × 66 saffron and small packs, front and back', 66],
   E7: ['Ø30 Yemeni region seal', 30], E8: ['60 × 34 Yemeni lot card', 34], E9: ['82 × 66 Yemeni Nutrition Facts', 66],
   E11: ['40 × 25 label on each stuffed date (filling, allergens)', 25],
   E13: ['Ø50 round Hikaya sticker, removable glue: folded over the top, it holds a coffee style together (same shape as E4)', 50],
 };
-const B1_MIX = { D24: 50, C12: 33, C2: 17 };   // % of gift boxes by insert
+const B1_MIX = { D24: 60, D12: 40 };   // % of gift boxes by grid (pack v12: dates only; the coffee sets go in the paper bag; D30 until Thirty Nights is decided: 0)
 const WASTE = { boxes: 3, bags: 5, cups: 5 };
 const MOQ_POUCH = 500;
 
@@ -56,7 +56,7 @@ export function packCounts(i: PackInput) {
     B1: i.b1_boxes, B5: i.b5_boxes, spice: i.spice_packs, small: i.small_packs,
   };
   const b1 = (k: keyof typeof B1_MIX) => Math.round(u.B1 * B1_MIX[k] / 100);
-  const cups = b1('D24') * 24 + b1('C12') * 12 + u.B5 * 6;
+  const cups = b1('D24') * 24 + b1('D12') * 12 + u.B5 * 6;
   const pouch = (n: number) => Math.max(MOQ_POUCH, up(w(n, i.waste_pouches), 100));
   const small = Math.ceil(i.bagged_orders * (1 - i.medium_share / 100));
   const medium = Math.max(Math.ceil(i.bagged_orders * i.medium_share / 100), u.B1);
@@ -69,15 +69,14 @@ export function packCounts(i: PackInput) {
     { group: 'Pouches', code: 'A3', name: '100 g Yemeni pouch (black and gold)', need: u.A3, why: 'Yemeni kg ÷ 0.1', order: pouch(u.A3) },
     { group: 'Pouches', code: 'A4', name: 'Spice-pack sachet', need: u.spice, why: 'one per pack', order: pouch(u.spice) },
     { group: 'Pouches', code: 'A5', name: 'Saffron and small-pack pouch', need: u.small, why: 'one per pack', order: pouch(u.small) },
-    { group: 'Boxes', code: 'B1', name: 'Gift box 320 × 240', need: u.B1, why: 'boxes', order: up(w(u.B1, WASTE.boxes), 10) },
-    { group: 'Boxes', code: 'B2', name: 'B1 inserts D24 · C12 · C2', need: u.B1, why: `${b1('D24')} · ${b1('C12')} · ${b1('C2')}`, order: up(w(u.B1, WASTE.boxes), 10) },
-    { group: 'Boxes', code: 'B5', name: 'Small date box 205 × 135', need: u.B5, why: 'boxes', order: up(w(u.B5, WASTE.boxes), 10) },
-    { group: 'Boxes', code: 'B4-B1', name: 'Sleeve B1 50 × 665 (vertical)', need: u.B1, why: 'one per gift box', order: up(w(u.B1, WASTE.boxes), 10) },
-    { group: 'Boxes', code: 'B4-B5', name: 'Sleeve B5 50 × 525 (horizontal)', need: u.B5, why: 'one per small box', order: up(w(u.B5, WASTE.boxes), 10) },
-    { group: 'Boxes', code: 'B3', name: 'Paper cups', need: cups, why: 'D24 × 24 + C12 × 12 + B5 × 6', order: up(w(cups, WASTE.cups), 500) },
-    // the clear cover over the dates lies on the insert, under the lid: one size for D24 (and D12), one for the date side of C12, one for B5; C2 holds no dates
-    { group: 'Boxes', code: 'Cover', name: 'Clear cover, D24 and D12 size (about 305 × 225)', need: b1('D24'), why: 'one per D24 box', order: up(w(b1('D24'), WASTE.boxes), 10) },
-    { group: 'Boxes', code: 'Cover', name: 'Clear cover, C12 size (about 150 × 225, the date side)', need: b1('C12'), why: 'one per C12 box; C2 has no dates', order: up(w(b1('C12'), WASTE.boxes), 10) },
+    { group: 'Boxes', code: 'B1', name: 'Gift box 320 × 240 × 40', need: u.B1, why: 'boxes', order: up(w(u.B1, WASTE.boxes), 10) },
+    { group: 'Boxes', code: 'B2', name: 'B1 grids D24 · D12 (card strips, sent flat)', need: u.B1, why: `${b1('D24')} · ${b1('D12')}`, order: up(w(u.B1, WASTE.boxes), 10) },
+    { group: 'Boxes', code: 'B5', name: 'Small date box 205 × 135 × 40, with its grid', need: u.B5, why: 'boxes', order: up(w(u.B5, WASTE.boxes), 10) },
+    { group: 'Boxes', code: 'B4-B1', name: 'Sleeve B1 50 × 605 (vertical)', need: u.B1, why: 'one per gift box', order: up(w(u.B1, WASTE.boxes), 10) },
+    { group: 'Boxes', code: 'B4-B5', name: 'Sleeve B5 50 × 515 (horizontal)', need: u.B5, why: 'one per small box', order: up(w(u.B5, WASTE.boxes), 10) },
+    { group: 'Boxes', code: 'B3', name: 'Paper cups', need: cups, why: 'D24 × 24 + D12 × 12 + B5 × 6', order: up(w(cups, WASTE.cups), 500) },
+    // the clear cover over the dates lies on the grid, under the lid: one size per box
+    { group: 'Boxes', code: 'Cover', name: 'Clear cover, B1 size (about 305 × 225)', need: u.B1, why: 'one per gift box', order: up(w(u.B1, WASTE.boxes), 10) },
     { group: 'Boxes', code: 'Cover', name: 'Clear cover, B5 size (about 191 × 121)', need: u.B5, why: 'one per small box', order: up(w(u.B5, WASTE.boxes), 10) },
     { group: 'Boxes', code: 'S1', name: 'Single-date wrapper (stuffed dates)', need: i.stuffed_dates, why: 'one per stuffed date', order: i.stuffed_dates ? up(w(i.stuffed_dates, WASTE.cups), 100) : 0 },
     { group: 'Bags', code: 'C-S', name: 'Small paper bag', need: small, why: `${i.bagged_orders} bagged orders × ${100 - i.medium_share}%`, order: up(w(small, WASTE.bags), 50) },
@@ -88,10 +87,9 @@ export function packCounts(i: PackInput) {
     lab('E1b', u.A1 + u.spice, '250 g backs + spice packs'),
     lab('E12', u.dates, 'one per dates bag, on the front, with everything on it (a 250 g bag too small for it gets E12s, 100 × 140)'),
     lab('E2', u.B1 + u.B5, 'one per gift box'),
-    lab('E3', u.B1 + u.B5 + b1('C12'), 'box bottoms (+1 on Coffee & Dates boxes)'),
+    lab('E3', u.B1 + u.B5, 'box bottoms'),
     lab('E4', Math.ceil((u.B1 + u.B5) * i.seasonal_share / 100), `${i.seasonal_share}% of gift boxes`),
-    lab('E5', u.B1, 'one per gift box B1, on a long side below the lid'),
-    lab('E14', u.B5, 'one per small box B5: its side shows only 25 mm below the lid, too low for E5'),
+    lab('E14', u.B1 + u.B5 + Math.ceil(i.stuffed_dates / 12), 'one per box side (B1 and B5); a stuffed-date box takes two (English, French)'),
     lab('E6', u.small * 2, 'front and back of each small pack'),
     lab('E7', u.A3, 'one per Yemeni pouch'), lab('E8', u.A3, 'one per Yemeni pouch'), lab('E9', u.A3, 'one per Yemeni pouch'),
     ...(i.stuffed_dates ? [lab('E11', i.stuffed_dates, 'one per stuffed date, on its wrapper')] : []),

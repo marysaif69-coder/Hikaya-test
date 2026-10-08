@@ -65,7 +65,7 @@ export const DECISIONS: Decision[] = [
   {
     id: 'reserve-12-box', topic: 'Dates · Reserve box of 12', asked: '2026-10-07',
     question: 'Twelve Medjool dates do not fit the small box B5. Where does the Reserve box of 12 go?',
-    context: 'Medjool is up to about 55 mm long. The small box B5 takes 6 large dates or 12 small or stuffed dates. Royal Sukkari Mufattal and Ajwa may fit twelve; Medjool does not. The China brief also asks for a 12-date insert for the gift box B1 (D12), so either way is quoted. Decide with the date samples.',
+    context: 'Medjool is up to about 55 mm long. The small box B5 takes 6 large dates or 12 small or stuffed dates. Royal Sukkari Mufattal and Ajwa may fit twelve; Medjool does not. The China brief also quotes a 12-date grid for the gift box B1 (D12), so either way is quoted. Decide with the date samples.',
     options: ['B5 with 12 for Mufattal and Ajwa; Medjool only in the box of 24', 'Every Reserve box of 12 in B1 with the D12 insert', 'Decide with the samples'],
   },
   {
@@ -83,7 +83,7 @@ export const DECISIONS: Decision[] = [
   {
     id: 'boxes-in-bags', topic: 'Delivery · Boxes in the paper bags', asked: '2026-10-07',
     question: 'The gift boxes only fit in the paper bags standing on their side. Is that all right?',
-    context: 'B1 (320 × 240 × 70) fits the medium bag (254 × 127 × 330) only on its long edge; B5 (205 × 135 × 45) is too wide to lie flat in either bag (small 203 × 121, medium 254 × 127). Standing up is common for gift boxes, and the film over the dates and the band hold them, but if you want them flat the bag sizes would need to change before 16 October.',
+    context: 'B1 (320 × 240 × 40) fits the medium bag (254 × 127 × 330) only on its long edge; B5 (205 × 135 × 40) is too wide to lie flat in either bag (small 203 × 121, medium 254 × 127). Standing up is common for gift boxes, and the grid and the clear cover keep each date in its cell, but if you want them flat the bag sizes would need to change before the bag samples. The coffee sets go in the medium bag too: a box of 12 standing beside its pouch, or two pouches.',
     options: ['Standing up is fine', 'Change the bag sizes so boxes lie flat'],
   },
   {
@@ -120,7 +120,7 @@ export const DECISIONS: Decision[] = [
   {
     id: 'box-photos', kind: 'provide', topic: 'Photos · Date and gift boxes', asked: '2026-10-04',
     question: 'Photos of the real boxes, when the samples arrive',
-    context: 'Until then the site draws each box. Shot list, all 4:5 portrait, same angle, on the cream background: Coffee & Dates open (a pouch and 12 dates); Two Coffees open; Reserve 12 and 24 (one variety, and Mixed); Stuffed 12 (showing the seals and the fillings); Four Palms; the closed box with the red band, then with the Ramadan sticker and with the Eid sticker; the Everyday dates in their clear bag in 250 g, 500 g and 1 kg. Send them to the website session; a box with a photo shows it, the rest keep the drawing.',
+    context: 'Until then the site draws each box. Shot list, all 4:5 portrait, same angle, on the cream background: Coffee & Dates (a pouch beside its box of 12 dates, with the paper bag); Two Coffees (two pouches, with the paper bag); Reserve 12 and 24 (one variety, and Mixed); Stuffed 12 (showing the seals and the fillings); Four Palms; the closed box with the red band, then with the Ramadan sticker and with the Eid sticker; the Everyday dates in their clear bag in 250 g, 500 g and 1 kg. Send them to the website session; a box with a photo shows it, the rest keep the drawing.',
     options: ['Given'],
   },
   {
@@ -235,7 +235,7 @@ export const DECISIONS: Decision[] = [
   {
     id: 'thirty-nights', topic: 'Ramadan · Idea', asked: '2026-10-04',
     question: '“ثلاثون ليلة · Thirty Nights”: 30 Reserve dates, one for each iftar. Do we make it?',
-    context: 'Not built. It needs a 30-date insert (D30), which has to be in the China packaging order by 13 November.',
+    context: 'Not built. It needs a 30-date grid (D30: card strips, 6 × 5, small cups). The China brief already asks for its price, so it can go in the packaging order (13 November) or be added later as a new layout.',
     options: ['Yes, add the D30 insert to the packaging order', 'No', 'Next year'],
   },
   {
