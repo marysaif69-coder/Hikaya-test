@@ -53,6 +53,12 @@ export const DECISIONS: Decision[] = [
     options: ['Yes, exactly', 'No: I will write the exact name here'],
   },
   {
+    id: 'coffee-bags-1000-or-2000', topic: 'China order · Coffee bags', asked: '2026-10-09',
+    question: 'When the factory quotes come in: 1,000 or 2,000 coffee bags (A1, 250 g)?',
+    context: 'You said in the chat (9 Oct): it depends on the price; if 2,000 costs close to 1,000, take 2,000. Brief v16 asks every factory to quote both, and plans 2,000 (2,100 with spares; 1,100 for 1,000). The E1 and E1b labels follow the bag count. Everything else in the first order is set from your answers that day (about six months of selling).',
+    options: ['1,000 bags', '2,000 bags'],
+  },
+  {
     id: 'coffee-style-box', topic: 'Coffee · The box for the styles', asked: '2026-10-07',
     question: 'The shop said “each coffee style comes in one box, the bag and its packs together”, but the China order had no such box. Keep the box? (You answered in the chat on 7 Oct: no box, a Hikaya sticker holds them together; the shop words are changed. Tick “No box” to close this.)',
     context: 'It covers the six styles (Najdi, Qassimi, Hijazi, Hadrami, Rada’i, Baydani) and the two tasting boxes. The China brief now asks for a quote on one style box (K1): one design for every style, the 250 g bag standing with its packs in front, our 80 × 80 sticker names the style and our 100 × 40 sticker lists what is inside. Enter how many you expect in Desk → Numbers → Packaging (Coffee styles and tasting boxes). Without a box, the shop words change to “the bag and its packs together”.',

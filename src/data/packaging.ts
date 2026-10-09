@@ -14,11 +14,14 @@ export type PackInput = {
   waste_labels: number; waste_pouches: number;
 };
 
-/** The brief's placeholder quantities, until the kilo forecast is set. */
+/** The owners' answers for the first China order (9 Oct, brief v16): about six months of selling. Coffee bags are
+ *  1,000 or 2,000 depending on the quote (planned at 2,000: 500 kg); Yemeni pouches 500; gift boxes 500 (60% of 24,
+ *  40% of 12) and small boxes 1,000; everyday dates 1,000 packs of each size; 1,000 spice sachets and 500 small
+ *  pouches (one coffee style per sachet); 3,000 bagged orders; 300 totes; a season sticker on every box. */
 export const PACK_DEFAULTS: PackInput = {
-  coffee_kg: 250, yemeni_kg: 100, qishr_packs: 0, dates_250_kg: 125, dates_500_kg: 300, dates_1kg_kg: 400,
-  b1_boxes: 250, b5_boxes: 600, spice_packs: 300, small_packs: 300, style_boxes: 0, stuffed_dates: 0,
-  seasonal_share: 100, bagged_orders: 1200, medium_share: 25, totes: 100, waste_labels: 8, waste_pouches: 5,
+  coffee_kg: 500, yemeni_kg: 50, qishr_packs: 0, dates_250_kg: 250, dates_500_kg: 500, dates_1kg_kg: 1000,
+  b1_boxes: 500, b5_boxes: 1000, spice_packs: 1000, small_packs: 500, style_boxes: 1000, stuffed_dates: 0,
+  seasonal_share: 100, bagged_orders: 3000, medium_share: 25, totes: 300, waste_labels: 8, waste_pouches: 5,
 };
 
 export const PACK_FIELDS: [keyof PackInput, string, string][] = [
@@ -95,6 +98,10 @@ export function packCounts(i: PackInput) {
     { group: 'Bags', code: 'C-M', name: 'Medium paper bag', need: medium, why: `${i.medium_share}% of orders, at least one per gift box`, order: up(w(medium, WASTE.bags), 50) },
     { group: 'Bags', code: 'H', name: 'Cloth tote (sold)', need: i.totes, why: 'your number', order: up(i.totes, 50) },
     { group: 'Bags', code: 'T', name: 'Yemeni gift tag + cord', need: u.A3, why: 'one per Yemeni pouch', order: up(w(u.A3, i.waste_labels), 100) },
+    // the three A6 cards, printed in China: one of each in every bagged order (owners, 9 Oct)
+    { group: 'Cards', code: 'D', name: 'Thank-you card', need: i.bagged_orders, why: 'one per bagged order', order: up(i.bagged_orders, 100) },
+    { group: 'Cards', code: 'D', name: 'Date guide card', need: i.bagged_orders, why: 'one per bagged order', order: up(i.bagged_orders, 100) },
+    { group: 'Cards', code: 'D', name: 'Coffee guide card', need: i.bagged_orders, why: 'one per bagged order', order: up(i.bagged_orders, 100) },
     lab('E1', u.A1, 'one per 250 g pouch (coffee and qishr)'),
     lab('E1b', u.A1 + u.spice, '250 g backs + spice packs'),
     lab('E12', u.dBig, 'one per 500 g or 1 kg dates pack, with everything on it'),

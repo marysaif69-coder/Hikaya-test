@@ -6,6 +6,13 @@ export type Release = { id: string; title: string; date: string; checks: Check[]
 
 export const RELEASES: Release[] = [
   {
+    id: 'pack-final-21', title: 'Pack v16: the coffee guide card, and the first-order quantities from your answers', date: '2026-10-09',
+    checks: [
+      { id: 'pack21-calc', text: 'Desk → Numbers → Packaging → Reset: it starts from your answers of 9 Oct: A1 2,100, A3 600, A4 1,100, A5 600, B1 520, B5 1,030, paper cups 16,500, bags 2,400 small and 800 medium, 300 totes, 600 tags, and a new Cards group with the thank-you, date guide and coffee guide cards, 3,000 each. About 19,600 blank labels in all (E13 1,100 included).', links: [{ label: 'Desk', href: '/admin' }] },
+      { id: 'pack21-decisions', text: 'Desk → Settings → Decisions: a new question, “When the factory quotes come in: 1,000 or 2,000 coffee bags?”, with the two answers.', links: [{ label: 'Desk', href: '/admin' }] },
+    ],
+  },
+  {
     id: 'pack-final-20', title: 'Pack v15: the 500 g and 1 kg dates label E12 turns landscape, 150 × 100, to fit flat-topped trays', date: '2026-10-08',
     checks: [
       { id: 'pack20-calc', text: 'Desk → Numbers → Packaging: the E12 row reads “100 × 150 everyday dates, 500 g and 1 kg trays, on the top, 150 wide…”, still 1,100; E12s still 600; 12,300 blank labels in all.', links: [{ label: 'Desk', href: '/admin' }] },
